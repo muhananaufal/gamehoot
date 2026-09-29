@@ -5,8 +5,8 @@ declare(strict_types=1);
 return [
     'types' => [
         'pentahoot' => 'Pentahoot',
-        'tebak_kata' => 'Tebak Kata',
-        'tebak_gambar' => 'Tebak Gambar',
+        'tebak_kata' => 'Word Guess',
+        'tebak_gambar' => 'Picture Guess',
     ],
 
     'kata' => [

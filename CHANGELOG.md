@@ -19,3 +19,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hosts can create events with a link, Public View theme and phone display setting, and open them when ready.
 - Event owners can add co-hosts, transfer ownership, and delete events; deleted events can be restored by their owner or a super-admin.
 - Hosts can close and reopen events and lock new name claims.
+- Hosts can write Pentahoot and Word Guess question packs, reorder questions, and preview the answer boxes while writing.

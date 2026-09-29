@@ -30,6 +30,9 @@
                 <x-host-nav-link :href="route('host.dashboard')" icon="calendar" :active="request()->routeIs('host.dashboard')">
                     {{ __('host.nav.events') }}
                 </x-host-nav-link>
+                <x-host-nav-link :href="route('host.packs.index')" icon="layers" :active="request()->routeIs('host.packs.*')">
+                    {{ __('host.nav.question_packs') }}
+                </x-host-nav-link>
                 <x-host-nav-link :href="route('host.trash.index')" icon="trash" :active="request()->routeIs('host.trash.*')">
                     {{ __('host.nav.deleted_events') }}
                 </x-host-nav-link>

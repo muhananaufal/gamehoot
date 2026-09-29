@@ -14,6 +14,9 @@ use App\Http\Controllers\Host\EventController;
 use App\Http\Controllers\Host\EventOwnerController;
 use App\Http\Controllers\Host\JoinLockController;
 use App\Http\Controllers\Host\OpenEventController;
+use App\Http\Controllers\Host\PackQuestionController;
+use App\Http\Controllers\Host\PackQuestionOrderController;
+use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
 use App\Http\Controllers\Host\TrashController;
 use App\Http\Middleware\EnsureAccountIsActive;
@@ -36,6 +39,21 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
     Route::prefix('host')->name('host.')->group(function (): void {
         Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
+
+        // D-9: question packs, owner only.
+        Route::get('/packs', [QuestionPackController::class, 'index'])->name('packs.index');
+        Route::post('/packs', [QuestionPackController::class, 'store'])->name('packs.store');
+        Route::prefix('/packs/{pack}')->whereUuid('pack')->name('packs.')->scopeBindings()->group(function (): void {
+            Route::get('/', [QuestionPackController::class, 'show'])->name('show')->can('view', 'pack');
+            Route::put('/', [QuestionPackController::class, 'update'])->name('update')->can('update', 'pack');
+            Route::delete('/', [QuestionPackController::class, 'destroy'])->name('destroy')->can('delete', 'pack');
+            Route::get('/questions/create', [PackQuestionController::class, 'create'])->name('questions.create')->can('update', 'pack');
+            Route::post('/questions', [PackQuestionController::class, 'store'])->name('questions.store')->can('update', 'pack');
+            Route::post('/questions/reorder', [PackQuestionOrderController::class, 'store'])->name('questions.reorder')->can('update', 'pack');
+            Route::get('/questions/{question}/edit', [PackQuestionController::class, 'edit'])->name('questions.edit')->can('update', 'pack');
+            Route::put('/questions/{question}', [PackQuestionController::class, 'update'])->name('questions.update')->can('update', 'pack');
+            Route::delete('/questions/{question}', [PackQuestionController::class, 'destroy'])->name('questions.destroy')->can('update', 'pack');
+        });
 
         Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
         Route::post('/trash/{event}/restore', [TrashController::class, 'update'])->name('trash.restore')

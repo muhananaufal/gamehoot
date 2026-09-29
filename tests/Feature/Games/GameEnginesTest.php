@@ -91,6 +91,13 @@ describe('Tebak Kata question form', function (): void {
             ]);
     });
 
+    it('treats a form without opened boxes as all boxes hidden', function (): void {
+        $input = ['prompt' => 'Capital of Italy', 'answer_text' => 'Rome', 'points' => '1'];
+
+        expect(engineErrors(GameType::TebakKata, $input))->toBe([])
+            ->and(app(GameEngines::class)->for(GameType::TebakKata)->detailAttributes($input)['initial_open_indexes'])->toBe([]);
+    });
+
     it('rejects an answer longer than 40 characters (T9)', function (): void {
         expect(engineErrors(GameType::TebakKata, [
             'prompt' => 'Long',
@@ -127,12 +134,12 @@ describe('Tebak Kata question form', function (): void {
         ]))->toHaveKey('initial_open_indexes');
     });
 
-    it('rejects points above 10 (E16)', function (): void {
+    it('accepts only 0, 1 or 2 points (E16)', function (): void {
         expect(engineErrors(GameType::TebakKata, [
             'prompt' => 'Bonus',
             'answer_text' => 'Rome',
             'initial_open_indexes' => [],
-            'points' => 11,
+            'points' => 3,
         ]))->toHaveKey('points');
     });
 });
