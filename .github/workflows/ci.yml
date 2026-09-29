@@ -1,0 +1,84 @@
+# O1, P6: quality gate on every push. PHP comes from the project image (6a),
+# MySQL from the versions production may run until O-B is answered (W13).
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Pint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/php-image
+      - name: Check formatting
+        run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/pint --test
+
+  static-analysis:
+    name: Larastan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/php-image
+      - name: Analyse
+        run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+  audit:
+    name: Composer audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/php-image
+      - name: Audit dependencies
+        run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci composer audit
+
+  secrets:
+    name: Gitleaks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Scan history for secrets
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git --redact --no-banner /repo
+
+  test:
+    name: Pest (MySQL ${{ matrix.mysql }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        mysql: ['8.0', '8.4']
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-root
+          MYSQL_DATABASE: pentahoot_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/php-image
+      - name: Run test suite
+        run: |
+          app_key="base64:$(openssl rand -base64 32)"
+          docker run --rm --network host -v "$PWD:/var/www/html" \
+            -e APP_KEY="$app_key" \
+            -e DB_HOST=127.0.0.1 -e DB_PORT=3306 \
+            -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root \
+            pentahoot-php:ci php artisan test
