@@ -33,7 +33,8 @@ final class EventController
             $request->boolean('show_on_devices'),
         );
 
-        return redirect()->route('host.events.edit', $event)->with('status', __('events.created'));
+        // Setup step 2: add names.
+        return redirect()->route('host.events.people.index', $event)->with('status', __('events.created'));
     }
 
     public function edit(Event $event, #[CurrentUser] User $user): View
