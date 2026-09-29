@@ -22,3 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hosts can write Pentahoot and Word Guess question packs, reorder questions, and preview the answer boxes while writing.
 - Hosts manage each event's name list: add, rename and delete names, or import a CSV through a preview that flags duplicates before anything is saved.
 - Hosts can release a claimed name, make a new personal link, and export all personal links as CSV.
+- Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
+- Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
