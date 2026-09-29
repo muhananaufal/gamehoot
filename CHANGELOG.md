@@ -16,3 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The first super-admin is created with `php artisan pentahoot:create-super-admin`.
 - Hosts see the events they own or co-host, filtered by status.
 - Host pages follow the system light or dark theme, with a switch in the sidebar.
+- Hosts can create events with a link, Public View theme and phone display setting, and open them when ready.
+- Event owners can add co-hosts, transfer ownership, and delete events; deleted events can be restored by their owner or a super-admin.
+- Hosts can close and reopen events and lock new name claims.
