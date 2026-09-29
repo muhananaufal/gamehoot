@@ -13,7 +13,7 @@
 <x-layouts.base :title="$title">
     <div x-data="{ menuOpen: false }" class="flex min-h-dvh" @keydown.escape.window="menuOpen = false">
         {{-- F20: one sidebar; on phones it becomes a drawer. --}}
-        <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-inverse/60 lg:hidden" @click="menuOpen = false"></div>
+        <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-nav/70 lg:hidden" @click="menuOpen = false"></div>
         <aside id="host-sidebar"
             class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col bg-nav px-3.5 py-4 text-[15px] text-nav-ink transition-transform lg:static lg:translate-x-0"
             :class="{ 'translate-x-0': menuOpen }">
@@ -62,7 +62,7 @@
                 <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" aria-hidden="true">{{ $initials }}</span>
                 <div class="flex min-w-0 grow flex-col">
                     <span class="truncate text-sm font-bold">{{ $user->name }}</span>
-                    <span class="text-xs text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+                    <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
                 </div>
                 <button type="button" x-data="themeToggle" @click="toggle()" aria-label="{{ __('host.nav.switch_theme') }}"
                     class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
