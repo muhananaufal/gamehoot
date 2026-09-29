@@ -1,0 +1,24 @@
+# K3: level fixed at setup, no baseline file.
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/pestphp/pest/extension.neon
+    - vendor/pestphp/pest/phpstan-pest-extension.neon
+
+parameters:
+    level: 9
+    paths:
+        - app
+        - bootstrap/app.php
+        - config
+        - database
+        - routes
+        - tests
+    tmpDir: .phpstan.cache
+    ignoreErrors:
+        # Pest's arch() returns TestCall and forwards preset()/expect() to the test case
+        # through __call, which static analysis cannot follow. Only these two calls, only
+        # in architecture tests, are ignored; everything else in those files is analysed.
+        -
+            identifier: method.notFound
+            message: '#^Call to an undefined method Pest\\PendingCalls\\TestCall::(preset|expect)\(\)\.$#'
+            path: tests/Architecture/*
