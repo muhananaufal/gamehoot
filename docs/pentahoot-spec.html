@@ -1,0 +1,1561 @@
+<title>Spesifikasi Pentahoot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --paper: #f5f7f8;
+    --surface: #ffffff;
+    --ink: #17212b;
+    --ink-soft: #4a5866;
+    --rule: #d9e0e5;
+    --accent: #0e6e66;
+    --accent-soft: #e1f1ef;
+    --ok: #1d7a45;
+    --ok-bg: #e3f4ea;
+    --dev: #9a5a07;
+    --dev-bg: #fbeed9;
+    --open: #a3333d;
+    --open-bg: #fbe5e7;
+    --code-bg: #eef2f4;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #11171c;
+      --surface: #182027;
+      --ink: #e4eaee;
+      --ink-soft: #9fb0bd;
+      --rule: #2a3640;
+      --accent: #4cc2b6;
+      --accent-soft: #163a37;
+      --ok: #6fd39a;
+      --ok-bg: #173424;
+      --dev: #f0b25c;
+      --dev-bg: #3a2a12;
+      --open: #f08a93;
+      --open-bg: #3d1d21;
+      --code-bg: #1f2a32;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #11171c;
+    --surface: #182027;
+    --ink: #e4eaee;
+    --ink-soft: #9fb0bd;
+    --rule: #2a3640;
+    --accent: #4cc2b6;
+    --accent-soft: #163a37;
+    --ok: #6fd39a;
+    --ok-bg: #173424;
+    --dev: #f0b25c;
+    --dev-bg: #3a2a12;
+    --open: #f08a93;
+    --open-bg: #3d1d21;
+    --code-bg: #1f2a32;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16.5px;
+    line-height: 1.6;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 48px;
+  }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    nav.toc { display: none; }
+  }
+
+  nav.toc {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    align-self: start;
+    padding-block: 40px;
+    font-size: 14px;
+  }
+  nav.toc p {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  nav.toc a { color: var(--ink-soft); text-decoration: none; display: flex; gap: 8px; }
+  nav.toc a span { font-family: var(--mono); font-size: 12px; color: var(--accent); min-width: 18px; padding-top: 2px; }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--ink); }
+
+  main { min-width: 0; padding-block: 40px 0; }
+
+  header.doc {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 8px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--accent);
+    letter-spacing: .04em;
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .lede { font-size: 18.5px; color: var(--ink-soft); max-width: 68ch; margin: 0 0 20px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; color: var(--ink-soft); margin: 0; padding: 0; list-style: none; }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  section { padding-block: 36px 8px; border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: 0; }
+  h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 25px;
+    line-height: 1.2;
+    margin: 0 0 6px;
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    text-wrap: balance;
+  }
+  h2 .num { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+  h3 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 17.5px;
+    margin: 28px 0 8px;
+  }
+  p, li { max-width: 72ch; }
+  .sub { color: var(--ink-soft); margin: 0 0 18px; }
+  code, .mono {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    word-break: break-word;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 14px; color: var(--ink-soft); margin: 20px 0 0; }
+  .legend span { display: inline-flex; gap: 8px; align-items: center; }
+
+  .pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    vertical-align: 1px;
+  }
+  .pill.ok { color: var(--ok); background: var(--ok-bg); }
+  .pill.dev { color: var(--dev); background: var(--dev-bg); }
+  .pill.open { color: var(--open); background: var(--open-bg); }
+
+  .table-scroll { overflow-x: auto; margin: 12px 0 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+  tr:last-child td { border-bottom: 0; }
+  th {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper);
+  }
+  td.id { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  td.st { white-space: nowrap; }
+  td p { margin: 0; }
+  td ul { margin: 4px 0 0; padding-left: 18px; }
+
+  .diagram {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0 8px;
+  }
+  .diagram pre.mermaid { margin: 0; background: none; font-family: var(--mono); font-size: 13px; }
+  .caption { font-size: 14px; color: var(--ink-soft); margin: 4px 0 16px; }
+
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+  }
+  .callout p { margin: 0; }
+  .callout p + p { margin-top: 8px; }
+
+  .phases { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
+  .phases li {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px 16px;
+    max-width: none;
+  }
+  .phases .n { font-family: var(--mono); font-weight: 600; color: var(--accent); font-size: 15px; padding-top: 2px; }
+  .phases b { font-family: var(--display); }
+  .phases p { margin: 2px 0 0; color: var(--ink-soft); font-size: 15px; }
+
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  footer.doc { margin-top: 32px; font-size: 13.5px; color: var(--ink-soft); }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Daftar isi">
+    <p>Isi</p>
+    <ol>
+      <li><a href="#ringkasan"><span>01</span>Ringkasan</a></li>
+      <li><a href="#asumsi"><span>02</span>Asumsi &amp; NFR</a></li>
+      <li><a href="#identitas"><span>03</span>Link &amp; identitas</a></li>
+      <li><a href="#host"><span>04</span>Akun host</a></li>
+      <li><a href="#siklus"><span>05</span>Siklus hidup</a></li>
+      <li><a href="#pentahoot"><span>06</span>Pentahoot</a></li>
+      <li><a href="#tebak"><span>07</span>Tebak Kata &amp; Gambar</a></li>
+      <li><a href="#arsitektur"><span>08</span>Arsitektur</a></li>
+      <li><a href="#data"><span>09</span>Model data</a></li>
+      <li><a href="#penyimpangan"><span>10</span>Beda dari PRD</a></li>
+      <li><a href="#terbuka"><span>11</span>Item terbuka</a></li>
+      <li><a href="#urutan"><span>12</span>Urutan kerja</a></li>
+      <li><a href="#alur"><span>13</span>Alur pengembangan</a></li>
+      <li><a href="#operasional"><span>14</span>Operasional</a></li>
+      <li><a href="#rilis"><span>15</span>Rilis</a></li>
+      <li><a href="#blueprint"><span>16</span>Blueprint</a></li>
+      <li><a href="#sumber"><span>17</span>Sumber</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="doc">
+      <p class="eyebrow">SPESIFIKASI TEKNIS · TURUNAN DARI PRD PENTAHOOT GAME PLATFORM</p>
+      <h1>Pentahoot: keputusan produk dan rancangan teknis</h1>
+      <p class="lede">PRD dari PM menjelaskan apa yang harus dilihat host, layar publik, dan peserta. Dokumen ini mengunci hal-hal yang belum diatur PRD: identitas peserta, akun host, siklus hidup event, aturan seri, arsitektur realtime, dan model data. Setiap keputusan punya ID supaya bisa dirujuk di tiket dan commit.</p>
+      <ul class="meta">
+        <li><b>Disusun</b> 28 September 2026</li>
+        <li><b>Sumber utama</b> PRD — Pentahoot Game Platform (PDF)</li>
+        <li><b>Status</b> Dikunci 28 September 2026 (spesifikasi v1). Perubahan hanya lewat W8. Masih menunggu review PM atas bagian 10, serta item terbuka O-B dan O-E</li>
+        <li><b>Target</b> Event pertama pertengahan Oktober 2026</li>
+      </ul>
+      <div class="legend" aria-label="Keterangan status">
+        <span><span class="pill ok">DISETUJUI</span> diputuskan dalam sesi</span>
+        <span><span class="pill dev">BEDA DARI PRD</span> menambah atau mengubah isi PRD</span>
+        <span><span class="pill open">TERBUKA</span> belum diputuskan atau belum dikonfirmasi</span>
+      </div>
+    </header>
+
+    <section id="ringkasan">
+      <h2><span class="num">01</span>Ringkasan</h2>
+      <p>Pentahoot adalah web game untuk acara internal. Satu event berisi tiga game yang dijalankan host dari laptop dan ditampilkan di proyektor: <b>Pentahoot</b> (voting ala awards dari HP peserta), <b>Tebak Kata</b> (satu soal dengan kotak huruf), dan <b>Tebak Gambar</b> (gambar soal lalu gambar jawaban). Peserta masuk lewat link tanpa install dan tanpa login.</p>
+      <p>Skala yang dirancang: sampai sekitar 200 peserta per event, beberapa event bisa berjalan bersamaan (misalnya per divisi), satu server. Stack: <b>Laravel 13 + PHP 8.4 di Docker, MySQL server yang sudah ada, Laravel Reverb, Blade + Alpine.js + Laravel Echo</b>, tanpa Redis dan tanpa queue worker.</p>
+      <p>Soal ditulis di <b>paket soal</b> yang bisa dipakai ulang, lalu disalin ke event setiap kali dimainkan, seperti satu kahoot yang bisa dimainkan berkali-kali. Setiap jenis game punya engine sendiri dengan kontrak yang sama, sehingga game baru bisa ditambah tanpa mengubah game yang sudah ada.</p>
+      <div class="callout">
+        <p><b>Bagian paling berisiko bukan CRUD, tetapi realtime:</b> countdown yang sinkron di ratusan HP, peserta yang putus-sambung di internet venue yang buruk, suara yang harus ditolak tepat saat waktu habis, dan gambar jawaban yang tidak boleh bocor sebelum Reveal. Rancangan di bagian 08 dibuat khusus untuk empat hal ini.</p>
+      </div>
+    </section>
+
+    <section id="asumsi">
+      <h2><span class="num">02</span>Asumsi dan kebutuhan non-fungsional</h2>
+      <p class="sub">PRD tidak memuat kebutuhan non-fungsional. Angka dan batasan di bawah berasal dari jawaban dalam sesi breakdown.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Asumsi</th><th>Akibat ke rancangan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">A1</td><td>Maksimal sekitar 200 peserta per event, biasanya sekitar 50.</td><td>Satu server Reverb cukup. Tidak perlu scaling horizontal.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A2</td><td>Tool internal. Beberapa event bisa berjalan bersamaan.</td><td>Channel realtime dipisah per event. Banyak akun host (bagian 04).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A3</td><td>Wajib online. Internet venue bisa buruk.</td><td>Klien reconnect otomatis dan mengambil ulang state dari server. Payload dan gambar kecil.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A4</td><td>Dikerjakan satu developer dengan Laravel + MySQL, hosting di GCP.</td><td>Stack mengikuti kebiasaan kantor.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A5</td><td>Hosting yang dipakai aman untuk WebSocket. Server VM mengizinkan proses yang hidup terus.</td><td>Reverb berjalan sebagai proses yang hidup terus di belakang reverse proxy. Konfigurasi proxy untuk WebSocket dibuktikan di staging pada tahap 2.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A6</td><td>Ketiga game wajib ada di event pertama, pertengahan Oktober 2026. <b>Seluruh keputusan di dokumen ini masuk <code>v1.0.0</code>, tanpa pemotongan scope</b>; risiko terhadap tenggat diterima pemilik proyek.</td><td>Urutan pengerjaan Pentahoot, lalu Tebak Kata, lalu Tebak Gambar (bagian 12).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A7</td><td>Server berupa VM yang diakses lewat SSH dan punya disk permanen, bukan Cloud Run. Dikonfirmasi: tim senior biasa deploy ke VM lewat SSH, sesuai pola workflow <code>mp-so</code>.</td><td>Gambar disimpan di disk <code>media</code> dengan driver local (F16).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A8</td><td>
+              <p><b>Laravel 13 + PHP 8.4, dijalankan di Docker</b> di lokal, CI, staging, dan production.</p>
+              <ul>
+                <li>Versi PHP ditentukan image aplikasi, bukan VM. Laravel 13 didukung sampai Q1 2028.</li>
+                <li>Container: <code>app</code> (php-fpm), <code>web</code> (nginx), <code>reverb</code>. Preseden: staging <code>vivace-board</code>.</li>
+                <li>Pest v4 (butuh PHP 8.3+) dan plugin browser-nya ikut tersedia (W11).</li>
+                <li>Database tidak di-container: memakai server MySQL yang sudah ada (A9).</li>
+                <li>Kerangka Docker dan deploy staging dibuat di tahap 1 dan dibuktikan di tahap 2.</li>
+              </ul>
+            </td><td>Menggantikan opsi Laravel 12 di VM. Tidak ada upgrade framework wajib dalam waktu dekat.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A9</td><td><b>Database memakai server MySQL yang sudah ada</b> (satu server berisi banyak database), dengan database dan user MySQL khusus Pentahoot yang hanya punya akses ke database itu. Container aplikasi terhubung ke MySQL di host.</td><td>Versi MySQL server belum diketahui (O-B). Sampai diketahui, kode hanya memakai fitur MySQL 8.0 ke atas dan CI menguji dua versi. Deploy harus mengizinkan koneksi dari jaringan Docker ke MySQL host.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">A10</td><td><b>Bahasa antarmuka: Inggris</b> di semua layar (HP, Public View, panel host). Isi yang ditulis host (soal, nama, judul) bebas bahasa apa pun.</td><td>Mockup saat ini masih Bahasa Indonesia dan akan disesuaikan (O-E).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="identitas">
+      <h2><span class="num">03</span>Link, daftar nama, dan identitas peserta</h2>
+      <p class="sub">Master daftar nama menentukan siapa yang boleh ikut, tetapi tidak memastikan bahwa pemegang HP adalah pemilik namanya. Keputusan di bawah menutup celah itu tanpa memaksa peserta login.</p>
+
+      <h3>Rute</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Rute</th><th>Untuk</th><th>Catatan</th></tr></thead>
+          <tbody>
+            <tr><td><code>/host/{event}</code></td><td>Panel kontrol host</td><td>Wajib login (bagian 04).</td></tr>
+            <tr><td><code>/{event}/screen</code></td><td>Public View di proyektor</td><td>Tanpa login. Hanya menampilkan data yang boleh dilihat semua orang.</td></tr>
+            <tr><td><code>/{event}</code></td><td>Join umum</td><td>Peserta memilih namanya dari daftar nama yang belum diklaim.</td></tr>
+            <tr><td><code>/{event}/j/{token}</code></td><td>Join personal</td><td>Token acak, bukan slug nama. Membuka link ini langsung mengklaim nama pemiliknya. <span class="pill dev">BEDA DARI PRD</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Peta rute lengkap untuk peserta, host, dan super-admin ada di bagian 08.</p>
+
+      <h3>Keputusan</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Keputusan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">B-1</td><td>
+              <p><b>Klaim nama per HP.</b> HP pertama yang masuk sebagai sebuah nama menerima token perangkat di cookie. Nama itu hilang dari daftar join umum. HP yang sama dikenali lagi saat reconnect.</p>
+              <ul>
+                <li>Host punya tombol <b>Lepas klaim</b> untuk salah pilih nama, ganti HP, atau cookie yang terhapus.</li>
+                <li>Link personal memakai token acak supaya tidak bisa ditebak.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">B-2</td><td>Peserta boleh memilih dirinya sendiri di Pentahoot.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">B-3</td><td>Hanya nama di master daftar yang bisa ikut. Daftar bisa di-CRUD manual. <b>Daftar terkunci saat game pertama dimulai</b>, jadi tamu yang datang setelah itu tidak bisa ikut.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">B-5</td><td>Kunci di B-3 hanya berlaku untuk <b>pengeditan</b> daftar nama. Peserta yang datang terlambat tetap bisa mengklaim nama yang belum diklaim, lalu langsung melihat soal aktif beserta sisa waktunya.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">B-6</td><td>Tidak ada tombol "Bukan saya" di HP. Hanya host yang bisa melepas klaim, supaya satu orang tidak bisa berganti nama lalu vote dua kali.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">B-7</td><td><b>Kunci klaim</b>, mengikuti "Lock game joining" Kahoot. Tombol di panel host mengisi <code>events.join_locked_at</code>. Selama terkunci, klaim baru lewat join umum maupun link personal ditolak. HP yang sudah mengklaim tetap bisa reconnect.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">B-4</td><td>
+              <p><b>Nama kembar tidak pernah tersimpan.</b></p>
+              <ul>
+                <li>Import CSV tidak langsung menyimpan. Hasilnya tampil di tabel pratinjau yang bisa diedit.</li>
+                <li>Nama kembar ditandai, baik kembar di dalam file maupun kembar dengan nama yang sudah ada. Perbandingan tidak membedakan huruf besar-kecil.</li>
+                <li>Tombol Simpan baru aktif setelah semua nama kembar diedit atau dihapus. Server memvalidasi ulang saat simpan.</li>
+                <li>Tambah atau edit manual juga menolak nama kembar. Database menjaganya dengan unique index.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="host">
+      <h2><span class="num">04</span>Akun host dan peran</h2>
+      <p class="sub">PRD hanya menulis bahwa halaman host butuh login, tanpa menjelaskan siapa yang login.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Keputusan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">C-1</td><td>Banyak akun host. Tidak ada pendaftaran mandiri: <b>super-admin</b> membuat akun host. Setiap host hanya melihat event miliknya.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">C-2</td><td>
+              <p>Satu event boleh punya <b>co-host</b>. Co-host setara dengan pemilik, kecuali untuk tiga hal yang hanya bisa dilakukan pemilik:</p>
+              <ul>
+                <li>menghapus event,</li>
+                <li>mengatur co-host,</li>
+                <li>mengalihkan kepemilikan.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">C-3</td><td>Kalau dua host menekan tombol hampir bersamaan, server hanya menerima aksi yang cocok dengan state saat itu. Aksi yang sudah basi ditolak dengan pesan "Sudah diubah host lain".</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">C-4</td><td>Super-admin mengelola akun host dan memulihkan event, tetapi <b>tidak bisa membuka panel event milik host lain</b> kecuali ditambahkan sebagai co-host. Event antar divisi tetap terpisah.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">C-5</td><td>Tidak ada halaman register dan tidak ada lupa-password lewat email. Password host di-reset manual oleh super-admin. Ini keputusan sementara supaya tetap sederhana.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="siklus">
+      <h2><span class="num">05</span>Siklus hidup event, game, dan soal</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Keputusan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">D-1</td><td>Hanya satu game yang aktif per event. Saat game yang aktif adalah Tebak Kata atau Tebak Gambar, isi HP peserta mengikuti pengaturan E14: layar tunggu kalau toggle mati, mirror Public View kalau toggle menyala.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">D-9</td><td>
+              <p><b>Paket soal terpisah dari sesi</b>, mengikuti model Kahoot: satu kahoot bisa dimainkan berkali-kali dan setiap sesi punya laporan sendiri.</p>
+              <ul>
+                <li><b>Paket soal</b> adalah konten milik seorang host, untuk satu jenis game. Soal ditulis dan diedit di paket.</li>
+                <li><b>Event adalah sesi.</b> Game di event dibuat dengan memilih paket. Saat itu soal paket <b>disalin</b> ke game. Hasil sesi hanya merujuk ke salinan, jadi mengedit atau menghapus paket tidak pernah merusak hasil sesi lama.</li>
+                <li>Selama game belum dimulai, host bisa "Muat ulang dari paket" untuk mengambil versi paket terbaru.</li>
+                <li>Memainkan konten yang sama lagi, misalnya untuk divisi lain, berarti membuat game baru dari paket yang sama di event lain.</li>
+                <li>File gambar tidak pernah ditimpa. Upload baru selalu membuat file baru, dan salinan soal boleh merujuk file yang sama dengan paket. Di fase 1, file gambar tidak dihapus secara fisik.</li>
+                <li>Paket memakai soft delete. Di fase 1, paket hanya dipakai pemiliknya. Berbagi paket antar host bisa ditambah nanti tanpa mengubah tabel sesi.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">D-2</td><td>Salinan soal di game yang belum pernah tampil boleh diedit, dengan form yang sama dengan form paket. Soal yang sudah tampil terkunci. Perubahan di salinan tidak mengubah paket.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">D-3</td><td>
+              <p>Setelah event ditutup, link peserta dan Public View menampilkan "Event telah selesai". Token klaim <b>tidak dihapus</b>: akses peserta hanya ditolak selama status event <code>finished</code>, sehingga event yang dibuka lagi (D-7) langsung tersambung tanpa klaim ulang.</p>
+              <ul>
+                <li>Host dan co-host masih bisa membuka halaman Hasil: top 5 per soal Pentahoot, winner per soal Tebak, leaderboard akhir per game, dan export CSV.</li>
+                <li>Menghapus event memakai <b>soft delete</b>. Pemilik event bisa memulihkan event miliknya sendiri lewat halaman "Event terhapus". Super-admin bisa memulihkan event siapa pun. Co-host tidak bisa menghapus maupun memulihkan, sesuai C-2.</li>
+                <li>Kolom <code>deleted_by</code> mencatat siapa yang menghapus, supaya halaman "Event terhapus" bisa menampilkan "Dihapus oleh … pada …". Kolom ini dikosongkan saat event dipulihkan. Riwayat lengkap hapus dan pulihkan tetap ada di log (E13).</li>
+                <li>Saat dihapus, slug event diganti menjadi <code>{slug}--deleted-{id}</code> sehingga slug aslinya bisa dipakai lagi. Kalau event dipulihkan dan slug aslinya sudah terpakai, host memilih slug baru.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">D-4</td><td>Belum ada fitur mengulang satu game penuh di fase 1.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">D-5</td><td>Host bisa membuka <b>soal mana pun yang belum selesai</b>, tidak harus urut. Soal yang sudah selesai terkunci. Soal Tebak yang ter-skip bisa ditarik lagi lebih awal, tetapi jatah skip-nya tetap terpakai.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">D-7</td><td>
+              <p><b>Tutup dan buka lagi event.</b></p>
+              <ul>
+                <li>Menutup event meminta konfirmasi. Ditolak kalau masih ada game yang berjalan (T6).</li>
+                <li>Pemilik bisa membuka lagi event yang sudah ditutup, selama event itu belum dihapus. HP yang masih terbuka otomatis kembali ke layar permainan lewat broadcast.</li>
+                <li>Game yang sudah selesai tetap selesai (D-4), dan daftar nama tetap terkunci (B-3).</li>
+                <li>Halaman Hasil menampilkan waktu terakhir hasil berubah, karena CSV yang sudah diekspor bisa jadi tidak sesuai lagi.</li>
+                <li>Aksi tutup dan buka lagi dicatat di log (E13).</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">D-8</td><td>Host boleh mengakhiri game sebelum semua soal selesai, dengan konfirmasi. Soal yang tersisa tidak dihitung, dan hasil akhir dihitung dari soal yang sudah selesai.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">D-6</td><td>Pick Winner meminta konfirmasi ("Winner: Budi Santoso — yakin?") sebelum dikunci, karena winner tidak bisa dibatalkan.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>State soal Pentahoot</h3>
+      <div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+    direction LR
+    [*] --> ready
+    ready --> live: Mulai Soal
+    live --> closed: countdown habis / Stop
+    closed --> revealed: Reveal (peringkat 5 ke 1)
+    live --> ready: Reset
+    closed --> ready: Reset
+    revealed --> ready: Reset
+    revealed --> done: Soal Berikutnya
+    done --> [*]
+</pre>
+      </div>
+      <p class="caption"><code>closed</code> tidak disimpan di database. Nilainya dihitung dari waktu: sebuah soal tertutup kalau <code>now &gt; ends_at + 1 detik</code>. Tombol Stop cukup mengisi <code>ends_at = now</code>. Reset butuh konfirmasi, menghapus semua suara soal itu, dan tercatat di log.</p>
+
+      <h3>State soal Tebak Kata dan Tebak Gambar</h3>
+      <div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+    direction LR
+    [*] --> queued
+    queued --> shown: Tampilkan
+    shown --> shown: buka hint (Kata) / Reveal tanpa winner (Gambar)
+    shown --> won: Pick Winner
+    shown --> surrendered: Surrender
+    shown --> queued: Skip (sekali, pindah ke akhir antrian)
+    won --> [*]
+    surrendered --> [*]
+</pre>
+      </div>
+      <p class="caption">Soal selesai kalau statusnya <code>won</code> atau <code>surrendered</code>. Skip nonaktif kalau jatahnya sudah terpakai, atau kalau gambar jawaban sudah di-reveal (E7).</p>
+    </section>
+
+    <section id="pentahoot">
+      <h2><span class="num">06</span>Aturan Pentahoot</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Aturan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">E1</td><td>
+              <p>Peringkat seri memakai <b>penomoran kompetisi</b>. Contoh suara 10, 8, 8, 5, 5, 5, 3 menghasilkan peringkat 1, 2, 2, 4, 4, 4, 7.</p>
+              <ul>
+                <li>Nama dengan peringkat 5 atau lebih kecil ikut tampil, jadi contoh di atas menampilkan 6 nama.</li>
+                <li>Nama dengan 0 suara tidak tampil.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E2</td><td>Saat Reveal, nama dengan peringkat sama muncul bersamaan dalam satu langkah, dari peringkat terbawah naik ke peringkat 1.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E3</td><td>
+              <p>Server menolak suara berdasarkan jam server dengan <b>toleransi 1 detik</b> untuk suara yang masih di perjalanan. Tombol Submit di HP tetap terkunci tepat di detik 0.</p>
+              <p>Angka 1 detik adalah pilihan desain, bukan hasil pengukuran. Nilainya disetel ulang setelah uji coba di venue.</p>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E4</td><td>Setelah submit, HP menampilkan "Jawaban terkirim" beserta nama yang dipilih. Soal tanpa suara menampilkan "Tidak ada suara" di Public View.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E15</td><td>Soal tidak ditutup otomatis walaupun semua peserta sudah vote. Panel host menampilkan "Semua sudah menjawab (48/48)", lalu host menekan Stop.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E4b</td><td>Setelah Reveal, HP peserta selalu menampilkan top 5 yang sama dengan Public View. Isinya hanya teks, jadi tidak membebani jaringan dan tidak bergantung pada toggle E14.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tebak">
+      <h2><span class="num">07</span>Aturan Tebak Kata dan Tebak Gambar</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Aturan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">E5</td><td>
+              <p>Tebak Kata:</p>
+              <ul>
+                <li>Huruf dan angka masing-masing menjadi satu kotak.</li>
+                <li>Tanda baca (<code>- ' . / &amp;</code>) langsung tampil dan tidak dihitung sebagai kotak.</li>
+                <li>Semua huruf ditampilkan kapital.</li>
+                <li>Jawaban panjang pindah baris per kata, tidak pernah memotong kata.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E6</td><td>Kalau antrian hanya berisi soal ter-skip, soal itu tampil lagi dengan Skip nonaktif. Host harus memilih Pick Winner atau Surrender.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E7</td><td>Tebak Gambar: Skip nonaktif setelah jawaban di-reveal. Pick Winner dan Surrender tetap bisa dipakai.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E8</td><td>
+              <p>Upload gambar:</p>
+              <ul>
+                <li>Gambar diperkecil di browser host sampai lebar maksimal 1920 px, baru dicek batas 2 MB. Batas PRD tetap berlaku, hanya urutannya yang ditukar.</li>
+                <li>Format JPG atau PNG. File HEIC ditolak dengan pesan yang jelas.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">E9</td><td>
+              <p><b>Gambar jawaban tidak bisa diintip.</b></p>
+              <ul>
+                <li>Gambar jawaban disimpan di disk private dan hanya bisa dibuka lewat temporary signed URL yang dibuat saat Reveal.</li>
+                <li>Nama file gambar jawaban: <code>{nama-asli-dinormalisasi}-{tanggal}-{acak}</code>.</li>
+                <li>Gambar soal diberi nama <code>{tanggal}-{acak}</code> tanpa nama asli, karena URL-nya sudah terkirim sebelum Reveal dan nama file bisa membocorkan jawaban. Nama aslinya disimpan di database.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E10</td><td>
+              <p>Poin dan hasil akhir:</p>
+              <ul>
+                <li>Setiap winner mendapat +1 poin. Poin dihitung terpisah per game.</li>
+                <li>Kalau poin sama, yang lebih dulu mencapai poin itu berada di atas, jadi tidak ada yang benar-benar seri. Hasil akhir tepat 5 nama, atau kurang kalau pemenangnya kurang dari 5. Ini sengaja berbeda dari E1.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E16</td><td><b>Bobot poin per soal</b>, mengikuti pengaturan Points di Kahoot. Kolom <code>points</code> ada di soal paket dan salinannya, dengan default 1 (bisa 0 atau 2, misalnya soal bonus). Poin = <code>SUM(points)</code> soal yang dimenangkan, bukan jumlah soal. Aturan seri E10 tetap sama. Pentahoot tidak memakai kolom ini.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">E17</td><td>
+              <p><b>Podium untuk hasil final.</b> Selama permainan berjalan, tampilan tetap daftar peringkat yang posisinya naik-turun (E11) supaya terasa kejar-kejaran. Podium hanya muncul saat hasil sudah final.</p>
+              <ul>
+                <li><b>Tebak Kata dan Tebak Gambar:</b> saat host menekan "Tampilkan Hasil Akhir" (E12). Peringkat 1–3 di podium (kiri 2, tengah 1, kanan 3), peringkat 4–5 sebagai baris kecil di bawahnya sehingga top 5 (E10) tetap lengkap. Tidak mungkin seri karena tie-break E10.</li>
+                <li><b>Pentahoot:</b> per soal. Reveal tetap berupa daftar 5 → 1 (E2). Setelah peringkat 1 terbuka, tampilan berubah menjadi podium sebagai hasil final kategori itu. Karena seri mungkin terjadi (E1), satu anak tangga bisa berisi beberapa nama dan anak tangga yang terlewati dibiarkan kosong. Tiga nama atau lebih di satu anak tangga ditumpuk dengan huruf lebih kecil.</li>
+                <li>Isi tiap kolom: inisial nama dalam lingkaran, nama, dan angka (poin untuk Tebak, suara untuk Pentahoot). Juara 1 memakai warna peringkat yang paling mencolok, anak tangga lain lebih redup.</li>
+                <li>Urutan buka 3 → 2 → 1 dengan jeda sebelum juara 1. Kalau <code>prefers-reduced-motion</code> aktif, semuanya langsung tampil.</li>
+                <li>Podium yang sama tampil di HP peserta (isinya teks, tidak bergantung pada toggle E14).</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">E18</td><td>
+              <p><b>Layar lobby dengan QR code.</b> Selama menunggu host, Public View menampilkan alamat join, QR code, dan jumlah peserta yang sudah masuk.</p>
+              <ul>
+                <li>QR hanya berisi URL join umum event (<code>/{event}</code>). Tidak ada token atau data lain, karena QR tampil di layar untuk semua orang.</li>
+                <li>Logo Pentahoot di tengah QR, memakai tingkat koreksi error tertinggi (H). Ukuran logo dijaga kecil, dan QR wajib diuji dengan kamera HP sungguhan (iOS dan Android) sebelum gladi.</li>
+                <li>Library pembuat QR dipilih dan diverifikasi saat implementasi.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">E19</td><td><b>Logo.</b> Tanda segi lima lima warna (warna peringkat) dengan dua mata, ditambah tulisan <code>pentahoot</code> dengan font Fredoka. Varian: latar gelap, latar terang, ikon aplikasi, favicon 64/32 px, satu warna. Sumber: artboard "Brand" di mockup. Di tahap 1, SVG-nya dipindah ke repo sebagai aset. Belum ada pengecekan kemiripan dengan merek terdaftar.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E11</td><td>Setelah Pick Winner, host bisa menekan "Tampilkan Leaderboard" (tidak otomatis). Yang tampil top 5 dengan animasi naik-turun peringkat.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E12</td><td>Setelah semua soal selesai, host menekan "Tampilkan Hasil Akhir". Game berstatus selesai dan game berikutnya bisa dimulai.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">E13</td><td>Log mencatat semua aksi yang tidak bisa dibatalkan: Reset, Lepas klaim, Pick Winner, Surrender, hapus event, pulihkan event, tutup event, buka lagi event, akhiri game lebih awal, kunci klaim, alihkan kepemilikan, serta aksi super-admin (buat akun, reset password, nonaktifkan akun). Isinya siapa, kapan, dan di soal mana. Hanya host dan co-host yang bisa melihatnya.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">E14</td><td>
+              <p><b>Toggle per event "Tampilkan soal di HP peserta"</b>, default mati. Polanya mengikuti opsi Kahoot "Show questions &amp; answers on participants' devices". Masuk fase 1.</p>
+              <ul>
+                <li>Kalau menyala, HP menampilkan hal yang sama dengan Public View untuk Tebak Kata (soal, kotak, hint, winner) dan Tebak Gambar (gambar soal, lalu gambar jawaban dan winner setelah Reveal). HP tidak punya tombol apa pun; penonton tetap menjawab lisan.</li>
+                <li>HP memakai <b>versi gambar kecil</b> (lebar maksimal 720 px) yang dibuat di browser host bersamaan dengan versi 1920 px saat upload. Angka 720 px adalah pilihan desain.</li>
+                <li>Gambar jawaban versi HP juga disimpan di disk private dan dikirim sebagai temporary signed URL saat Reveal (E9).</li>
+                <li>Pengaturan ini menampilkan peringatan: semua HP mengunduh gambar bersamaan, jadi toggle hanya dinyalakan kalau WiFi venue memadai.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="arsitektur">
+      <h2><span class="num">08</span>Arsitektur realtime dan stack</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Lapisan</th><th>Pilihan</th><th>Alasan</th></tr></thead>
+          <tbody>
+            <tr><td>Backend</td><td>Laravel 13 + PHP 8.4 di Docker, MySQL server yang sudah ada</td><td>Versi PHP ditentukan image, bukan VM (A8, A9).</td></tr>
+            <tr><td>WebSocket</td><td>Laravel Reverb, satu server</td><td>Kebutuhan realtime tercakup. Satu server cukup di bawah sekitar 1.000 koneksi.</td></tr>
+            <tr><td>Frontend</td><td>Blade + Alpine.js + Laravel Echo di semua layar, tanpa Livewire</td><td>Standar kantor. Pola yang sama sudah dipakai di <code>mp-marketing-panel</code>.</td></tr>
+            <tr><td>Redis / queue</td><td>Tidak dipakai. Cache dan session memakai driver database.</td><td>Redis hanya dibutuhkan kalau Reverb lebih dari satu server. Broadcast dikirim langsung tanpa antre.</td></tr>
+            <tr><td>File</td><td>Disk bernama <code>media</code> (driver local di fase 1), gambar jawaban di area private</td><td>Server punya disk permanen (A7). Pindah ke object storage cukup lewat konfigurasi (F16).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+    subgraph Klien
+        H[Host - laptop]
+        P[Public View - proyektor]
+        HP[HP peserta, sampai 200]
+    end
+    subgraph Server
+        NG[Reverse proxy]
+        APP[Laravel - HTTP]
+        RV[Reverb - WebSocket]
+        DB[(MySQL)]
+        FS[(Disk local)]
+    end
+    H -- "HTTP: aksi host" --> NG
+    HP -- "HTTP: klaim nama, vote" --> NG
+    P -- "HTTP: ambil snapshot" --> NG
+    NG --> APP
+    APP --> DB
+    APP --> FS
+    APP -- "broadcast langsung" --> RV
+    RV -- "WS: event.uuid.public" --> P
+    RV -- "WS: event.uuid.public" --> HP
+    RV -- "WS: event.uuid.host (private)" --> H
+</pre>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Keputusan</th><th>Alasan</th></tr></thead>
+          <tbody>
+            <tr><td class="id">F1</td><td>Server satu-satunya sumber kebenaran. Setiap pesan realtime membawa <b>snapshot utuh</b> layar yang aktif, bukan potongan perubahan. Saat reconnect, klien memanggil <code>GET /state</code>.</td><td>Pesan yang hilang saat sinyal putus tidak merusak tampilan.</td></tr>
+            <tr><td class="id">F2</td><td>Dua channel per event. Channel <code>public</code> hanya berisi yang boleh dilihat semua orang. Channel <code>host</code> (private) berisi jumlah suara live per nama.</td><td>Peserta tamu tidak bisa masuk private channel, jadi isi channel public dianggap terbuka.</td></tr>
+            <tr><td class="id">F3</td><td>Aksi peserta (klaim nama, vote) lewat HTTP POST biasa, bukan pesan WebSocket.</td><td>Bisa divalidasi server dan dibatasi rate-nya, dan langsung menerima balasan.</td></tr>
+            <tr><td class="id">F4</td><td>Timer disimpan sebagai <code>ends_at</code>. Setiap snapshot membawa <code>server_now</code>, dan klien menghitung selisih jamnya sendiri. Status "waktu habis" dihitung dari waktu, bukan dari job terjadwal.</td><td>Countdown tetap sinkron walau jam HP salah. Tidak butuh scheduler.</td></tr>
+            <tr><td class="id">F5</td><td>Event realtime memakai <code>ShouldBroadcastNow</code>.</td><td>Broadcast biasa lewat queue, dan worker yang lambat atau mati membuat countdown dan reveal telat.</td></tr>
+            <tr><td class="id">F6</td><td>Aksi host memakai update bersyarat (<code>WHERE status = ...</code>). Satu suara per peserta per soal dijaga unique index.</td><td>Menangani klik ganda dan dua host yang bekerja bersamaan (C-3).</td></tr>
+            <tr><td class="id">F7</td><td>Tanpa Redis.</td><td>Satu server Reverb cukup untuk A1.</td></tr>
+            <tr><td class="id">F8</td><td>URL gambar jawaban hanya ada di snapshot setelah Reveal, sebagai temporary signed URL.</td><td>Mewujudkan E9.</td></tr>
+            <tr><td class="id">F9</td><td>Daftar nama (sekitar 200) diunduh sekali, lalu pencarian dilakukan di HP tanpa request ke server per ketikan.</td><td>Tetap responsif di internet buruk.</td></tr>
+            <tr><td class="id">F13</td><td><b>Satu engine per jenis game.</b> Setiap jenis game punya class engine dengan kontrak yang sama: aksi yang diizinkan per state, pembuatan snapshot, perhitungan hasil, validasi form soal, dan penyalinan dari paket. Controller hanya memanggil engine sesuai <code>games.type</code>, tanpa percabangan per jenis game.</td><td>Game keempat cukup berupa engine baru, tabel detail baru, dan view baru. Kode game yang sudah ada tidak disentuh.</td></tr>
+            <tr><td class="id">F14</td><td><b>Anggaran ukuran broadcast.</b> Reverb menolak request di atas <code>max_request_size</code>, default 10.000 byte, dengan status 413. Setiap vote hanya mem-broadcast penghitung kecil <code>{answered: n}</code>. Rincian suara per nama diambil host lewat <code>GET /host/{event}/state</code>. Ukuran setiap jenis snapshot diuji otomatis agar tetap jauh di bawah batas.</td><td>Broadcast yang terlalu besar gagal, dan aksi host ikut gagal karena broadcast dikirim langsung (F5).</td></tr>
+            <tr><td class="id">F15</td><td><b>Versi state.</b> <code>events.state_version</code> naik di setiap perubahan dan ikut di setiap snapshot. Klien membuang snapshot yang versinya lebih kecil dari yang sudah dipegang. Hasil <code>/state</code> di-cache per versi.</td><td>Mencegah tampilan mundur ketika respons <code>/state</code> yang lama tiba setelah broadcast yang baru. Ratusan request <code>/state</code> cukup dilayani satu kali perhitungan.</td></tr>
+            <tr><td class="id">F16</td><td><b>Semua file lewat disk bernama <code>media</code>.</b> Database hanya menyimpan path. Gambar privat divalidasi tanda tangannya oleh Laravel, lalu pengiriman file diserahkan ke web server (misalnya <code>X-Accel-Redirect</code> di Nginx). Mekanismenya dipastikan saat implementasi.</td><td>Worker PHP tidak tertahan saat 200 HP mengunduh gambar bersamaan (E14). Pindah ke object storage nanti cukup mengubah konfigurasi.</td></tr>
+            <tr><td class="id">F17</td><td><b>Jeda acak saat reconnect dan polling.</b> Klien menunggu waktu acak singkat sebelum memanggil <code>/state</code> setelah tersambung ulang, dan polling fallback (T2) juga diberi jeda acak.</td><td>Mencegah ratusan HP menyerang server di detik yang sama setelah Reverb restart.</td></tr>
+            <tr><td class="id">F18</td><td>Nama channel memakai UUID event (<code>event.{uuid}.public</code>, <code>event.{uuid}.host</code>), bukan slug.</td><td>Slug bisa berubah (D-3), UUID tidak.</td></tr>
+            <tr><td class="id">F19</td><td><b>Uji beban sebelum gladi.</b> Satu skrip mensimulasikan 200–500 klien WebSocket plus vote di server staging.</td><td>Menjadikan A1 angka hasil ukur, bukan asumsi.</td></tr>
+            <tr><td class="id">F20</td><td>
+              <p><b>Struktur frontend.</b></p>
+              <ul>
+                <li>Satu Alpine store bersama untuk ketiga layar: menerima snapshot, mengecek <code>state_version</code> (F15), mengatur reconnect (F17). Tampilan hanya membaca dari store. Logika store diuji dengan Vitest (W11).</li>
+                <li>Komponen Blade untuk elemen berulang: baris peringkat, podium (E17), kotak huruf, countdown, kolom pencarian nama, dan <b>timeline progres</b>.</li>
+                <li><b>Timeline progres selalu vertikal</b> dengan satu komponen yang sama, baik untuk langkah (misalnya import nama) maupun daftar soal di Live control. Status: selesai (hijau, centang), berjalan (ungu, nomor), belum (garis tepi, nomor), surrender (abu-abu, strip), di-skip (garis tepi putus-putus).</li>
+                <li>Layar status wajib ada: menunggu host, menyambung ulang, koneksi terputus, event selesai, error.</li>
+                <li><b>Shell halaman host:</b> satu layout Blade dipakai semua halaman host. Sidebar kiri berisi logo, menu Workspace (Events, Question packs), menu event yang muncul saat berada di dalam satu event (Live control, Games, Names, Results, Activity log, Settings), menu Admin khusus super-admin, dan akun di bawah. Top bar berisi breadcrumb di kiri dan tombol aksi halaman di kanan. Menu aktif ditandai blok latar, tanpa garis aksen. Di HP, sidebar yang sama menjadi laci geser lewat tombol menu, dan top bar menampilkan nama event, judul halaman, serta status.</li>
+                <li>Semua teks antarmuka (Bahasa Inggris, A10) dikumpulkan di berkas bahasa, tidak ditulis langsung di view.</li>
+              </ul>
+            </td><td>Logika realtime di satu tempat yang bisa diuji; tampilan konsisten di tiga layar; bahasa lain bisa ditambah tanpa mengubah view.</td></tr>
+            <tr><td class="id">F21</td><td>
+              <p><b>Tema terang dan gelap yang bisa dikembangkan.</b></p>
+              <ul>
+                <li>Warna didefinisikan sebagai <b>token semantik</b> di <code>@theme</code> Tailwind v4, misalnya <code>--color-surface</code>, <code>--color-ink</code>, <code>--color-muted</code>, <code>--color-accent</code>, <code>--color-rank-1</code> sampai <code>--color-rank-5</code>. Tailwind otomatis membuat class seperti <code>bg-surface</code> dan <code>text-ink</code>, dan token ini juga tersedia sebagai CSS variable.</li>
+                <li>Tema gelap hanya mengganti nilai token di bawah selector <code>[data-theme=dark]</code>. View tidak memakai <code>dark:</code> per elemen untuk warna, sehingga menambah tema baru cukup menambah satu set nilai token.</li>
+                <li><b>Dilarang</b> memakai warna langsung di view: nilai hex arbitrer (<code>bg-[#120D26]</code>) dan palet bawaan (<code>bg-gray-900</code>). Aturan ini dicek otomatis di CI.</li>
+                <li>Pilihan tema: HP peserta dan panel host mengikuti pengaturan sistem, dengan tombol ganti. Public View memakai tema yang dipilih host per event (default gelap), karena pencahayaan ruangan yang menentukan mana yang terbaca di proyektor.</li>
+                <li>Kedua tema wajib lolos cek kontras di Definition of Done (O11), termasuk kelima warna peringkat. <b>Warna peringkat punya nilai berbeda per tema:</b> versi tema gelap (misalnya coral <code>#FF6B4A</code>, mint <code>#2ED3A0</code>) hanya 2,82:1 dan 1,92:1 di atas putih, sedangkan varian tema terang (<code>#C23A1A</code>, <code>#0B7A5A</code>, <code>#1B63C4</code>, <code>#C0266D</code>) terukur 4,89–5,79:1. Peringkat 1 tetap latar kuning <code>#FFC933</code> dengan teks gelap (11,46:1) di kedua tema.</li>
+                <li>Di daftar peringkat, hanya peringkat 1 yang berwarna penuh; peringkat 2–5 memakai latar biasa dengan angka berwarna peringkat. Podium tidak memakai garis aksen di tepi anak tangga.</li>
+                <li>Tidak ada komponen dengan tampilan bawaan browser yang tersisa: scrollbar, slider/range, checkbox, radio, select, dan file input diberi gaya dari token yang sama, sehingga ikut berganti tema.</li>
+                <li>Struktur token dipasang sejak batch pertama frontend. Nilai warna tema terang dan tombol ganti tema dikerjakan di akhir.</li>
+              </ul>
+            </td><td>Mengganti tema atau warna brand nanti tidak perlu menyentuh class di view.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Peta rute: publik (tanpa login)</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Method</th><th>Rute</th><th>Fungsi</th><th>Penjaga</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td><code>/{event}</code></td><td>Join umum: daftar nama yang belum diklaim</td><td>Event berstatus <code>open</code></td></tr>
+            <tr><td>POST</td><td><code>/{event}/claim</code></td><td>Klaim nama dan pasang cookie token</td><td>Nama belum diklaim (B-1)</td></tr>
+            <tr><td>GET</td><td><code>/{event}/j/{token}</code></td><td>Join personal: langsung klaim, lalu ke <code>/play</code></td><td>Token valid</td></tr>
+            <tr><td>GET</td><td><code>/{event}/play</code></td><td>Layar peserta</td><td>Cookie klaim valid</td></tr>
+            <tr><td>GET</td><td><code>/{event}/screen</code></td><td>Public View</td><td>—</td></tr>
+            <tr><td>GET</td><td><code>/{event}/state</code></td><td>Snapshot publik (F1). Kalau ada cookie klaim, ikut berisi "suara saya"</td><td>—</td></tr>
+            <tr><td>GET</td><td><code>/{event}/people</code></td><td>Daftar nama untuk pencarian di HP (F9)</td><td>Cookie klaim valid</td></tr>
+            <tr><td>POST</td><td><code>/{event}/questions/{question}/vote</code></td><td>Kirim suara</td><td>Cookie klaim valid, waktu belum lewat toleransi (E3), unique index</td></tr>
+            <tr><td>GET</td><td><code>/media/{path}</code></td><td>Gambar jawaban (dan versi HP-nya)</td><td>Signed URL yang dibuat saat Reveal (E9)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Peta rute: autentikasi</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Method</th><th>Rute</th><th>Catatan</th></tr></thead>
+          <tbody>
+            <tr><td>GET, POST</td><td><code>/login</code></td><td>Rate limit percobaan login.</td></tr>
+            <tr><td>POST</td><td><code>/logout</code></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Peta rute: host dan co-host (login)</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Rute</th><th>Fungsi</th><th>Siapa</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /host</code></td><td>Dashboard: event milik saya dan event tempat saya jadi co-host</td><td>Host</td></tr>
+            <tr><td><code>/host/events/create</code></td><td>Buat event</td><td>Host</td></tr>
+            <tr><td><code>/host/trash</code>, <code>POST /host/trash/{event}/restore</code></td><td>Event terhapus milik saya (D-3)</td><td>Pemilik</td></tr>
+            <tr><td><code>GET /host/{event}</code></td><td>Panel kontrol live</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>GET /host/{event}/state</code></td><td>Snapshot host, termasuk jumlah suara live</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>/host/{event}/settings</code></td><td>Edit event dan toggle E14</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>/host/{event}/cohosts</code>, <code>DELETE /host/{event}</code></td><td>Atur co-host, hapus event</td><td>Pemilik (C-2)</td></tr>
+            <tr><td><code>POST /host/{event}/transfer</code></td><td>Alihkan kepemilikan event ke host lain (C-2)</td><td>Pemilik</td></tr>
+            <tr><td><code>POST /host/{event}/join-lock</code></td><td>Kunci atau buka klaim (B-7)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>/host/packs</code>, <code>/host/packs/{pack}/questions</code>, <code>/reorder</code></td><td>CRUD paket soal dan soalnya (D-9)</td><td>Pemilik paket</td></tr>
+            <tr><td><code>POST /host/{event}/games</code>, <code>POST /host/{event}/games/{game}/reload</code></td><td>Buat game dari paket, muat ulang dari paket sebelum game dimulai (D-9)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>POST /host/{event}/close</code></td><td>Tutup event, dengan konfirmasi (D-7)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>POST /host/{event}/reopen</code></td><td>Buka lagi event yang sudah ditutup (D-7)</td><td>Pemilik</td></tr>
+            <tr><td><code>/host/{event}/people</code>, <code>/import</code>, <code>/import/confirm</code>, <code>/{person}/release-claim</code>, <code>/links.csv</code></td><td>CRUD nama, import dengan pratinjau (B-4), lepas klaim, export link personal. Ditambah <code>POST /{person}/regenerate-link</code> untuk membuat token link personal baru kalau file link bocor (T5).</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>/host/{event}/games</code>, <code>/games/{game}/questions</code>, <code>/reorder</code></td><td>Kelola game di event dan edit salinan soal yang belum tampil (D-2)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>POST /host/{event}/games/{game}/{start|finish}</code></td><td>Mulai atau akhiri game (D-1)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>POST /host/{event}/questions/{question}/{aksi}</code></td><td>Aksi <code>start, stop, reveal, next, reset, show, hint, pick-winner, skip, surrender, open</code></td><td>Pemilik, co-host, divalidasi terhadap state (C-3, F6)</td></tr>
+            <tr><td><code>POST /host/{event}/leaderboard/show</code></td><td>Tampilkan leaderboard (E11)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>/host/{event}/results</code>, <code>/export.csv</code>, <code>/host/{event}/logs</code></td><td>Hasil (D-3) dan log (E13)</td><td>Pemilik, co-host</td></tr>
+            <tr><td><code>POST /broadcasting/auth</code></td><td>Izin masuk channel private <code>host</code> (F2)</td><td>Pemilik, co-host</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Peta rute: super-admin</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Rute</th><th>Fungsi</th></tr></thead>
+          <tbody>
+            <tr><td><code>/admin/users</code></td><td>Buat akun host, reset password, nonaktifkan akun (C-1, C-5)</td></tr>
+            <tr><td><code>/admin/trash</code>, <code>/restore</code></td><td>Semua event terhapus (D-3)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Aturan turunan peta rute</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">F10</td><td>Rute <code>/{event}</code> menangkap semua path satu tingkat di root. Karena itu rute lain didaftarkan lebih dulu, dan slug event menolak kata yang dicadangkan: <code>host, admin, login, logout, media, broadcasting, storage, build, up</code>.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">F11</td><td>Rate limit vote dan klaim <b>tidak berbasis IP</b>. Semua HP di WiFi venue kemungkinan besar terlihat sebagai satu IP, sehingga rate limit per IP akan memblokir seluruh ruangan. Vote dibatasi per token klaim. Klaim dan <code>/login</code> dibatasi per IP dengan batas longgar.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">F12</td><td>Daftar nama yang belum diklaim bisa dilihat siapa pun yang tahu slug event, karena join umum membutuhkannya. Risiko ini diterima untuk acara internal.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Penanganan teknis kasus tepi</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Kasus</th><th>Penanganan</th></tr></thead>
+          <tbody>
+            <tr><td class="id">T1</td><td>Host menekan Reset lalu langsung Mulai lagi, padahal suara dari putaran lama masih di perjalanan</td><td>Soal Pentahoot punya penghitung <code>attempt</code>. Suara membawa nomor putarannya, dan suara dengan nomor yang tidak cocok ditolak.</td></tr>
+            <tr><td class="id">T2</td><td>Reverb mati di tengah acara</td><td>Selama WebSocket terputus, klien meminta <code>/state</code> setiap beberapa detik. Permainan tetap jalan, hanya kurang mulus.</td></tr>
+            <tr><td class="id">T3</td><td>HP dikunci atau browser ditaruh di latar belakang</td><td>Saat halaman aktif lagi (<code>visibilitychange</code>), klien langsung mengambil <code>/state</code>.</td></tr>
+            <tr><td class="id">T4</td><td>CSV hasil export Excel</td><td>Pemisah <code>,</code> atau <code>;</code> dideteksi otomatis, dan BOM UTF-8 dibuang.</td></tr>
+            <tr><td class="id">T5</td><td>File CSV link personal berisi token</td><td>Layar export menampilkan peringatan "Jangan disebar di grup", karena pemegang file bisa masuk sebagai orang lain.</td></tr>
+            <tr><td class="id">T6</td><td>Menutup event saat masih ada game berjalan</td><td>Ditolak. Game diakhiri dulu (D-8).</td></tr>
+            <tr><td class="id">T7</td><td>Event tanpa game, atau game tanpa soal</td><td>Tombol Mulai nonaktif.</td></tr>
+            <tr><td class="id">T8</td><td>Menghapus game yang soalnya sudah pernah dimainkan</td><td>Ditolak supaya hasil tidak hilang. Game dan soal yang belum dimainkan boleh dihapus.</td></tr>
+            <tr><td class="id">T9</td><td>Batas input</td><td>Durasi Pentahoot 5–300 detik, jawaban Tebak Kata maksimal 40 karakter, maksimal 500 nama per event. Semua angka ini pilihan desain.</td></tr>
+            <tr><td class="id">T10</td><td>Zona waktu</td><td>Disimpan dalam UTC, ditampilkan dalam WIB.</td></tr>
+            <tr><td class="id">T11</td><td>Dua proyektor atau dua tab host terbuka bersamaan</td><td>Aman. Semua tab berlangganan channel yang sama, dan aksi host divalidasi terhadap state saat itu (C-3).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Titik rawan Reverb di production ada di reverse proxy dan SSL. Karena itu deploy ke server staging dan uji coba dengan puluhan HP sungguhan dilakukan sebelum hari acara, bukan pada hari acara.</p>
+    </section>
+
+    <section id="data">
+      <h2><span class="num">09</span>Model data</h2>
+      <p class="sub">Model dibagi dua: <b>konten</b> (paket soal milik host) dan <b>sesi</b> (event, game, salinan soal, suara). Di kedua sisi, soal memakai satu tabel induk berisi kolom yang sama untuk semua game, ditambah satu tabel detail per jenis game. Game keempat cukup menambah satu tabel detail di tiap sisi dan satu engine (F13).</p>
+      <div class="diagram">
+<pre class="mermaid">
+erDiagram
+    users ||--o{ events : "owner"
+    users ||--o{ event_hosts : "co-host"
+    events ||--o{ event_hosts : ""
+    users ||--o{ question_packs : "owner"
+    question_packs ||--o{ pack_questions : ""
+    pack_questions ||--o| pack_question_pentahoot : ""
+    pack_questions ||--o| pack_question_kata : ""
+    pack_questions ||--o| pack_question_gambar : ""
+    question_packs ||--o{ games : "sumber salinan"
+    events ||--o{ people : "master nama"
+    events ||--o{ games : "sesi"
+    games ||--o{ questions : "salinan soal"
+    questions ||--o| question_pentahoot : ""
+    questions ||--o| question_kata : ""
+    questions ||--o| question_gambar : ""
+    questions ||--o{ votes : ""
+    people ||--o{ votes : "pemilih dan pilihan"
+    people ||--o{ questions : "winner"
+    events ||--o{ action_logs : ""
+    media_files ||--o{ pack_question_gambar : "gambar"
+    media_files ||--o{ question_gambar : "gambar"
+    questions ||--o{ question_results : "top 5 beku"
+    games ||--o{ game_results : "leaderboard beku"
+    people ||--o{ question_results : ""
+    people ||--o{ game_results : ""
+    users ||--o{ action_logs : "pelaku"
+
+    users {
+        uuid id PK
+        string name
+        string email UK
+        string password
+        bool is_super_admin
+        timestamp disabled_at "C-5"
+    }
+    events {
+        uuid id PK
+        uuid owner_id FK
+        string name
+        string slug UK
+        string status "draft, open, finished"
+        timestamp names_locked_at "B-3"
+        timestamp join_locked_at "B-7"
+        bool show_on_devices "E14"
+        string screen_theme "F21, dark atau light"
+        uuid active_game_id FK "satu-satunya penanda game aktif"
+        bigint state_version "F15"
+        timestamp deleted_at "soft delete"
+        uuid deleted_by FK "users"
+    }
+    event_hosts {
+        uuid event_id FK
+        uuid user_id FK
+    }
+    question_packs {
+        uuid id PK
+        uuid owner_id FK
+        string title
+        string game_type "pentahoot, tebak_kata, tebak_gambar"
+        timestamp deleted_at "soft delete"
+    }
+    pack_questions {
+        uuid id PK
+        uuid pack_id FK
+        int position
+        int points "E16, default 1"
+    }
+    pack_question_pentahoot {
+        uuid pack_question_id PK
+        text prompt
+        int duration_seconds
+    }
+    pack_question_kata {
+        uuid pack_question_id PK
+        text prompt
+        string answer_text
+        json initial_open_indexes
+    }
+    pack_question_gambar {
+        uuid pack_question_id PK
+        string title
+        string answer_text
+        uuid question_image_id FK "media_files"
+        uuid answer_image_id FK "media_files, private"
+    }
+    people {
+        uuid id PK
+        uuid event_id FK
+        string name
+        string name_normalized "unique per event"
+        string join_token UK "link personal"
+        string claim_token_hash
+        timestamp claimed_at
+    }
+    games {
+        uuid id PK
+        uuid event_id FK
+        uuid source_pack_id FK "nullable, D-9"
+        string type "pentahoot, tebak_kata, tebak_gambar"
+        string title
+        int position
+        string status "draft, finished"
+        uuid current_question_id FK "satu-satunya penanda soal tampil"
+    }
+    questions {
+        uuid id PK
+        uuid game_id FK
+        uuid source_pack_question_id "nullable, D-9"
+        int position "antrian"
+        int points "E16"
+        string status
+        bool skip_used
+        timestamp answer_revealed_at
+        uuid winner_person_id FK
+        timestamp resolved_at
+    }
+    question_pentahoot {
+        uuid question_id PK
+        text prompt
+        int duration_seconds
+        int attempt "T1"
+        timestamp ends_at
+    }
+    question_kata {
+        uuid question_id PK
+        text prompt
+        string answer_text
+        json initial_open_indexes
+        json opened_indexes
+    }
+    question_gambar {
+        uuid question_id PK
+        string title
+        string answer_text "hanya untuk host"
+        uuid question_image_id FK "media_files"
+        uuid answer_image_id FK "media_files, private"
+    }
+    votes {
+        bigint id PK
+        uuid question_id FK
+        uuid voter_person_id FK
+        uuid target_person_id FK
+        int attempt "T1"
+        timestamp created_at
+    }
+    action_logs {
+        bigint id PK
+        uuid event_id FK "nullable untuk aksi super-admin"
+        uuid user_id FK
+        string action
+        json payload
+        timestamp created_at
+    }
+    media_files {
+        uuid id PK
+        uuid parent_id FK "null untuk original, isi untuk varian"
+        string disk "F16"
+        string path
+        string variant "original, w1920, w720"
+        string visibility "public, private"
+        string mime
+        int size_bytes
+        int width
+        int height
+        string sha256
+        string original_name
+        uuid created_by FK "users"
+    }
+    question_results {
+        bigint id PK
+        uuid question_id FK
+        int attempt
+        uuid person_id FK
+        int rank "penomoran kompetisi"
+        int votes
+        timestamp frozen_at "saat Reveal"
+    }
+    game_results {
+        bigint id PK
+        uuid game_id FK
+        uuid person_id FK
+        int rank
+        int points
+        timestamp reached_at "tie-break E10"
+        timestamp frozen_at "saat game selesai"
+    }
+
+</pre>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Keputusan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">G1</td><td>Selama permainan berjalan, poin, leaderboard, dan top 5 dihitung langsung dari data. Setelah selesai, hasilnya dibekukan (G10). Poin Tebak = jumlah <code>points</code> dari soal yang <code>winner_person_id</code>-nya orang itu (E16). Kalau poin sama, orang dengan <code>resolved_at</code> kemenangan terakhir yang lebih awal berada di atas.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G2</td><td>
+              <p>Aturan yang dijaga langsung oleh database:</p>
+              <ul>
+                <li>Unique <code>(question_id, voter_person_id)</code> untuk satu suara per soal.</li>
+                <li>Unique <code>(event_id, name_normalized)</code> untuk nama kembar.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G3</td><td>Token klaim yang asli ada di cookie HP. Database hanya menyimpan hash-nya. Lepas klaim mengosongkan kolom itu.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G4</td><td>Hanya tabel <code>events</code> yang memakai soft delete. Data turunannya tidak disentuh dan tidak terjangkau karena selalu diakses lewat event induknya. Aturan slug mengikuti D-3.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G6</td><td>
+              <p><b>Jenis ID per tabel.</b></p>
+              <ul>
+                <li>UUIDv7 (<code>HasUuids</code>; perilaku UUIDv7 terverifikasi di dokumentasi Laravel 12, dicek ulang kalau A8 = Laravel 13) untuk tabel yang ID-nya terlihat dari luar: <code>users, events, people, games, questions</code>, dan tabel detail soal.</li>
+                <li>Bigint auto-increment untuk tabel internal: <code>votes, action_logs</code>. Tabel <code>event_hosts</code> tidak punya ID sendiri.</li>
+                <li>Foreign key selalu mengikuti tipe tabel yang dirujuk, misalnya <code>votes.question_id</code> bertipe UUID. Aturan ini dikunci di migration batch fondasi.</li>
+                <li>UUID tidak menggantikan pengecekan hak akses. Fungsinya menutup penebakan ID dan kebocoran jumlah data.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G7</td><td>
+              <p><b>Satu penanda untuk satu fakta.</b></p>
+              <ul>
+                <li>Game yang aktif hanya ditentukan oleh <code>events.active_game_id</code>. <code>games.status</code> cukup <code>draft</code> atau <code>finished</code>.</li>
+                <li>Soal yang sedang tampil hanya ditentukan oleh <code>games.current_question_id</code>. Dengan begitu D-5 tidak bisa menampilkan dua soal sekaligus.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G8</td><td>Index wajib di migration pertama: <code>votes(question_id, attempt, target_person_id)</code>, <code>questions(game_id, status, position)</code>, <code>pack_questions(pack_id, position)</code>, <code>action_logs(event_id, created_at)</code>.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G9</td><td>Tabel konten (<code>question_packs</code>, <code>pack_questions</code>, <code>pack_question_*</code>) terpisah dari tabel sesi (<code>games</code>, <code>questions</code>, <code>question_*</code>). Kolom <code>source_*</code> di tabel sesi hanya jejak asal salinan, tidak pernah dipakai untuk menghitung hasil.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G10</td><td>
+              <p><b>Hasil dibekukan saat selesai.</b> Perhitungan langsung dari data mentah (G1) hanya dipakai selama permainan berjalan.</p>
+              <ul>
+                <li>Saat Reveal, top 5 Pentahoot disimpan ke <code>question_results</code> (per <code>attempt</code>). Reset menghapus hasil beku attempt itu.</li>
+                <li>Saat game selesai (E12 atau D-8), leaderboard akhir Tebak disimpan ke <code>game_results</code>.</li>
+                <li>Halaman Hasil dan export CSV hanya membaca tabel beku, sehingga perubahan aturan hitung di kode tidak mengubah hasil event lama.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G11</td><td>
+              <p><b>Tabel <code>media_files</code></b> untuk semua gambar.</p>
+              <ul>
+                <li>Satu baris per file: disk, path, varian (<code>original</code>, <code>w1920</code>, <code>w720</code>), visibilitas, ukuran, dimensi, <code>sha256</code>, nama asli, pengunggah. Varian menunjuk ke file aslinya lewat <code>parent_id</code>.</li>
+                <li>Soal hanya menyimpan <code>question_image_id</code> dan <code>answer_image_id</code>. Salinan soal (D-9) merujuk baris yang sama dengan paketnya.</li>
+                <li>File yatim bisa dilacak, file dobel bisa dikenali dari <code>sha256</code>, dan varian baru tidak butuh kolom baru.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G12</td><td>Setiap aksi host dijalankan di dalam transaksi dengan <code>lockForUpdate</code> pada baris soal atau game yang diubah. Ini menutup kasus dua host membuka hint berbeda bersamaan lalu saling menimpa array <code>opened_indexes</code>, yang tidak tertangkap oleh update bersyarat F6 saja.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G13</td><td>
+              <p><b>Aturan standar tabel.</b></p>
+              <ul>
+                <li>Semua tabel punya <code>created_at</code> dan <code>updated_at</code>.</li>
+                <li><code>event_hosts</code> memakai primary key gabungan <code>(event_id, user_id)</code>.</li>
+                <li>Foreign key ke data yang sudah dipakai hasil (<code>votes</code>, <code>winner_person_id</code>, <code>question_results</code>, <code>game_results</code>) memakai <code>restrict</code>. Kolom jejak <code>source_*</code> memakai <code>nullOnDelete</code>.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">G5</td><td>Status soal per tipe. Pentahoot: <code>ready, live, revealed, done</code> (<code>closed</code> dihitung dari waktu). Tebak: <code>queued, shown, won, surrendered</code>.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="penyimpangan">
+      <h2><span class="num">10</span>Yang berbeda dari PRD</h2>
+      <p class="sub">Daftar ini untuk review PM. Semua poin sudah disepakati dalam sesi breakdown dan dicatat di sini supaya tidak ada perubahan diam-diam.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>PRD menulis</th><th>Spesifikasi ini</th></tr></thead>
+          <tbody>
+            <tr><td class="id">B-1</td><td>Link personal dari slug nama, misalnya <code>budi-santoso</code>.</td><td>Link personal memakai token acak. Satu nama hanya bisa dipakai satu HP, dan host bisa melepas klaim.</td></tr>
+            <tr><td class="id">C-1, C-2</td><td>Halaman host butuh login.</td><td>Akun host dibuat super-admin. Ada co-host.</td></tr>
+            <tr><td class="id">D-3</td><td>Tidak diatur.</td><td>Event bisa ditutup dan dihapus (soft delete). Hasil tetap bisa dilihat dan diekspor.</td></tr>
+            <tr><td class="id">D-5</td><td>Tidak diatur.</td><td>Host bisa membuka soal mana pun yang belum selesai.</td></tr>
+            <tr><td class="id">D-6</td><td>Pick Winner langsung mengunci.</td><td>Pick Winner meminta konfirmasi dulu.</td></tr>
+            <tr><td class="id">E8</td><td>Maksimal 2 MB per gambar, lalu dikompres ke 1920 px.</td><td>Dikompres dulu di browser, baru dicek batas 2 MB.</td></tr>
+            <tr><td class="id">E13</td><td>Hanya Reset yang tercatat di log.</td><td>Semua aksi yang tidak bisa dibatalkan tercatat di log.</td></tr>
+            <tr><td class="id">D-9</td><td>Soal dibuat langsung per game di event.</td><td>Soal ditulis di paket soal milik host, lalu disalin ke game saat game dibuat. Paket bisa dipakai ulang di event lain.</td></tr>
+            <tr><td class="id">E16</td><td>Setiap winner mendapat +1 poin.</td><td>Poin per soal bisa diatur (default 1).</td></tr>
+            <tr><td class="id">B-7</td><td>Tidak diatur.</td><td>Host bisa mengunci klaim baru.</td></tr>
+            <tr><td class="id">E4b, E14</td><td>HP peserta hanya dipakai di Pentahoot. Isi HP setelah Reveal tidak diatur.</td><td>HP selalu menampilkan top 5 setelah Reveal. Host bisa menyalakan toggle agar soal Tebak Kata/Gambar juga tampil di HP.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="terbuka">
+      <h2><span class="num">11</span>Item terbuka</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Pertanyaan</th><th>Default kalau belum terjawab</th><th>Siapa yang menjawab</th></tr></thead>
+          <tbody>
+            <tr><td class="id">O-B</td><td>Versi MySQL di server production. Cara mengeceknya: <code>SELECT VERSION();</code> di server.</td><td>Kode hanya memakai fitur MySQL 8.0 ke atas, dan CI menguji dua versi (8.0 dan 8.4)</td><td>Senior / pemilik proyek</td></tr>
+                        <tr><td class="id">O-E</td><td>Persetujuan akhir mockup UI. Mockup sudah lengkap (52 artboard, satu kelompok per baris): 14 layar HP, 14 layar Public View (16:9 dan 4:3), 19 halaman host dan admin dengan sidebar dan top bar yang sama (termasuk dialog konfirmasi dan notifikasi STALE_ACTION), 3 contoh tema terang untuk layar peserta, 1 contoh tema gelap untuk host, dan logo. Yang sengaja belum digambar: tampilan kosong, langkah upload import, dialog alihkan kepemilikan, dan versi HP halaman host selain Live control (mengikuti pola laci geser yang sama). Semuanya dalam Bahasa Inggris.</td><td>Menunggu review pemilik proyek</td><td>Pemilik proyek, PM</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="urutan">
+      <h2><span class="num">12</span>Urutan pengerjaan</h2>
+      <p class="sub">Urutan dibuat supaya kalau waktu habis, yang tertunda adalah bagian yang paling ringan. Tanggal per tahap sengaja tidak ditulis karena belum diestimasi bersama.</p>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Fondasi</b><p>Migration dan model sesuai bagian 09, kontrak engine per jenis game (F13), akun host dan super-admin, CRUD event, paket soal (D-9), master nama dengan import dan pratinjau, klaim nama, link personal, dan kunci klaim.</p></div></li>
+        <li><span class="n">2</span><div><b>Kerangka realtime</b><p>Reverb, channel per UUID event, snapshot berversi dan <code>GET /state</code> dengan cache, anggaran ukuran broadcast, sinkron jam, reconnect dengan jeda acak. Langsung diuji di server staging dengan beberapa HP.</p></div></li>
+        <li><span class="n">3</span><div><b>Pentahoot</b><p>Game paling berat: voting dari HP, toleransi waktu, Reset, reveal dengan peringkat kompetisi.</p></div></li>
+        <li><span class="n">4</span><div><b>Tebak Kata</b><p>Kotak huruf, hint, Skip, Surrender, winner, leaderboard live, hasil akhir. Toggle E14 dan tampilan mirror di HP.</p></div></li>
+        <li><span class="n">5</span><div><b>Tebak Gambar</b><p>Upload dengan kompresi di browser (versi 1920 px dan versi HP 720 px), gambar jawaban private dan signed URL. Memakai ulang alur winner, Skip, leaderboard, dan tampilan mirror dari Tebak Kata.</p></div></li>
+        <li><span class="n">6</span><div><b>Gladi di venue</b><p>Uji beban dengan skrip 200–500 klien di staging (F19), lalu uji dengan puluhan HP di jaringan venue. Setel ulang toleransi E3 bila perlu.</p></div></li>
+      </ol>
+    </section>
+
+    <section id="alur">
+      <h2><span class="num">13</span>Alur pengembangan</h2>
+      <p class="sub">Aturan kerja untuk siapa pun yang menulis kode di repo ini, manusia maupun AI. Ringkasan operasionalnya ada di <code>AGENTS.md</code> di root repo.</p>
+
+      <h3>Branch</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Branch</th><th>Fungsi</th><th>Deploy</th></tr></thead>
+          <tbody>
+            <tr><td><code>main</code></td><td>Kode production. Hanya menerima merge dari <code>release/*</code> dan <code>hotfix/*</code>, dan setiap merge diberi tag versi.</td><td>Production</td></tr>
+            <tr><td><code>develop</code></td><td>Integrasi semua fitur.</td><td>Staging, setiap push</td></tr>
+            <tr><td><code>feature/*</code>, <code>fix/*</code>, <code>refactor/*</code></td><td>Tempat kerja. Dibuat dari <code>develop</code>, dihapus setelah di-merge.</td><td>—</td></tr>
+            <tr><td><code>release/x.y.z</code></td><td>Persiapan rilis: versi dan CHANGELOG. Di-merge ke <code>main</code> dan kembali ke <code>develop</code>.</td><td>—</td></tr>
+            <tr><td><code>hotfix/*</code></td><td>Perbaikan darurat production. Dibuat dari <code>main</code>, di-merge ke <code>main</code> dan <code>develop</code>.</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Aturan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">W1</td><td>
+              <p><b>Siklus per tugas.</b></p>
+              <ul>
+                <li>Buat branch dari <code>develop</code>.</li>
+                <li>Tulis test dulu dan saksikan test itu gagal, baru implementasi sampai lulus.</li>
+                <li>Jalankan gerbang kualitas lokal (W4) dan penuhi Definition of Done (O11).</li>
+                <li>Commit atomik: satu commit untuk satu alasan perubahan.</li>
+                <li>Rebase branch ke <code>develop</code> terbaru, lalu push branch fitur ke <code>origin</code>.</li>
+                <li><b>Tunggu CI hijau untuk commit terakhir branch itu (W18).</b> Merah berarti diperbaiki di branch yang sama, lalu tunggu hijau lagi.</li>
+                <li><code>git merge --no-ff</code> ke <code>develop</code>, push, lalu hapus branch-nya di lokal dan di <code>origin</code>.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W2</td><td>
+              <p><b>Tanpa pull request.</b> Merge ke <code>develop</code> dilakukan langsung, tetapi hanya setelah CI hijau (W18). Pengganti review PR:</p>
+              <ul>
+                <li>Berhenti untuk review pemilik proyek setelah batch fondasi (skema dan kontrak) dan setelah setiap game selesai.</li>
+                <li>CI hijau wajib sebelum merge, bukan hanya diperiksa sesudahnya.</li>
+                <li><code>--no-ff</code> menjaga setiap fitur tetap terlihat sebagai satu kelompok di riwayat.</li>
+              </ul>
+              <p><b>Merge ke <code>main</code> selalu ditanyakan dulu ke pemilik proyek setiap rilis</b>, karena berarti deploy ke production.</p>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W3</td><td>
+              <p><b>Commit.</b></p>
+              <ul>
+                <li>Format Conventional Commits dalam Bahasa Inggris, misalnya <code>feat(db): add events and people migrations</code>.</li>
+                <li>Trailer wajib <code>Co-authored-by: aetheris &lt;agents.aetheris@gmail.com&gt;</code>. Trailer AI lain boleh ditambahkan di bawahnya, tidak menggantikan.</li>
+                <li>Dilarang commit <code>wip</code>, <code>temp</code>, atau <code>fix: try again</code>.</li>
+                <li><code>git push --force</code> dilarang di <code>main</code>, <code>develop</code>, dan <code>release/*</code>.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W4</td><td>
+              <p><b>Gerbang kualitas</b>, wajib lulus sebelum commit dan merge:</p>
+              <ul>
+                <li>test suite penuh dengan Pest,</li>
+                <li>format dengan Pint,</li>
+                <li>analisis statis dengan Larastan.</li>
+              </ul>
+              <p>Hasil dilaporkan apa adanya, termasuk yang gagal.</p>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W5</td><td>
+              <p><b>Clean code.</b></p>
+              <ul>
+                <li>Controller tipis. Validasi di FormRequest, hak akses di Policy, logika bisnis di Action atau Service, dan logika game hanya di engine per jenis game (F13).</li>
+                <li>Aturan penting (E1, E3, E5, E10) menjadi class kecil yang diuji sendiri.</li>
+                <li>Tanpa <code>TODO</code>, tanpa kredensial di kode, dan tanpa bypass tipe. Kode ditulis dalam Bahasa Inggris.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W6</td><td>
+              <p><b>Lapisan test.</b></p>
+              <ul>
+                <li>Unit: aturan peringkat, tie-break, toleransi waktu, pemecah kotak.</li>
+                <li>Database: unique index, aturan hapus foreign key, hasil beku.</li>
+                <li>Feature: setiap rute beserta hak aksesnya.</li>
+                <li>Kontrak realtime: ukuran snapshot (F14) dan versi state (F15).</li>
+                <li>Beban: F19, di staging.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W7</td><td>Repo dimulai lokal. Remote GitHub di organisasi <code>devivace-groups</code> menyusul. Saat remote dibuat, cek apakah ada branch protection yang mewajibkan PR, karena itu akan menolak push langsung (W2).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W9</td><td>
+              <p><b>Versi mengikuti SemVer <code>MAJOR.MINOR.PATCH</code>.</b></p>
+              <ul>
+                <li><b>PATCH</b> untuk perbaikan bug dan perubahan kecil yang tidak menambah fitur. Angkanya boleh terus naik (<code>0.3.9</code> → <code>0.3.10</code>), tidak pernah "dibulatkan" ke minor.</li>
+                <li><b>MINOR</b> untuk fitur baru. Di masa pengembangan, minor hanya naik saat satu tahap selesai: <code>v0.1.0</code> fondasi, <code>v0.2.0</code> kerangka realtime, <code>v0.3.0</code> Pentahoot, <code>v0.4.0</code> Tebak Kata, <code>v0.5.0</code> Tebak Gambar. PATCH kembali ke 0 setiap minor naik.</li>
+                <li><b>MAJOR</b> untuk perubahan besar yang merusak kompatibilitas. <code>v1.0.0</code> adalah rilis production pertama.</li>
+                <li><b>Rilis event pertengahan Oktober 2026 paling tinggi <code>v1.0.0</code>.</b> Uji beban dan gladi memakai <code>v1.0.0-rc.1</code>, <code>v1.0.0-rc.2</code>, dan seterusnya. Kalau ada tahap yang belum selesai, event tetap <code>v1.0.0</code> dari apa yang siap.</li>
+                <li>Versi hanya dibuat saat merge ke <code>main</code> dengan persetujuan pemilik proyek (W2). Banyak perbaikan boleh dikumpulkan dalam satu PATCH. Merge ke <code>develop</code> tidak membuat versi, dan tidak ada bump otomatis per commit.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W10</td><td>
+              <p><b>Changelog.</b></p>
+              <ul>
+                <li><code>CHANGELOG.md</code> di root repo, mengikuti format Keep a Changelog 1.1.0 dan menyatakan bahwa proyek memakai SemVer (W9).</li>
+                <li><b>Ditulis dalam Bahasa Inggris</b> dengan kategori standar: Added, Changed, Deprecated, Removed, Fixed, Security.</li>
+                <li>Diisi di setiap branch fitur. Commit terakhir sebelum merge ke <code>develop</code> adalah <code>docs(changelog): ...</code> yang menambah baris di <code>[Unreleased]</code>, ditulis dari sudut pandang pemakai, misalnya "Hosts can lock new name claims", bukan "add join_locked_at column".</li>
+                <li>Saat rilis di <code>release/x.y.z</code>, isi <code>[Unreleased]</code> dipindah ke <code>[x.y.z] - YYYY-MM-DD</code>.</li>
+                <li>Refactor, test, dan perubahan CI tidak dicatat kecuali berdampak ke pemakai.</li>
+                <li>Berkas dibuat di tahap 1 setelah <code>.gitignore</code> ter-commit.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W11</td><td>
+              <p><b>Test di sisi browser.</b></p>
+              <ul>
+                <li><b>Pest Browser Testing</b> (Pest v4, mesin Playwright) untuk alur end-to-end: klaim nama, voting, reveal, reconnect. Mendukung Chrome, Firefox, dan Safari (WebKit), emulasi perangkat seperti iPhone, dan beberapa halaman dalam satu test, sehingga host, Public View, dan HP bisa diuji bersamaan. Dijalankan di CI.</li>
+                <li><b>Vitest</b> untuk logika JavaScript murni yang dipisah dari tampilan: selisih jam server (F4), penolakan snapshot lama (F15), jeda acak reconnect (F17), tata letak kotak huruf (E5).</li>
+                <li>Pengecekan manual tetap lewat checklist O11 untuk tampilan dan animasi.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W12</td><td><b>Akhir baris.</b> <code>.gitattributes</code> memaksa akhir baris LF untuk semua berkas teks. Pengembangan di Windows, sedangkan container berjalan di Linux; skrip shell dan entrypoint Docker dengan akhir baris CRLF gagal dijalankan di container.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W13</td><td><b>Test memakai MySQL</b>, bukan SQLite, dengan versi yang sama dengan matrix CI (A9). Unique index, JSON, <code>lockForUpdate</code>, dan aturan foreign key (G2, G12, G13) berperilaku berbeda di SQLite.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W14</td><td>
+              <p><b>Aturan migration.</b></p>
+              <ul>
+                <li>Migration yang sudah masuk <code>develop</code> tidak boleh diedit. Perubahan selalu lewat migration baru.</li>
+                <li>Migration harus tetap aman saat container versi lama masih berjalan sebentar selama deploy: tambah kolom dulu, baru hapus kolom lama di rilis berikutnya.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W15</td><td><b>Hook lokal sebelum commit</b>: Pint pada berkas yang diubah, lint JS, dan pengecekan format pesan commit (Conventional Commits). CI tetap penjaga terakhir.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W16</td><td><b>Format dan lint JavaScript</b> dengan ESLint dan Prettier untuk kode Alpine dan JS. Dijalankan di hook lokal (W15) dan di CI.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W17</td><td><b>Versi tool dikunci.</b> <code>composer.lock</code> dan <code>package-lock.json</code> selalu di-commit. Versi Node dikunci lewat <code>.nvmrc</code> dan <code>engines</code> di <code>package.json</code>. Versi PHP dikunci oleh image Docker (A8).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W18</td><td>
+              <p><b>CI harus hijau sebelum merge.</b></p>
+              <ul>
+                <li>Branch fitur di-push ke <code>origin</code> dan CI dijalankan untuk commit terakhirnya. Merge ke <code>develop</code> hanya kalau hasilnya hijau.</li>
+                <li>Branch sudah di-rebase ke <code>develop</code> terbaru sebelum push, jadi hasil merge sama dengan yang diuji CI.</li>
+                <li>Branch <code>release/*</code> dan <code>hotfix/*</code> juga wajib hijau sebelum merge ke <code>main</code>.</li>
+                <li>Job deploy staging dan production hanya jalan kalau job CI di push yang sama hijau.</li>
+                <li>Sebelum remote GitHub ada (W7), langkah CI yang sama dijalankan lokal di container yang sama, dan hasilnya dilaporkan sebagai pengganti sementara.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K1</td><td><b>Test arsitektur (Pest arch).</b> Preset Laravel, Strict (strict types, class <code>final</code>), dan Security, ditambah aturan proyek: controller tidak memakai facade <code>DB</code>, engine game (F13) tidak bergantung pada class HTTP, dan <code>dd</code>/<code>dump</code> dilarang. Aturan arsitektur di <code>AGENTS.md</code> harus punya test yang bisa gagal.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K2</td><td><b>Mutation test sejak awal</b> untuk aturan inti: peringkat E1, tie-break E10, toleransi waktu E3, dan pemecah kotak E5. Memakai <code>pest --mutate</code> dengan batas skor minimal (<code>--min</code>) di CI. Image CI memuat PCOV.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K3</td><td><b>Level Larastan</b> ditetapkan saat setup dan <b>tanpa baseline</b>: tidak ada daftar error yang diabaikan.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K4</td><td><b>Format error konsisten</b> untuk endpoint yang dipanggil Alpine: <code>{code, message}</code> dengan kode tetap, misalnya <code>VOTE_CLOSED</code>, <code>STALE_ACTION</code>, <code>NAME_TAKEN</code>, <code>EVENT_NOT_FOUND</code>, <code>CLAIMS_LOCKED</code>. Setiap exception domain dipetakan ke satu kode.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K5</td><td><b>Logging terstruktur</b> dengan <code>event_id</code> dan request id serta level yang jelas. <b>Dilarang mencatat data pribadi</b>: nama peserta, token klaim, token link personal.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K6</td><td><b>Cek konfigurasi saat start.</b> Variabel wajib yang hilang (kunci Reverb, disk <code>media</code>, dan sejenisnya) membuat aplikasi gagal start dengan pesan yang jelas.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K7</td><td><b>Batas upload di tiga lapis</b> yang nilainya sama: validasi Laravel, <code>upload_max_filesize</code>/<code>post_max_size</code> PHP, dan <code>client_max_body_size</code> nginx (E8).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">K8</td><td><b>Dependency baru wajib beralasan.</b> Menambah paket Composer atau npm harus disertai alasan di pesan commit.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">W8</td><td>Perubahan keputusan apa pun dicatat dulu di dokumen ini dengan ID-nya, baru kodenya diubah. Kode yang menyimpang dari dokumen dianggap bug.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="operasional">
+      <h2><span class="num">14</span>Operasional, CI/CD, dan gerbang selesai</h2>
+      <p class="sub">Cara aplikasi dijalankan, di-deploy, dijaga, dan dinyatakan selesai. Semua lingkungan memakai Docker (A8), database memakai server MySQL yang sudah ada (A9).</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Keputusan</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">O1</td><td><b>CI di GitHub Actions</b> untuk setiap push: gerbang kualitas W4 (Pest, Pint, Larastan) ditambah <code>composer audit</code>. Dipasang sejak batch pertama, dengan versi PHP dan MySQL yang sama dengan production.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O2</td><td>
+              <p><b>Deploy dan rollback.</b></p>
+              <ul>
+                <li>Push ke <code>develop</code> men-deploy staging. Tag versi di <code>main</code> men-deploy production.</li>
+                <li>Deploy wajib me-restart Reverb supaya kode barunya terpakai.</li>
+                <li>Ada langkah rollback tertulis untuk kembali ke versi sebelumnya.</li>
+                <li><b>Dilarang deploy selama event berlangsung.</b></li>
+                <li>Mekanisme: build image, lalu <code>docker compose</code> di VM, mengikuti pola staging <code>vivace-board</code>. Rollback berarti menjalankan kembali image versi sebelumnya.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O3</td><td><b>Konfigurasi per lingkungan.</b> <code>.env.example</code> lengkap. Lokal, staging, dan production punya <code>APP_KEY</code> dan kunci Reverb masing-masing. Rahasia deploy disimpan di GitHub Secrets, tidak pernah di repo.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O4</td><td><b>Tanpa backup otomatis</b> untuk saat ini. <b>Backup manual database (<code>mysqldump</code>) wajib tepat sebelum dan sesudah setiap event</b>, disimpan di luar VM. Risiko di luar dua titik itu diterima: kalau server atau data rusak di antara event, tidak ada salinan.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O5</td><td>
+              <p><b>Pemantauan.</b></p>
+              <ul>
+                <li>Health check <code>/up</code> dan log error dengan file harian: selalu aktif.</li>
+                <li>Laravel Pulse (monitor koneksi Reverb) butuh proses <code>pulse:check</code> dan menulis data ke database per request. Dipakai atau tidaknya diputuskan dari uji beban F19 yang dijalankan dua kali, dengan dan tanpa Pulse.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O7</td><td>
+              <p><b>Dasar keamanan.</b></p>
+              <ul>
+                <li>Upload divalidasi dari isi file, bukan ekstensi.</li>
+                <li>Header keamanan, termasuk CSP.</li>
+                <li>CSRF untuk semua POST, termasuk dari peserta.</li>
+                <li>Aturan password akun host.</li>
+                <li>Satu sesi audit keamanan sebelum rilis <code>v1.0.0</code>.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O9</td><td><b>README dan setup lokal.</b> Developer baru bisa menjalankan aplikasi dari clone sampai jalan dengan langkah tertulis, termasuk Reverb lokal. Lingkungan lokal: <code>app</code>, <code>web</code>, dan <code>reverb</code> di Docker, terhubung ke MySQL lokal di laptop, sama seperti pola production (A9).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O10</td><td>
+              <p><b>Pemisahan seeder.</b></p>
+              <ul>
+                <li>Akun super-admin dibuat lewat <code>php artisan pentahoot:create-super-admin</code>. Email dan password ditanyakan saat perintah dijalankan, tidak pernah ditulis di kode.</li>
+                <li><code>DatabaseSeeder</code> hanya berisi data dasar yang aman dijalankan berulang di semua lingkungan.</li>
+                <li><code>DemoSeeder</code> (event contoh, sekitar 50 nama, satu paket per jenis game) menolak jalan kalau <code>APP_ENV=production</code>.</li>
+                <li><code>LoadTestSeeder</code> (500 nama) hanya untuk staging.</li>
+                <li>Factory dipakai bersama oleh test dan seeder demo.</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P1</td><td><b>Image disimpan di GitHub Container Registry</b> sebagai paket privat. Image dibangun sekali di CI dan diberi tag commit SHA serta nomor versi. VM hanya menarik image, tidak membangun.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P2</td><td><b>Kualitas image:</b> build bertahap, container berjalan sebagai user non-root, versi base image dikunci, dependency dev tidak ikut, opcache aktif, <code>healthcheck</code> di setiap container.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P3</td><td><b>Scan keamanan di CI:</b> gitleaks untuk rahasia yang ter-commit dan Trivy untuk celah di image, melengkapi <code>composer audit</code> (O1).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P4</td><td><b>Urutan deploy:</b> migration, ganti container, lalu smoke test otomatis (<code>/up</code> dan satu koneksi WebSocket). Gagal berarti otomatis kembali ke image sebelumnya. Contoh di kantor: <code>smoke.sh</code> dan <code>staging-recover.sh</code> di <code>vivace-board</code>.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P5</td><td><b>Persetujuan deploy production di GitHub</b>, misalnya lewat environment dengan persetujuan manual, sehingga W2 juga dijaga oleh platform. Fitur persisnya diverifikasi saat remote dibuat.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P6</td><td><b>Susunan job CI:</b> lint, analisis statis, test, mutation test, dan browser test dijalankan paralel. Cache Composer dan npm. Run lama dibatalkan kalau ada push baru ke branch yang sama.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P7</td><td><b>Data staging terpisah.</b> Staging memakai database sendiri dan hanya berisi data demo (O10). Data production tidak pernah disalin ke staging.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">O11</td><td>
+              <p><b>Definition of Done</b>, berlaku sebagai gerbang sejak fitur pertama. Satu fitur baru boleh di-merge ke <code>develop</code> kalau:</p>
+              <ul>
+                <li>gerbang kualitas W4 lulus,</li>
+                <li>changelog W10 sudah diisi,</li>
+                <li>dicek di tiga ukuran layar (HP, proyektor 16:9, laptop) untuk fitur yang punya tampilan,</li>
+                <li>aksesibilitas dasar: kontras cukup, target sentuh minimal 44 px, bisa dipakai dengan keyboard,</li>
+                <li>spesifikasi masih sesuai dengan kode (W8).</li>
+              </ul>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Backlog operasional</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Topik</th><th>Kapan</th></tr></thead>
+          <tbody>
+            <tr><td class="id">O6</td><td>Runbook hari-H (<code>docs/runbook-event.md</code>): checklist sebelum acara, rencana cadangan kalau WiFi mati, kontak darurat.</td><td>Menjelang gladi</td></tr>
+            <tr><td class="id">O8</td><td>Daftar browser dan HP yang didukung, diuji di perangkat sungguhan.</td><td>Menjelang gladi</td></tr>
+            <tr><td class="id">O12</td><td>Issue tracker (GitHub Issues/Projects), commit merujuk issue.</td><td>Setelah <code>v1.0.0</code></td></tr>
+            <tr><td class="id">O13</td><td>Catatan keputusan (ADR) Markdown di <code>docs/adr/</code> untuk keputusan baru.</td><td>Setelah <code>v1.0.0</code></td></tr>
+            <tr><td class="id">O14</td><td>Update dependency otomatis (Dependabot atau Renovate).</td><td>Setelah <code>v1.0.0</code></td></tr>
+            <tr><td class="id">O15</td><td>Batas ukuran JS/CSS halaman peserta, dicek di CI.</td><td>Setelah <code>v1.0.0</code></td></tr>
+            <tr><td class="id">P8</td><td>Rector untuk refactor otomatis dan upgrade Laravel berikutnya.</td><td>Setelah <code>v1.0.0</code></td></tr>
+            <tr><td class="id">O16</td><td>Kebijakan retensi data pribadi (daftar nama karyawan).</td><td>Setelah <code>v1.0.0</code>, ditanyakan ke pihak kantor yang berwenang</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="rilis">
+      <h2><span class="num">15</span>Rilis staging dan production</h2>
+      <p class="sub">Langkah sekali jalan untuk menyiapkan tiap lingkungan, lalu langkah yang diulang di setiap rilis. Bagian dalam kurung siku, seperti [DOMAIN STAGING], diisi saat server disiapkan. Perintah di bab ini ditulis sebagai acuan urutan; nama service, path, dan flag persisnya dipastikan saat <code>compose.yaml</code> dan workflow CI ditulis di tahap 1, lalu bab ini diperbarui kalau ada yang berbeda.</p>
+
+      <h3>Staging: disiapkan sekali</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Akses server</b><p>Senior menyiapkan VM (boleh sama dengan production atau terpisah), memasang Docker, membuat user deploy dengan kunci SSH khusus, dan membuka port 80/443.</p></div></li>
+        <li><span class="n">2</span><div><b>Domain dan TLS</b><p>Subdomain [DOMAIN STAGING] diarahkan ke VM. TLS dan reverse proxy mengikuti pola kantor (staging <code>vivace-board</code> memakai Caddy). Proxy wajib meneruskan WebSocket ke container <code>reverb</code>.</p></div></li>
+        <li><span class="n">3</span><div><b>Database</b><p>Di server MySQL yang sudah ada (A9): buat database <code>pentahoot_staging</code> dan user yang hanya punya akses ke database itu. Izinkan koneksi dari jaringan Docker. Catat versi MySQL (O-B).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">-- dijalankan sebagai admin MySQL di server
+SELECT VERSION();
+CREATE DATABASE pentahoot_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'pentahoot_staging'@'[SUBNET DOCKER]' IDENTIFIED BY '[PASSWORD KUAT]';
+GRANT ALL PRIVILEGES ON pentahoot_staging.* TO 'pentahoot_staging'@'[SUBNET DOCKER]';
+FLUSH PRIVILEGES;</pre></div></li>
+        <li><span class="n">4</span><div><b>GitHub</b><p>Repo di <code>devivace-groups</code>. Environment <code>staging</code> dan <code>production</code> (P5). Secrets: host, user, dan kunci SSH deploy. Cek branch protection (W7).</p></div></li>
+        <li><span class="n">5</span><div><b>Registry image (P1)</b><p>Image disimpan di GitHub Container Registry sebagai paket privat. VM login ke registry dengan token yang hanya bisa membaca.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;"># di VM, sekali, sebagai user deploy
+echo "[TOKEN READ:PACKAGES]" | docker login ghcr.io -u [USER GITHUB] --password-stdin</pre></div></li>
+        <li><span class="n">6</span><div><b>Berkas di server</b><p>Folder deploy hanya berisi <code>compose.yaml</code> dan <code>.env</code> staging (<code>APP_KEY</code>, kunci Reverb, kredensial database). <b>Tidak ada kode sumber, PHP, atau Composer di server</b>; yang dibutuhkan hanya Docker. <code>compose.yaml</code> berasal dari repo dan disalin oleh job deploy setiap kali deploy. <code>.env</code> dibuat langsung di server dan tidak pernah masuk repo (O3).</p></div></li>
+        <li><span class="n">7</span><div><b>Deploy pertama</b><p>Tarik image, jalankan migration, buat super-admin dengan <code>php artisan pentahoot:create-super-admin</code>, jalankan <code>DemoSeeder</code>, lalu smoke test (P4).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">cd [FOLDER DEPLOY]
+IMAGE_TAG=[SHA] docker compose pull
+docker compose run --rm app php artisan migrate --force
+docker compose run --rm app php artisan pentahoot:create-super-admin   # email &amp; password ditanya interaktif
+docker compose run --rm app php artisan db:seed --class=DemoSeeder     # staging saja
+docker compose up -d
+curl -fsS https://[DOMAIN STAGING]/up</pre></div></li>
+        <li><span class="n">8</span><div><b>Bukti realtime</b><p>Buka Public View di laptop dan voting dari beberapa HP sungguhan lewat proxy staging (A5). Setelah itu jalankan uji beban F19 dengan dan tanpa Pulse (O5).</p></div></li>
+      </ol>
+
+      <h3>Production: disiapkan sekali</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Sama dengan staging langkah 1–6</b><p>Dengan domain [DOMAIN PRODUCTION], database <code>pentahoot</code>, <code>.env</code> production terpisah, dan kunci Reverb berbeda dari staging.</p></div></li>
+        <li><span class="n">2</span><div><b>Persetujuan deploy</b><p>Environment <code>production</code> di GitHub memakai persetujuan manual pemilik proyek (P5, W2).</p></div></li>
+        <li><span class="n">3</span><div><b>Tempat backup</b><p>Tentukan lokasi di luar VM untuk backup manual (O4).</p></div></li>
+        <li><span class="n">4</span><div><b>Deploy pertama</b><p>Tag <code>v1.0.0-rc.1</code>: tarik image, migration, buat super-admin, smoke test. <b>Tanpa</b> <code>DemoSeeder</code> dan <code>LoadTestSeeder</code> (O10). Data staging tidak disalin ke production, dan sebaliknya (P7).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">cd [FOLDER DEPLOY PRODUCTION]
+IMAGE_TAG=v1.0.0-rc.1 docker compose pull
+docker compose run --rm app php artisan migrate --force
+docker compose run --rm app php artisan pentahoot:create-super-admin
+docker compose up -d
+curl -fsS https://[DOMAIN PRODUCTION]/up</pre></div></li>
+        <li><span class="n">5</span><div><b>Akun host</b><p>Super-admin membuat akun host untuk tiap divisi (C-1).</p></div></li>
+      </ol>
+
+      <h3>Staging: setiap merge ke <code>develop</code> (otomatis)</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>CI hijau</b><p>Job CI di push yang sama harus hijau (W18). Kalau merah, deploy tidak jalan.</p></div></li>
+        <li><span class="n">2</span><div><b>Build dan simpan image</b><p>Image dibangun sekali di CI, diberi tag commit SHA, lalu disimpan di registry (P1, P2). Image yang di-deploy sama persis dengan yang diuji.</p></div></li>
+        <li><span class="n">3</span><div><b>Deploy</b><p>Job deploy masuk lewat SSH dan menjalankan perintah berikut. <b>Tidak ada <code>git pull</code> dan tidak ada <code>composer install</code> di server</b>; yang ditarik hanya image yang sudah diuji CI. Flag persisnya dipastikan saat workflow ditulis.</p>
+<pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">1. salin compose.yaml terbaru dari repo ke folder deploy
+2. IMAGE_TAG=&lt;sha&gt; docker compose pull
+3. docker compose run --rm app php artisan migrate --force
+4. docker compose up -d          # ganti app, web, reverb
+5. smoke test: /up + satu koneksi WebSocket (P4)</pre></div></li>
+        <li><span class="n">4</span><div><b>Rollback otomatis</b><p>Kalau smoke test gagal, tag image dikembalikan ke versi sebelumnya lalu <code>docker compose up -d</code> dijalankan lagi. Migration selalu kompatibel dengan versi sebelumnya (W14), jadi rollback tidak perlu membatalkan migration.</p></div></li>
+      </ol>
+
+      <h3>Production: setiap rilis versi</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Persetujuan</b><p>Pemilik proyek menyetujui rilis dan nomor versinya (W2, W9). Cek jadwal event: dilarang deploy selama event berlangsung (O2).</p></div></li>
+        <li><span class="n">2</span><div><b>Branch rilis</b><p>Buat <code>release/x.y.z</code> dari <code>develop</code>. Pindahkan <code>[Unreleased]</code> di changelog ke <code>[x.y.z] - YYYY-MM-DD</code> (W10) dan perbarui nomor versi aplikasi.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout develop &amp;&amp; git pull --rebase origin develop
+git checkout -b release/1.1.0
+# edit CHANGELOG.md dan nomor versi aplikasi
+git commit -am "chore(release): prepare v1.1.0"
+git push origin release/1.1.0
+gh run watch                         # tunggu CI hijau (W18)</pre></div></li>
+        <li><span class="n">3</span><div><b>CI hijau</b><p>Branch rilis wajib hijau sebelum merge (W18).</p></div></li>
+        <li><span class="n">4</span><div><b>Merge dan tag</b><p><code>git merge --no-ff</code> ke <code>main</code>, beri tag <code>vx.y.z</code>, push. Lalu back-merge <code>release/x.y.z</code> ke <code>develop</code> dan hapus branch rilis.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout main &amp;&amp; git pull --rebase origin main
+git merge --no-ff release/1.1.0
+git tag -a v1.1.0 -m "release: v1.1.0"
+git push origin main --follow-tags   # memicu build image v1.1.0 + deploy (menunggu persetujuan P5)
+git checkout develop &amp;&amp; git merge --no-ff release/1.1.0 &amp;&amp; git push origin develop
+git branch -d release/1.1.0 &amp;&amp; git push origin --delete release/1.1.0</pre></div></li>
+        <li><span class="n">5</span><div><b>Deploy</b><p>Tag memicu build image <code>vx.y.z</code>. Deploy production menunggu persetujuan di environment GitHub (P5), lalu menjalankan lima perintah yang sama dengan staging dengan <code>IMAGE_TAG=vx.y.z</code>. Rollback: jalankan lagi dengan tag versi sebelumnya.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;"># rollback manual kalau diperlukan
+cd [FOLDER DEPLOY PRODUCTION]
+IMAGE_TAG=v1.0.0 docker compose pull
+IMAGE_TAG=v1.0.0 docker compose up -d
+curl -fsS https://[DOMAIN PRODUCTION]/up</pre></div></li>
+        <li><span class="n">6</span><div><b>Sesudah deploy</b><p>Cek manual singkat dari satu HP dan satu laptop. Salin bagian changelog versi itu ke GitHub Releases.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gh release create v1.1.0 --title "v1.1.0" --notes-file [BAGIAN CHANGELOG v1.1.0].md</pre></div></li>
+      </ol>
+
+      <h3>Hotfix production</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Branch dari <code>main</code></b><p><code>hotfix/&lt;nama&gt;</code>. Tulis test yang membuktikan bug-nya (merah), perbaiki sampai hijau.</p></div></li>
+        <li><span class="n">2</span><div><b>Rilis patch</b><p>CI hijau, persetujuan pemilik proyek, merge ke <code>main</code> dengan tag patch (misalnya <code>v1.0.1</code>), lalu back-merge ke <code>develop</code>. Deploy seperti rilis biasa.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout main &amp;&amp; git pull --rebase origin main
+git checkout -b hotfix/vote-rejected-on-time
+# test merah -&gt; perbaikan -&gt; test hijau, isi CHANGELOG.md bagian Fixed
+git push origin hotfix/vote-rejected-on-time &amp;&amp; gh run watch
+git checkout main &amp;&amp; git merge --no-ff hotfix/vote-rejected-on-time
+git tag -a v1.0.1 -m "hotfix: accept votes within tolerance" &amp;&amp; git push origin main --follow-tags
+git checkout develop &amp;&amp; git merge --no-ff hotfix/vote-rejected-on-time &amp;&amp; git push origin develop
+git branch -d hotfix/vote-rejected-on-time &amp;&amp; git push origin --delete hotfix/vote-rejected-on-time</pre></div></li>
+      </ol>
+
+      <h3>Setiap event</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Sebelum acara</b><p>Tidak ada deploy yang dijadwalkan di hari itu. Backup manual database dan simpan di luar VM (O4). Cek <code>/up</code> dan koneksi Reverb.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">mysqldump --single-transaction -u [USER BACKUP] -p pentahoot | gzip &gt; pentahoot-$(date +%F)-before.sql.gz
+# pindahkan berkas ke [LOKASI BACKUP DI LUAR VM]
+curl -fsS https://[DOMAIN PRODUCTION]/up</pre></div></li>
+        <li><span class="n">2</span><div><b>Selama acara</b><p>Larangan deploy berlaku (O2).</p></div></li>
+        <li><span class="n">3</span><div><b>Sesudah acara</b><p>Backup manual database lagi (O4). Checklist lengkap hari-H ada di runbook (O6, backlog).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">mysqldump --single-transaction -u [USER BACKUP] -p pentahoot | gzip &gt; pentahoot-$(date +%F)-after.sql.gz</pre></div></li>
+      </ol>
+    </section>
+
+    <section id="blueprint">
+      <h2><span class="num">16</span>Blueprint: cara kita merancang</h2>
+      <p class="sub">Catatan alur berpikir sesi perencanaan 28 September 2026, dari PRD sampai mockup. Bab lain berisi <b>apa</b> yang diputuskan; bab ini berisi <b>bagaimana</b> kita sampai ke sana, supaya bisa diulang untuk proyek berikutnya.</p>
+
+      <h3>Urutan yang ditempuh</h3>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart TD
+    A[PRD dari PM] --> B[Baca utuh, ringkas, daftar celah dan kontradiksi]
+    B --> C[Breakdown satu topik per putaran]
+    C --> C1[A. Skala dan kebutuhan non-fungsional]
+    C1 --> C2[B. Identitas dan anti-curang]
+    C2 --> C3[C. Akun dan peran]
+    C3 --> C4[D. Siklus hidup dan state machine]
+    C4 --> C5[E. Kasus tepi per fitur]
+    C5 --> C6[F. Arsitektur dan stack]
+    C6 --> C7[G. Model data dan rute]
+    C7 --> D[Tulis dokumen berID + AGENTS.md]
+    D --> E[Bandingkan dengan produk sejenis]
+    E --> F[Review: apakah ini hanya aman untuk saat ini?]
+    F --> G[Alur kerja: git, versi, changelog, CI/CD, DoD, operasional]
+    G --> H[Uji garis best practice vs over-engineering]
+    H --> I[Mockup semua layar per perangkat nyata]
+    I --> J[Review konsistensi desain]
+    J --> K[Kunci spesifikasi v1, sisakan item terbuka yang eksplisit]
+</pre>
+      </div>
+
+      <h3>Prinsip yang dipakai berulang</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Prinsip</th><th>Bentuknya di sesi ini</th></tr></thead>
+          <tbody>
+            <tr><td>Satu topik per putaran</td><td>Breakdown A sampai G dikerjakan berurutan. Topik berikutnya baru dibuka setelah pertanyaan topik sebelumnya terjawab.</td></tr>
+            <tr><td>Setiap keputusan punya ID dan status</td><td>DISETUJUI, BEDA DARI PRD, atau TERBUKA. ID dipakai di commit, komentar kode, dan <code>AGENTS.md</code>.</td></tr>
+            <tr><td>Tanya hanya yang memang milik pemilik proyek</td><td>Skala, tenggat, aturan main, dan selera ditanyakan. Hal teknis diputuskan dengan rekomendasi dan alasannya, lalu dilaporkan supaya bisa dikoreksi.</td></tr>
+            <tr><td>Setiap opsi punya kelebihan, kekurangan, dan kapan batal</td><td>Contoh: pilihan identitas B1/B2/B3, akun host C1–C4, tabel soal (a)/(b)/(c), Docker (b)/(c).</td></tr>
+            <tr><td>Klaim diverifikasi ke sumber</td><td>Dokumentasi resmi (Laravel, Tailwind, Pest, SemVer, Keep a Changelog, Cloud Run), source library yang terpasang (batas 10.000 byte Reverb), repo kantor (pola deploy, stack), dan tanggal dukungan versi. Klaim tanpa sumber diberi label.</td></tr>
+            <tr><td>Produk sejenis sebagai pembanding, bukan acuan</td><td>Kahoot dipakai untuk menguji ide: soal di HP sebagai opsi, konten terpisah dari sesi, bobot poin per soal, kunci pendaftaran. Aturan main tetap diputuskan sendiri.</td></tr>
+            <tr><td>Pertanyaan pengecek skalabilitas</td><td>"Kalau dipakai rutin selama setahun, bagian mana yang rusak?" Pertanyaan ini menemukan hasil yang harus dibekukan, tabel file, penanda ganda, dan snapshot tanpa versi.</td></tr>
+            <tr><td>Garis best practice vs over-engineering</td><td>Praktik layak dipakai kalau mencegah kegagalan yang benar-benar mungkin terjadi di proyek ini dengan biaya sepadan. Yang murah tetap dipakai sebagai blueprint; yang mahal dinilai terhadap tenggat.</td></tr>
+            <tr><td>Dokumen dulu, baru kode</td><td>W8. Setiap perubahan keputusan dicatat di dokumen sebelum kodenya berubah.</td></tr>
+            <tr><td>Ukur, jangan menilai dengan mata</td><td>Kontras warna dihitung dengan rumus WCAG, struktur HTML dicek otomatis, detektor kata tersisa diuji dulu pada berkas yang pasti mengandung kata itu.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Checklist breakdown PRD (bisa dipakai ulang)</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Area</th><th>Pertanyaan yang harus terjawab</th></tr></thead>
+          <tbody>
+            <tr><td>Kebutuhan non-fungsional</td><td>Berapa pengguna sekaligus? Berapa instance berjalan bersamaan? Kondisi jaringan? Hosting dan batas versi runtime? Siapa yang membangun dan merawat? Kapan tenggatnya?</td></tr>
+            <tr><td>Identitas</td><td>Siapa yang boleh masuk? Apa yang mencegah orang menyamar? Bagaimana masuk ulang setelah putus?</td></tr>
+            <tr><td>Akun dan peran</td><td>Siapa membuat akun? Siapa melihat data siapa? Apa yang hanya boleh pemilik? Bagaimana reset password?</td></tr>
+            <tr><td>Siklus hidup</td><td>State apa saja, dan transisi apa yang boleh? Bisa mundur? Bisa dibuka lagi? Apa yang terkunci setelah mulai?</td></tr>
+            <tr><td>Kasus tepi</td><td>Seri, waktu habis dan jaringan lambat, dua orang menekan bersamaan, salah klik yang tidak bisa dibatalkan, data kosong, input aneh.</td></tr>
+            <tr><td>Realtime dan konsistensi</td><td>Siapa sumber kebenaran? Apa yang terjadi saat pesan hilang atau tiba terlambat? Batas ukuran pesan?</td></tr>
+            <tr><td>Data</td><td>Jenis ID, soft delete dan siapa yang menghapus, audit log, hasil yang harus dibekukan, file dan variannya, jaminan di level database.</td></tr>
+            <tr><td>Rute dan hak akses</td><td>Peta rute publik, login, pemilik, admin. Kata yang dicadangkan. Rate limit yang tidak memblokir satu ruangan.</td></tr>
+            <tr><td>Alur kerja</td><td>Git flow, format commit, versi, changelog, Definition of Done, test per lapisan, CI hijau sebelum merge.</td></tr>
+            <tr><td>Operasional</td><td>Deploy dan rollback, rahasia per lingkungan, backup, pemantauan, seeder produksi vs demo, keamanan dasar, larangan deploy di hari acara.</td></tr>
+            <tr><td>Frontend dan desain</td><td>Token tema, komponen yang dipakai ulang, bahasa antarmuka, aksesibilitas, mockup per perangkat nyata, konsistensi pola.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Titik belok: koreksi yang mengubah rancangan</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Awalnya</th><th>Menjadi</th><th>Pelajaran</th></tr></thead>
+          <tbody>
+            <tr><td>"Rilis pertama maksimal v1.0.0" ditafsirkan sebagai larangan tag 0.x</td><td>0.x boleh; minor naik per tahap, patch untuk perbaikan, batas atas v1.0.0 (W9)</td><td>Nyatakan ulang maksud pemilik sebelum mengunci aturan dari satu kata kunci</td></tr>
+            <tr><td>Laravel 12 dikunci karena PHP di VM versi 8.2</td><td>Docker di semua lingkungan, sehingga Laravel 13 + PHP 8.4 (A8)</td><td>Batas tooling bisa dilepas oleh keputusan infrastruktur. Cek tanggal akhir dukungan sebelum mengunci versi</td></tr>
+            <tr><td>Nama kembar ditandai lalu dicek saat game dimulai</td><td>Nama kembar tidak pernah tersimpan; diperbaiki di pratinjau import (B-4)</td><td>Cegah data buruk di pintu masuk, bukan di tengah alur</td></tr>
+            <tr><td>Event dihapus permanen</td><td>Soft delete, <code>deleted_by</code>, dipulihkan pemilik atau super-admin (D-3)</td><td>Data hasil acara tidak bisa diulang; beri jalan kembali</td></tr>
+            <tr><td>Soal ditulis langsung per event</td><td>Paket soal disalin ke sesi, poin per soal (D-9, E16)</td><td>Bandingkan dengan produk sejenis untuk melihat kebutuhan pemakaian ulang</td></tr>
+            <tr><td>Rancangan dianggap cukup</td><td>Review skalabilitas menemukan 10 cacat, lalu review data menemukan 4 lagi (F14–F19, G7–G13)</td><td>Selalu ada putaran "apakah ini hanya aman untuk saat ini?"</td></tr>
+            <tr><td>Merge langsung setelah test lokal</td><td>CI wajib hijau sebelum merge, walaupun tanpa PR (W18)</td><td>Tanpa PR, CI adalah satu-satunya penjaga yang independen</td></tr>
+            <tr><td>Menu host di top bar, stepper horizontal, daftar peringkat berwarna penuh, garis aksen di podium</td><td>Sidebar + top bar breadcrumb, satu timeline vertikal, hanya juara berwarna penuh, isian samar (F20, F21, E17)</td><td>Konsistensi pola lebih penting daripada gaya per halaman; hindari pola desain generik</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Pelajaran desain</h3>
+      <ul>
+        <li>Mulai dari identitas yang punya arti di domainnya: lima warna peringkat untuk "top 5", logo segi lima dengan mata untuk "penta" dan "hoot".</li>
+        <li>Hierarki dulu: satu elemen paling mencolok per layar (juara, tombol aksi utama, countdown).</li>
+        <li>Warna per tema adalah token terpisah dan diukur kontrasnya; warna yang bagus di latar gelap sering gagal di latar terang.</li>
+        <li>Pola yang harus sama di banyak halaman dibuat dari satu sumber (generator shell di mockup, layout Blade di kode).</li>
+        <li>Hindari pola desain generik: garis aksen di tepi kartu, daftar serba warna, kontrol bawaan browser, radius acak.</li>
+        <li>Mockup digambar per perangkat nyata: HP 390 px, proyektor 16:9 dan 4:3, laptop 1440 px, plus layar status (menunggu, putus, error, selesai).</li>
+      </ul>
+
+      <h3>Cara memakai blueprint ini untuk proyek baru</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Baca PRD utuh</b><p>Ringkas, lalu tulis daftar celah dan kontradiksi sebelum mengusulkan apa pun.</p></div></li>
+        <li><span class="n">2</span><div><b>Jalankan checklist breakdown</b><p>Satu area per putaran. Setiap jawaban menjadi keputusan berID dengan status.</p></div></li>
+        <li><span class="n">3</span><div><b>Salin kerangka dokumen</b><p>Bab spesifikasi ini (asumsi, keputusan per area, arsitektur, data, rute, beda dari PRD, item terbuka, urutan kerja, alur pengembangan, operasional, rilis, sumber) dan <code>AGENTS.md</code> sebagai pegangan kerja.</p></div></li>
+        <li><span class="n">4</span><div><b>Tiga putaran review</b><p>Bandingkan dengan produk sejenis, tanya "hanya aman untuk saat ini?", lalu uji garis best practice vs over-engineering terhadap tenggat.</p></div></li>
+        <li><span class="n">5</span><div><b>Mockup dan review konsistensi</b><p>Semua layar per perangkat, satu shell untuk halaman admin, satu komponen per pola.</p></div></li>
+        <li><span class="n">6</span><div><b>Kunci, lalu eksekusi</b><p>Spesifikasi dikunci, item terbuka ditulis eksplisit, dan pekerjaan kode mulai dari batch fondasi dengan review setelahnya.</p></div></li>
+      </ol>
+    </section>
+
+    <section id="sumber">
+      <h2><span class="num">17</span>Sumber yang dipakai</h2>
+      <p class="sub">Semua sumber dibuka pada 28 September 2026. Perilaku Kahoot dipakai hanya sebagai pembanding, bukan acuan.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Klaim</th><th>Sumber</th></tr></thead>
+          <tbody>
+            <tr><td>Reverb butuh Redis hanya untuk banyak server. Event loop bawaan terbatas sekitar 1.024 koneksi.</td><td><a href="https://laravel.com/docs/12.x/reverb">Laravel 12 — Reverb</a></td></tr>
+            <tr><td>Broadcast default lewat queue. <code>ShouldBroadcastNow</code> memakai queue <code>sync</code>. Private channel menolak tamu yang belum login.</td><td><a href="https://laravel.com/docs/12.x/broadcasting">Laravel 12 — Broadcasting</a></td></tr>
+            <tr><td>Temporary URL tersedia untuk disk <code>local</code> dan <code>s3</code>.</td><td><a href="https://laravel.com/docs/12.x/filesystem">Laravel 12 — File Storage</a></td></tr>
+            <tr><td>Soft delete: <code>softDeletes()</code>, <code>withTrashed</code>, <code>restore()</code>.</td><td><a href="https://laravel.com/docs/12.x/eloquent">Laravel 12 — Eloquent</a></td></tr>
+            <tr><td>Laravel 13 butuh PHP ^8.3. Laravel 12 (v12.69.2) butuh PHP ^8.2.</td><td><a href="https://packagist.org/packages/laravel/framework">Packagist — laravel/framework</a></td></tr>
+            <tr><td>Filesystem Cloud Run berada di memori dan hilang saat instance berhenti.</td><td><a href="https://docs.cloud.google.com/run/docs/container-contract">Cloud Run — container contract</a></td></tr>
+            <tr><td>Kahoot: peserta masuk dengan PIN dan nickname tanpa akun. Ada 2-step Join. Player identifier hanya muncul di laporan.</td><td><a href="https://support.kahoot.com/hc/en-us/articles/35342050693789">Kahoot — 2-step Join</a>, <a href="https://support.kahoot.com/hc/en-us/articles/360036178314">Kahoot — Player identifier</a></td></tr>
+            <tr><td>Kahoot: skor bergantung kecepatan menjawab. Aturan seri tidak ditemukan di Help Center.</td><td><a href="https://support.kahoot.com/hc/en-us/articles/115002303908">Kahoot — How points work</a></td></tr>
+            <tr><td>Kahoot: soal di HP peserta adalah opsi host, alasannya aksesibilitas, dan kebutuhan bandwidth naik signifikan kalau semua HP memakai jaringan lokal yang sama.</td><td><a href="https://support.kahoot.com/hc/en-us/articles/115003197928">Kahoot — See questions on participant's screen</a></td></tr>
+            <tr><td>Kahoot: PIN mati saat game selesai. Laporan disimpan sampai dihapus host.</td><td><a href="https://support.kahoot.com/hc/en-us/articles/360000109048">Kahoot — PIN</a>, <a href="https://support.kahoot.com/hc/en-us/articles/1500004783782">Kahoot — reports</a></td></tr>
+            <tr><td>Laravel 12: bug fix sampai 13 Agustus 2026, security fix sampai 24 Februari 2027. PHP 8.2: security fix sampai 31 Desember 2026.</td><td><a href="https://laravel.com/docs/12.x/releases">Laravel 12 — Release notes</a>, <a href="https://www.php.net/supported-versions.php">php.net — Supported versions</a></td></tr>
+            <tr><td>Reverb menolak request di atas <code>max_request_size</code> (default 10.000 byte) dengan status 413.</td><td>Source <code>laravel/reverb</code>: <code>config/reverb.php:39</code>, <code>src/Servers/Reverb/Http/Server.php:79-81</code> (terpasang di repo internal <code>vivace-board</code>)</td></tr>
+            <tr><td>Kahoot: satu kahoot punya banyak laporan sesi ("View Other reports from this kahoot", "Play again"), dan bisa diduplikat untuk kelompok lain.</td><td><a href="https://support.kahoot.com/hc/en-us/articles/360035063054">Kahoot — quiz reports</a>, <a href="https://support.kahoot.com/hc/en-us/articles/115000472987">Kahoot — duplicate kahoots</a></td></tr>
+            <tr><td>Kahoot: bobot poin per soal (standar, ganda, tanpa poin). Host bisa mengunci pendaftaran ("Lock game joining").</td><td><a href="https://support.kahoot.com/hc/en-us/articles/115002303908">Kahoot — How points work</a>, <a href="https://support.kahoot.com/hc/en-us/articles/35342050693789">Kahoot — 2-step Join</a></td></tr>
+            <tr><td>SemVer: MAJOR untuk perubahan yang tidak kompatibel, MINOR untuk fungsi baru yang kompatibel, PATCH untuk perbaikan bug yang kompatibel. Angka naik secara numerik (1.9.0 → 1.10.0). Pre-release ditandai tanda hubung dan lebih rendah dari versi normal.</td><td><a href="https://semver.org/">semver.org</a></td></tr>
+            <tr><td>Changelog untuk manusia, berisi perubahan penting per versi, dengan kategori Added/Changed/Deprecated/Removed/Fixed/Security dan bagian Unreleased. Git log bukan changelog karena "full of noise".</td><td><a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog 1.1.0</a></td></tr>
+            <tr><td>Pest v4 memperkenalkan browser testing dengan Playwright: Chrome, Firefox, Safari, emulasi perangkat, beberapa halaman sekaligus, dan langkah setup GitHub Actions. Pest v4.7.8 butuh PHP ^8.3.</td><td><a href="https://pestphp.com/docs/browser-testing">Pest — Browser Testing</a>, <a href="https://packagist.org/packages/pestphp/pest">Packagist — pestphp/pest</a></td></tr>
+            <tr><td>Pest arch testing: preset Laravel, Strict, Security, dan aturan seperti larangan <code>dd</code>/<code>dump</code>. Mutation testing: <code>--mutate</code>, batas skor <code>--min</code>, butuh Xdebug 3 atau PCOV.</td><td><a href="https://pestphp.com/docs/arch-testing">Pest — Arch Testing</a>, <a href="https://pestphp.com/docs/mutation-testing">Pest — Mutation Testing</a></td></tr>
+            <tr><td>Tailwind v4.3: <code>@theme</code> membuat utility class dari token dan mengeksposnya sebagai CSS variable. Dark mode default mengikuti <code>prefers-color-scheme</code>, dan bisa diganti manual lewat <code>@custom-variant dark</code> dengan class atau atribut data.</td><td><a href="https://tailwindcss.com/docs/theme">Tailwind — Theme variables</a>, <a href="https://tailwindcss.com/docs/dark-mode">Tailwind — Dark mode</a></td></tr>
+            <tr><td>Pola deploy lewat SSH ke server PHP 8.2. Preseden Blade + Alpine + Echo + Reverb.</td><td>Repo internal <code>mp-so</code> (workflow deploy) dan <code>mp-marketing-panel</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Yang belum terverifikasi</h3>
+      <ul>
+        <li>Apakah host Kahoot bisa kembali ke soal sebelumnya. Tidak ditemukan di Help Center. Tidak memengaruhi keputusan D-5.</li>
+        <li>Nilai toleransi E3 dan waktu yang dibutuhkan satu broadcast langsung (F5). Keduanya diukur saat gladi.</li>
+        <li>Sebagian sumber di atas dibaca di dokumentasi Laravel 12 (Reverb, soft delete, <code>HasUuids</code> UUIDv7). Karena A8 sekarang Laravel 13, semuanya dicek ulang di dokumentasi 13.x dan di source yang terpasang saat skeleton dibuat. Broadcasting dan temporary URL sudah dicek di dokumentasi 13.x.</li>
+        <li>Perilaku unique index MySQL terhadap nilai NULL. Rancangan sengaja tidak bergantung padanya (D-3).</li>
+      </ul>
+    </section>
+
+    <footer class="doc">Disusun dari sesi breakdown PRD Pentahoot, 28 September 2026. ID keputusan (A, B, C, D, E, F, G, K, O, P, T, W) dipakai sebagai rujukan di tiket dan commit.</footer>
+  </main>
+</div>
