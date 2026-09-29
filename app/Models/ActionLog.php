@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\LoggedAction;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,7 @@ final class ActionLog extends Model
     protected function casts(): array
     {
         return [
+            'action' => LoggedAction::class,
             'payload' => 'array',
         ];
     }

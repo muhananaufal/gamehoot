@@ -36,8 +36,8 @@
     --color-field: #ffffff;
 
     /* Status chips and messages */
-    --color-neutral: #eeecf6;
-    --color-on-neutral: #3e3860;
+    --color-subtle: #eeecf6;
+    --color-on-subtle: #3e3860;
     --color-success: #e3f9f1;
     --color-on-success: #0e6b4f;
     --color-success-dot: #0e8f6a;
@@ -45,6 +45,8 @@
     --color-on-warning: #7a4b0a;
     --color-danger: #fbe7df;
     --color-on-danger: #b4460f;
+    --color-destructive: #c2410c;
+    --color-on-destructive: #ffffff;
 
     /* Sidebar: dark in both themes */
     --color-nav: #1a1433;
@@ -86,8 +88,8 @@
         --color-on-inverse: #1a1433;
         --color-field: #1f1840;
 
-        --color-neutral: #2e2656;
-        --color-on-neutral: #d9d3ff;
+        --color-subtle: #2e2656;
+        --color-on-subtle: #d9d3ff;
         --color-success: #123b30;
         --color-on-success: #7fe3bd;
         --color-success-dot: #2ed3a0;
@@ -113,6 +115,10 @@
         background-color: var(--color-canvas);
         color: var(--color-ink);
         font-family: var(--font-sans);
+    }
+
+    [x-cloak] {
+        display: none !important;
     }
 
     :focus-visible {
