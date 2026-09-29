@@ -1,9 +1,127 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * F21: views use semantic tokens only. The default palette is removed, so classes like
+ * bg-gray-900 generate nothing; tests/Architecture/ViewTokensTest.php also rejects them.
+ * Values come from the approved mockup. Dark mode only swaps token values below.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-*: initial;
+
+    --font-sans: var(--font-figtree);
+    --font-display: var(--font-fredoka);
+
+    --radius-control: 10px;
+    --radius-card: 16px;
+    --radius-panel: 20px;
+
+    /* Page */
+    --color-canvas: #f3f2f8;
+    --color-surface: #ffffff;
+    --color-bar: #ffffff;
+    --color-line: #e8e6f1;
+    --color-line-soft: #eeecf6;
+    --color-line-strong: #d5d0ea;
+    --color-ink: #1a1433;
+    --color-muted: #5e587a;
+    --color-inverse: #1a1433;
+    --color-on-inverse: #ffffff;
+
+    /* Actions */
+    --color-accent: #5b3fd9;
+    --color-accent-strong: #3f2a9e;
+    --color-on-accent: #ffffff;
+    --color-field: #ffffff;
+
+    /* Status chips and messages */
+    --color-neutral: #eeecf6;
+    --color-on-neutral: #3e3860;
+    --color-success: #e3f9f1;
+    --color-on-success: #0e6b4f;
+    --color-success-dot: #0e8f6a;
+    --color-warning: #f3e8d2;
+    --color-on-warning: #7a4b0a;
+    --color-danger: #fbe7df;
+    --color-on-danger: #b4460f;
+
+    /* Sidebar: dark in both themes */
+    --color-nav: #1a1433;
+    --color-nav-ink: #ffffff;
+    --color-nav-muted: #cfc8f2;
+    --color-nav-icon: #a79fd6;
+    --color-nav-label: #8f87c4;
+    --color-nav-active: #2e2656;
+
+    /* Ranks (E1, E17): rank 1 is a filled yellow in both themes */
+    --color-rank-1: #ffc933;
+    --color-on-rank-1: #1a1433;
+    --color-rank-2: #c23a1a;
+    --color-rank-3: #0b7a5a;
+    --color-rank-4: #1b63c4;
+    --color-rank-5: #c0266d;
+
+    /* Logo (E19): fixed brand colors, identical in both themes */
+    --color-brand-yellow: #ffc933;
+    --color-brand-coral: #ff6b4a;
+    --color-brand-mint: #2ed3a0;
+    --color-brand-blue: #3aa0ff;
+    --color-brand-pink: #ff5fa2;
+    --color-brand-eye: #ffffff;
+    --color-brand-pupil: #1a1433;
+}
+
+@layer base {
+    [data-theme='dark'] {
+        --color-canvas: #15102b;
+        --color-surface: #1f1840;
+        --color-bar: #1b1538;
+        --color-line: #2e2656;
+        --color-line-soft: #2e2656;
+        --color-line-strong: #3a3160;
+        --color-ink: #ece9fa;
+        --color-muted: #b8b0e8;
+        --color-inverse: #ece9fa;
+        --color-on-inverse: #1a1433;
+        --color-field: #1f1840;
+
+        --color-neutral: #2e2656;
+        --color-on-neutral: #d9d3ff;
+        --color-success: #123b30;
+        --color-on-success: #7fe3bd;
+        --color-success-dot: #2ed3a0;
+        --color-warning: #3b2e14;
+        --color-on-warning: #f0c66e;
+        --color-danger: #3d1f17;
+        --color-on-danger: #ff9a6b;
+
+        --color-rank-2: #ff6b4a;
+        --color-rank-3: #2ed3a0;
+        --color-rank-4: #3aa0ff;
+        --color-rank-5: #ff5fa2;
+
+        color-scheme: dark;
+    }
+
+    html {
+        color-scheme: light;
+        accent-color: var(--color-accent);
+    }
+
+    body {
+        background-color: var(--color-canvas);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--color-accent);
+        outline-offset: 2px;
+    }
+
+    /* F21: no browser-default scrollbars */
+    * {
+        scrollbar-color: var(--color-line-strong) transparent;
+    }
 }
