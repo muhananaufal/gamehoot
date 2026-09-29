@@ -1,0 +1,49 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+auth.json
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel runtime
+/bootstrap/cache/*.php
+/storage/*.key
+/storage/pail
+/storage/app/private/*
+/storage/app/public/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/public/hot
+/public/storage
+/public/build
+
+# Build and test artifacts
+/dist/
+/build/
+/coverage/
+.phpunit.result.cache
+.phpunit.cache/
+/tests/Browser/Screenshots/
+/playwright-report/
+/test-results/
+.phpstan.cache/
+
+# IDE and OS
+.idea/
+.vscode/
+.fleet/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
