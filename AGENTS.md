@@ -23,7 +23,7 @@ Aturan:
 - **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). Sampai versi server diketahui (O-B), hanya pakai fitur MySQL 8.0 ke atas; CI menguji MySQL 8.0 dan 8.4.
 - **Laravel Reverb** satu server, **tanpa Redis**, **tanpa queue worker** (F5, F7).
 - **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**.
-- **Pest v4** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
+- **Pest v5** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
 - Server production: **VM lewat SSH** dengan disk permanen (A7), menjalankan Docker.
 - **Bahasa antarmuka: Inggris** (A10). Isi yang ditulis host bebas bahasa.
 
@@ -149,9 +149,9 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6c. Aturan kode (K1–K8)
 
-- **Test arsitektur (K1):** Pest arch dengan preset Laravel, Strict (strict types, class `final`), Security, ditambah: controller tidak memakai facade `DB`, engine game tidak bergantung pada class HTTP, `dd`/`dump` dilarang. Aturan arsitektur baru di berkas ini harus punya arch test.
+- **Test arsitektur (K1):** Pest arch dengan preset PHP, Laravel, Security, ditambah aturan eksplisit strict types, strict equality, semua class `final`, larangan `sleep`/`usleep`, dan: controller tidak memakai facade `DB`, engine game tidak bergantung pada class HTTP, `dd`/`dump` dilarang. Aturan arsitektur baru di berkas ini harus punya arch test.
 - **Mutation test (K2):** `pest --mutate --min=<skor>` di CI untuk E1, E10, E3, E5.
-- **Larastan (K3):** tanpa baseline.
+- **Larastan (K3):** level 9, tanpa baseline. Pengecualian hanya dua panggilan DSL `arch()` Pest di `tests/Architecture` (lihat `phpstan.neon`); jangan menambah pengecualian lain tanpa alasan tertulis.
 - **Error API (K4):** selalu `{code, message}` dengan kode tetap (`VOTE_CLOSED`, `STALE_ACTION`, `NAME_TAKEN`, `EVENT_NOT_FOUND`, `CLAIMS_LOCKED`, ...). Setiap exception domain dipetakan ke satu kode.
 - **Log (K5):** terstruktur dengan `event_id` dan request id. **Dilarang mencatat nama peserta, token klaim, dan token link personal.**
 - **Konfigurasi (K6):** variabel wajib yang hilang membuat aplikasi gagal start dengan pesan jelas.
