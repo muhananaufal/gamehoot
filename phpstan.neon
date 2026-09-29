@@ -14,6 +14,9 @@ parameters:
         - routes
         - tests
     tmpDir: .phpstan.cache
+    # Read enum and date casts from the body of Model::casts(); the declared
+    # array<string, string> return type alone hides them.
+    parseModelCastsMethod: true
     ignoreErrors:
         # Pest's arch() returns TestCall and forwards preset()/expect() to the test case
         # through __call, which static analysis cannot follow. Only these two calls, only
