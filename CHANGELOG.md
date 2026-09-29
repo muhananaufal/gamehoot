@@ -20,3 +20,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Event owners can add co-hosts, transfer ownership, and delete events; deleted events can be restored by their owner or a super-admin.
 - Hosts can close and reopen events and lock new name claims.
 - Hosts can write Pentahoot and Word Guess question packs, reorder questions, and preview the answer boxes while writing.
+- Hosts manage each event's name list: add, rename and delete names, or import a CSV through a preview that flags duplicates before anything is saved.
+- Hosts can release a claimed name, make a new personal link, and export all personal links as CSV.
