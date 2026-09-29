@@ -1,5 +1,10 @@
 name: PHP image
-description: Builds the project PHP image (dev target) and installs Composer dependencies inside it.
+description: Builds a project PHP image target and installs Composer dependencies inside it.
+
+inputs:
+  target:
+    description: Dockerfile target, "dev" or "browser".
+    default: dev
 
 runs:
   using: composite
@@ -11,11 +16,11 @@ runs:
       uses: docker/build-push-action@v7.4.0
       with:
         context: .
-        target: dev
+        target: ${{ inputs.target }}
         load: true
         tags: pentahoot-php:ci
-        cache-from: type=gha,scope=php-dev
-        cache-to: type=gha,scope=php-dev,mode=max
+        cache-from: type=gha,scope=php-${{ inputs.target }}
+        cache-to: type=gha,scope=php-${{ inputs.target }},mode=max
 
     - name: Cache vendor
       uses: actions/cache@v6.1.0

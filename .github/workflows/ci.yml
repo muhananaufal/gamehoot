@@ -53,13 +53,57 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json', '.nvmrc') }}
       - name: Install, check and build
         run: |
-          docker run --rm -v "$PWD:/app" -w /app -e npm_config_cache=/app/.npm-cache "node:$(cat .nvmrc)-alpine3.23" sh -c '
+          docker run --rm -v "$PWD:/app" -w /app -e npm_config_cache=/app/.npm-cache "node:$(cat .nvmrc)-bookworm-slim" sh -c '
             npm ci --no-audit --no-fund &&
             npx eslint . &&
             npx prettier --check resources/js tests/js "*.config.js" &&
             npx vitest run &&
             npm run build
           '
+
+  browser:
+    name: Pest browser (${{ matrix.browser }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, safari]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-root
+          MYSQL_DATABASE: pentahoot_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/php-image
+        with:
+          target: browser
+      - name: Cache npm
+        uses: actions/cache@v6.1.0
+        with:
+          path: .npm-cache
+          key: npm-${{ hashFiles('package-lock.json', '.nvmrc') }}
+      - name: Install packages and build assets
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app -e npm_config_cache=/app/.npm-cache "node:$(cat .nvmrc)-bookworm-slim"             sh -c 'npm ci --no-audit --no-fund && npm run build'
+      - name: Run browser tests (W11)
+        run: |
+          app_key="base64:$(openssl rand -base64 32)"
+          docker run --rm --network host -v "$PWD:/var/www/html"             -e APP_KEY="$app_key"             -e DB_HOST=127.0.0.1 -e DB_PORT=3306             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root             pentahoot-php:ci php artisan test --testsuite=Browser --browser ${{ matrix.browser }}
+      - name: Keep failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: browser-screenshots-${{ matrix.browser }}
+          path: tests/Browser/Screenshots
 
   secrets:
     name: Gitleaks
