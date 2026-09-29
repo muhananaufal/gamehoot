@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-29
+
+Foundation stage: accounts, events, question packs, name lists and joining from phones.
+
 ### Added
 
 - Application foundation: Laravel 13 on PHP 8.4 in Docker, backed by MySQL.
@@ -24,3 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hosts can release a claimed name, make a new personal link, and export all personal links as CSV.
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
+
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.1.0...develop
+[0.1.0]: https://github.com/devivace-groups/pentahoot/releases/tag/v0.1.0
