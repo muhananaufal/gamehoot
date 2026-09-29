@@ -69,6 +69,9 @@ return [
 
     'timezone' => 'UTC',
 
+    // T10: stored in UTC, shown in WIB.
+    'display_timezone' => 'Asia/Jakarta',
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
