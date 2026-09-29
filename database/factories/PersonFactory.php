@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Event;
 use App\Models\Person;
+use App\People\PersonName;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -26,8 +27,8 @@ final class PersonFactory extends Factory
         return [
             'event_id' => Event::factory(),
             'name' => $name,
-            'name_normalized' => Str::lower($name),
-            'join_token' => Str::random(40),
+            'name_normalized' => PersonName::normalize($name),
+            'join_token' => Str::random(16),
             'claim_token_hash' => null,
             'claimed_at' => null,
         ];
