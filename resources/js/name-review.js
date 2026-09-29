@@ -32,10 +32,18 @@ export function findDuplicates(names, existing) {
     return problems;
 }
 
-export function nameReview({ names = [], existing = {} } = {}) {
+export function nameReview({ names = [], existing = {}, labels = {} } = {}) {
     return {
         rows: names.map((name, i) => ({ id: i, name })),
         existing,
+        labels,
+
+        // Translated texts come from the page as { one, other } with __N__ where the number goes.
+        label(key, count) {
+            const forms = this.labels[key] ?? { one: '', other: '' };
+
+            return (count === 1 ? forms.one : forms.other).replace('__N__', count);
+        },
 
         get problems() {
             return findDuplicates(
