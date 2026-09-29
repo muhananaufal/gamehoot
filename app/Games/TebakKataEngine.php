@@ -25,22 +25,24 @@ final class TebakKataEngine implements GameEngine
             'prompt' => ['required', 'string', 'max:500'],
             // T9, E5
             'answer_text' => ['required', 'string', 'max:40', new KataAnswer],
-            'initial_open_indexes' => ['present', 'array', new KataOpenIndexes('answer_text')],
+            // Absent when no box is opened: the form sends no inputs for an empty selection.
+            'initial_open_indexes' => ['nullable', 'array', new KataOpenIndexes('answer_text')],
             'initial_open_indexes.*' => ['integer', 'distinct'],
             // E16
-            'points' => ['required', 'integer', 'between:0,10'],
+            'points' => ['required', 'integer', 'between:0,2'],
         ];
     }
 
     public function detailAttributes(array $validated): array
     {
-        $attributes = Arr::only($validated, ['prompt', 'answer_text', 'initial_open_indexes']);
+        $attributes = Arr::only($validated, ['prompt', 'answer_text']);
+        $attributes['initial_open_indexes'] = $validated['initial_open_indexes'] ?? [];
 
         if (isset($attributes['answer_text']) && is_string($attributes['answer_text'])) {
             $attributes['answer_text'] = trim($attributes['answer_text']);
         }
 
-        if (isset($attributes['initial_open_indexes']) && is_array($attributes['initial_open_indexes'])) {
+        if (is_array($attributes['initial_open_indexes'])) {
             // Form input arrives as numeric strings; questionRules() already rejected anything else.
             $indexes = [];
             foreach ($attributes['initial_open_indexes'] as $index) {
