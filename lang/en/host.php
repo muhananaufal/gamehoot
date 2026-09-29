@@ -12,6 +12,7 @@ return [
         'question_packs' => 'Question packs',
         'deleted_events' => 'Deleted events',
         'all_deleted_events' => 'All deleted events',
+        'names' => 'Names',
         'settings' => 'Settings',
         'open_menu' => 'Open menu',
         'close_menu' => 'Close menu',
