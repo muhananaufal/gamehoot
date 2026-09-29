@@ -26,7 +26,7 @@ Requirements: Docker with Compose, Git, and a MySQL 8.0+ server on your machine.
    cp .env.example .env
    ```
 
-   On Windows with the Docker engine inside WSL, also set `PROJECT_PATH` to the WSL path of the project (for example `/mnt/c/Projects/devivace/pentahoot`).
+   On Windows with the Docker engine inside WSL, also set `PROJECT_PATH` to the WSL path of the project (for example `/mnt/c/Projects/devivace/pentahoot`). If port 8000 is already taken on your machine, set `APP_PORT` (and `APP_URL`) to a free one.
 
 3. Build the image, install dependencies, and prepare the database:
 
@@ -44,7 +44,7 @@ Requirements: Docker with Compose, Git, and a MySQL 8.0+ server on your machine.
    git config core.hooksPath .githooks
    ```
 
-5. Start the app at http://localhost:8000 (the `node` service runs the Vite dev server on port 5173):
+5. Start the app at http://localhost:8000, or your `APP_PORT` (the `node` service runs the Vite dev server on port 5173):
 
    ```bash
    docker compose up
@@ -65,3 +65,16 @@ docker compose run --rm -T node npx vitest run
 ```
 
 Tests refuse to run against a database whose name does not end in `_test`, because they drop every table first.
+
+## Browser tests (W11)
+
+Browser tests drive real Chromium and WebKit (Safari) with Playwright, using the built assets. They live in `tests/Browser` and run in the `browser` image, not in `php artisan test`:
+
+```bash
+docker compose build browser                    # once, and after Dockerfile changes
+docker compose run --rm -T node npm run build   # stop the Vite dev server first
+docker compose run --rm browser php artisan test --testsuite=Browser --browser chrome
+docker compose run --rm browser php artisan test --testsuite=Browser --browser safari
+```
+
+Failure screenshots are written to `tests/Browser/Screenshots`. Known limits of the plugin (file uploads, WebKit sign in) are listed under W11 in the specification.
