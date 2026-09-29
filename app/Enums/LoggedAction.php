@@ -21,4 +21,6 @@ enum LoggedAction: string
     case OwnershipTransferred = 'event.ownership_transferred';
     case JoinLocked = 'event.join_locked';
     case JoinUnlocked = 'event.join_unlocked';
+
+    case ClaimReleased = 'person.claim_released';
 }
