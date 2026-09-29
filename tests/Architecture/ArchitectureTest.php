@@ -30,6 +30,11 @@ arch('debug and blocking helpers are not used')
     ->expect(['dd', 'dump', 'ray', 'var_dump', 'sleep', 'usleep'])
     ->not->toBeUsed();
 
+// K1, F13: game engines are plain domain code, callable from HTTP, console and tests alike.
+arch('game engines do not depend on HTTP classes')
+    ->expect('App\Games')
+    ->not->toUse(['App\Http', 'Illuminate\Http', 'Illuminate\Routing', 'Illuminate\Support\Facades\Request']);
+
 arch('controllers do not query the database directly')
     ->expect('App\Http\Controllers')
     ->not->toUse('Illuminate\Support\Facades\DB');
