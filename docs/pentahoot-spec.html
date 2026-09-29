@@ -743,7 +743,7 @@ flowchart LR
           <thead><tr><th>ID</th><th>Aturan turunan peta rute</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td class="id">F10</td><td>Rute <code>/{event}</code> menangkap semua path satu tingkat di root. Karena itu rute lain didaftarkan lebih dulu, dan slug event menolak kata yang dicadangkan: <code>host, admin, login, logout, media, broadcasting, storage, build, up</code>.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
-            <tr><td class="id">F11</td><td>Rate limit vote dan klaim <b>tidak berbasis IP</b>. Semua HP di WiFi venue kemungkinan besar terlihat sebagai satu IP, sehingga rate limit per IP akan memblokir seluruh ruangan. Vote dibatasi per token klaim. Klaim dan <code>/login</code> dibatasi per IP dengan batas longgar.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">F11</td><td>Rate limit vote dan klaim <b>tidak berbasis IP</b>. Semua HP di WiFi venue kemungkinan besar terlihat sebagai satu IP, sehingga rate limit per IP akan memblokir seluruh ruangan. Vote dibatasi per token klaim. Klaim dan <code>/login</code> dibatasi per IP dengan batas longgar (login: 30 request per menit per IP). Login juga dibatasi 5 percobaan gagal per menit per email, supaya satu akun tidak bisa ditebak passwordnya tanpa memblokir ruangan.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">F12</td><td>Daftar nama yang belum diklaim bisa dilihat siapa pun yang tahu slug event, karena join umum membutuhkannya. Risiko ini diterima untuk acara internal.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
           </tbody>
         </table>
@@ -1257,7 +1257,7 @@ erDiagram
                 <li>Upload divalidasi dari isi file, bukan ekstensi.</li>
                 <li>Header keamanan, termasuk CSP.</li>
                 <li>CSRF untuk semua POST, termasuk dari peserta.</li>
-                <li>Aturan password akun host.</li>
+                <li>Aturan password akun host: minimal 12 karakter, berisi huruf dan angka. Berlaku untuk form admin dan <code>pentahoot:create-super-admin</code>.</li>
                 <li>Satu sesi audit keamanan sebelum rilis <code>v1.0.0</code>.</li>
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
