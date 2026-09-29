@@ -17,7 +17,7 @@ final class UserFactory extends Factory
     /**
      * The current password being used by the factory.
      */
-    protected static ?string $password;
+    private static ?string $password = null;
 
     /**
      * Define the model's default state.
@@ -29,19 +29,20 @@ final class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => self::$password ??= Hash::make('password'),
+            'is_super_admin' => false,
+            'disabled_at' => null,
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function superAdmin(): self
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(fn (): array => ['is_super_admin' => true]);
+    }
+
+    public function disabled(): self
+    {
+        return $this->state(fn (): array => ['disabled_at' => now()]);
     }
 }
