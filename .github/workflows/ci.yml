@@ -96,6 +96,7 @@ jobs:
           docker run --rm -v "$PWD:/app" -w /app -e npm_config_cache=/app/.npm-cache "node:$(cat .nvmrc)-bookworm-slim"             sh -c 'npm ci --no-audit --no-fund && npm run build'
       - name: Run browser tests (W11)
         run: |
+          cp .env.example .env
           app_key="base64:$(openssl rand -base64 32)"
           docker run --rm --network host -v "$PWD:/var/www/html"             -e APP_KEY="$app_key"             -e DB_HOST=127.0.0.1 -e DB_PORT=3306             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root             pentahoot-php:ci php artisan test --testsuite=Browser --browser ${{ matrix.browser }}
       - name: Keep failure screenshots
@@ -140,9 +141,10 @@ jobs:
       - uses: ./.github/actions/php-image
       - name: Run test suite
         run: |
+          cp .env.example .env
           app_key="base64:$(openssl rand -base64 32)"
           docker run --rm --network host -v "$PWD:/var/www/html" \
             -e APP_KEY="$app_key" \
             -e DB_HOST=127.0.0.1 -e DB_PORT=3306 \
             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root \
-            pentahoot-php:ci php artisan test
+            pentahoot-php:ci php artisan test --display-warnings
