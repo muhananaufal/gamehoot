@@ -28,5 +28,8 @@ final class AppServiceProvider extends ServiceProvider
         // F11: loose per IP because a whole venue may share one address. Failed attempts per
         // account are limited more strictly in LoginRequest.
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip() ?? 'unknown'));
+
+        // F11: a whole venue may share one address, so the per-IP claim limit is generous.
+        RateLimiter::for('claim', fn (Request $request): Limit => Limit::perMinute(300)->by($request->ip() ?? 'unknown'));
     }
 }
