@@ -1,0 +1,16 @@
+# Local development (O9). The database is not a container: the app connects to the
+# MySQL server already running on this machine (A9), reached through host-gateway.
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    image: pentahoot-php:dev
+    working_dir: /var/www/html
+    volumes:
+      - ${PROJECT_PATH:-.}:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    ports:
+      - "8000:8000"
