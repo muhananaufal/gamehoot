@@ -9,6 +9,7 @@ return [
         'admin' => 'Admin',
         'events' => 'Events',
         'host_accounts' => 'Host accounts',
+        'question_packs' => 'Question packs',
         'deleted_events' => 'Deleted events',
         'all_deleted_events' => 'All deleted events',
         'settings' => 'Settings',
