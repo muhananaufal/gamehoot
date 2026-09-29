@@ -1,0 +1,13 @@
+#!/bin/sh
+# W15: staged PHP files must pass Pint. Runs in the app container so the PHP version matches CI.
+# Enable once per clone with: git config core.hooksPath .githooks
+set -eu
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.php')
+[ -z "$files" ] && exit 0
+
+# shellcheck disable=SC2086 # one argument per file; repo paths contain no spaces
+docker compose run --rm -T app vendor/bin/pint --test $files || {
+    echo "pre-commit: Pint found formatting issues. Run 'docker compose run --rm -T app vendor/bin/pint' and stage the result." >&2
+    exit 1
+}
