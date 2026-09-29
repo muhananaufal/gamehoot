@@ -8,6 +8,10 @@
     };
 @endphp
 <x-layouts.host :title="__('host.dashboard.title')" :breadcrumbs="[[__('host.dashboard.title'), null]]">
+    <x-slot:actions>
+        <x-button :href="route('host.events.create')">{{ __('events.new_event') }}</x-button>
+    </x-slot:actions>
+
     <div class="flex flex-wrap items-center justify-between gap-3">
         <nav class="flex flex-wrap gap-2" aria-label="{{ __('host.dashboard.status') }}">
             @foreach ([null, ...EventStatus::cases()] as $filter)
@@ -48,7 +52,7 @@
                     @foreach ($events as $event)
                         <tr class="border-b border-line-soft last:border-0">
                             <td class="px-6 py-4">
-                                <span class="block text-base font-bold">{{ $event->name }}</span>
+                                <a href="{{ route('host.events.edit', $event) }}" class="block text-base font-bold hover:text-accent">{{ $event->name }}</a>
                                 <span class="text-[13px] text-muted">/{{ $event->slug }}</span>
                             </td>
                             <td class="px-4 py-4">

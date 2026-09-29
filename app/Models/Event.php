@@ -84,6 +84,33 @@ final class Event extends Model
         return $this->belongsTo(Game::class, 'active_game_id');
     }
 
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->owner_id === $user->id;
+    }
+
+    public function isHostedBy(User $user): bool
+    {
+        return $this->isOwnedBy($user) || $this->cohosts()->whereKey($user->id)->exists();
+    }
+
+    /**
+     * F15: every change clients can see bumps the version carried by snapshots.
+     * Callers save the model inside their transaction.
+     */
+    public function bumpStateVersion(): void
+    {
+        $this->state_version++;
+    }
+
+    /**
+     * D-3: the link a deleted event had, before it was freed.
+     */
+    public function originalSlug(): string
+    {
+        return (string) preg_replace('/--deleted-[0-9a-f-]{36}$/', '', $this->slug);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

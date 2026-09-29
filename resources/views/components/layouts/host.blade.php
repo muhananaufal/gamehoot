@@ -2,6 +2,8 @@
     'title',
     // list of [label, url|null]; the last item is the current page.
     'breadcrumbs' => [],
+    // F20: the event menu appears while working inside one event.
+    'event' => null,
 ])
 @php
     /** @var \App\Models\User $user */
@@ -28,11 +30,24 @@
                 <x-host-nav-link :href="route('host.dashboard')" icon="calendar" :active="request()->routeIs('host.dashboard')">
                     {{ __('host.nav.events') }}
                 </x-host-nav-link>
+                <x-host-nav-link :href="route('host.trash.index')" icon="trash" :active="request()->routeIs('host.trash.*')">
+                    {{ __('host.nav.deleted_events') }}
+                </x-host-nav-link>
+
+                @if ($event)
+                    <span class="truncate px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase">{{ $event->name }}</span>
+                    <x-host-nav-link :href="route('host.events.edit', $event)" icon="settings" :active="request()->routeIs('host.events.edit')">
+                        {{ __('host.nav.settings') }}
+                    </x-host-nav-link>
+                @endif
 
                 @can('viewAny', \App\Models\User::class)
                     <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase">{{ __('host.nav.admin') }}</span>
                     <x-host-nav-link :href="route('admin.users.index')" icon="user" :active="request()->routeIs('admin.users.*')">
                         {{ __('host.nav.host_accounts') }}
+                    </x-host-nav-link>
+                    <x-host-nav-link :href="route('admin.trash.index')" icon="trash" :active="request()->routeIs('admin.trash.*')">
+                        {{ __('host.nav.all_deleted_events') }}
                     </x-host-nav-link>
                 @endcan
             </nav>
