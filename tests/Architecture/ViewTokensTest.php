@@ -9,25 +9,6 @@ declare(strict_types=1);
 const PALETTE = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|black|white';
 
 /**
- * @return array<string, array{string}>
- */
-function bladeViews(): array
-{
-    $root = dirname(__DIR__, 2).'/resources/views';
-    $views = [];
-
-    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
-
-    foreach ($files as $file) {
-        if ($file instanceof SplFileInfo && str_ends_with($file->getFilename(), '.blade.php')) {
-            $views[substr($file->getPathname(), strlen($root) + 1)] = [$file->getPathname()];
-        }
-    }
-
-    return $views;
-}
-
-/**
  * @return list<string>
  */
 function colorViolations(string $contents): array
