@@ -39,6 +39,9 @@
 
                 @if ($event)
                     <span class="truncate px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase">{{ $event->name }}</span>
+                    <x-host-nav-link :href="route('host.events.people.index', $event)" icon="user" :active="request()->routeIs('host.events.people.*')">
+                        {{ __('host.nav.names') }}
+                    </x-host-nav-link>
                     <x-host-nav-link :href="route('host.events.edit', $event)" icon="settings" :active="request()->routeIs('host.events.edit')">
                         {{ __('host.nav.settings') }}
                     </x-host-nav-link>

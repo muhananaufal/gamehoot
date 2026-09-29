@@ -16,6 +16,10 @@ use App\Http\Controllers\Host\JoinLockController;
 use App\Http\Controllers\Host\OpenEventController;
 use App\Http\Controllers\Host\PackQuestionController;
 use App\Http\Controllers\Host\PackQuestionOrderController;
+use App\Http\Controllers\Host\PersonClaimController;
+use App\Http\Controllers\Host\PersonController;
+use App\Http\Controllers\Host\PersonImportController;
+use App\Http\Controllers\Host\PersonLinksController;
 use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
 use App\Http\Controllers\Host\TrashController;
@@ -72,6 +76,20 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             Route::post('/close', CloseEventController::class)->name('close')->can('close', 'event');
             Route::post('/reopen', ReopenEventController::class)->name('reopen')->can('reopen', 'event');
             Route::post('/join-lock', JoinLockController::class)->name('join-lock')->can('lockJoining', 'event');
+
+            // B-3, B-4, B-6, T5: the master name list.
+            Route::prefix('/people')->name('people.')->scopeBindings()->middleware('can:update,event')->group(function (): void {
+                Route::get('/', [PersonController::class, 'index'])->name('index');
+                Route::post('/', [PersonController::class, 'store'])->name('store');
+                Route::get('/import', [PersonImportController::class, 'create'])->name('import.create');
+                Route::post('/import', [PersonImportController::class, 'store'])->name('import.store');
+                Route::post('/import/confirm', [PersonImportController::class, 'update'])->name('import.confirm');
+                Route::get('/links.csv', PersonLinksController::class)->name('links');
+                Route::put('/{person}', [PersonController::class, 'update'])->whereUuid('person')->name('update');
+                Route::delete('/{person}', [PersonController::class, 'destroy'])->whereUuid('person')->name('destroy');
+                Route::post('/{person}/release-claim', [PersonClaimController::class, 'store'])->whereUuid('person')->name('release-claim');
+                Route::post('/{person}/regenerate-link', [PersonClaimController::class, 'update'])->whereUuid('person')->name('regenerate-link');
+            });
         });
     });
 
