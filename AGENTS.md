@@ -19,11 +19,11 @@ Aturan:
 
 ## 2. Keputusan yang dikunci — jangan diusulkan ulang
 
-- **Laravel 13 + PHP 8.4, dijalankan di Docker** di lokal, CI, staging, dan production: container `app` (php-fpm), `web` (nginx), `reverb` (A8). Pola compose mengikuti staging `vivace-board`.
+- **Laravel 13 + PHP 8.4, dijalankan di Docker** di lokal, CI, staging, dan production: container `app` (php-fpm), `web` (nginx), `reverb` (A8). Pola compose mengikuti staging `vivace-board`. Base image **Debian bookworm**, bukan Alpine: Playwright (W11) hanya mendukung Debian/Ubuntu (P2).
 - **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). Sampai versi server diketahui (O-B), hanya pakai fitur MySQL 8.0 ke atas; CI menguji MySQL 8.0 dan 8.4.
 - **Laravel Reverb** satu server, **tanpa Redis**, **tanpa queue worker** (F5, F7).
 - **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**.
-- **Pest v4** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
+- **Pest v5** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
 - Server production: **VM lewat SSH** dengan disk permanen (A7), menjalankan Docker.
 - **Bahasa antarmuka: Inggris** (A10). Isi yang ditulis host bebas bahasa.
 
@@ -111,9 +111,16 @@ Changelog (W10):
 Wajib lulus sebelum commit dan sebelum merge. Laporkan hasilnya apa adanya, termasuk yang gagal.
 
 ```bash
-php artisan test            # Pest, suite penuh
+php artisan test            # Pest: Unit, Feature, Architecture
 vendor/bin/pint --test      # format
 vendor/bin/phpstan analyse  # Larastan
+```
+
+Untuk perubahan yang punya tampilan, jalankan juga test browser (W11) di kedua browser, setelah `npm run build`:
+
+```bash
+docker compose run --rm browser php artisan test --testsuite=Browser --browser chrome
+docker compose run --rm browser php artisan test --testsuite=Browser --browser safari
 ```
 
 Klaim "selesai" hanya boleh dibuat setelah perintah di atas dijalankan ulang dan output-nya dibaca. Hasil run sebelumnya tidak dihitung.
@@ -149,9 +156,9 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6c. Aturan kode (K1–K8)
 
-- **Test arsitektur (K1):** Pest arch dengan preset Laravel, Strict (strict types, class `final`), Security, ditambah: controller tidak memakai facade `DB`, engine game tidak bergantung pada class HTTP, `dd`/`dump` dilarang. Aturan arsitektur baru di berkas ini harus punya arch test.
+- **Test arsitektur (K1):** Pest arch dengan preset PHP, Laravel, Security, ditambah aturan eksplisit strict types, strict equality, semua class `final`, larangan `sleep`/`usleep`, dan: controller tidak memakai facade `DB`, engine game tidak bergantung pada class HTTP, `dd`/`dump` dilarang. Aturan arsitektur baru di berkas ini harus punya arch test.
 - **Mutation test (K2):** `pest --mutate --min=<skor>` di CI untuk E1, E10, E3, E5.
-- **Larastan (K3):** tanpa baseline.
+- **Larastan (K3):** level 9, tanpa baseline. Pengecualian hanya dua panggilan DSL `arch()` Pest di `tests/Architecture` (lihat `phpstan.neon`); jangan menambah pengecualian lain tanpa alasan tertulis.
 - **Error API (K4):** selalu `{code, message}` dengan kode tetap (`VOTE_CLOSED`, `STALE_ACTION`, `NAME_TAKEN`, `EVENT_NOT_FOUND`, `CLAIMS_LOCKED`, ...). Setiap exception domain dipetakan ke satu kode.
 - **Log (K5):** terstruktur dengan `event_id` dan request id. **Dilarang mencatat nama peserta, token klaim, dan token link personal.**
 - **Konfigurasi (K6):** variabel wajib yang hilang membuat aplikasi gagal start dengan pesan jelas.
@@ -160,7 +167,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6d. Pipeline (P1–P7)
 
-- **Image (P1, P2):** dibangun sekali di CI, disimpan di GitHub Container Registry dengan tag commit SHA dan versi. Build bertahap, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
+- **Image (P1, P2):** dibangun sekali di CI, disimpan di GitHub Container Registry dengan tag commit SHA dan versi. Build bertahap, base image Debian bookworm, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
 - **Scan (P3):** gitleaks + Trivy + `composer audit`.
 - **Deploy (P4):** lewat SSH, **tanpa `git pull` dan tanpa `composer install` di server**: salin `compose.yaml` → `IMAGE_TAG=<sha> docker compose pull` → `docker compose run --rm app php artisan migrate --force` → `docker compose up -d` → smoke test `/up` + satu koneksi WebSocket → kalau gagal, kembali ke tag image sebelumnya.
 - **Production (P5):** deploy menunggu persetujuan manual di environment GitHub.
@@ -177,7 +184,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 | Feature | Setiap rute + hak aksesnya (bagian 08 spesifikasi) |
 | Kontrak realtime | Ukuran setiap jenis snapshot < 10 KB (F14), `state_version` naik di setiap perubahan (F15) |
 | Beban | Skrip F19 di staging sebelum gladi |
-| Browser (W11) | Pest Browser Testing untuk alur end-to-end (host + Public View + HP dalam satu test, termasuk Safari/WebKit dan emulasi iPhone); Vitest untuk logika JS murni (F4, F15, F17, E5) |
+| Browser (W11) | Pest Browser Testing untuk alur end-to-end (host + Public View + HP dalam satu test, termasuk Safari/WebKit dan emulasi iPhone); Vitest untuk logika JS murni (F4, F15, F17, E5). Setiap test browser memanggil `assertNoJavaScriptErrors()`. Batasan plugin 5.0.1 (upload file tidak bisa diuji di browser, login lewat form hanya di Chromium) ada di W11 spesifikasi. |
 
 Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki sampai hijau, dan test itu tetap tinggal sebagai regression test.
 

@@ -1,0 +1,26 @@
+#!/bin/sh
+# W15: staged PHP files must pass Pint, staged JS files ESLint and Prettier. The tools run in
+# the same containers as CI so versions match.
+# Enable once per clone with: git config core.hooksPath .githooks
+set -eu
+
+php_files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.php')
+# Joined with spaces: the list is interpolated into an sh -c string, where a newline would
+# end the command.
+js_files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.js' | tr '\n' ' ')
+
+# shellcheck disable=SC2086 # one argument per file; repo paths contain no spaces
+if [ -n "$php_files" ]; then
+    docker compose run --rm -T app vendor/bin/pint --test $php_files || {
+        echo "pre-commit: Pint found formatting issues. Run 'docker compose run --rm -T app vendor/bin/pint' and stage the result." >&2
+        exit 1
+    }
+fi
+
+# shellcheck disable=SC2086
+if [ -n "$js_files" ]; then
+    docker compose run --rm -T node sh -c "npx eslint $js_files && npx prettier --check $js_files" || {
+        echo "pre-commit: ESLint or Prettier failed. Run 'docker compose run --rm -T node npx prettier --write <files>' and stage the result." >&2
+        exit 1
+    }
+fi

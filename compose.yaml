@@ -1,0 +1,41 @@
+# Local development (O9). The database is not a container: the app connects to the
+# MySQL server already running on this machine (A9), reached through host-gateway.
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    image: pentahoot-php:dev
+    working_dir: /var/www/html
+    volumes:
+      - ${PROJECT_PATH:-.}:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    ports:
+      - "${APP_PORT:-8000}:8000"
+
+  # Browser tests (W11): run with `docker compose run --rm browser`.
+  browser:
+    build:
+      context: .
+      target: browser
+    image: pentahoot-php:browser
+    working_dir: /var/www/html
+    volumes:
+      - ${PROJECT_PATH:-.}:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["php", "artisan", "test", "--testsuite=Browser"]
+    profiles: ["test"]
+
+  # Vite dev server. Node runs in a container on the same Debian base as the PHP image, so
+  # native packages (Tailwind, Rollup) match CI and the production build (6a).
+  node:
+    image: node:24.15.0-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ${PROJECT_PATH:-.}:/app
+    command: ["npm", "run", "dev"]
+    ports:
+      - "5173:5173"
