@@ -12,6 +12,16 @@ use RuntimeException;
 abstract class TestCase extends BaseTestCase
 {
     /**
+     * Pages render without built assets: CI runs the PHP suite without a Vite build.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
+    /**
      * Refuses to boot the tests against any database whose name does not end in "_test",
      * because RefreshDatabase drops every table before the first test runs.
      */

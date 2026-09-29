@@ -35,15 +35,16 @@ Requirements: Docker with Compose, Git, and a MySQL 8.0+ server on your machine.
    docker compose run --rm -T app composer install
    docker compose run --rm -T app php artisan key:generate
    docker compose run --rm -T app php artisan migrate
+   docker compose run --rm -T node npm ci
    ```
 
-4. Enable the Git hooks (Pint on staged PHP files, Conventional Commits check):
+4. Enable the Git hooks (Pint on staged PHP files, ESLint and Prettier on staged JS files, Conventional Commits check):
 
    ```bash
    git config core.hooksPath .githooks
    ```
 
-5. Start the app at http://localhost:8000:
+5. Start the app at http://localhost:8000 (the `node` service runs the Vite dev server on port 5173):
 
    ```bash
    docker compose up
@@ -58,6 +59,9 @@ docker compose run --rm -T app php artisan test
 docker compose run --rm -T app vendor/bin/pint --test
 docker compose run --rm -T app vendor/bin/phpstan analyse
 docker compose run --rm -T app composer audit
+docker compose run --rm -T node npx eslint .
+docker compose run --rm -T node npx prettier --check resources/js tests/js "*.config.js"
+docker compose run --rm -T node npx vitest run
 ```
 
 Tests refuse to run against a database whose name does not end in `_test`, because they drop every table first.
