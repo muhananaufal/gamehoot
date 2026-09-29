@@ -7,6 +7,7 @@ namespace App\Http\Requests\Host;
 use App\Enums\ScreenTheme;
 use App\Models\Event;
 use App\Rules\EventSlug;
+use App\Support\EventLink;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -42,15 +43,24 @@ final class StoreEventRequest extends FormRequest
     }
 
     /**
-     * An empty link is made from the name; the result is validated like a typed one.
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['slug' => __('events.link_attribute')];
+    }
+
+    /**
+     * An empty link is made from the name and kept free (EventLink); a typed one is
+     * validated as it is.
      */
     protected function prepareForValidation(): void
     {
         $slug = Str::lower($this->string('slug')->trim()->toString());
 
         if ($slug === '') {
-            $slug = Str::limit(Str::slug($this->string('name')->toString()), 60, '');
-            $slug = rtrim($slug, '-');
+            $event = $this->route('event');
+            $slug = EventLink::fromName($this->string('name')->toString(), $event instanceof Event ? $event : null);
         }
 
         $this->merge(['slug' => $slug]);

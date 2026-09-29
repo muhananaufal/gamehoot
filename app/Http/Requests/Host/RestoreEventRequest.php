@@ -31,6 +31,14 @@ final class RestoreEventRequest extends FormRequest
         return ['slug.unique' => __('events.restore_slug_taken')];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return ['slug' => __('events.link_attribute')];
+    }
+
     protected function prepareForValidation(): void
     {
         $this->merge(['slug' => Str::lower($this->string('slug')->trim()->toString())]);

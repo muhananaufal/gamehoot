@@ -136,6 +136,12 @@ describe('CSV import with preview (B-4, T4)', function (): void {
             ->assertSee('Same as row 1.')
             ->assertSee('Same as “Rita Wulandari” already in this event', false);
 
+        // Directives inside component attributes would reach Alpine as raw text.
+        actingAs(hostOf($event))
+            ->post("/host/{$event->id}/people/import", ['file' => csvUpload('Budi
+')])
+            ->assertDontSee('@js(', false);
+
         expect(Person::query()->count())->toBe(1);
     });
 

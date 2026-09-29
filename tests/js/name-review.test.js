@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { displayName, findDuplicates, normalizeName } from '../../resources/js/name-review.js';
+import { displayName, findDuplicates, nameReview, normalizeName } from '../../resources/js/name-review.js';
 
 // Mirrors App\People\PersonName and App\People\DuplicateNames (B-4).
 describe('B-4 name review', () => {
@@ -20,5 +20,18 @@ describe('B-4 name review', () => {
 
     it('clears a problem once the name is changed', () => {
         expect(findDuplicates(['Budi', 'Budi (IT)'], {})).toEqual({});
+    });
+
+    it('fills live counts into the translated labels, singular or plural', () => {
+        const review = nameReview({
+            names: ['Budi', 'budi', 'Ana'],
+            labels: { save: { one: 'Save __N__ name', other: 'Save __N__ names' } },
+        });
+        expect(review.problemCount).toBe(1);
+        review.remove(1);
+        expect(review.label('save', review.rows.length)).toBe('Save 2 names');
+        expect(review.problemCount).toBe(0);
+        review.remove(0);
+        expect(review.label('save', review.rows.length)).toBe('Save 1 name');
     });
 });

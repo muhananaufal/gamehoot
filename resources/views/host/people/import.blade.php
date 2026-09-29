@@ -16,7 +16,7 @@
             </div>
             <x-timeline :steps="[
                 ['label' => __('people.step_upload'), 'hint' => $reviewing ? $fileName : null, 'state' => $reviewing ? 'done' : 'current'],
-                ['label' => __('people.step_review'), 'hint' => $reviewing ? __('people.duplicates_left', ['count' => $problemCount]) : null, 'state' => $reviewing ? 'current' : 'todo'],
+                ['label' => __('people.step_review'), 'hint' => $reviewing ? __('people.step_review_hint') : null, 'state' => $reviewing ? 'current' : 'todo'],
                 ['label' => __('people.step_save'), 'hint' => __('people.step_save_hint'), 'state' => 'todo'],
             ]" />
         </section>
@@ -41,22 +41,30 @@
             </form>
         @else
             <form method="POST" action="{{ route('host.events.people.import.confirm', $event) }}" novalidate
-                x-data="nameReview({ names: @js(array_column($rows, 'name')), existing: @js($event->people()->pluck('name', 'name_normalized')) })"
+                x-data="nameReview({
+                    names: @js(array_column($rows, 'name')),
+                    existing: @js($event->people()->pluck('name', 'name_normalized')),
+                    labels: @js(collect(['review' => 'people.review', 'ready' => 'people.ready', 'duplicates' => 'people.duplicates', 'save' => 'people.save_names'])
+                        ->map(fn (string $key): array => [
+                            'one' => trans_choice($key, 1, ['count' => '__N__']),
+                            'other' => trans_choice($key, 2, ['count' => '__N__']),
+                        ])),
+                })"
                 class="flex flex-col gap-4 rounded-card bg-surface p-6">
                 @csrf
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <h2 class="font-display text-xl font-semibold">{{ __('people.review', ['count' => count($rows)]) }}</h2>
+                        <h2 class="font-display text-xl font-semibold" x-text="label('review', rows.length)">{{ trans_choice('people.review', count($rows)) }}</h2>
                         @if ($separator)
                             <p class="text-sm text-muted">{{ __('people.separator', ['separator' => $separator]) }}</p>
                         @endif
                     </div>
                     <div class="flex gap-2">
-                        <x-chip tone="success" x-text="@js(__('people.ready', ['count' => '__N__'])).replace('__N__', rows.length - problemCount)">
+                        <x-chip tone="success" x-text="label('ready', rows.length - problemCount)">
                             {{ __('people.ready', ['count' => count($rows) - $problemCount]) }}
                         </x-chip>
-                        <x-chip tone="danger" x-show="problemCount > 0" x-text="@js(__('people.duplicates', ['count' => '__N__'])).replace('__N__', problemCount)">
-                            {{ __('people.duplicates', ['count' => $problemCount]) }}
+                        <x-chip tone="danger" x-show="problemCount > 0" x-text="label('duplicates', problemCount)">
+                            {{ trans_choice('people.duplicates', $problemCount) }}
                         </x-chip>
                     </div>
                 </div>
@@ -114,8 +122,8 @@
                 <div class="flex items-center justify-end gap-3">
                     <p class="text-sm font-semibold text-on-danger" x-show="problemCount > 0">{{ __('people.fix_to_save') }}</p>
                     <x-button type="submit" x-bind:disabled="problemCount > 0 || rows.length === 0"
-                        x-text="@js(__('people.save_names', ['count' => '__N__'])).replace('__N__', rows.length)">
-                        {{ __('people.save_names', ['count' => count($rows)]) }}
+                        x-text="label('save', rows.length)">
+                        {{ trans_choice('people.save_names', count($rows)) }}
                     </x-button>
                 </div>
             </form>

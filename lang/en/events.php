@@ -17,6 +17,7 @@ return [
 
     'name' => 'Event name',
     'link' => 'Link',
+    'link_attribute' => 'link',
     'link_hint_new' => 'Made from the name when left empty. Words used by the app, like host or admin, can\'t be used.',
     'link_hint' => 'Words used by the app, like host or admin, can\'t be used as a link.',
     'screen_theme' => 'Public View theme',
@@ -71,7 +72,7 @@ return [
     'restore' => 'Restore',
     'restore_link' => 'Link to restore under',
 
-    'created' => 'Event created.',
+    'created' => 'Event created. Next, add the names of the people who can play.',
     'saved' => 'Settings saved.',
     'deleted_done' => ':name moved to Deleted events.',
     'restored' => 'Event restored.',

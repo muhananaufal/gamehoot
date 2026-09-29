@@ -53,7 +53,8 @@ describe('creating an event', function (): void {
         ]);
 
         $event = Event::query()->firstOrFail();
-        $response->assertRedirect("/host/{$event->id}/settings");
+        // Setup step 2 comes next: adding names.
+        $response->assertRedirect("/host/{$event->id}/people");
         expect($event->owner_id)->toBe($host->id)
             ->and($event->slug)->toBe('gathering-2026')
             ->and($event->status)->toBe(EventStatus::Draft)
@@ -66,6 +67,37 @@ describe('creating an event', function (): void {
             ->post('/host/events', ['name' => 'Anything', 'slug' => $slug, 'screen_theme' => 'dark'])
             ->assertSessionHasErrors('slug');
     })->with(['host', 'admin', 'login', 'logout', 'media', 'broadcasting', 'storage', 'build', 'up']);
+
+    it('picks a free link when the one made from the name is taken', function (): void {
+        ownedEvent(attributes: ['slug' => 'gathering-2026']);
+        ownedEvent(attributes: ['slug' => 'gathering-2026-2']);
+
+        actingAs(User::factory()->create())
+            ->post('/host/events', ['name' => 'Gathering 2026', 'slug' => '', 'screen_theme' => 'dark'])
+            ->assertSessionHasNoErrors();
+
+        expect(Event::query()->where('name', 'Gathering 2026')->latest('created_at')->value('slug'))->toBe('gathering-2026-3');
+    });
+
+    it('extends a link made from a reserved or too short name (F10)', function (string $name, string $slug): void {
+        actingAs(User::factory()->create())
+            ->post('/host/events', ['name' => $name, 'slug' => '', 'screen_theme' => 'dark'])
+            ->assertSessionHasNoErrors();
+
+        expect(Event::query()->where('name', $name)->value('slug'))->toBe($slug);
+    })->with([
+        ['Host', 'host-event'],
+        ['Up', 'up-event'],
+        ['!!!', 'event'],
+    ]);
+
+    it('names the field "link" when a typed link is taken', function (): void {
+        ownedEvent(attributes: ['slug' => 'gathering-2026']);
+
+        actingAs(User::factory()->create())
+            ->post('/host/events', ['name' => 'Anything', 'slug' => 'gathering-2026', 'screen_theme' => 'dark'])
+            ->assertSessionHasErrors(['slug' => 'The link has already been taken.']);
+    });
 
     it('rejects a link that is taken or badly formed', function (string $slug): void {
         ownedEvent(attributes: ['slug' => 'gathering-2026']);
