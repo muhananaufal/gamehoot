@@ -145,4 +145,4 @@ jobs:
             -e APP_KEY="$app_key" \
             -e DB_HOST=127.0.0.1 -e DB_PORT=3306 \
             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root \
-            pentahoot-php:ci php artisan test
+            pentahoot-php:ci php artisan test --display-warnings
