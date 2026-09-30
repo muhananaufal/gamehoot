@@ -8,15 +8,10 @@ use App\Enums\GameType;
 use LogicException;
 
 /**
- * F13: the game type has no engine in this version.
+ * F13: the engine of this game type cannot run it live.
  */
 final class UnsupportedGameType extends LogicException
 {
-    public static function for(GameType $type): self
-    {
-        return new self(sprintf('Game type [%s] has no engine yet.', $type->value));
-    }
-
     public static function notPlayable(GameType $type): self
     {
         return new self(sprintf('Game type [%s] cannot be played live yet.', $type->value));
