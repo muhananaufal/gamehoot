@@ -91,9 +91,9 @@
         </div>
     </div>
 
-    {{-- Tebak Kata: phones mirror the Public View only when the host turned it on (E14), with no
-         buttons; players answer out loud. The final podium always shows, as text (E17). --}}
-    <div x-data="tebakScreen({ type: 'tebak_kata', labels: @js(__('tebak')) })" x-cloak x-show="$store.realtime.screen() === 'live' && game" class="flex grow flex-col">
+    {{-- Tebak Kata and Tebak Gambar: phones mirror the Public View only when the host turned it on
+         (E14), with no buttons; players answer out loud. The final podium always shows, as text (E17). --}}
+    <div x-data="tebakScreen({ types: ['tebak_kata', 'tebak_gambar'], labels: @js(__('tebak')) })" x-cloak x-show="$store.realtime.screen() === 'live' && game" class="flex grow flex-col">
         <div x-show="view === 'final'" class="flex grow flex-col gap-4">
             <h1 class="font-display text-[22px] font-bold"><span x-text="game?.title"></span> · {{ __('tebak.final') }}</h1>
             <x-podium stand="stand" class="pt-2" />
@@ -113,8 +113,11 @@
             <p x-show="view === 'next'" class="grow content-center text-center text-lg text-muted">{{ __('tebak.next_soon') }}</p>
             <template x-if="question && view !== 'next' && view !== 'leaderboard'">
                 <div class="flex flex-col gap-5">
-                    <p class="font-display text-[24px] leading-tight font-bold" x-text="question.prompt"></p>
-                    <x-kata-boxes words="question.boxes" class="text-[26px]" />
+                    @foreach (['tebak_kata', 'tebak_gambar'] as $tebakType)
+                        <template x-if="game.type === '{{ $tebakType }}'">
+                            @include('join.tebak.' . $tebakType)
+                        </template>
+                    @endforeach
                     <p x-show="view === 'won'" class="rounded-card bg-rank-1 px-4 py-3 text-center font-display text-xl font-bold text-on-rank-1">
                         <span>{{ __('tebak.winner') }}:</span> <span x-text="question.winner"></span>
                     </p>

@@ -8,9 +8,11 @@ use App\Models\Person;
 use App\Models\User;
 use App\People\ClaimCookie;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\Support\Pentahoot;
+use Tests\Support\TebakGambar;
 use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
@@ -157,5 +159,34 @@ describe('Tebak Kata screens (stage 4)', function (): void {
         $event->save();
 
         get('/year-end-party/screen')->assertOk()->assertDontSee('PARIS');
+    });
+});
+
+describe('Tebak Gambar screens (stage 5)', function (): void {
+    it('gives hosts Live control for a Tebak Gambar game with Reveal and the name list', function (): void {
+        Storage::fake('media');
+        $event = Pentahoot::event(['Rita Wulandari']);
+        TebakGambar::running($event, [['Which city is this?', 'Paris']]);
+
+        actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")
+            ->assertOk()
+            ->assertSee('Which city is this?')
+            ->assertSee('Reveal answer')
+            ->assertSee('Show final results')
+            ->assertSee('Rita Wulandari');
+    });
+
+    it('never puts the answer or its image in the page of the Public View before Reveal (E9, F2)', function (): void {
+        Storage::fake('media');
+        $event = Pentahoot::event(['Rita Wulandari']);
+        $game = TebakGambar::running($event, [['Which city is this?', 'Paris']]);
+        $question = $game->questions()->sole();
+        $question->forceFill(['status' => QuestionStatus::Shown])->save();
+        $game->forceFill(['current_question_id' => $question->id])->save();
+        $event->bumpStateVersion();
+        $event->save();
+        $answerImage = $question->gambar()->firstOrFail()->answer_image_id;
+
+        get('/year-end-party/screen')->assertOk()->assertDontSee('Paris')->assertDontSee($answerImage);
     });
 });

@@ -42,10 +42,10 @@ function base(labels) {
 }
 
 /**
- * The Public View and the phone mirror (E14) of a Tebak game of the given type: the question
+ * The Public View and the phone mirror (E14) of the Tebak games of the given types: the question
  * (boxes or images), the winner or surrender, the leaderboard (E11) and the final podium (E12, E17).
  */
-export function tebakScreen({ type, labels }) {
+export function tebakScreen({ types, labels }) {
     return {
         ...base(labels),
 
@@ -55,7 +55,7 @@ export function tebakScreen({ type, labels }) {
         get game() {
             const game = this.store.snapshot?.game;
 
-            return game?.type === type ? game : null;
+            return types.includes(game?.type) ? game : null;
         },
         get view() {
             return this.game ? tebakView(this.game) : 'none';
