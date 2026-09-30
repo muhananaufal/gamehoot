@@ -14,6 +14,7 @@ use App\Http\Controllers\Host\EventController;
 use App\Http\Controllers\Host\EventOwnerController;
 use App\Http\Controllers\Host\EventStateController as HostEventStateController;
 use App\Http\Controllers\Host\JoinLockController;
+use App\Http\Controllers\Host\LiveController;
 use App\Http\Controllers\Host\OpenEventController;
 use App\Http\Controllers\Host\PackQuestionController;
 use App\Http\Controllers\Host\PackQuestionOrderController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Join\EventStateController;
 use App\Http\Controllers\Join\JoinController;
 use App\Http\Controllers\Join\PersonalLinkController;
 use App\Http\Controllers\Join\PlayController;
+use App\Http\Controllers\Join\ScreenController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Views\PhoneStatus;
 use App\Models\User;
@@ -70,6 +72,7 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             ->withTrashed()->can('restore', 'event');
 
         Route::prefix('{event}')->whereUuid('event')->name('events.')->group(function (): void {
+            Route::get('/', LiveController::class)->name('live')->can('view', 'event');
             Route::get('/state', HostEventStateController::class)->name('state')->can('view', 'event');
             Route::get('/settings', [EventController::class, 'edit'])->name('edit')->can('update', 'event');
             Route::put('/settings', [EventController::class, 'update'])->name('update')->can('update', 'event');
@@ -127,4 +130,5 @@ Route::prefix('{event:slug}')->where(['event' => '[a-z0-9]+(?:-[a-z0-9]+)*'])->n
         Route::post('/claim', [JoinController::class, 'store'])->name('claim')->middleware('throttle:claim');
         Route::get('/j/{token}', PersonalLinkController::class)->name('personal')->where('token', '[A-Za-z0-9]{16}')->middleware('throttle:claim');
         Route::get('/play', PlayController::class)->name('play');
+        Route::get('/screen', ScreenController::class)->name('screen');
     });
