@@ -21,6 +21,8 @@ export function realtimeStore({ now = () => Date.now() } = {}) {
         connection: 'connecting',
         // The server no longer knows the event (deleted or wrong link).
         missing: false,
+        // E4: this phone's name and vote. Only /state carries it; broadcasts never do (F2).
+        me: null,
 
         /**
          * F15: keeps a snapshot unless it is older than the one already held.
@@ -48,11 +50,30 @@ export function realtimeStore({ now = () => Date.now() } = {}) {
             this.version = next.version;
             this.missing = false;
 
+            if (Object.hasOwn(next, 'me')) {
+                this.me = next.me;
+            }
+
             return true;
         },
 
         serverNow() {
             return now() + this.clockOffset;
+        },
+
+        /**
+         * F14, F24: the per-vote counter, for the question and attempt on screen only.
+         */
+        answered({ question_id: questionId, attempt, answered }) {
+            const question = this.snapshot?.game?.question;
+
+            if (!question || question.id !== questionId || question.attempt !== attempt) {
+                return false;
+            }
+
+            this.snapshot.game.answered = answered;
+
+            return true;
         },
 
         /** Milliseconds left until a server timestamp, never negative. */
@@ -82,18 +103,27 @@ export async function fetchSnapshot(url) {
 /**
  * Keeps the store in sync: broadcasts on every channel (F1), a jittered refresh after each
  * reconnect (F17), polling while the socket is down (T2) and a refresh when the page is
- * shown again (T3).
+ * shown again (T3). Returns { refresh } for pages that need to reload on demand.
  *
  * @param {{
  *   store: ReturnType<typeof realtimeStore>,
  *   echo: { channel: Function, private: Function, connector: { onConnectionChange: Function } },
  *   channels: Array<{ name: string, private: boolean }>,
  *   fetchState: () => Promise<object|null>,
+ *   onAnswered?: () => void,
  *   random?: () => number,
  *   doc?: { visibilityState: string, addEventListener: Function },
  * }} options
  */
-export function connectRealtime({ store, echo, channels, fetchState, random = Math.random, doc = document }) {
+export function connectRealtime({
+    store,
+    echo,
+    channels,
+    fetchState,
+    onAnswered = () => {},
+    random = Math.random,
+    doc = document,
+}) {
     let everConnected = false;
     let lastStatus = null;
     let pollTimer = null;
@@ -138,7 +168,24 @@ export function connectRealtime({ store, echo, channels, fetchState, random = Ma
 
     for (const channel of channels) {
         const subscription = channel.private ? echo.private(channel.name) : echo.channel(channel.name);
-        subscription.listen('.state', (next) => store.accept(next));
+
+        subscription.listen('.state', (next) => {
+            // F24: the snapshot was too big to send; fetch it, spread by jitter (F17).
+            if (next?.refresh === true) {
+                setTimeout(refresh, random() * RECONNECT_JITTER_MS);
+
+                return;
+            }
+
+            store.accept(next);
+        });
+
+        if (!channel.private) {
+            subscription.listen('.answered', (counter) => {
+                store.answered(counter);
+                onAnswered();
+            });
+        }
     }
 
     echo.connector.onConnectionChange((status) => {
@@ -184,6 +231,8 @@ export function connectRealtime({ store, echo, channels, fetchState, random = Ma
     });
 
     refresh();
+
+    return { refresh };
 }
 
 /**
