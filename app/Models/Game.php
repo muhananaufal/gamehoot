@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\GameStatus;
 use App\Enums\GameType;
+use App\Enums\QuestionStatus;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -72,6 +73,17 @@ final class Game extends Model
     public function results(): HasMany
     {
         return $this->hasMany(GameResult::class);
+    }
+
+    /**
+     * D-9, T8: a game that ran is never reloaded or deleted, so its results stay. It ran when
+     * it is finished, is the active game, or has a question that left its first status.
+     */
+    public function wasPlayed(Event $event, QuestionStatus $initialStatus): bool
+    {
+        return $this->status === GameStatus::Finished
+            || $event->active_game_id === $this->id
+            || $this->questions()->where('status', '!=', $initialStatus)->exists();
     }
 
     /**

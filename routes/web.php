@@ -7,12 +7,17 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
 use App\Http\Controllers\Admin\UserStatusController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\Host\ActivityLogController;
 use App\Http\Controllers\Host\CloseEventController;
 use App\Http\Controllers\Host\DashboardController;
 use App\Http\Controllers\Host\EventCohostController;
 use App\Http\Controllers\Host\EventController;
 use App\Http\Controllers\Host\EventOwnerController;
 use App\Http\Controllers\Host\EventStateController as HostEventStateController;
+use App\Http\Controllers\Host\GameController;
+use App\Http\Controllers\Host\GameFinishController;
+use App\Http\Controllers\Host\GameReloadController;
+use App\Http\Controllers\Host\GameStartController;
 use App\Http\Controllers\Host\JoinLockController;
 use App\Http\Controllers\Host\LiveController;
 use App\Http\Controllers\Host\OpenEventController;
@@ -22,14 +27,19 @@ use App\Http\Controllers\Host\PersonClaimController;
 use App\Http\Controllers\Host\PersonController;
 use App\Http\Controllers\Host\PersonImportController;
 use App\Http\Controllers\Host\PersonLinksController;
+use App\Http\Controllers\Host\QuestionActionController;
 use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
+use App\Http\Controllers\Host\ResultsController;
+use App\Http\Controllers\Host\ResultsExportController;
 use App\Http\Controllers\Host\TrashController;
 use App\Http\Controllers\Join\EventStateController;
 use App\Http\Controllers\Join\JoinController;
+use App\Http\Controllers\Join\PeopleController;
 use App\Http\Controllers\Join\PersonalLinkController;
 use App\Http\Controllers\Join\PlayController;
 use App\Http\Controllers\Join\ScreenController;
+use App\Http\Controllers\Join\VoteController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Views\PhoneStatus;
 use App\Models\User;
@@ -87,6 +97,25 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             Route::post('/reopen', ReopenEventController::class)->name('reopen')->can('reopen', 'event');
             Route::post('/join-lock', JoinLockController::class)->name('join-lock')->can('lockJoining', 'event');
 
+            // D-1, D-8, D-9, T8: the games of the event.
+            Route::prefix('/games')->name('games.')->scopeBindings()->middleware('can:update,event')->group(function (): void {
+                Route::get('/', [GameController::class, 'index'])->name('index');
+                Route::post('/', [GameController::class, 'store'])->name('store');
+                Route::delete('/{game}', [GameController::class, 'destroy'])->whereUuid('game')->name('destroy');
+                Route::post('/{game}/reload', GameReloadController::class)->whereUuid('game')->name('reload');
+                Route::post('/{game}/start', GameStartController::class)->whereUuid('game')->name('start');
+                Route::post('/{game}/finish', GameFinishController::class)->whereUuid('game')->name('finish');
+            });
+
+            // D-3, G10, E13: results and the activity log, for the owner and co-hosts.
+            Route::get('/results', ResultsController::class)->name('results')->can('view', 'event');
+            Route::get('/results.csv', ResultsExportController::class)->name('results.export')->can('view', 'event');
+            Route::get('/logs', ActivityLogController::class)->name('logs')->can('view', 'event');
+
+            // F13, C-3: question actions, run by the engine of the game type.
+            Route::post('/questions/{question}/{action}', QuestionActionController::class)
+                ->whereUuid('question')->where('action', '[a-z-]+')->name('questions.action')->can('update', 'event');
+
             // B-3, B-4, B-6, T5: the master name list.
             Route::prefix('/people')->name('people.')->scopeBindings()->middleware('can:update,event')->group(function (): void {
                 Route::get('/', [PersonController::class, 'index'])->name('index');
@@ -117,9 +146,15 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
     });
 });
 
-// F1: the public snapshot answers in JSON, including the not-found error (K4).
-Route::get('/{event:slug}/state', EventStateController::class)->where('event', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('join.state')
-    ->missing(fn () => response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404));
+// F1, F3, F9: JSON endpoints for phones and the Public View; an unknown event answers with
+// the JSON error (K4). Votes are limited per claim token, not per IP (F11).
+Route::prefix('{event:slug}')->where(['event' => '[a-z0-9]+(?:-[a-z0-9]+)*'])->name('join.')
+    ->missing(fn () => response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404))
+    ->group(function (): void {
+        Route::get('/state', EventStateController::class)->name('state');
+        Route::get('/people', PeopleController::class)->name('people');
+        Route::post('/questions/{question}/vote', VoteController::class)->whereUuid('question')->name('vote')->middleware('throttle:vote');
+    });
 
 // F10: participant routes catch one path segment at the root, so they are registered last.
 // The event is found by its link; unknown and deleted events get the EVENT_NOT_FOUND screen.

@@ -42,8 +42,17 @@
                     <x-host-nav-link :href="route('host.events.live', $event)" icon="broadcast" :active="request()->routeIs('host.events.live')">
                         {{ __('realtime.live.title') }}
                     </x-host-nav-link>
+                    <x-host-nav-link :href="route('host.events.games.index', $event)" icon="layers" :active="request()->routeIs('host.events.games.*')">
+                        {{ __('games.title') }}
+                    </x-host-nav-link>
                     <x-host-nav-link :href="route('host.events.people.index', $event)" icon="user" :active="request()->routeIs('host.events.people.*')">
                         {{ __('host.nav.names') }}
+                    </x-host-nav-link>
+                    <x-host-nav-link :href="route('host.events.results', $event)" icon="calendar" :active="request()->routeIs('host.events.results')">
+                        {{ __('results.title') }}
+                    </x-host-nav-link>
+                    <x-host-nav-link :href="route('host.events.logs', $event)" icon="layers" :active="request()->routeIs('host.events.logs')">
+                        {{ __('logs.title') }}
                     </x-host-nav-link>
                     <x-host-nav-link :href="route('host.events.edit', $event)" icon="settings" :active="request()->routeIs('host.events.edit')">
                         {{ __('host.nav.settings') }}

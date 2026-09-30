@@ -32,6 +32,7 @@ Aturan:
 - **Engine per jenis game (F13).** Semua logika game (aksi per state, snapshot, hasil, validasi soal, penyalinan dari paket) ada di class engine per `games.type`. Controller tidak boleh bercabang per jenis game.
 - **Controller tipis.** Validasi di FormRequest, hak akses di Policy (pemilik, co-host, super-admin: C-2, C-4), logika bisnis di Action/Service.
 - **Server satu-satunya sumber kebenaran (F1).** Setiap broadcast membawa snapshot utuh + `state_version` (F15). Klien membuang snapshot yang versinya lebih kecil.
+- **Engine game tidak mem-publish.** Aksi soal berjalan lewat `RunQuestionAction` (transaksi, kunci event, naikkan versi, publish); engine hanya mengubah state game (F13). Dicek oleh arch test "game engines do not publish realtime state".
 - **Setiap aksi yang menaikkan `state_version` wajib memanggil `StatePublisher::publish()`** di dalam transaksinya; snapshot dikirim setelah commit dan broadcast yang gagal hanya dicatat, tidak menggagalkan aksi (F22). Dicek oleh `tests/Architecture/StatePublishingTest.php`.
 - **Broadcast pakai `ShouldBroadcastNow`** dan dijaga jauh di bawah batas 10.000 byte Reverb (F14). Per vote hanya `{answered: n}`; rincian suara lewat `GET /host/{event}/state`.
 - **Aksi peserta lewat HTTP POST**, bukan pesan WebSocket (F3). Rate limit per token klaim, bukan per IP (F11).
@@ -95,9 +96,9 @@ Aturan tetap:
 Versi (W9), SemVer `MAJOR.MINOR.PATCH`:
 
 - **PATCH**: perbaikan bug dan perubahan kecil. Boleh terus naik (`0.3.9` → `0.3.10`).
-- **MINOR**: fitur baru. Sebelum rilis, minor hanya naik saat satu tahap selesai: `v0.1.0` fondasi, `v0.2.0` realtime, `v0.3.0` Pentahoot, `v0.4.0` Tebak Kata, `v0.5.0` Tebak Gambar. PATCH kembali ke 0.
+- **MINOR**: fitur baru. Sebelum rilis, minor hanya naik saat satu tahap selesai: `v0.1.0` fondasi, `v0.2.0` realtime, `v0.3.0` Pentahoot, `v0.4.0` Tebak Kata, `v0.5.0` Tebak Gambar, `v0.6.0` penyempurnaan (tanpa fitur baru, tetap minor karena menutup satu tahap). PATCH kembali ke 0.
 - **MAJOR**: perubahan yang merusak kompatibilitas. `v1.0.0` = rilis production pertama.
-- **Rilis event pertengahan Oktober 2026 paling tinggi `v1.0.0`.** Uji beban dan gladi memakai `v1.0.0-rc.N`.
+- **Rilis event pertengahan Oktober 2026 paling tinggi `v1.0.0`.** Uji beban dan gladi memakai `v1.0.0-rc.N`, setelah `v0.6.0`.
 - Versi hanya dibuat saat merge ke `main` dengan persetujuan pemilik proyek. Banyak perbaikan boleh dikumpulkan dalam satu PATCH. Merge ke `develop` tidak membuat versi. Tidak ada bump otomatis.
 
 Changelog (W10):
@@ -198,4 +199,4 @@ Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki samp
 
 ## 9. Urutan pengerjaan
 
-Ikuti bagian 12 spesifikasi: fondasi → kerangka realtime → Pentahoot → Tebak Kata → Tebak Gambar → uji beban dan gladi.
+Ikuti bagian 12 spesifikasi: fondasi → kerangka realtime → Pentahoot → Tebak Kata → Tebak Gambar → penyempurnaan → uji beban dan gladi.

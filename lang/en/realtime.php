@@ -16,6 +16,7 @@ return [
     'screen' => [
         'title' => 'Public View',
         'join_at' => 'Join on your phone at',
+        'qr' => 'QR code with the join link',
         'joined' => ['one' => '__N__ player joined', 'other' => '__N__ players joined'],
         'waiting' => 'The game starts soon',
     ],
