@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Hosts can write Tebak Gambar packs: each question has a question image and an answer image, picked as JPG or PNG and made smaller in the browser before upload. iPhone HEIC photos are refused with a clear message.
+- Live control runs Tebak Gambar questions: show any queued question, reveal the answer image after a confirmation, skip before Reveal, pick the winner or surrender, and show the leaderboard. Hosts see the answer and both images from the start.
+- The Public View shows the question image, then the answer image beside it after Reveal, with the winner, the leaderboard and a final podium. Phones that mirror the screen get smaller images.
+- The Results page and CSV export list the winner and answer of every Tebak Gambar question and the final board.
+
+### Security
+
+- Answer images stay private until Reveal: they are only reachable through signed links that expire after 12 hours, and question image file names never give the answer away.
+
 ## [0.4.0] - 2026-10-01
 
 Tebak Kata stage: the word-guessing game, editing copied questions and a shorter projector reveal.
