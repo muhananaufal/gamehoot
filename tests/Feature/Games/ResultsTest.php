@@ -13,7 +13,9 @@ use App\Models\User;
 use App\Support\AuditLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\Pentahoot;
+use Tests\Support\TebakGambar;
 use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
@@ -132,6 +134,33 @@ describe('Tebak Kata results (D-3, E10, G10)', function (): void {
             '"Word Guess",1,"Capital of France?",,"Rita Wulandari",2',
             '"Word Guess",Final,,1,"Rita Wulandari",2',
         ]);
+    });
+});
+
+describe('Tebak Gambar results (D-3, G10)', function (): void {
+    it('shows and exports the winner of each question with the answer, and the final board', function (): void {
+        Storage::fake('media');
+        $event = Pentahoot::event(['Rita Wulandari', 'Budi Santoso']);
+        $game = TebakGambar::game($event, [['Which city is this?', 'Paris', 2], ['Which ocean is this?', 'Pacific']]);
+        $rita = Pentahoot::person($event, 'Rita Wulandari');
+        $game->questions()->where('position', 1)->update(['status' => QuestionStatus::Won, 'winner_person_id' => $rita->id, 'resolved_at' => now()]);
+        GameResult::query()->create(['game_id' => $game->id, 'person_id' => $rita->id, 'rank' => 1, 'points' => 2, 'reached_at' => now(), 'frozen_at' => now()]);
+        $game->forceFill(['status' => GameStatus::Finished])->save();
+        $owner = $event->owner()->firstOrFail();
+
+        actingAs($owner)->get("/host/{$event->id}/results")
+            ->assertOk()
+            ->assertSeeInOrder(['Picture Guess', 'Which city is this?', 'Paris', 'Rita Wulandari', '2 points', 'Which ocean is this?', 'Not played', 'Final leaderboard', 'Rita Wulandari']);
+
+        $csv = actingAs($owner)->get("/host/{$event->id}/results.csv")->assertOk()->streamedContent();
+        expect(explode("\n", trim($csv)))->toBe([
+            'Game,Question,Prompt,Rank,Name,Score',
+            '"Picture Guess",1,"Which city is this?",,"Rita Wulandari",2',
+            '"Picture Guess",Final,,1,"Rita Wulandari",2',
+        ]);
+
+        app(AuditLog::class)->record(LoggedAction::WinnerPicked, $owner, $event, ['question_id' => $game->questions()->where('position', 1)->firstOrFail()->id, 'person_id' => $rita->id]);
+        actingAs($owner)->get("/host/{$event->id}/logs")->assertOk()->assertSee('Which city is this?');
     });
 });
 

@@ -17,8 +17,8 @@ use Carbon\CarbonImmutable;
  * scoring code never changes a past event.
  * - Pentahoot: the frozen top 5 of each question's current attempt (a Reset drops the
  *   earlier attempt, T1).
- * - Tebak Kata: the winner of each question (final once picked, D-6) and the final board
- *   frozen when the game finished (E12).
+ * - Tebak Kata and Tebak Gambar: the winner of each question (final once picked, D-6) and the
+ *   final board frozen when the game finished (E12). The answer is shown to hosts here.
  *
  * @phpstan-type Row array{rank: int, name: string, votes: int}
  * @phpstan-type QuestionResults array{number: int, prompt: string, played: bool, rows: list<Row>, answer: ?string, winner: ?string, points: ?int}
@@ -38,15 +38,14 @@ final class EventResults
         $changes = [];
 
         $played = $event->games()
-            ->whereIn('type', [GameType::Pentahoot, GameType::TebakKata])
             ->orderBy('position')
-            ->with(['questions.pentahoot', 'questions.kata', 'questions.winner:id,name'])
+            ->with(['questions.pentahoot', 'questions.kata', 'questions.gambar', 'questions.winner:id,name'])
             ->get();
 
         foreach ($played as $game) {
             $games[] = $game->type === GameType::Pentahoot
                 ? self::pentahoot($game, $changes)
-                : self::kata($game, $changes);
+                : self::tebak($game, $changes);
         }
 
         $lastChange = null;
@@ -101,7 +100,7 @@ final class EventResults
      * @param  list<CarbonImmutable>  $changes
      * @return GameResults
      */
-    private static function kata(Game $game, array &$changes): array
+    private static function tebak(Game $game, array &$changes): array
     {
         $questions = [];
 
@@ -115,10 +114,10 @@ final class EventResults
 
             $questions[] = [
                 'number' => $index + 1,
-                'prompt' => $question->kata->prompt ?? '',
+                'prompt' => $question->kata->prompt ?? $question->gambar->title ?? '',
                 'played' => $resolved,
                 'rows' => [],
-                'answer' => $resolved ? ($question->kata->answer_text ?? null) : null,
+                'answer' => $resolved ? ($question->kata->answer_text ?? $question->gambar->answer_text ?? null) : null,
                 'winner' => $question->status === QuestionStatus::Won ? ($question->winner->name ?? null) : null,
                 'points' => $question->status === QuestionStatus::Won ? $question->points : null,
             ];
