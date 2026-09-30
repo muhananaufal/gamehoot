@@ -38,8 +38,8 @@ it('broadcasts the new version after each state change', function (Closure $chan
 
     Events::assertDispatchedTimes(StateChanged::class, 2);
     Events::assertDispatched(StateChanged::class, fn (StateChanged $sent): bool => $sent->audience === Audience::Public
-        && $sent->snapshot['version'] === 5
-        && $sent->snapshot['lobby']['joined'] === $joined);
+        && data_get($sent->payload, 'version') === 5
+        && data_get($sent->payload, 'lobby.joined') === $joined);
 })->with([
     'open' => [fn (Event $e) => app(OpenEvent::class)->handle($e), 'draft', 1],
     'close' => [fn (Event $e, Person $p, $h) => app(CloseEvent::class)->handle($e, $h), 'open', 1],

@@ -32,9 +32,11 @@ use App\Http\Controllers\Host\ReopenEventController;
 use App\Http\Controllers\Host\TrashController;
 use App\Http\Controllers\Join\EventStateController;
 use App\Http\Controllers\Join\JoinController;
+use App\Http\Controllers\Join\PeopleController;
 use App\Http\Controllers\Join\PersonalLinkController;
 use App\Http\Controllers\Join\PlayController;
 use App\Http\Controllers\Join\ScreenController;
+use App\Http\Controllers\Join\VoteController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Views\PhoneStatus;
 use App\Models\User;
@@ -136,9 +138,15 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
     });
 });
 
-// F1: the public snapshot answers in JSON, including the not-found error (K4).
-Route::get('/{event:slug}/state', EventStateController::class)->where('event', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('join.state')
-    ->missing(fn () => response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404));
+// F1, F3, F9: JSON endpoints for phones and the Public View; an unknown event answers with
+// the JSON error (K4). Votes are limited per claim token, not per IP (F11).
+Route::prefix('{event:slug}')->where(['event' => '[a-z0-9]+(?:-[a-z0-9]+)*'])->name('join.')
+    ->missing(fn () => response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404))
+    ->group(function (): void {
+        Route::get('/state', EventStateController::class)->name('state');
+        Route::get('/people', PeopleController::class)->name('people');
+        Route::post('/questions/{question}/vote', VoteController::class)->whereUuid('question')->name('vote')->middleware('throttle:vote');
+    });
 
 // F10: participant routes catch one path segment at the root, so they are registered last.
 // The event is found by its link; unknown and deleted events get the EVENT_NOT_FOUND screen.

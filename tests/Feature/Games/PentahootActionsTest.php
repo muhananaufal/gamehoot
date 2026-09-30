@@ -61,8 +61,8 @@ describe('start and stop (F4, D-5)', function (): void {
         expect($question->refresh()->status)->toBe(QuestionStatus::Live)
             ->and($detail->ends_at?->format('Y-m-d H:i:s.v'))->toBe('2026-10-15 10:00:20.250')
             ->and($game->refresh()->current_question_id)->toBe($question->id);
-        Events::assertDispatched(StateChanged::class, fn (StateChanged $sent): bool => data_get($sent->snapshot, 'game.question.status') === 'live'
-            && data_get($sent->snapshot, 'game.question.ends_at') === CarbonImmutable::parse('2026-10-15 10:00:20.250')->getTimestampMs());
+        Events::assertDispatched(StateChanged::class, fn (StateChanged $sent): bool => data_get($sent->payload, 'game.question.status') === 'live'
+            && data_get($sent->payload, 'game.question.ends_at') === CarbonImmutable::parse('2026-10-15 10:00:20.250')->getTimestampMs());
     });
 
     it('stops the countdown at once, and refuses a second stop', function (): void {
@@ -129,12 +129,12 @@ describe('reveal and next (E1, E2, E3, E4, G10)', function (): void {
                 ['rank' => 2, 'votes' => 1, 'attempt' => 1],
             ]);
         Events::assertDispatched(StateChanged::class, fn (StateChanged $sent): bool => $sent->audience->value === 'public'
-            && data_get($sent->snapshot, 'game.question.results') === [
+            && data_get($sent->payload, 'game.question.results') === [
                 ['rank' => 1, 'name' => 'Budi Santoso', 'votes' => 2],
                 ['rank' => 2, 'name' => 'Ana Putri', 'votes' => 1],
                 ['rank' => 2, 'name' => 'Rita Wulandari', 'votes' => 1],
             ]
-            && data_get($sent->snapshot, 'game.question.total_votes') === 4);
+            && data_get($sent->payload, 'game.question.total_votes') === 4);
     });
 
     it('reveals a question nobody voted on as an empty result (E4)', function (): void {

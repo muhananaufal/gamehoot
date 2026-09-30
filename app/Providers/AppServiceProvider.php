@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Event;
+use App\People\ClaimCookie;
 use App\Support\RequiredConfig;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -38,5 +40,15 @@ final class AppServiceProvider extends ServiceProvider
 
         // F11: a whole venue may share one address, so the per-IP claim limit is generous.
         RateLimiter::for('claim', fn (Request $request): Limit => Limit::perMinute(300)->by($request->ip() ?? 'unknown'));
+
+        // F11: votes are limited per phone (claim token), so a venue behind one IP keeps voting.
+        // Throttling runs before route model binding, so the event is still its link here.
+        RateLimiter::for('vote', function (Request $request): Limit {
+            $link = $request->route('event');
+            $event = $link instanceof Event ? $link : Event::query()->where('slug', is_string($link) ? $link : '')->first();
+            $token = $event instanceof Event ? $request->cookie(ClaimCookie::name($event)) : null;
+
+            return Limit::perMinute(30)->by(is_string($token) && $token !== '' ? 'vote:'.ClaimCookie::hash($token) : 'vote-ip:'.($request->ip() ?? 'unknown'));
+        });
     }
 }

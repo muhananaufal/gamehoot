@@ -121,7 +121,7 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         $event->refresh();
         expect($event->active_game_id)->toBe($game->id)
             ->and($event->names_locked_at)->not->toBeNull();
-        Events::assertDispatched(StateChanged::class, fn (StateChanged $sent): bool => data_get($sent->snapshot, 'game.id') === $game->id);
+        Events::assertDispatched(StateChanged::class, fn (StateChanged $sent): bool => data_get($sent->payload, 'game.id') === $game->id);
     });
 
     it('refuses to start a second game, a game without questions, or while the event is not open', function (): void {
