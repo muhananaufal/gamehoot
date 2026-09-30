@@ -13,6 +13,10 @@ use App\Http\Controllers\Host\EventCohostController;
 use App\Http\Controllers\Host\EventController;
 use App\Http\Controllers\Host\EventOwnerController;
 use App\Http\Controllers\Host\EventStateController as HostEventStateController;
+use App\Http\Controllers\Host\GameController;
+use App\Http\Controllers\Host\GameFinishController;
+use App\Http\Controllers\Host\GameReloadController;
+use App\Http\Controllers\Host\GameStartController;
 use App\Http\Controllers\Host\JoinLockController;
 use App\Http\Controllers\Host\LiveController;
 use App\Http\Controllers\Host\OpenEventController;
@@ -86,6 +90,16 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             Route::post('/close', CloseEventController::class)->name('close')->can('close', 'event');
             Route::post('/reopen', ReopenEventController::class)->name('reopen')->can('reopen', 'event');
             Route::post('/join-lock', JoinLockController::class)->name('join-lock')->can('lockJoining', 'event');
+
+            // D-1, D-8, D-9, T8: the games of the event.
+            Route::prefix('/games')->name('games.')->scopeBindings()->middleware('can:update,event')->group(function (): void {
+                Route::get('/', [GameController::class, 'index'])->name('index');
+                Route::post('/', [GameController::class, 'store'])->name('store');
+                Route::delete('/{game}', [GameController::class, 'destroy'])->whereUuid('game')->name('destroy');
+                Route::post('/{game}/reload', GameReloadController::class)->whereUuid('game')->name('reload');
+                Route::post('/{game}/start', GameStartController::class)->whereUuid('game')->name('start');
+                Route::post('/{game}/finish', GameFinishController::class)->whereUuid('game')->name('finish');
+            });
 
             // B-3, B-4, B-6, T5: the master name list.
             Route::prefix('/people')->name('people.')->scopeBindings()->middleware('can:update,event')->group(function (): void {

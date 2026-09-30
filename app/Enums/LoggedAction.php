@@ -23,4 +23,6 @@ enum LoggedAction: string
     case JoinUnlocked = 'event.join_unlocked';
 
     case ClaimReleased = 'person.claim_released';
+    case GameFinishedEarly = 'game.finished_early';
+    case QuestionReset = 'question.reset';
 }
