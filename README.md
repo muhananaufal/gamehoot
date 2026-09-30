@@ -37,8 +37,11 @@ Requirements: Docker with Compose, Git, and a MySQL 8.0+ server on your machine.
    docker compose run --rm -T app composer install
    docker compose run --rm -T app php artisan key:generate
    docker compose run --rm -T app php artisan migrate
+   docker compose run --rm -T app php artisan storage:link
    docker compose run --rm -T node npm ci
    ```
+
+   `storage:link` makes the public question images of Tebak Gambar reachable under `/media` (F16).
 
 4. Enable the Git hooks (Pint on staged PHP files, ESLint and Prettier on staged JS files, Conventional Commits check):
 

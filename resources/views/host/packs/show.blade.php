@@ -134,12 +134,15 @@
         @if ($pack && $formOpen)
             @php
                 $number = $editing ? $questions->search(fn ($q) => $q->is($editing)) + 1 : null;
+                // E8: only forms with images are sent as multipart.
+                $multipart = app(\App\Games\GameEngines::class)->for($pack->game_type)->imageFields() !== [];
             @endphp
             <section class="flex flex-col gap-4 rounded-card bg-surface p-6 lg:col-span-2 xl:col-span-1" aria-labelledby="question-form-heading">
                 <h2 id="question-form-heading" class="font-display text-xl font-semibold">
                     {{ $editing ? __('packs.edit_question', ['number' => $number]) : __('packs.new_question') }}
                 </h2>
-                <form method="POST" action="{{ $editing ? route('host.packs.questions.update', [$pack, $editing]) : route('host.packs.questions.store', $pack) }}" class="flex flex-col gap-4" novalidate>
+                <form method="POST" action="{{ $editing ? route('host.packs.questions.update', [$pack, $editing]) : route('host.packs.questions.store', $pack) }}"
+                    @if ($multipart) enctype="multipart/form-data" @endif class="flex flex-col gap-4" novalidate>
                     @csrf
                     @if ($editing)
                         @method('PUT')

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Games\TebakKata\Leaderboard;
+use App\Games\Tebak\Leaderboard;
 use Carbon\CarbonImmutable;
 
 /**

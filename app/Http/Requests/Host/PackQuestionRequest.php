@@ -19,7 +19,7 @@ final class PackQuestionRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->engine()->questionRules();
+        return $this->engine()->questionRules(creating: $this->route('question') === null);
     }
 
     public function engine(): GameEngine

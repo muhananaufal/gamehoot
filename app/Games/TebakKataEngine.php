@@ -8,12 +8,11 @@ use App\Enums\Audience;
 use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\QuestionStatus;
+use App\Games\Tebak\TebakBoard;
 use App\Games\TebakKata\AnswerBoxes;
 use App\Games\TebakKata\KataActions;
-use App\Games\TebakKata\Leaderboard;
 use App\Models\Event;
 use App\Models\Game;
-use App\Models\GameResult;
 use App\Models\PackQuestion;
 use App\Models\Question;
 use App\Models\QuestionKata;
@@ -22,20 +21,23 @@ use App\Rules\KataAnswer;
 use App\Rules\KataOpenIndexes;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
-/**
- * @phpstan-import-type Win from Leaderboard
- */
 final readonly class TebakKataEngine implements LiveGameEngine
 {
-    public function __construct(private KataActions $actions) {}
+    public function __construct(private KataActions $actions, private TebakBoard $board) {}
 
     public function type(): GameType
     {
         return GameType::TebakKata;
     }
 
-    public function questionRules(): array
+    public function imageFields(): array
+    {
+        return [];
+    }
+
+    public function questionRules(bool $creating): array
     {
         return [
             'prompt' => ['required', 'string', 'max:500'],
@@ -121,7 +123,7 @@ final readonly class TebakKataEngine implements LiveGameEngine
         // UUIDv7 ids follow the order the questions were copied in, which a Skip does not change.
         $questions = $game->questions()->orderBy('id')->get(['id', 'position', 'status', 'skip_used']);
         $current = $game->currentQuestion()->with(['kata', 'winner:id,name'])->first();
-        $resolved = $questions->filter(fn (Question $question): bool => $this->resolved($question))->count();
+        $resolved = $questions->filter(fn (Question $question): bool => TebakBoard::resolved($question))->count();
 
         $snapshot = [
             'id' => $game->id,
@@ -130,20 +132,13 @@ final readonly class TebakKataEngine implements LiveGameEngine
             'status' => $game->status->value,
             'count' => $questions->count(),
             'question' => $current === null ? null : $this->questionPart($current, $audience, $resolved),
-            'leaderboard' => $game->leaderboard_at === null ? null : $this->board($game),
-            'final' => $game->status === GameStatus::Finished ? $this->frozenBoard($game) : null,
+            'leaderboard' => $game->leaderboard_at === null ? null : $this->board->live($game),
+            'final' => $game->status === GameStatus::Finished ? $this->board->frozen($game) : null,
         ];
 
         if ($audience === Audience::Host) {
-            // F14: one letter per question, in copy order; the prompts are on the host page already.
-            // q queued, s shown, w won, x surrendered; a capital Q is queued after a Skip.
-            $snapshot['statuses'] = $questions->map(fn (Question $question): string => match ($question->status) {
-                QuestionStatus::Shown => 's',
-                QuestionStatus::Won => 'w',
-                QuestionStatus::Surrendered => 'x',
-                default => $question->skip_used ? 'Q' : 'q',
-            })->values()->all();
-            $snapshot['live_board'] = $this->board($game);
+            $snapshot['statuses'] = TebakBoard::statusCodes($questions);
+            $snapshot['live_board'] = $this->board->live($game);
         }
 
         return $snapshot;
@@ -174,16 +169,18 @@ final readonly class TebakKataEngine implements LiveGameEngine
      */
     public function finish(Game $game, CarbonImmutable $at): void
     {
-        foreach (Leaderboard::top($this->wins($game)) as $row) {
-            GameResult::query()->create([
-                'game_id' => $game->id,
-                'person_id' => $row['person_id'],
-                'rank' => $row['rank'],
-                'points' => $row['points'],
-                'reached_at' => $row['reached_at'],
-                'frozen_at' => $at,
-            ]);
-        }
+        $this->board->freeze($game, $at);
+    }
+
+    public function liveQuestions(Game $game): Collection
+    {
+        // UUIDv7 ids follow the order the questions were copied in, which a Skip does not change.
+        return $game->questions()->orderBy('id')->with('kata')->get();
+    }
+
+    public function picksWinners(): bool
+    {
+        return true;
     }
 
     /**
@@ -205,7 +202,7 @@ final readonly class TebakKataEngine implements LiveGameEngine
             return [];
         }
 
-        $resolved = $this->resolved($question);
+        $resolved = TebakBoard::resolved($question);
         $initial = $detail->initial_open_indexes;
         $opened = $detail->opened_indexes;
         $words = [];
@@ -245,54 +242,5 @@ final readonly class TebakKataEngine implements LiveGameEngine
         }
 
         return $part;
-    }
-
-    private function resolved(Question $question): bool
-    {
-        return in_array($question->status, [QuestionStatus::Won, QuestionStatus::Surrendered], true);
-    }
-
-    /**
-     * G1: the live board, computed from the data while the game runs.
-     *
-     * @return list<array{rank: int, name: string, points: int, movement: ?int}>
-     */
-    private function board(Game $game): array
-    {
-        return array_map(
-            fn (array $row): array => ['rank' => $row['rank'], 'name' => $row['name'], 'points' => $row['points'], 'movement' => $row['movement']],
-            Leaderboard::top($this->wins($game)),
-        );
-    }
-
-    /**
-     * G10: the final board, read from the frozen table.
-     *
-     * @return list<array{rank: int, name: string, points: int}>
-     */
-    private function frozenBoard(Game $game): array
-    {
-        return array_values($game->results()->with('person:id,name')->orderBy('rank')->get()
-            ->map(fn (GameResult $row): array => ['rank' => $row->rank, 'name' => $row->person->name ?? '', 'points' => $row->points])
-            ->all());
-    }
-
-    /**
-     * @return list<Win>
-     */
-    private function wins(Game $game): array
-    {
-        return array_values($game->questions()
-            ->where('status', QuestionStatus::Won)
-            ->whereNotNull('winner_person_id')
-            ->with('winner:id,name')
-            ->get()
-            ->map(fn (Question $question): array => [
-                'person_id' => (string) $question->winner_person_id,
-                'name' => $question->winner->name ?? '',
-                'points' => $question->points,
-                'resolved_at' => $question->resolved_at ?? CarbonImmutable::now(),
-            ])
-            ->all());
     }
 }

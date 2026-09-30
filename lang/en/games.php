@@ -13,6 +13,15 @@ return [
         'answer_unsupported' => 'The answer may only contain letters, digits, spaces and the punctuation - \' . / &, with at least one letter or digit.',
         'open_index_out_of_range' => 'Opened boxes must be numbered from 0 to :max.',
         'all_boxes_open' => 'At least one box must stay closed.',
+    ],
+
+    'gambar' => [
+        'heic' => 'HEIC photos are not supported. Pick a JPG or PNG image, or change the iPhone camera setting to Most Compatible.',
+        'not_image' => 'The image must be a JPG or PNG file.',
+    ],
+
+    // Shared by Tebak Kata and Tebak Gambar.
+    'tebak' => [
         'winner_unknown' => 'Pick a name from this event\'s list.',
     ],
 

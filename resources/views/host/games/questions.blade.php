@@ -34,7 +34,10 @@
                 <h2 id="copy-form-heading" class="font-display text-xl font-semibold">
                     {{ __('games.edit_question', ['number' => $questions->search(fn ($question) => $question->is($editing)) + 1]) }}
                 </h2>
-                <form method="POST" action="{{ route('host.events.games.questions.update', [$event, $game, $editing]) }}" class="flex flex-col gap-5" novalidate>
+                {{-- E8: only forms with images are sent as multipart. --}}
+                @php($multipart = app(\App\Games\GameEngines::class)->for($game->type)->imageFields() !== [])
+                <form method="POST" action="{{ route('host.events.games.questions.update', [$event, $game, $editing]) }}"
+                    @if ($multipart) enctype="multipart/form-data" @endif class="flex flex-col gap-5" novalidate>
                     @csrf
                     @method('PUT')
                     @include('host.packs.forms.' . $game->type->value, ['question' => $editing])

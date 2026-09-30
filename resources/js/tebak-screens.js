@@ -1,6 +1,7 @@
-// F20: the Alpine components of the Tebak Kata screens. They only read the shared realtime
-// store; the rules live in kata.js and on the server.
-import { kataView, legendOf, movementOf } from './kata.js';
+// F20: the Alpine components of the Tebak screens (Tebak Kata and Tebak Gambar). They only read
+// the shared realtime store; the rules live in tebak.js, kata.js and on the server.
+import { legendOf } from './kata.js';
+import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
 import { fill, podium, searchPeople } from './pentahoot.js';
 
 function csrfToken() {
@@ -41,10 +42,10 @@ function base(labels) {
 }
 
 /**
- * The Public View and the phone mirror (E14) of a Tebak Kata game: the question with its
- * boxes, the winner or surrender, the leaderboard (E11) and the final podium (E12, E17).
+ * The Public View and the phone mirror (E14) of the Tebak games of the given types: the question
+ * (boxes or images), the winner or surrender, the leaderboard (E11) and the final podium (E12, E17).
  */
-export function kataScreen({ labels }) {
+export function tebakScreen({ types, labels }) {
     return {
         ...base(labels),
 
@@ -54,10 +55,10 @@ export function kataScreen({ labels }) {
         get game() {
             const game = this.store.snapshot?.game;
 
-            return game?.type === 'tebak_kata' ? game : null;
+            return types.includes(game?.type) ? game : null;
         },
         get view() {
-            return this.game ? kataView(this.game) : 'none';
+            return this.game ? tebakView(this.game) : 'none';
         },
         get question() {
             return this.game?.question ?? null;
@@ -79,11 +80,12 @@ export function kataScreen({ labels }) {
 }
 
 /**
- * Live control for Tebak Kata: show any queued question (D-5), open boxes as hints (E5),
- * skip once (E6), pick a winner with a confirmation (D-6), surrender, and show the
- * leaderboard (E11). STALE_ACTION is shown when the state moved on (C-3).
+ * Live control for a Tebak game of the given type: show any queued question (D-5), open boxes
+ * as hints (Kata, E5) or reveal the answer image (Gambar, E9), skip once (E6, E7), pick a winner
+ * with a confirmation (D-6), surrender, and show the leaderboard (E11). STALE_ACTION is shown
+ * when the state moved on (C-3).
  */
-export function kataHost({ actionUrl, people, labels }) {
+export function tebakHost({ type, actionUrl, people, labels }) {
     return {
         ...base(labels),
         busy: false,
@@ -97,7 +99,7 @@ export function kataHost({ actionUrl, people, labels }) {
         get game() {
             const game = this.store.snapshot?.game;
 
-            return game?.type === 'tebak_kata' ? game : null;
+            return game?.type === type ? game : null;
         },
         get question() {
             return this.game?.question ?? null;
@@ -117,11 +119,11 @@ export function kataHost({ actionUrl, people, labels }) {
         get liveBoard() {
             return this.game?.live_board ?? [];
         },
-        /** E6: a Skip needs another question in the queue, and only once per question. */
         get canSkip() {
-            const queued = this.codes.filter((code) => code === 'q' || code === 'Q').length;
-
-            return this.status === 'shown' && !this.question?.skipped && queued > 0;
+            return canSkip(this.game);
+        },
+        get canReveal() {
+            return canReveal(this.game);
         },
         get canLeaderboard() {
             return this.status === 'won' && this.game?.leaderboard === null;

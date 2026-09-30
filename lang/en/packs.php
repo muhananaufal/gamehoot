@@ -47,6 +47,23 @@ return [
         'box_label' => 'Box :number, letter :char',
     ],
 
+    'gambar' => [
+        'title' => 'Question',
+        'answer' => 'Answer',
+        'answer_hint' => 'Only hosts see this. The room sees the answer image after Reveal.',
+        'question_image' => 'Question image',
+        'question_image_hint' => 'Shown with the question. Its file name never reaches the screen.',
+        'answer_image' => 'Answer image',
+        'answer_image_hint' => 'Stays hidden until you reveal it.',
+        'image_hint' => 'JPG or PNG. It is made smaller in your browser before upload.',
+        'replace_hint' => 'Pick a new file to replace it.',
+        'pick' => 'Choose image',
+        'preparing' => 'Preparing image...',
+        'preview' => 'Preview of the :image',
+        'too_big' => 'This image is still over 2 MB after making it smaller. Pick a smaller one.',
+        'unreadable' => 'This image could not be read. Pick another JPG or PNG file.',
+    ],
+
     'created' => 'Pack created.',
     'saved' => 'Pack saved.',
     'deleted' => ':title deleted.',

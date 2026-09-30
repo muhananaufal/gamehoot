@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-// Tebak Kata screens: Public View, phone mirror (E14) and Live control. __N__ is filled in by JavaScript.
+// Tebak Kata and Tebak Gambar screens: Public View, phone mirror (E14) and Live control. __N__ is
+// filled in by JavaScript.
 return [
     'question_of' => 'Question __N__ of __TOTAL__',
     'raise_hand' => 'Raise your hand if you know the answer',
@@ -21,6 +22,7 @@ return [
     'moved_down' => 'down __N__',
     'new_entry' => 'new',
     'watch_screen' => 'Watch the screen and answer out loud to the host.',
+    'answer_image' => 'The answer',
 
     // Live control (D-5, D-6, E6, E11, E12, E13)
     'questions' => 'Questions',
@@ -43,6 +45,13 @@ return [
     'no_question' => 'Pick a question to show.',
     'live_board' => 'Leaderboard now',
     'live_board_empty' => 'No winner yet.',
+
+    // Tebak Gambar on Live control (E7, E9)
+    'reveal' => 'Reveal answer',
+    'reveal_title' => 'Reveal the answer image?',
+    'reveal_help' => 'Shows the answer image on the screen. Skip is off afterwards.',
+    'revealed' => 'Answer on screen',
+    'answer_image_host' => 'Answer image (only you see it until Reveal)',
     'status' => [
         'q' => 'Queued',
         'Q' => 'Skipped',
