@@ -9,6 +9,7 @@ use App\Enums\LoggedAction;
 use App\Exceptions\EventHasActiveGame;
 use App\Models\Event;
 use App\Models\User;
+use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class CloseEvent
 {
-    public function __construct(private AuditLog $auditLog) {}
+    public function __construct(private AuditLog $auditLog, private StatePublisher $publisher) {}
 
     /**
      * @throws EventHasActiveGame
@@ -38,6 +39,7 @@ final readonly class CloseEvent
             $locked->status = EventStatus::Finished;
             $locked->bumpStateVersion();
             $locked->save();
+            $this->publisher->publish($locked);
 
             $this->auditLog->record(LoggedAction::EventClosed, $actor, $locked);
         });

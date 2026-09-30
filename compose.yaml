@@ -15,6 +15,19 @@ services:
     ports:
       - "${APP_PORT:-8000}:8000"
 
+  # F5, F7, A8: the Reverb WebSocket server, in its own container. The app reaches it as
+  # reverb:8080; browsers reach it on REVERB_CLIENT_PORT of this machine.
+  reverb:
+    image: pentahoot-php:dev
+    working_dir: /var/www/html
+    volumes:
+      - ${PROJECT_PATH:-.}:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "${REVERB_CLIENT_PORT:-8080}:8080"
+
   # Browser tests (W11): run with `docker compose run --rm browser`.
   browser:
     build:

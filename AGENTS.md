@@ -32,6 +32,7 @@ Aturan:
 - **Engine per jenis game (F13).** Semua logika game (aksi per state, snapshot, hasil, validasi soal, penyalinan dari paket) ada di class engine per `games.type`. Controller tidak boleh bercabang per jenis game.
 - **Controller tipis.** Validasi di FormRequest, hak akses di Policy (pemilik, co-host, super-admin: C-2, C-4), logika bisnis di Action/Service.
 - **Server satu-satunya sumber kebenaran (F1).** Setiap broadcast membawa snapshot utuh + `state_version` (F15). Klien membuang snapshot yang versinya lebih kecil.
+- **Setiap aksi yang menaikkan `state_version` wajib memanggil `StatePublisher::publish()`** di dalam transaksinya; snapshot dikirim setelah commit dan broadcast yang gagal hanya dicatat, tidak menggagalkan aksi (F22). Dicek oleh `tests/Architecture/StatePublishingTest.php`.
 - **Broadcast pakai `ShouldBroadcastNow`** dan dijaga jauh di bawah batas 10.000 byte Reverb (F14). Per vote hanya `{answered: n}`; rincian suara lewat `GET /host/{event}/state`.
 - **Aksi peserta lewat HTTP POST**, bukan pesan WebSocket (F3). Rate limit per token klaim, bukan per IP (F11).
 - **Aksi host** dijalankan dalam transaksi dengan `lockForUpdate` dan update bersyarat terhadap state (F6, G12).

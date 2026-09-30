@@ -7,6 +7,7 @@ namespace App\Actions\Events;
 use App\Enums\LoggedAction;
 use App\Models\Event;
 use App\Models\User;
+use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class DeleteEvent
 {
-    public function __construct(private AuditLog $auditLog) {}
+    public function __construct(private AuditLog $auditLog, private StatePublisher $publisher) {}
 
     public function handle(Event $event, User $actor): void
     {
@@ -28,6 +29,7 @@ final readonly class DeleteEvent
             $locked->bumpStateVersion();
             $locked->save();
             $locked->delete();
+            $this->publisher->publish($locked);
 
             $this->auditLog->record(LoggedAction::EventDeleted, $actor, $locked);
         });

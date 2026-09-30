@@ -26,7 +26,9 @@ Requirements: Docker with Compose, Git, and a MySQL 8.0+ server on your machine.
    cp .env.example .env
    ```
 
-   On Windows with the Docker engine inside WSL, also set `PROJECT_PATH` to the WSL path of the project (for example `/mnt/c/Projects/devivace/pentahoot`). If port 8000 is already taken on your machine, set `APP_PORT` (and `APP_URL`) to a free one.
+   Fill in `REVERB_APP_ID`, `REVERB_APP_KEY` and `REVERB_APP_SECRET` with random values of your own (for example `php -r "echo bin2hex(random_bytes(16));"`). Web pages refuse to load while one of them is empty (K6).
+
+   On Windows with the Docker engine inside WSL, also set `PROJECT_PATH` to the WSL path of the project (for example `/mnt/c/Projects/devivace/pentahoot`). If port 8000 or 8080 is already taken on your machine, set `APP_PORT` (and `APP_URL`) or `REVERB_CLIENT_PORT` to a free one.
 
 3. Build the image, install dependencies, and prepare the database:
 
@@ -44,11 +46,17 @@ Requirements: Docker with Compose, Git, and a MySQL 8.0+ server on your machine.
    git config core.hooksPath .githooks
    ```
 
-5. Start the app at http://localhost:8000, or your `APP_PORT` (the `node` service runs the Vite dev server on port 5173):
+5. Start the app at http://localhost:8000, or your `APP_PORT`. The `reverb` service runs the WebSocket server on port 8080 (`REVERB_CLIENT_PORT`), and the `node` service runs the Vite dev server on port 5173:
 
    ```bash
    docker compose up
    ```
+
+## Realtime (F1–F23)
+
+Every change a screen can see bumps `events.state_version` and sends the full snapshot over Reverb after the transaction commits. Screens drop older versions, poll `/{event}/state` while the socket is down, and refresh after a reconnect with a random delay.
+
+To see it working: open an event's **Live control** page (`/host/{event}`), open the **Public View** (`/{event}/screen`) in another window, then claim a name from a phone or a private window. The join count updates on both without a reload. With `docker compose stop reverb`, both screens show a connection warning and keep updating every few seconds.
 
 ## Quality gate
 
@@ -77,4 +85,4 @@ docker compose run --rm browser php artisan test --testsuite=Browser --browser c
 docker compose run --rm browser php artisan test --testsuite=Browser --browser safari
 ```
 
-Failure screenshots are written to `tests/Browser/Screenshots`. Known limits of the plugin (file uploads, WebKit sign in) are listed under W11 in the specification.
+Browser tests run without a Reverb server, so their live screens update by polling; the socket path is covered by feature tests and the manual check above. Failure screenshots are written to `tests/Browser/Screenshots`. Known limits of the plugin (file uploads, WebKit sign in) are listed under W11 in the specification.

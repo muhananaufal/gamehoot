@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Support\RequiredConfig;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,6 +23,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // K6: web requests need the realtime configuration. Console commands still run, so
+        // setup steps such as key:generate work on a fresh .env.
+        if (! $this->app->runningInConsole()) {
+            RequiredConfig::check();
+        }
+
         // O7: host account passwords.
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
 

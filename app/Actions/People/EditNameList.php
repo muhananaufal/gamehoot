@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\Person;
 use App\People\JoinToken;
 use App\People\PersonName;
+use App\Realtime\StatePublisher;
 use Closure;
 use Illuminate\Support\Facades\DB;
 
@@ -17,8 +18,10 @@ use Illuminate\Support\Facades\DB;
  * against names_locked_at cannot race with a game starting. Duplicates are refused by
  * validation and, as the last guard, by the unique index (G2).
  */
-final class EditNameList
+final readonly class EditNameList
 {
+    public function __construct(private StatePublisher $publisher) {}
+
     public function add(Event $event, string $name): Person
     {
         return $this->locked($event, function (Event $locked) use ($name): Person {
@@ -76,6 +79,7 @@ final class EditNameList
             $result = $change($locked);
             $locked->bumpStateVersion();
             $locked->save();
+            $this->publisher->publish($locked);
 
             return $result;
         });
