@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-01
+
+Tebak Gambar stage: the picture-guessing game with private answer images.
+
 ### Added
 
 - Hosts can write Tebak Gambar packs: each question has a question image and an answer image, picked as JPG or PNG and made smaller in the browser before upload. iPhone HEIC photos are refused with a clear message.
@@ -84,7 +88,8 @@ Foundation stage: accounts, events, question packs, name lists and joining from 
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
 
-[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.4.0...develop
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.5.0...develop
+[0.5.0]: https://github.com/devivace-groups/pentahoot/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/devivace-groups/pentahoot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/devivace-groups/pentahoot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/devivace-groups/pentahoot/compare/v0.1.0...v0.2.0
