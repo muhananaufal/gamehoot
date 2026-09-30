@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\GameStatus;
 use App\Enums\LoggedAction;
 use App\Enums\QuestionStatus;
 use App\Models\Event;
+use App\Models\GameResult;
 use App\Models\Question;
 use App\Models\QuestionResult;
 use App\Models\User;
@@ -12,6 +14,7 @@ use App\Support\AuditLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\Pentahoot;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\travelTo;
@@ -78,7 +81,7 @@ describe('results (D-3, G10)', function (): void {
             ->streamedContent();
 
         expect(explode("\n", trim($csv)))->toBe([
-            'Game,Question,Prompt,Rank,Name,Votes',
+            'Game,Question,Prompt,Rank,Name,Score',
             '"Office Awards",1,"Most punctual?",1,"Rita Wulandari",5',
             '"Office Awards",1,"Most punctual?",2,"\'=cmd Budi",3',
         ]);
@@ -89,6 +92,46 @@ describe('results (D-3, G10)', function (): void {
 
         actingAs(User::factory()->create())->get("/host/{$event->id}/results")->assertForbidden();
         actingAs(User::factory()->create())->get("/host/{$event->id}/results.csv")->assertForbidden();
+    });
+});
+
+describe('Tebak Kata results (D-3, E10, G10)', function (): void {
+    /**
+     * Rita won question 1 (2 points), question 2 was surrendered, question 3 did not run, and
+     * the final board was frozen with Rita first.
+     */
+    function playedKata(): Event
+    {
+        $event = Pentahoot::event(['Rita Wulandari', 'Budi Santoso']);
+        $game = TebakKata::game($event, [['Capital of France?', 'PARIS', [0], 2], ['Largest ocean?', 'PACIFIC'], ['Tallest mountain?', 'EVEREST']]);
+        $rita = Pentahoot::person($event, 'Rita Wulandari');
+        $game->questions()->where('position', 1)->update(['status' => QuestionStatus::Won, 'winner_person_id' => $rita->id, 'resolved_at' => now()]);
+        $game->questions()->where('position', 2)->update(['status' => QuestionStatus::Surrendered, 'resolved_at' => now()]);
+        GameResult::query()->create(['game_id' => $game->id, 'person_id' => $rita->id, 'rank' => 1, 'points' => 2, 'reached_at' => now(), 'frozen_at' => CarbonImmutable::parse('2026-10-15 04:00:00')]);
+        $game->forceFill(['status' => GameStatus::Finished])->save();
+
+        return $event;
+    }
+
+    it('shows the winner of each question and the frozen final board', function (): void {
+        $event = playedKata();
+
+        actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}/results")
+            ->assertOk()
+            ->assertSeeInOrder(['Word Guess', 'Capital of France?', 'PARIS', 'Rita Wulandari', '2 points', 'Largest ocean?', 'PACIFIC', 'No winner', 'Tallest mountain?', 'Not played', 'Final leaderboard', 'Rita Wulandari', '2'])
+            ->assertSee('Last change: 15 Oct 2026, 11:00 WIB');
+    });
+
+    it('exports the winners and the final board as CSV', function (): void {
+        $event = playedKata();
+
+        $csv = actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}/results.csv")->assertOk()->streamedContent();
+
+        expect(explode("\n", trim($csv)))->toBe([
+            'Game,Question,Prompt,Rank,Name,Score',
+            '"Word Guess",1,"Capital of France?",,"Rita Wulandari",2',
+            '"Word Guess",Final,,1,"Rita Wulandari",2',
+        ]);
     });
 });
 
