@@ -12,6 +12,7 @@ use App\Http\Controllers\Host\DashboardController;
 use App\Http\Controllers\Host\EventCohostController;
 use App\Http\Controllers\Host\EventController;
 use App\Http\Controllers\Host\EventOwnerController;
+use App\Http\Controllers\Host\EventStateController as HostEventStateController;
 use App\Http\Controllers\Host\JoinLockController;
 use App\Http\Controllers\Host\OpenEventController;
 use App\Http\Controllers\Host\PackQuestionController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Host\PersonLinksController;
 use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
 use App\Http\Controllers\Host\TrashController;
+use App\Http\Controllers\Join\EventStateController;
 use App\Http\Controllers\Join\JoinController;
 use App\Http\Controllers\Join\PersonalLinkController;
 use App\Http\Controllers\Join\PlayController;
@@ -68,6 +70,7 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             ->withTrashed()->can('restore', 'event');
 
         Route::prefix('{event}')->whereUuid('event')->name('events.')->group(function (): void {
+            Route::get('/state', HostEventStateController::class)->name('state')->can('view', 'event');
             Route::get('/settings', [EventController::class, 'edit'])->name('edit')->can('update', 'event');
             Route::put('/settings', [EventController::class, 'update'])->name('update')->can('update', 'event');
             Route::delete('/', [EventController::class, 'destroy'])->name('destroy')->can('delete', 'event');
@@ -110,6 +113,10 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             ->withTrashed()->can('restore', 'event');
     });
 });
+
+// F1: the public snapshot answers in JSON, including the not-found error (K4).
+Route::get('/{event:slug}/state', EventStateController::class)->where('event', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('join.state')
+    ->missing(fn () => response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404));
 
 // F10: participant routes catch one path segment at the root, so they are registered last.
 // The event is found by its link; unknown and deleted events get the EVENT_NOT_FOUND screen.
