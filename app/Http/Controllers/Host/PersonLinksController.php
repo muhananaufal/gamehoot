@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Host;
 
 use App\Models\Event;
+use App\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -26,18 +27,10 @@ final class PersonLinksController
             fputcsv($out, ['Name', 'Link'], ',', '"', '');
 
             foreach ($people as $person) {
-                fputcsv($out, [self::safeCell($person->name), url("/{$event->slug}/j/{$person->join_token}")], ',', '"', '');
+                fputcsv($out, [CsvCell::safe($person->name), url("/{$event->slug}/j/{$person->join_token}")], ',', '"', '');
             }
 
             fclose($out);
         }, "{$event->slug}-personal-links.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
-    }
-
-    /**
-     * A cell starting with = + - @ would run as a formula in Excel (CSV injection).
-     */
-    private static function safeCell(string $value): string
-    {
-        return in_array(substr($value, 0, 1), ['=', '+', '-', '@'], true) ? "'".$value : $value;
     }
 }

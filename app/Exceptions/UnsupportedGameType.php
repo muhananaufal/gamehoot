@@ -16,4 +16,9 @@ final class UnsupportedGameType extends LogicException
     {
         return new self(sprintf('Game type [%s] has no engine yet.', $type->value));
     }
+
+    public static function notPlayable(GameType $type): self
+    {
+        return new self(sprintf('Game type [%s] cannot be played live yet.', $type->value));
+    }
 }

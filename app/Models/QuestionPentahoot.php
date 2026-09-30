@@ -21,6 +21,14 @@ final class QuestionPentahoot extends Model
     ];
 
     /**
+     * F4, E3: ends_at keeps milliseconds; the default format would cut them and close the
+     * question up to a second early.
+     *
+     * @var string
+     */
+    protected $dateFormat = 'Y-m-d H:i:s.v';
+
+    /**
      * @return BelongsTo<Question, $this>
      */
     public function question(): BelongsTo

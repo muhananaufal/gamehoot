@@ -11,20 +11,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 /**
- * F1, F5: a full snapshot for one audience, sent straight to Reverb without a queue.
- * Dispatched only by StatePublisher, after the transaction commits (F22).
- *
- * @phpstan-import-type Snapshot from EventSnapshot
+ * F1, F5: a full snapshot for one audience, sent straight to Reverb without a queue, or a
+ * refresh signal when the snapshot is too big (F24). Dispatched only by StatePublisher,
+ * after the transaction commits (F22).
  */
 final readonly class StateChanged implements ShouldBroadcastNow
 {
     /**
-     * @param  Snapshot  $snapshot
+     * @param  array<string, mixed>  $payload
      */
     public function __construct(
         public Event $event,
         public Audience $audience,
-        public array $snapshot,
+        public array $payload,
     ) {}
 
     public function broadcastOn(): Channel
@@ -40,10 +39,10 @@ final readonly class StateChanged implements ShouldBroadcastNow
     }
 
     /**
-     * @return Snapshot
+     * @return array<string, mixed>
      */
     public function broadcastWith(): array
     {
-        return $this->snapshot;
+        return $this->payload;
     }
 }

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-30
+
+Pentahoot stage: games in an event, voting from phones, the reveal and the results.
+
+### Added
+
+- Hosts add games to an event from their Pentahoot question packs, reload a game from its pack before it starts, and delete games that never ran.
+- Hosts start and finish games; starting the first game locks the name list, and finishing early leaves unfinished questions out and is logged.
+- Live control runs Pentahoot questions: open any question that is not done, stop the countdown, reveal once late votes are in, move on, or reset a question's votes. Hosts see a live count per name that players never see.
+- Players vote from their phones by searching the name list, until the countdown ends; they see the name they sent, then the same results and podium as the projector.
+- The Public View shows the question with a countdown and how many answered, then reveals the top 5 from the lowest rank up and ends on a podium.
+- The Public View lobby shows a QR code with the join link.
+- A Results page per event shows the top 5 of every question, with a CSV export, and an Activity log lists the actions that cannot be undone.
+
 ## [0.2.0] - 2026-09-30
 
 Realtime stage: live screens over Reverb, the Public View lobby and Live control.
@@ -42,6 +56,7 @@ Foundation stage: accounts, events, question packs, name lists and joining from 
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
 
-[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.2.0...develop
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.3.0...develop
+[0.3.0]: https://github.com/devivace-groups/pentahoot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/devivace-groups/pentahoot/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/devivace-groups/pentahoot/releases/tag/v0.1.0

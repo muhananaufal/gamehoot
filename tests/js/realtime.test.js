@@ -261,3 +261,74 @@ describe('F20 status screens', () => {
         vi.useRealTimers();
     });
 });
+
+describe('F14, F24 small messages', () => {
+    it('updates the answered counter of the question on screen only', () => {
+        const store = realtimeStore();
+        store.accept({ ...snapshot(3), game: { question: { id: 'q1', attempt: 2 } } });
+
+        store.answered({ question_id: 'q1', attempt: 2, answered: 7 });
+        expect(store.snapshot.game.answered).toBe(7);
+
+        store.answered({ question_id: 'q1', attempt: 1, answered: 99 });
+        store.answered({ question_id: 'q2', attempt: 2, answered: 99 });
+        expect(store.snapshot.game.answered).toBe(7);
+    });
+
+    it('fetches the full state after a jitter when a snapshot was too big to send', async () => {
+        vi.useFakeTimers();
+        const echo = fakeEcho();
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => snapshot(9, Date.now()));
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.abc.public', private: false }],
+            fetchState,
+            random: () => 0.5,
+            doc: fakeDocument(),
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        const before = fetchState.mock.calls.length;
+
+        echo.listeners['event.abc.public.state']({ version: 9, server_now: 0, refresh: true });
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS * 0.5);
+
+        expect(fetchState).toHaveBeenCalledTimes(before + 1);
+        expect(store.version).toBe(9);
+        vi.useRealTimers();
+    });
+
+    it('lets the host page react to each vote, to reload the tally', async () => {
+        const echo = fakeEcho();
+        const store = realtimeStore();
+        store.accept({ ...snapshot(1), game: { question: { id: 'q1', attempt: 1 } } });
+        const onAnswered = vi.fn();
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.abc.public', private: false }],
+            fetchState: async () => null,
+            onAnswered,
+            doc: fakeDocument(),
+        });
+
+        echo.listeners['event.abc.public.answered']({ question_id: 'q1', attempt: 1, answered: 3 });
+
+        expect(onAnswered).toHaveBeenCalledOnce();
+        expect(store.snapshot.game.answered).toBe(3);
+    });
+});
+
+describe("E4 the phone's own state", () => {
+    it('keeps "me" from /state while public broadcasts, which never carry it, come in', () => {
+        const store = realtimeStore();
+        store.accept({ ...snapshot(1), me: { name: 'Rita', vote: null } });
+        store.accept(snapshot(2));
+
+        expect(store.me).toEqual({ name: 'Rita', vote: null });
+
+        store.accept({ ...snapshot(3), me: null });
+        expect(store.me).toBe(null);
+    });
+});
