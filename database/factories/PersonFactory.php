@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Event;
 use App\Models\Person;
+use App\People\ClaimCookie;
 use App\People\PersonName;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -32,5 +33,16 @@ final class PersonFactory extends Factory
             'claim_token_hash' => null,
             'claimed_at' => null,
         ];
+    }
+
+    /**
+     * B-1: a name a phone has claimed, with its own token hash (G2: unique).
+     */
+    public function claimed(): self
+    {
+        return $this->state(fn (): array => [
+            'claim_token_hash' => ClaimCookie::hash(ClaimCookie::newToken()),
+            'claimed_at' => now(),
+        ]);
     }
 }
