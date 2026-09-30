@@ -10,7 +10,8 @@ use App\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * D-3, G10: the results as CSV, one row per ranked name.
+ * D-3, G10: the results as CSV. Pentahoot: one row per ranked name with its votes. Tebak:
+ * one row per won question with its points, then the final board ("Final").
  */
 final class ResultsExportController
 {
@@ -25,20 +26,23 @@ final class ResultsExportController
                 return;
             }
 
-            fputcsv($out, ['Game', 'Question', 'Prompt', 'Rank', 'Name', 'Votes'], ',', '"', '');
+            fputcsv($out, ['Game', 'Question', 'Prompt', 'Rank', 'Name', 'Score'], ',', '"', '');
 
             foreach ($results->games as $game) {
+                $title = CsvCell::safe($game['title']);
+
                 foreach ($game['questions'] as $question) {
                     foreach ($question['rows'] as $row) {
-                        fputcsv($out, [
-                            CsvCell::safe($game['title']),
-                            $question['number'],
-                            CsvCell::safe($question['prompt']),
-                            $row['rank'],
-                            CsvCell::safe($row['name']),
-                            $row['votes'],
-                        ], ',', '"', '');
+                        fputcsv($out, [$title, $question['number'], CsvCell::safe($question['prompt']), $row['rank'], CsvCell::safe($row['name']), $row['votes']], ',', '"', '');
                     }
+
+                    if ($question['winner'] !== null) {
+                        fputcsv($out, [$title, $question['number'], CsvCell::safe($question['prompt']), '', CsvCell::safe($question['winner']), $question['points']], ',', '"', '');
+                    }
+                }
+
+                foreach ($game['final'] ?? [] as $row) {
+                    fputcsv($out, [$title, 'Final', '', $row['rank'], CsvCell::safe($row['name']), $row['points']], ',', '"', '');
                 }
             }
 

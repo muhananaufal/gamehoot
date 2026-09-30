@@ -25,4 +25,6 @@ enum LoggedAction: string
     case ClaimReleased = 'person.claim_released';
     case GameFinishedEarly = 'game.finished_early';
     case QuestionReset = 'question.reset';
+    case WinnerPicked = 'question.winner_picked';
+    case QuestionSurrendered = 'question.surrendered';
 }

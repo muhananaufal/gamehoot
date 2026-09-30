@@ -2,6 +2,7 @@ import Alpine from 'alpinejs';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { kataBoxes } from './kata-boxes.js';
+import { kataHost, kataScreen } from './kata-screens.js';
 import { nameReview } from './name-review.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
 import { connectRealtime, countLabel, fetchSnapshot, offlineEcho, realtimeStore, screenFor } from './realtime.js';
@@ -13,6 +14,8 @@ Alpine.data('nameReview', nameReview);
 Alpine.data('pentahootPhone', pentahootPhone);
 Alpine.data('pentahootScreen', pentahootScreen);
 Alpine.data('pentahootHost', pentahootHost);
+Alpine.data('kataScreen', kataScreen);
+Alpine.data('kataHost', kataHost);
 
 /** F14: hosts reload the per-name tally at most once a second while votes come in. */
 const TALLY_RELOAD_MS = 1_000;

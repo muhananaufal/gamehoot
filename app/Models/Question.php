@@ -24,6 +24,13 @@ final class Question extends Model
     use HasFactory, HasUuids;
 
     /**
+     * E10, G1: resolved_at keeps milliseconds for the tie-break; the default format cuts them.
+     *
+     * @var string
+     */
+    protected $dateFormat = 'Y-m-d H:i:s.v';
+
+    /**
      * @var array<string, mixed>
      */
     protected $attributes = [

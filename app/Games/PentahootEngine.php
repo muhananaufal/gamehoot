@@ -14,6 +14,7 @@ use App\Models\PackQuestion;
 use App\Models\Question;
 use App\Models\QuestionResult;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 
 final class PentahootEngine implements LiveGameEngine
@@ -65,6 +66,11 @@ final class PentahootEngine implements LiveGameEngine
         ]);
     }
 
+    public function saveCopyDetail(Question $question, array $attributes): void
+    {
+        $question->pentahoot()->firstOrFail()->fill($attributes)->save();
+    }
+
     public function initialStatus(): QuestionStatus
     {
         return QuestionStatus::Ready;
@@ -83,6 +89,8 @@ final class PentahootEngine implements LiveGameEngine
             'id' => $game->id,
             'type' => $game->type->value,
             'title' => $game->title,
+            // G7, E12: a finished game stays on screen until the next game starts.
+            'status' => $game->status->value,
             'count' => $questions->count(),
             'question' => $current === null ? null : $this->questionPart($current),
         ];
@@ -100,9 +108,27 @@ final class PentahootEngine implements LiveGameEngine
         return PentahootActions::ACTIONS;
     }
 
-    public function perform(string $action, Event $event, Question $question, User $actor): void
+    public function actionRules(string $action): array
+    {
+        return [];
+    }
+
+    public function perform(string $action, Event $event, Question $question, User $actor, array $input): void
     {
         $this->actions->perform($action, $event, $question, $actor);
+    }
+
+    /**
+     * G10: Pentahoot results are frozen at each Reveal already.
+     */
+    public function finish(Game $game, CarbonImmutable $at): void {}
+
+    /**
+     * D-2: a question was on screen once it left ready, or a Reset brought it back (T1).
+     */
+    public function wasShown(Question $question): bool
+    {
+        return $question->status !== QuestionStatus::Ready || ($question->pentahoot->attempt ?? 1) > 1;
     }
 
     public function liveCounters(Game $game, Audience $audience): array

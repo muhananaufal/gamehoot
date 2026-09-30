@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Actions\Events;
 
 use App\Enums\EventStatus;
+use App\Enums\GameStatus;
 use App\Enums\LoggedAction;
 use App\Exceptions\EventHasActiveGame;
 use App\Models\Event;
+use App\Models\Game;
 use App\Models\User;
 use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
@@ -28,7 +30,10 @@ final readonly class CloseEvent
         DB::transaction(function () use ($event, $actor): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
 
-            if ($locked->active_game_id !== null) {
+            // T6, G7: only a game that is still running blocks closing; a finished one just shows its results.
+            $onScreen = $locked->active_game_id === null ? null : Game::query()->find($locked->active_game_id);
+
+            if ($onScreen !== null && $onScreen->status !== GameStatus::Finished) {
                 throw EventHasActiveGame::cannotClose();
             }
 

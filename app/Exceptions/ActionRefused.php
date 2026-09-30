@@ -60,6 +60,14 @@ final class ActionRefused extends RuntimeException
         return new self('GAME_PLAYED', 409);
     }
 
+    /**
+     * D-2: a copied question that has been on screen, or belongs to a finished game.
+     */
+    public static function questionLocked(): self
+    {
+        return new self('QUESTION_LOCKED', 409);
+    }
+
     public static function eventNotOpen(): self
     {
         return new self('EVENT_NOT_OPEN', 409);

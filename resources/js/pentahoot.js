@@ -60,13 +60,57 @@ export function revealSteps(results) {
  * E17: ranks 1 to 3 stand on the podium; a tie can leave a step empty. Ranks 4 and 5 follow
  * as small rows.
  */
+/** E17: a podium step shows at most this many names; more are summed up in one row (E20). */
+export const PODIUM_STEP_NAMES = 3;
+
+/** E20: the projector draws at most this many rows of the reveal list. A design choice, tuned at the rehearsal. */
+export const SCREEN_ROWS = 10;
+
+/**
+ * E20: one row standing for a whole tied group: its rank, how many names and their score.
+ */
+function summaryOf(group) {
+    return { rank: group[0].rank, summary: true, count: group.length, votes: group[0].votes };
+}
+
+/**
+ * E17: ranks 1 to 3 stand on the podium; a tie can leave a step empty, and a step with more
+ * than three names shows one summary row (E20). Ranks 4 and 5 follow as small rows.
+ */
 export function podium(results) {
+    const step = (rank) => {
+        const rows = results.filter((row) => row.rank === rank);
+
+        return rows.length > PODIUM_STEP_NAMES ? [summaryOf(rows)] : rows;
+    };
+
     return {
-        first: results.filter((row) => row.rank === 1),
-        second: results.filter((row) => row.rank === 2),
-        third: results.filter((row) => row.rank === 3),
+        first: step(1),
+        second: step(2),
+        third: step(3),
         rest: results.filter((row) => row.rank > 3),
     };
+}
+
+/**
+ * E20: keeps whole rank groups while the list fits in max rows. The first group that would
+ * not fit, and every group after it, becomes one summary row, so a tie is never cut.
+ * The full list stays on phones, the results page and the CSV.
+ */
+export function capRows(results, max = SCREEN_ROWS) {
+    const rows = [];
+    let overflowing = false;
+
+    for (const group of revealSteps(results).reverse()) {
+        if (!overflowing && rows.length + group.length <= max) {
+            rows.push(...group);
+        } else {
+            overflowing = true;
+            rows.push(summaryOf(group));
+        }
+    }
+
+    return rows;
 }
 
 /**

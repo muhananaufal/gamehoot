@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Host;
 
 use App\Actions\Games\RunQuestionAction;
 use App\Games\GameEngines;
+use App\Http\Requests\Host\QuestionActionRequest;
 use App\Models\Event;
 use App\Models\Question;
 use App\Models\User;
@@ -18,7 +19,7 @@ use Illuminate\Http\Response;
  */
 final class QuestionActionController
 {
-    public function __invoke(Event $event, Question $question, string $action, GameEngines $engines, RunQuestionAction $run, #[CurrentUser] User $user): Response
+    public function __invoke(QuestionActionRequest $request, Event $event, Question $question, string $action, GameEngines $engines, RunQuestionAction $run, #[CurrentUser] User $user): Response
     {
         $game = $question->game()->where('event_id', $event->id)->first();
         abort_if($game === null, 404);
@@ -26,7 +27,7 @@ final class QuestionActionController
         $engine = $engines->live($game->type);
         abort_unless(in_array($action, $engine->actions(), true), 404);
 
-        $run->handle($engine, $action, $event, $question, $user);
+        $run->handle($engine, $action, $event, $question, $user, $request->validated());
 
         return response()->noContent();
     }

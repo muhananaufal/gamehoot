@@ -10,6 +10,7 @@ return [
     'NO_QUESTIONS' => 'This game has no questions yet.',
     'GAME_PLAYED' => 'This game has been played, so it is kept for the results.',
     'EVENT_NOT_OPEN' => 'Open the event before starting a game.',
+    'QUESTION_LOCKED' => 'This question has been on screen, so it can no longer be edited.',
     'VOTE_CLOSED' => 'Voting for this question has closed.',
     'ALREADY_VOTED' => 'You have already voted for this question.',
     'NOT_CLAIMED' => 'Pick your name first.',

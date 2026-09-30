@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Hosts can add Tebak Kata games to an event from their Tebak Kata packs.
+- Live control runs Tebak Kata questions: show any queued question, open letter boxes as hints, skip a question once, pick the winner from the name list after a confirmation, surrender, and show the leaderboard between questions. Hosts see the answer and a live board.
+- The Public View shows Tebak Kata letter boxes, the winner or "no winner", the leaderboard with how names moved, and a final podium. Phones mirror the screen when the event allows it and always show the final results.
+- Hosts can edit the copied questions of a game until each one has been on screen, without changing the pack.
+- The Results page and CSV export list the winner of every Tebak Kata question and the final board.
+
+### Changed
+
+- A finished game stays on the Public View and phones until the next game starts.
+- The projector reveal shows at most 10 rows: when many names tie, the tied group is summed up in one line, and the full list stays on phones, the Results page and the export.
+
 ## [0.3.0] - 2026-09-30
 
 Pentahoot stage: games in an event, voting from phones, the reveal and the results.

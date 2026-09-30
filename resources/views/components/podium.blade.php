@@ -9,11 +9,13 @@
         {{-- Fixed step heights, so names above a step never squeeze it (1 is always the tallest). --}}
         @foreach (['second' => ['h-[16vh]', 'text-rank-2'], 'first' => ['h-[23vh]', 'text-on-rank-1'], 'third' => ['h-[11vh]', 'text-rank-3']] as $step => [$height, $number])
             <div class="flex flex-col items-center justify-end gap-2">
-                <template x-for="row in {{ $stand }}.{{ $step }}" :key="row.name">
+                <template x-for="row in {{ $stand }}.{{ $step }}" :key="row.summary ? 'summary' : row.name">
                     <div class="flex max-w-full flex-col items-center gap-1 text-center" :class="{{ $stand }}.{{ $step }}.length > 2 ? 'text-[0.7em]' : ''">
                         <span class="flex size-[2.6em] items-center justify-center rounded-full bg-surface font-display font-bold"
-                            x-text="row.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('')"></span>
-                        <span class="max-w-full truncate font-semibold" x-text="row.name"></span>
+                            x-text="row.summary ? row.count : row.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('')"></span>
+                        {{-- E20: a step with more than three names shows one summary. --}}
+                        <span class="max-w-full truncate font-semibold"
+                            x-text="row.summary ? $store.realtime.count(@js(__('pentahoot.tied_names')), row.count) : row.name"></span>
                         <span class="font-display font-semibold tabular-nums" x-text="row.votes"></span>
                     </div>
                 </template>

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\QuestionStatus;
 use App\Models\Event;
 use App\Models\Person;
 use App\Models\User;
@@ -9,6 +10,8 @@ use App\People\ClaimCookie;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Tests\Support\Pentahoot;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -129,5 +132,30 @@ describe('socket settings (P1)', function (): void {
         screensEvent();
 
         expect(realtimeConfigOf(get('/gathering-2026/screen')))->toHaveKey('socket', null);
+    });
+});
+
+describe('Tebak Kata screens (stage 4)', function (): void {
+    it('gives hosts Live control for a Tebak Kata game with the name list for the winner', function (): void {
+        $event = Pentahoot::event(['Rita Wulandari']);
+        TebakKata::running($event, [['Capital of France?', 'PARIS', [0]]]);
+
+        actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")
+            ->assertOk()
+            ->assertSee('Capital of France?')
+            ->assertSee('Show final results')
+            ->assertSee('Rita Wulandari');
+    });
+
+    it('never puts the answer in the page of the Public View or the phone (E5, F2)', function (): void {
+        $event = Pentahoot::event(['Rita Wulandari']);
+        $game = TebakKata::running($event, [['Capital of France?', 'PARIS', [0]]]);
+        $question = $game->questions()->sole();
+        $question->forceFill(['status' => QuestionStatus::Shown])->save();
+        $game->forceFill(['current_question_id' => $question->id])->save();
+        $event->bumpStateVersion();
+        $event->save();
+
+        get('/year-end-party/screen')->assertOk()->assertDontSee('PARIS');
     });
 });
