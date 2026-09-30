@@ -1,5 +1,8 @@
 @php
     use App\Enums\GameStatus;
+
+    // D-1, G7: a game still running blocks starting another; a finished one on screen does not.
+    $gameRunning = $games->contains(fn ($game) => $game->id === $event->active_game_id && $game->status !== GameStatus::Finished);
 @endphp
 {{-- D-9, T8: the games of an event, in play order. --}}
 <x-layouts.host :title="__('games.title') . ' · ' . $event->name" :event="$event"
@@ -18,7 +21,7 @@
 
             @forelse ($games as $game)
                 @php
-                    $running = $event->active_game_id === $game->id;
+                    $running = $event->active_game_id === $game->id && $game->status !== GameStatus::Finished;
                     $status = $running ? 'running' : ($game->status === GameStatus::Finished ? 'finished' : 'waiting');
                 @endphp
                 <article class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-4">
@@ -33,7 +36,7 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <form method="POST" action="{{ route('host.events.games.start', [$event, $game]) }}">
                                 @csrf
-                                <x-button type="submit" :disabled="$game->questions_count === 0 || $event->active_game_id !== null">{{ __('games.start') }}</x-button>
+                                <x-button type="submit" :disabled="$game->questions_count === 0 || $gameRunning">{{ __('games.start') }}</x-button>
                             </form>
                             @if ($game->source_pack_id)
                                 <form method="POST" action="{{ route('host.events.games.reload', [$event, $game]) }}">

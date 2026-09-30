@@ -154,9 +154,31 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish")
             ->assertRedirect("/host/{$event->id}");
 
+        // G7, E12: the finished game stays on screen with its results until the next game starts.
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
-            ->and($event->refresh()->active_game_id)->toBeNull()
+            ->and($event->refresh()->active_game_id)->toBe($game->id)
             ->and(ActionLog::query()->where('action', LoggedAction::GameFinishedEarly)->count())->toBe(1);
+    });
+
+    it('starts the next game in place of a finished one on screen (G7, E12)', function (): void {
+        $event = Pentahoot::event();
+        $first = Pentahoot::running($event);
+        $first->forceFill(['status' => GameStatus::Finished])->save();
+        $next = Pentahoot::game($event, ['Next?'], 'Second round');
+
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$next->id}/start")
+            ->assertRedirect("/host/{$event->id}");
+
+        expect($event->refresh()->active_game_id)->toBe($next->id);
+    });
+
+    it('does not finish a game twice', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event);
+        $game->forceFill(['status' => GameStatus::Finished])->save();
+
+        actingAs(gamesOwner($event))->from("/host/{$event->id}")->post("/host/{$event->id}/games/{$game->id}/finish")
+            ->assertSessionHasErrors(['action' => 'The screen was out of date. It has been refreshed, try again.']);
     });
 
     it('finishes a completed game without an early-finish log entry', function (): void {

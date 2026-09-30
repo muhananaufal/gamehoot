@@ -22,14 +22,16 @@ final readonly class RunQuestionAction
     public function __construct(private StatePublisher $publisher) {}
 
     /**
+     * @param  array<string, mixed>  $input  validated by the engine's actionRules()
+     *
      * @throws ActionRefused
      */
-    public function handle(LiveGameEngine $engine, string $action, Event $event, Question $question, User $actor): void
+    public function handle(LiveGameEngine $engine, string $action, Event $event, Question $question, User $actor, array $input = []): void
     {
-        DB::transaction(function () use ($engine, $action, $event, $question, $actor): void {
+        DB::transaction(function () use ($engine, $action, $event, $question, $actor, $input): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
 
-            $engine->perform($action, $locked, $question, $actor);
+            $engine->perform($action, $locked, $question, $actor, $input);
 
             $locked->bumpStateVersion();
             $locked->save();

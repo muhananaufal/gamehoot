@@ -13,7 +13,7 @@ use App\Realtime\StatePublisher;
 use Illuminate\Support\Facades\DB;
 
 /**
- * D-1: one active game per event. B-3: starting the first game locks the name list
+ * D-1: one active game per event; a finished game on screen gives way to the next (G7). B-3: starting the first game locks the name list
  * (claims stay possible, B-5). T7: a game without questions cannot start.
  */
 final readonly class StartGame
@@ -41,7 +41,10 @@ final readonly class StartGame
                 throw ActionRefused::stale();
             }
 
-            if ($locked->active_game_id !== null) {
+            // G7: a finished game only shows its results and gives way to the next one.
+            $onScreen = $locked->active_game_id === null ? null : Game::query()->find($locked->active_game_id);
+
+            if ($onScreen !== null && $onScreen->status !== GameStatus::Finished) {
                 throw ActionRefused::gameRunning();
             }
 
