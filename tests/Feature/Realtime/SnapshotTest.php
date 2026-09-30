@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use App\Enums\Audience;
+use App\Enums\QuestionStatus;
 use App\Models\Event;
 use App\Models\Person;
 use App\Realtime\EventSnapshot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Pentahoot;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\travelTo;
 
@@ -42,6 +45,7 @@ it('gives every screen the event, the lobby count and the version (F1, F15, F23)
             'link' => url('/gathering-2026'),
             'claims_locked' => false,
             'screen_theme' => 'dark',
+            'show_on_devices' => false,
         ],
         'lobby' => ['joined' => 2],
         'game' => null,
@@ -94,6 +98,35 @@ it('keeps the largest snapshot well under the Reverb message limit (F14)', funct
         'event' => 'state',
         'channel' => $audience->channelName($event),
         'data' => json_encode(snapshotOf($event, $audience)),
+    ], JSON_THROW_ON_ERROR);
+
+    expect(strlen($message))->toBeLessThan(EventSnapshot::MAX_MESSAGE_BYTES);
+})->with(['public', 'host']);
+
+it('keeps the largest Tebak Kata snapshot under the Reverb message limit (F14)', function (string $channel): void {
+    $audience = Audience::from($channel);
+    // Worst case: 50 questions, a 500 character prompt, a 40 character answer, a full board of
+    // the longest names allowed (100 characters).
+    $names = array_map(fn (int $i): string => str_pad("Name {$i} ", 100, 'x'), range(1, 5));
+    $event = Pentahoot::event($names);
+    $questions = array_map(fn (int $i): array => [str_repeat('Q', 500), str_repeat('AB ', 13).'A', [0], 2], range(1, 50));
+    $game = TebakKata::running($event, $questions);
+    foreach (range(1, 5) as $position) {
+        $game->questions()->where('position', $position)->update([
+            'status' => QuestionStatus::Won,
+            'winner_person_id' => Pentahoot::person($event, $names[$position - 1])->id,
+            'resolved_at' => now(),
+        ]);
+    }
+    $current = $game->questions()->where('position', 5)->firstOrFail();
+    $game->forceFill(['current_question_id' => $current->id, 'leaderboard_at' => now()])->save();
+    $event->bumpStateVersion();
+    $event->save();
+
+    $message = json_encode([
+        'event' => 'state',
+        'channel' => $audience->channelName($event),
+        'data' => json_encode(snapshotOf($event->refresh(), $audience)),
     ], JSON_THROW_ON_ERROR);
 
     expect(strlen($message))->toBeLessThan(EventSnapshot::MAX_MESSAGE_BYTES);

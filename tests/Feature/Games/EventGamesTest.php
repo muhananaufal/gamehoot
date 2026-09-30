@@ -10,6 +10,7 @@ use App\Enums\QuestionStatus;
 use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Game;
+use App\Models\PackQuestion;
 use App\Models\QuestionPack;
 use App\Models\User;
 use App\Realtime\StateChanged;
@@ -58,19 +59,32 @@ describe('games in an event (D-9)', function (): void {
             ->assertOk()
             ->assertSee('Warm-up')
             ->assertSee('Office Awards')
-            ->assertDontSee('Celebrities');
+            // Tebak Kata is playable from stage 4.
+            ->assertSee('Celebrities');
     });
 
-    it('refuses packs of another host and game types that cannot be played yet', function (): void {
+    it('refuses packs of another host', function (): void {
         $event = Pentahoot::event();
         $foreign = Pentahoot::pack(User::factory()->create());
+
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $foreign->id])->assertSessionHasErrors('pack_id');
+        expect(Game::query()->count())->toBe(0);
+    });
+
+    it('adds a Tebak Kata game from a pack, copying the answers and open boxes (D-9, stage 4)', function (): void {
+        $event = Pentahoot::event();
         $kata = new QuestionPack(['title' => 'Celebrities', 'game_type' => GameType::TebakKata]);
         $kata->owner()->associate(gamesOwner($event))->save();
+        $source = new PackQuestion(['position' => 1, 'points' => 2]);
+        $source->pack()->associate($kata)->save();
+        $source->kata()->forceCreate(['prompt' => 'Capital of France?', 'answer_text' => 'PARIS', 'initial_open_indexes' => [0]]);
 
-        actingAs(gamesOwner($event));
-        post("/host/{$event->id}/games", ['pack_id' => $foreign->id])->assertSessionHasErrors('pack_id');
-        post("/host/{$event->id}/games", ['pack_id' => $kata->id])->assertSessionHasErrors('pack_id');
-        expect(Game::query()->count())->toBe(0);
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $kata->id])->assertSessionHasNoErrors();
+
+        $copy = Game::query()->sole()->questions()->sole();
+        expect($copy->status)->toBe(QuestionStatus::Queued)
+            ->and($copy->points)->toBe(2)
+            ->and($copy->kata?->opened_indexes)->toBe([0]);
     });
 
     it('reloads an unstarted game from the latest pack', function (): void {
