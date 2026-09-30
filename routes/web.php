@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
 use App\Http\Controllers\Admin\UserStatusController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\Host\ActivityLogController;
 use App\Http\Controllers\Host\CloseEventController;
 use App\Http\Controllers\Host\DashboardController;
 use App\Http\Controllers\Host\EventCohostController;
@@ -29,6 +30,8 @@ use App\Http\Controllers\Host\PersonLinksController;
 use App\Http\Controllers\Host\QuestionActionController;
 use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
+use App\Http\Controllers\Host\ResultsController;
+use App\Http\Controllers\Host\ResultsExportController;
 use App\Http\Controllers\Host\TrashController;
 use App\Http\Controllers\Join\EventStateController;
 use App\Http\Controllers\Join\JoinController;
@@ -103,6 +106,11 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
                 Route::post('/{game}/start', GameStartController::class)->whereUuid('game')->name('start');
                 Route::post('/{game}/finish', GameFinishController::class)->whereUuid('game')->name('finish');
             });
+
+            // D-3, G10, E13: results and the activity log, for the owner and co-hosts.
+            Route::get('/results', ResultsController::class)->name('results')->can('view', 'event');
+            Route::get('/results.csv', ResultsExportController::class)->name('results.export')->can('view', 'event');
+            Route::get('/logs', ActivityLogController::class)->name('logs')->can('view', 'event');
 
             // F13, C-3: question actions, run by the engine of the game type.
             Route::post('/questions/{question}/{action}', QuestionActionController::class)
