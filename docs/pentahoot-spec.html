@@ -1073,11 +1073,12 @@ erDiagram
       <p class="sub">Urutan dibuat supaya kalau waktu habis, yang tertunda adalah bagian yang paling ringan. Tanggal per tahap sengaja tidak ditulis karena belum diestimasi bersama.</p>
       <ol class="phases">
         <li><span class="n">1</span><div><b>Fondasi</b><p>Migration dan model sesuai bagian 09, kontrak engine per jenis game (F13), akun host dan super-admin, CRUD event, paket soal (D-9), master nama dengan import dan pratinjau, klaim nama, link personal, dan kunci klaim.</p></div></li>
-        <li><span class="n">2</span><div><b>Kerangka realtime</b><p>Reverb, channel per UUID event, snapshot berversi dan <code>GET /state</code> dengan cache, anggaran ukuran broadcast, sinkron jam, reconnect dengan jeda acak, lobby Public View (F23). Diuji lokal dengan test otomatis dan browser. Uji di server staging dengan beberapa HP ditunda sampai staging disiapkan, dan wajib dilakukan sebelum tahap 6.</p></div></li>
+        <li><span class="n">2</span><div><b>Kerangka realtime</b><p>Reverb, channel per UUID event, snapshot berversi dan <code>GET /state</code> dengan cache, anggaran ukuran broadcast, sinkron jam, reconnect dengan jeda acak, lobby Public View (F23). Diuji lokal dengan test otomatis dan browser. Uji di server staging dengan beberapa HP ditunda sampai staging disiapkan, dan wajib dilakukan sebelum tahap 7 (gladi).</p></div></li>
         <li><span class="n">3</span><div><b>Pentahoot</b><p>Game paling berat: voting dari HP, toleransi waktu, Reset, reveal dengan peringkat kompetisi.</p></div></li>
         <li><span class="n">4</span><div><b>Tebak Kata</b><p>Kotak huruf, hint, Skip, Surrender, winner, leaderboard live, hasil akhir. Toggle E14 dan tampilan mirror di HP.</p></div></li>
         <li><span class="n">5</span><div><b>Tebak Gambar</b><p>Upload dengan kompresi di browser (versi 1920 px dan versi HP 720 px), gambar jawaban private dan signed URL. Memakai ulang alur winner, Skip, leaderboard, dan tampilan mirror dari Tebak Kata.</p></div></li>
-        <li><span class="n">6</span><div><b>Gladi di venue</b><p>Uji beban dengan skrip 200–500 klien di staging (F19), lalu uji dengan puluhan HP di jaringan venue. Setel ulang toleransi E3 bila perlu.</p></div></li>
+        <li><span class="n">6</span><div><b>Penyempurnaan</b><p>Perbaikan temuan dan penghalusan dari review tahap 3–5 (tampilan, alur, performa, pesan error) sebelum gladi. Tidak ada fitur di luar spesifikasi; perubahan keputusan tetap lewat dokumen dulu (W8). Ditutup dengan <code>v0.6.0</code>.</p></div></li>
+        <li><span class="n">7</span><div><b>Gladi di venue</b><p>Uji beban dengan skrip 200–500 klien di staging (F19), lalu uji dengan puluhan HP di jaringan venue. Setel ulang toleransi E3 bila perlu.</p></div></li>
       </ol>
     </section>
 
@@ -1165,7 +1166,7 @@ erDiagram
               <p><b>Versi mengikuti SemVer <code>MAJOR.MINOR.PATCH</code>.</b></p>
               <ul>
                 <li><b>PATCH</b> untuk perbaikan bug dan perubahan kecil yang tidak menambah fitur. Angkanya boleh terus naik (<code>0.3.9</code> → <code>0.3.10</code>), tidak pernah "dibulatkan" ke minor.</li>
-                <li><b>MINOR</b> untuk fitur baru. Di masa pengembangan, minor hanya naik saat satu tahap selesai: <code>v0.1.0</code> fondasi, <code>v0.2.0</code> kerangka realtime, <code>v0.3.0</code> Pentahoot, <code>v0.4.0</code> Tebak Kata, <code>v0.5.0</code> Tebak Gambar. PATCH kembali ke 0 setiap minor naik.</li>
+                <li><b>MINOR</b> untuk fitur baru. Di masa pengembangan, minor hanya naik saat satu tahap selesai: <code>v0.1.0</code> fondasi, <code>v0.2.0</code> kerangka realtime, <code>v0.3.0</code> Pentahoot, <code>v0.4.0</code> Tebak Kata, <code>v0.5.0</code> Tebak Gambar, <code>v0.6.0</code> penyempurnaan (tahap tanpa fitur baru, tetap menaikkan minor karena menutup satu tahap). PATCH kembali ke 0 setiap minor naik. Setelah <code>v0.6.0</code>, uji beban dan gladi memakai <code>v1.0.0-rc.N</code>.</li>
                 <li><b>MAJOR</b> untuk perubahan besar yang merusak kompatibilitas. <code>v1.0.0</code> adalah rilis production pertama.</li>
                 <li><b>Rilis event pertengahan Oktober 2026 paling tinggi <code>v1.0.0</code>.</b> Uji beban dan gladi memakai <code>v1.0.0-rc.1</code>, <code>v1.0.0-rc.2</code>, dan seterusnya. Kalau ada tahap yang belum selesai, event tetap <code>v1.0.0</code> dari apa yang siap.</li>
                 <li>Versi hanya dibuat saat merge ke <code>main</code> dengan persetujuan pemilik proyek (W2). Banyak perbaikan boleh dikumpulkan dalam satu PATCH. Merge ke <code>develop</code> tidak membuat versi, dan tidak ada bump otomatis per commit.</li>

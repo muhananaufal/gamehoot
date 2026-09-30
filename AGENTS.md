@@ -95,9 +95,9 @@ Aturan tetap:
 Versi (W9), SemVer `MAJOR.MINOR.PATCH`:
 
 - **PATCH**: perbaikan bug dan perubahan kecil. Boleh terus naik (`0.3.9` → `0.3.10`).
-- **MINOR**: fitur baru. Sebelum rilis, minor hanya naik saat satu tahap selesai: `v0.1.0` fondasi, `v0.2.0` realtime, `v0.3.0` Pentahoot, `v0.4.0` Tebak Kata, `v0.5.0` Tebak Gambar. PATCH kembali ke 0.
+- **MINOR**: fitur baru. Sebelum rilis, minor hanya naik saat satu tahap selesai: `v0.1.0` fondasi, `v0.2.0` realtime, `v0.3.0` Pentahoot, `v0.4.0` Tebak Kata, `v0.5.0` Tebak Gambar, `v0.6.0` penyempurnaan (tanpa fitur baru, tetap minor karena menutup satu tahap). PATCH kembali ke 0.
 - **MAJOR**: perubahan yang merusak kompatibilitas. `v1.0.0` = rilis production pertama.
-- **Rilis event pertengahan Oktober 2026 paling tinggi `v1.0.0`.** Uji beban dan gladi memakai `v1.0.0-rc.N`.
+- **Rilis event pertengahan Oktober 2026 paling tinggi `v1.0.0`.** Uji beban dan gladi memakai `v1.0.0-rc.N`, setelah `v0.6.0`.
 - Versi hanya dibuat saat merge ke `main` dengan persetujuan pemilik proyek. Banyak perbaikan boleh dikumpulkan dalam satu PATCH. Merge ke `develop` tidak membuat versi. Tidak ada bump otomatis.
 
 Changelog (W10):
@@ -198,4 +198,4 @@ Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki samp
 
 ## 9. Urutan pengerjaan
 
-Ikuti bagian 12 spesifikasi: fondasi → kerangka realtime → Pentahoot → Tebak Kata → Tebak Gambar → uji beban dan gladi.
+Ikuti bagian 12 spesifikasi: fondasi → kerangka realtime → Pentahoot → Tebak Kata → Tebak Gambar → penyempurnaan → uji beban dan gladi.
