@@ -26,9 +26,9 @@ final class PackQuestionController
         return view('host.packs.show', $this->page->data($user, $pack, creating: true));
     }
 
-    public function store(PackQuestionRequest $request, QuestionPack $pack, SavePackQuestion $save): RedirectResponse
+    public function store(PackQuestionRequest $request, QuestionPack $pack, SavePackQuestion $save, #[CurrentUser] User $actor): RedirectResponse
     {
-        $save->handle($pack, null, $request->validated());
+        $save->handle($pack, null, $request->validated(), $actor);
 
         return redirect()->route('host.packs.show', $pack)->with('status', __('packs.question_added'));
     }
@@ -38,9 +38,9 @@ final class PackQuestionController
         return view('host.packs.show', $this->page->data($user, $pack, $question));
     }
 
-    public function update(PackQuestionRequest $request, QuestionPack $pack, PackQuestion $question, SavePackQuestion $save): RedirectResponse
+    public function update(PackQuestionRequest $request, QuestionPack $pack, PackQuestion $question, SavePackQuestion $save, #[CurrentUser] User $actor): RedirectResponse
     {
-        $save->handle($pack, $question, $request->validated());
+        $save->handle($pack, $question, $request->validated(), $actor);
 
         return redirect()->route('host.packs.show', $pack)->with('status', __('packs.question_saved'));
     }

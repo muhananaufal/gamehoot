@@ -7,8 +7,10 @@ namespace App\Actions\Games;
 use App\Enums\GameStatus;
 use App\Exceptions\ActionRefused;
 use App\Games\GameEngines;
+use App\Media\QuestionImages;
 use App\Models\Game;
 use App\Models\Question;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -18,16 +20,16 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class EditGameQuestion
 {
-    public function __construct(private GameEngines $engines) {}
+    public function __construct(private GameEngines $engines, private QuestionImages $images) {}
 
     /**
      * @param  array<string, mixed>  $validated
      *
      * @throws ActionRefused
      */
-    public function handle(Game $game, Question $question, array $validated): void
+    public function handle(Game $game, Question $question, array $validated, User $actor): void
     {
-        DB::transaction(function () use ($game, $question, $validated): void {
+        DB::transaction(function () use ($game, $question, $validated, $actor): void {
             $lockedGame = Game::query()->lockForUpdate()->findOrFail($game->id);
             $locked = Question::query()->lockForUpdate()->with(['pentahoot', 'kata'])->findOrFail($question->id);
             $engine = $this->engines->live($lockedGame->type);
@@ -35,6 +37,9 @@ final readonly class EditGameQuestion
             if ($lockedGame->status === GameStatus::Finished || $engine->wasShown($locked)) {
                 throw ActionRefused::questionLocked();
             }
+
+            // D-9: a new image is a new file; the pack keeps the one it had.
+            $validated = $this->images->store($engine, $validated, $actor);
 
             $locked->fill($engine->questionAttributes($validated))->save();
             $engine->saveCopyDetail($locked, $engine->detailAttributes($validated));

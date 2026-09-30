@@ -40,4 +40,17 @@ final class QuestionGambar extends Model
     {
         return $this->belongsTo(MediaFile::class, 'answer_image_id');
     }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            // E7, E9: when the answer image was revealed.
+            'revealed_at' => 'immutable_datetime',
+        ];
+    }
 }

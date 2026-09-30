@@ -49,6 +49,16 @@ return [
             'report' => false,
         ],
 
+        // F16, G11: every image of the game. Question images (public) are served statically
+        // through the public/media link; answer images (private) only through the signed
+        // /media/{mediaFile} route (E9). Paths start with public/ or private/.
+        'media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -77,6 +87,7 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
+        public_path('media') => storage_path('app/media/public'),
     ],
 
 ];

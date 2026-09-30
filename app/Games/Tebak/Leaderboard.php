@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Games\TebakKata;
+namespace App\Games\Tebak;
 
 use Carbon\CarbonImmutable;
 

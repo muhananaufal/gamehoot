@@ -42,10 +42,12 @@ describe('packs (D-9)', function (): void {
             ->and($pack->game_type)->toBe(GameType::TebakKata);
     });
 
-    it('refuses Tebak Gambar packs until image upload exists (F13, stage 5)', function (): void {
+    it('creates a Tebak Gambar pack (stage 5)', function (): void {
         actingAs(User::factory()->create())
             ->post('/host/packs', ['title' => 'Famous Places', 'game_type' => 'tebak_gambar'])
-            ->assertSessionHasErrors('game_type');
+            ->assertSessionHasNoErrors();
+
+        expect(QuestionPack::query()->sole()->game_type)->toBe(GameType::TebakGambar);
     });
 
     it('lists only the host\'s own packs, grouped by type', function (): void {

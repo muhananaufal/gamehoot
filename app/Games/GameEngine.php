@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Games;
 
 use App\Enums\GameType;
+use App\Enums\MediaVisibility;
 use App\Enums\QuestionStatus;
 use App\Models\PackQuestion;
 use App\Models\Question;
@@ -20,10 +21,20 @@ interface GameEngine
 
     /**
      * Validation rules for the question form, shared by pack questions and unplayed copies (D-2).
+     * $creating is false when an existing question is edited, so stored images may stay as they are.
      *
      * @return array<string, mixed>
      */
-    public function questionRules(): array;
+    public function questionRules(bool $creating): array;
+
+    /**
+     * E8, G11: form fields that carry an image, with the visibility it is stored with (E9). Each
+     * field comes with a {field}_small file (E14). The images are stored before detailAttributes()
+     * runs, which then finds the id of the stored image under {field}_id.
+     *
+     * @return array<string, MediaVisibility>
+     */
+    public function imageFields(): array;
 
     /**
      * Maps validated form data to the columns of the type specific detail table.

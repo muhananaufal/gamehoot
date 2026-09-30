@@ -71,38 +71,37 @@
             <x-podium x-show="results.length > 0 && final" stand="stand" class="grow justify-end" />
         </main>
 
-        {{-- Tebak Kata (E5, E11, E12, E17). --}}
-        <div x-data="kataScreen({ labels: @js(__('kata')) })" x-show="$store.realtime.screen() === 'live' && game" class="contents">
+        {{-- Tebak Kata and Tebak Gambar (E5, E9, E11, E12, E17). Only the question itself differs per game. --}}
+        <div x-data="tebakScreen({ types: ['tebak_kata', 'tebak_gambar'], labels: @js(__('tebak')) })" x-show="$store.realtime.screen() === 'live' && game" class="contents">
             <main x-cloak x-show="view === 'next'" class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
                 <p class="font-display text-[clamp(36px,5vw,88px)] leading-tight font-bold" x-text="game?.title"></p>
-                <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('kata.next_soon') }}</p>
+                <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('tebak.next_soon') }}</p>
             </main>
 
             <main x-cloak x-show="view === 'question' || view === 'won' || view === 'surrendered'"
                 class="flex grow flex-col items-center justify-center gap-[4vh] text-center text-[clamp(18px,2vw,34px)]">
-                <p x-show="view === 'question'" class="text-muted">{{ __('kata.raise_hand') }}</p>
-                <p class="font-display text-[1.8em] leading-tight font-semibold text-balance" x-text="question?.prompt"></p>
-                <x-kata-boxes words="question?.boxes ?? []" class="text-[clamp(28px,4vw,72px)]" />
+                <p x-show="view === 'question'" class="text-muted">{{ __('tebak.raise_hand') }}</p>
+                @foreach (['tebak_kata', 'tebak_gambar'] as $tebakType)
+                    <template x-if="game?.type === '{{ $tebakType }}' && question">
+                        @include('screen.tebak.' . $tebakType)
+                    </template>
+                @endforeach
                 <p x-show="view === 'won'" class="rounded-panel bg-rank-1 px-[2vw] py-[1.5vh] font-display text-[1.4em] font-bold text-on-rank-1">
-                    <span>{{ __('kata.winner') }}:</span> <span x-text="question?.winner"></span>
+                    <span>{{ __('tebak.winner') }}:</span> <span x-text="question?.winner"></span>
                 </p>
-                <p x-show="view === 'surrendered'" class="font-display text-[1.3em] font-semibold text-muted">{{ __('kata.no_winner') }}</p>
-                <div x-show="view === 'question'" class="flex gap-[2vw] text-[0.8em] text-muted">
-                    <span class="flex items-center gap-2"><span class="size-[0.9em] rounded-sm bg-accent" aria-hidden="true"></span>{{ __('kata.legend_initial') }}</span>
-                    <span class="flex items-center gap-2"><span class="size-[0.9em] rounded-sm bg-rank-1" aria-hidden="true"></span>{{ __('kata.legend_hint') }}</span>
-                </div>
+                <p x-show="view === 'surrendered'" class="font-display text-[1.3em] font-semibold text-muted">{{ __('tebak.no_winner') }}</p>
             </main>
 
             {{-- E11: the leaderboard after a win, with each name's move. --}}
             <main x-cloak x-show="view === 'leaderboard'" class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
-                <p class="font-display text-[1.6em] font-bold">{{ __('kata.leaderboard') }}</p>
+                <p class="font-display text-[1.6em] font-bold">{{ __('tebak.leaderboard') }}</p>
                 <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" note="moveLabel(row)" />
-                <p class="text-[0.7em] text-muted">{{ __('kata.tie_note') }}</p>
+                <p class="text-[0.7em] text-muted">{{ __('tebak.tie_note') }}</p>
             </main>
 
             {{-- E12, E17: the final podium stays until the next game starts (G7). --}}
             <main x-cloak x-show="view === 'final'" class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
-                <p class="text-center font-display text-[1.6em] font-bold"><span x-text="game?.title"></span> · {{ __('kata.final') }}</p>
+                <p class="text-center font-display text-[1.6em] font-bold"><span x-text="game?.title"></span> · {{ __('tebak.final') }}</p>
                 <x-podium stand="stand" class="grow justify-end" />
             </main>
         </div>

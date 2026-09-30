@@ -21,8 +21,8 @@
                     <h3 class="font-bold"><span class="text-muted">{{ __('results.question', ['number' => $question['number']]) }} ·</span> {{ $question['prompt'] }}</h3>
                     @if (! $question['played'])
                         <p class="text-sm text-muted">{{ __('results.not_played') }}</p>
-                    @elseif ($game['type'] === \App\Enums\GameType::TebakKata)
-                        {{-- Tebak: the answer and its winner (D-6), or no winner after a Surrender. --}}
+                    @elseif ($game['type'] !== \App\Enums\GameType::Pentahoot)
+                        {{-- Tebak Kata and Tebak Gambar: the answer and its winner (D-6), or no winner after a Surrender. --}}
                         <p class="flex flex-wrap items-baseline gap-x-3 text-sm">
                             <span class="font-display font-semibold tracking-wide">{{ $question['answer'] }}</span>
                             @if ($question['winner'] !== null)

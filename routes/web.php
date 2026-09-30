@@ -41,6 +41,7 @@ use App\Http\Controllers\Join\PersonalLinkController;
 use App\Http\Controllers\Join\PlayController;
 use App\Http\Controllers\Join\ScreenController;
 use App\Http\Controllers\Join\VoteController;
+use App\Http\Controllers\MediaController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Views\PhoneStatus;
 use App\Models\User;
@@ -48,6 +49,9 @@ use Illuminate\Support\Facades\Route;
 
 // F10: every named route is registered before the catch-all /{event} participant routes.
 Route::redirect('/', '/host');
+
+// F16, E9: private images, only with a temporary signed URL made at Reveal (or for hosts).
+Route::get('/media/{mediaFile}', MediaController::class)->whereUuid('mediaFile')->middleware('signed')->name('media.show');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [SessionController::class, 'create'])->name('login');

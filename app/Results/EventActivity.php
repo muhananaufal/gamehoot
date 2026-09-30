@@ -8,6 +8,7 @@ use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Person;
+use App\Models\QuestionGambar;
 use App\Models\QuestionKata;
 use App\Models\QuestionPentahoot;
 use Carbon\CarbonImmutable;
@@ -45,7 +46,8 @@ final class EventActivity
 
         if (isset($payload['question_id']) && is_string($payload['question_id'])) {
             return self::text(QuestionPentahoot::query()->whereKey($payload['question_id'])->value('prompt'))
-                ?? self::text(QuestionKata::query()->whereKey($payload['question_id'])->value('prompt'));
+                ?? self::text(QuestionKata::query()->whereKey($payload['question_id'])->value('prompt'))
+                ?? self::text(QuestionGambar::query()->whereKey($payload['question_id'])->value('title'));
         }
 
         if (isset($payload['game_id']) && is_string($payload['game_id'])) {

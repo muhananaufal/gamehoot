@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use App\Enums\GameType;
 use App\Enums\QuestionStatus;
-use App\Exceptions\UnsupportedGameType;
 use App\Games\GameEngines;
 use App\Games\PentahootEngine;
 use App\Games\QuestionCopier;
+use App\Games\TebakGambarEngine;
 use App\Games\TebakKataEngine;
 use App\Models\Game;
 use App\Models\PackQuestion;
@@ -25,7 +25,7 @@ uses(RefreshDatabase::class);
 function engineErrors(GameType $type, array $input): array
 {
     /** @var array<string, list<string>> */
-    return Validator::make($input, app(GameEngines::class)->for($type)->questionRules())->errors()->toArray();
+    return Validator::make($input, app(GameEngines::class)->for($type)->questionRules(creating: true))->errors()->toArray();
 }
 
 function packQuestionFor(GameType $type): PackQuestion
@@ -45,12 +45,10 @@ describe('F13 engine registry', function (): void {
 
         expect($engines->for(GameType::Pentahoot))->toBeInstanceOf(PentahootEngine::class)
             ->and($engines->for(GameType::TebakKata))->toBeInstanceOf(TebakKataEngine::class)
-            ->and($engines->supportedTypes())->toBe([GameType::Pentahoot, GameType::TebakKata]);
+            ->and($engines->for(GameType::TebakGambar))->toBeInstanceOf(TebakGambarEngine::class)
+            ->and($engines->supportedTypes())->toBe([GameType::Pentahoot, GameType::TebakKata, GameType::TebakGambar])
+            ->and($engines->playableTypes())->toBe([GameType::Pentahoot, GameType::TebakKata, GameType::TebakGambar]);
     });
-
-    it('refuses a game type without an engine yet', function (): void {
-        app(GameEngines::class)->for(GameType::TebakGambar);
-    })->throws(UnsupportedGameType::class);
 });
 
 describe('Pentahoot question form', function (): void {

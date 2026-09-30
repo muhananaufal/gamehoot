@@ -11,6 +11,7 @@ use App\Models\Game;
 use App\Models\Question;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 /**
  * F13: the part of an engine that runs a game live. Separate from GameEngine so a game type
@@ -69,4 +70,17 @@ interface LiveGameEngine extends GameEngine
      * D-2: a copied question that has been on screen is locked and can no longer be edited.
      */
     public function wasShown(Question $question): bool;
+
+    /**
+     * F20: the questions as Live control lists them, with the detail their row shows. The
+     * snapshot only carries their statuses in the same order (F14).
+     *
+     * @return Collection<int, Question>
+     */
+    public function liveQuestions(Game $game): Collection;
+
+    /**
+     * D-6: whether Live control needs the name list of the event to pick winners.
+     */
+    public function picksWinners(): bool;
 }
