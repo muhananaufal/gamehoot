@@ -26,7 +26,7 @@ final readonly class PackPage
                 ->groupBy(fn (QuestionPack $p): string => $p->game_type->value),
             'types' => $this->engines->supportedTypes(),
             'pack' => $pack,
-            'questions' => $pack?->questions()->with(['pentahoot', 'kata'])->get(),
+            'questions' => $pack?->questions()->with(['pentahoot', 'kata', 'gambar.questionImage.variants'])->get(),
             'editing' => $editing?->load(['pentahoot', 'kata']),
             'creating' => $creating,
         ];

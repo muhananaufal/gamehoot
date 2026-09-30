@@ -41,7 +41,7 @@ final class GameQuestionController
     private function page(Event $event, Game $game, GameEngines $engines, ?Question $editing): View
     {
         $engine = $engines->live($game->type);
-        $questions = $game->questions()->orderBy('position')->with(['pentahoot', 'kata'])->get();
+        $questions = $game->questions()->orderBy('position')->with(['pentahoot', 'kata', 'gambar.questionImage.variants'])->get();
 
         return view('host.games.questions', [
             'event' => $event,

@@ -139,7 +139,7 @@
                 <h2 id="question-form-heading" class="font-display text-xl font-semibold">
                     {{ $editing ? __('packs.edit_question', ['number' => $number]) : __('packs.new_question') }}
                 </h2>
-                <form method="POST" action="{{ $editing ? route('host.packs.questions.update', [$pack, $editing]) : route('host.packs.questions.store', $pack) }}" class="flex flex-col gap-4" novalidate>
+                <form method="POST" action="{{ $editing ? route('host.packs.questions.update', [$pack, $editing]) : route('host.packs.questions.store', $pack) }}" enctype="multipart/form-data" class="flex flex-col gap-4" novalidate>
                     @csrf
                     @if ($editing)
                         @method('PUT')

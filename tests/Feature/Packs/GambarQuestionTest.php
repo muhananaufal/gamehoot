@@ -62,6 +62,43 @@ function heicFile(): UploadedFile
     return new UploadedFile((string) $path, 'IMG_0001.HEIC', null, null, true);
 }
 
+describe('Tebak Gambar question form (E8, F20)', function (): void {
+    it('sends the form as multipart, with a picker and two sized file fields per image', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+
+        actingAs($host)->get("/host/packs/{$pack->id}/questions/create")
+            ->assertOk()
+            ->assertSee('enctype="multipart/form-data"', false)
+            ->assertSee('name="question_image"', false)
+            ->assertSee('name="question_image_small"', false)
+            ->assertSee('name="answer_image"', false)
+            ->assertSee('name="answer_image_small"', false)
+            ->assertSee('Question image')
+            ->assertSee('Answer image');
+    });
+
+    it('shows the stored images when editing, the answer image only through a signed URL (E9)', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", gambarForm());
+        $question = $pack->questions()->sole();
+        $detail = PackQuestionGambar::query()->sole();
+
+        actingAs($host)->get("/host/packs/{$pack->id}")->assertOk()->assertSee('Which city is this?')->assertSee('Paris');
+        // The 720 px versions are enough for a preview (E14); the URLs sit in Alpine data as JSON.
+        $json = fn (string $url): string => trim(json_encode($url, JSON_THROW_ON_ERROR), '"');
+        $questionSmall = MediaFile::query()->findOrFail($detail->question_image_id)->variants()->sole();
+        $answerSmall = MediaFile::query()->findOrFail($detail->answer_image_id)->variants()->sole();
+
+        actingAs($host)->get("/host/packs/{$pack->id}/questions/{$question->id}/edit")
+            ->assertOk()
+            ->assertSee('Which city is this?')
+            ->assertSee($json(url('media/'.basename($questionSmall->path))), false)
+            ->assertSee($json(url("media/{$answerSmall->id}")).'?expires=', false);
+    });
+});
+
 describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
     it('stores the question image as public and the answer image as private, in both sizes', function (): void {
         $host = User::factory()->create();
@@ -152,6 +189,10 @@ describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
         $copy = $game->questions()->sole();
         $copyDetail = $copy->gambar()->firstOrFail();
         expect([$copyDetail->question_image_id, $copyDetail->answer_image_id, $copyDetail->revealed_at])->toBe([$packDetail->question_image_id, $packDetail->answer_image_id, null]);
+        actingAs($owner)->get("/host/{$event->id}/games/{$game->id}/questions/{$copy->id}/edit")
+            ->assertOk()
+            ->assertSee('Which city is this?')
+            ->assertSee('enctype="multipart/form-data"', false);
 
         actingAs($owner)->put("/host/{$event->id}/games/{$game->id}/questions/{$copy->id}", gambarForm([
             'title' => 'Copy title',

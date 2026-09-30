@@ -1,6 +1,7 @@
 import Alpine from 'alpinejs';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { imagePicker } from './image-picker.js';
 import { kataBoxes } from './kata-boxes.js';
 import { kataHost, kataScreen } from './kata-screens.js';
 import { nameReview } from './name-review.js';
@@ -10,6 +11,7 @@ import { themeToggle } from './theme.js';
 
 Alpine.data('themeToggle', themeToggle);
 Alpine.data('kataBoxes', kataBoxes);
+Alpine.data('imagePicker', imagePicker);
 Alpine.data('nameReview', nameReview);
 Alpine.data('pentahootPhone', pentahootPhone);
 Alpine.data('pentahootScreen', pentahootScreen);

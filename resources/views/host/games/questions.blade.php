@@ -34,7 +34,7 @@
                 <h2 id="copy-form-heading" class="font-display text-xl font-semibold">
                     {{ __('games.edit_question', ['number' => $questions->search(fn ($question) => $question->is($editing)) + 1]) }}
                 </h2>
-                <form method="POST" action="{{ route('host.events.games.questions.update', [$event, $game, $editing]) }}" class="flex flex-col gap-5" novalidate>
+                <form method="POST" action="{{ route('host.events.games.questions.update', [$event, $game, $editing]) }}" enctype="multipart/form-data" class="flex flex-col gap-5" novalidate>
                     @csrf
                     @method('PUT')
                     @include('host.packs.forms.' . $game->type->value, ['question' => $editing])
