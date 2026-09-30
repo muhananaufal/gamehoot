@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-// Tebak Kata screens: Public View, phone mirror (E14) and Live control. __N__ is filled in by JavaScript.
+// Tebak Kata and Tebak Gambar screens: Public View, phone mirror (E14) and Live control. __N__ is
+// filled in by JavaScript.
 return [
     'question_of' => 'Question __N__ of __TOTAL__',
     'raise_hand' => 'Raise your hand if you know the answer',
