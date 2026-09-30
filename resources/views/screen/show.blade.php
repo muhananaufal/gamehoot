@@ -12,10 +12,19 @@
 
         <x-connection-status class="text-[clamp(14px,1.2vw,20px)]" />
 
-        <main x-show="$store.realtime.screen() === 'live'" class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
-            <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('realtime.screen.join_at') }}</p>
-            <p class="font-display text-[clamp(40px,6vw,104px)] leading-tight font-bold break-all"
-                x-text="$store.realtime.snapshot?.event.link.replace(/^https?:\/\//, '')">{{ $withoutScheme(route('join.index', $event)) }}</p>
+        <main x-show="$store.realtime.screen() === 'live'" class="flex grow flex-wrap items-center justify-center gap-[5vw] text-center">
+            <div class="flex min-w-0 flex-col items-center gap-[3vh]">
+                <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('realtime.screen.join_at') }}</p>
+                <p class="font-display text-[clamp(36px,5vw,96px)] leading-tight font-bold break-all"
+                    x-text="$store.realtime.snapshot?.event.link.replace(/^https?:\/\//, '')">{{ $withoutScheme(route('join.index', $event)) }}</p>
+            </div>
+            {{-- E18: dark modules on a light card in both themes, so phone cameras can read it. --}}
+            <div data-test="join-qr" class="relative w-[min(32vh,28vw)] shrink-0 rounded-panel bg-brand-eye p-[1.2vh] text-brand-pupil">
+                <div class="[&>svg]:h-auto [&>svg]:w-full" role="img" aria-label="{{ __('realtime.screen.qr') }}">{!! \App\Support\JoinQrCode::svg(route('join.index', $event)) !!}</div>
+                <span class="absolute inset-0 m-auto flex size-[22%] items-center justify-center rounded-card bg-brand-eye">
+                    <x-logo :size="48" :wordmark="false" outline="stroke-brand-eye" class="size-[80%] [&>svg]:size-full" />
+                </span>
+            </div>
         </main>
 
         <x-live-status :event="$event" class="[&_h1]:text-[clamp(28px,4vw,64px)] [&_p]:text-[clamp(18px,2vw,32px)]" />

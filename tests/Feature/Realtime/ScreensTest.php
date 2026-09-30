@@ -48,6 +48,9 @@ describe('Public View (F23)', function (): void {
             ->assertOk()
             ->assertSee('data-theme="dark"', false)
             ->assertSee('Gathering 2026')
+            // E18: the QR code with the join link, drawn from tokens.
+            ->assertSee('data-test="join-qr"', false)
+            ->assertSee('<svg fill="currentColor" aria-hidden="true"', false)
             ->assertSee((string) preg_replace('#^https?://#', '', url('/gathering-2026')));
 
         $config = realtimeConfigOf($response);
