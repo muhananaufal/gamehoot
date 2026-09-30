@@ -82,6 +82,50 @@
             <p x-show="myVote" class="text-sm font-semibold"
                 x-text="myVote ? @js(__('pentahoot.your_pick_was', ['name' => '__NAME__'])).replace('__NAME__', myVote.target) : ''"></p>
         </div>
+
+        {{-- G7, E12: the Pentahoot game is over; the next game can start any time. --}}
+        <div x-cloak x-show="view === 'finished'" class="flex grow flex-col items-center justify-center gap-4 text-center" role="status">
+            <x-logo :size="80" :wordmark="false" outline="stroke-canvas" />
+            <h1 class="font-display text-[28px] leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
+            <p class="max-w-xs text-lg text-muted">{{ __('pentahoot.game_over') }}</p>
+        </div>
+    </div>
+
+    {{-- Tebak Kata: phones mirror the Public View only when the host turned it on (E14), with no
+         buttons; players answer out loud. The final podium always shows, as text (E17). --}}
+    <div x-data="kataScreen({ labels: @js(__('kata')) })" x-cloak x-show="$store.realtime.screen() === 'live' && game" class="flex grow flex-col">
+        <div x-show="view === 'final'" class="flex grow flex-col gap-4">
+            <h1 class="font-display text-[22px] font-bold"><span x-text="game?.title"></span> · {{ __('kata.final') }}</h1>
+            <x-podium stand="stand" class="pt-2" />
+        </div>
+
+        <div x-show="view !== 'final' && !mirrored" class="flex grow flex-col items-center justify-center gap-4 text-center" role="status">
+            <x-logo :size="80" :wordmark="false" outline="stroke-canvas" />
+            <h1 class="font-display text-[28px] leading-tight font-bold" x-text="game?.title"></h1>
+            <p class="max-w-xs text-lg text-muted">{{ __('kata.watch_screen') }}</p>
+        </div>
+
+        <div x-show="view !== 'final' && mirrored" class="flex grow flex-col gap-5">
+            <div class="flex items-center justify-between gap-3 text-sm font-semibold text-muted">
+                <span x-text="question ? label('question_of', { N: question.number, TOTAL: game.count }) : game?.title"></span>
+                <span>{{ __('kata.answer_out_loud') }}</span>
+            </div>
+            <p x-show="view === 'next'" class="grow content-center text-center text-lg text-muted">{{ __('kata.next_soon') }}</p>
+            <template x-if="question && view !== 'next' && view !== 'leaderboard'">
+                <div class="flex flex-col gap-5">
+                    <p class="font-display text-[24px] leading-tight font-bold" x-text="question.prompt"></p>
+                    <x-kata-boxes words="question.boxes" class="text-[26px]" />
+                    <p x-show="view === 'won'" class="rounded-card bg-rank-1 px-4 py-3 text-center font-display text-xl font-bold text-on-rank-1">
+                        <span>{{ __('kata.winner') }}:</span> <span x-text="question.winner"></span>
+                    </p>
+                    <p x-show="view === 'surrendered'" class="text-center font-semibold text-muted">{{ __('kata.no_winner') }}</p>
+                </div>
+            </template>
+            <div x-show="view === 'leaderboard'" class="flex flex-col gap-3">
+                <h1 class="font-display text-[22px] font-bold">{{ __('kata.leaderboard') }}</h1>
+                <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" note="moveLabel(row)" />
+            </div>
+        </div>
     </div>
 
     <x-live-status :event="$event" />
