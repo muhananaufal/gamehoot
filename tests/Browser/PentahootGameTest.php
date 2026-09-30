@@ -70,11 +70,13 @@ it('runs a question from Live control: open, stop, reveal and move on (D-5, F2)'
         ->assertSee('Question 2 of 2 · Live')
         ->assertSee('0 / 3 answered');
 
-    $page->click('Stop');
+    // "Time up" only shows once the server applied Stop (the new ends_at comes from the server).
+    // Move the clock after that: travelTo freezes the server clock, and a Stop that reached the
+    // server after the jump would end at the frozen time and never close (E3).
+    $page->click('Stop')->assertSee('Question 2 of 2 · Time up');
     travelTo(now()->addSeconds(2));
 
-    $page->assertSee('Question 2 of 2 · Time up')
-        ->click('Reveal')
+    $page->click('Reveal')
         ->assertSee('No votes')
         ->click('Next question')
         ->assertSee('Pick a question to open.')
