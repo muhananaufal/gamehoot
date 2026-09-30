@@ -6,8 +6,9 @@
      put several names on one step or leave a step empty. --}}
 <div {{ $attributes->merge(['class' => 'flex flex-col gap-[3vh]']) }}>
     <div class="grid grid-cols-3 items-end gap-[2vw]">
-        @foreach (['second' => ['h-[55%]', 'text-rank-2'], 'first' => ['h-[75%]', 'text-on-rank-1'], 'third' => ['h-[40%]', 'text-rank-3']] as $step => [$height, $number])
-            <div class="flex h-full flex-col items-center justify-end gap-2">
+        {{-- Fixed step heights, so names above a step never squeeze it (1 is always the tallest). --}}
+        @foreach (['second' => ['h-[16vh]', 'text-rank-2'], 'first' => ['h-[23vh]', 'text-on-rank-1'], 'third' => ['h-[11vh]', 'text-rank-3']] as $step => [$height, $number])
+            <div class="flex flex-col items-center justify-end gap-2">
                 <template x-for="row in {{ $stand }}.{{ $step }}" :key="row.name">
                     <div class="flex max-w-full flex-col items-center gap-1 text-center" :class="{{ $stand }}.{{ $step }}.length > 2 ? 'text-[0.7em]' : ''">
                         <span class="flex size-[2.6em] items-center justify-center rounded-full bg-surface font-display font-bold"
@@ -17,7 +18,7 @@
                     </div>
                 </template>
                 <div @class([
-                    'flex w-full items-start justify-center rounded-t-card pt-2 font-display text-[1.6em] font-bold',
+                    'flex w-full shrink-0 items-start justify-center rounded-t-card pt-2 font-display text-[1.6em] font-bold',
                     $height,
                     'bg-rank-1' => $step === 'first',
                     'bg-surface' => $step !== 'first',

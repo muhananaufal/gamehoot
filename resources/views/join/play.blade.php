@@ -76,7 +76,8 @@
             <h1 class="font-display text-[22px] font-bold" x-text="label('results_of', { N: question?.number })"></h1>
             <p class="text-muted" x-text="question?.prompt"></p>
             <p x-show="results.length === 0" class="rounded-card bg-surface px-4 py-6 text-center font-semibold">{{ __('pentahoot.no_votes') }}</p>
-            <x-rank-list rows="results" />
+            {{-- E17: the same podium as the Public View, with ranks 4 and 5 below it. --}}
+            <x-podium x-show="results.length > 0" stand="stand" class="pt-2" />
             <p x-show="results.length > 0" class="text-sm text-muted">{{ __('pentahoot.ties_note') }}</p>
             <p x-show="myVote" class="text-sm font-semibold"
                 x-text="myVote ? @js(__('pentahoot.your_pick_was', ['name' => '__NAME__'])).replace('__NAME__', myVote.target) : ''"></p>

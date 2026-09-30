@@ -60,7 +60,7 @@
             </div>
             <p x-show="results.length === 0" class="flex grow items-center justify-center font-display text-[2em] font-bold">{{ __('pentahoot.no_votes') }}</p>
             <x-rank-list x-show="results.length > 0 && !final" rows="results" shown="isShown(row)" class="overflow-y-auto" />
-            <x-podium x-show="results.length > 0 && final" stand="stand" class="min-h-[50vh] grow [&>div:first-child]:min-h-[45vh]" />
+            <x-podium x-show="results.length > 0 && final" stand="stand" class="grow justify-end" />
         </main>
 
         <x-live-status :event="$event" class="[&_h1]:text-[clamp(28px,4vw,64px)] [&_p]:text-[clamp(18px,2vw,32px)]" />
