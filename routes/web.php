@@ -16,6 +16,7 @@ use App\Http\Controllers\Host\EventOwnerController;
 use App\Http\Controllers\Host\EventStateController as HostEventStateController;
 use App\Http\Controllers\Host\GameController;
 use App\Http\Controllers\Host\GameFinishController;
+use App\Http\Controllers\Host\GameQuestionController;
 use App\Http\Controllers\Host\GameReloadController;
 use App\Http\Controllers\Host\GameStartController;
 use App\Http\Controllers\Host\JoinLockController;
@@ -105,6 +106,10 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
                 Route::post('/{game}/reload', GameReloadController::class)->whereUuid('game')->name('reload');
                 Route::post('/{game}/start', GameStartController::class)->whereUuid('game')->name('start');
                 Route::post('/{game}/finish', GameFinishController::class)->whereUuid('game')->name('finish');
+                // D-2: copied questions, editable until they have been on screen.
+                Route::get('/{game}/questions', [GameQuestionController::class, 'index'])->whereUuid('game')->name('questions.index');
+                Route::get('/{game}/questions/{question}/edit', [GameQuestionController::class, 'edit'])->whereUuid(['game', 'question'])->name('questions.edit');
+                Route::put('/{game}/questions/{question}', [GameQuestionController::class, 'update'])->whereUuid(['game', 'question'])->name('questions.update');
             });
 
             // D-3, G10, E13: results and the activity log, for the owner and co-hosts.

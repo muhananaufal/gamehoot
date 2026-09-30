@@ -66,6 +66,11 @@ final class PentahootEngine implements LiveGameEngine
         ]);
     }
 
+    public function saveCopyDetail(Question $question, array $attributes): void
+    {
+        $question->pentahoot()->firstOrFail()->fill($attributes)->save();
+    }
+
     public function initialStatus(): QuestionStatus
     {
         return QuestionStatus::Ready;

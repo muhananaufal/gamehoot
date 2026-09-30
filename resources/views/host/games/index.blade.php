@@ -27,7 +27,7 @@
                 <article class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-4">
                     <div class="flex min-w-0 grow flex-col gap-0.5">
                         <h3 class="truncate font-bold">{{ $game->position }}. {{ $game->title }}</h3>
-                        <p class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · {{ trans_choice('games.questions', $game->questions_count) }}</p>
+                        <p class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · <a href="{{ route('host.events.games.questions.index', [$event, $game]) }}" class="text-accent underline-offset-4 hover:underline">{{ trans_choice('games.questions', $game->questions_count) }}</a></p>
                     </div>
                     <x-chip :tone="match ($status) { 'running' => 'success', 'finished' => 'warning', default => 'neutral' }" :dot="$running">
                         {{ __('games.status.' . $status) }}

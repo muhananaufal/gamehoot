@@ -95,6 +95,17 @@ final readonly class TebakKataEngine implements LiveGameEngine
         ]);
     }
 
+    /**
+     * The boxes open at the start of the edited question are its open boxes again (E5).
+     */
+    public function saveCopyDetail(Question $question, array $attributes): void
+    {
+        $detail = $question->kata()->firstOrFail();
+        $detail->fill($attributes);
+        $detail->opened_indexes = $detail->initial_open_indexes;
+        $detail->save();
+    }
+
     public function initialStatus(): QuestionStatus
     {
         return QuestionStatus::Queued;
