@@ -16,6 +16,7 @@ use App\Models\QuestionResult;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 final class PentahootEngine implements LiveGameEngine
 {
@@ -127,6 +128,17 @@ final class PentahootEngine implements LiveGameEngine
      * G10: Pentahoot results are frozen at each Reveal already.
      */
     public function finish(Game $game, CarbonImmutable $at): void {}
+
+    public function liveQuestions(Game $game): Collection
+    {
+        return $game->questions()->orderBy('position')->with('pentahoot')->get();
+    }
+
+    public function picksWinners(): bool
+    {
+        // Pentahoot has no winners to pick; phones vote.
+        return false;
+    }
 
     /**
      * D-2: a question was on screen once it left ready, or a Reset brought it back (T1).

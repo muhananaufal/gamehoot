@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Rules\JpegOrPng;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 /**
  * Tebak Gambar: a question image, then the answer image at Reveal (E9). The host's browser sends
@@ -155,6 +156,17 @@ final readonly class TebakGambarEngine implements LiveGameEngine
     public function finish(Game $game, CarbonImmutable $at): void
     {
         $this->board->freeze($game, $at);
+    }
+
+    public function liveQuestions(Game $game): Collection
+    {
+        // UUIDv7 ids follow the order the questions were copied in, which a Skip does not change.
+        return $game->questions()->orderBy('id')->with('gambar')->get();
+    }
+
+    public function picksWinners(): bool
+    {
+        return true;
     }
 
     /**

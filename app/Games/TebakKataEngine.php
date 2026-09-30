@@ -21,6 +21,7 @@ use App\Rules\KataAnswer;
 use App\Rules\KataOpenIndexes;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 final readonly class TebakKataEngine implements LiveGameEngine
 {
@@ -169,6 +170,17 @@ final readonly class TebakKataEngine implements LiveGameEngine
     public function finish(Game $game, CarbonImmutable $at): void
     {
         $this->board->freeze($game, $at);
+    }
+
+    public function liveQuestions(Game $game): Collection
+    {
+        // UUIDv7 ids follow the order the questions were copied in, which a Skip does not change.
+        return $game->questions()->orderBy('id')->with('kata')->get();
+    }
+
+    public function picksWinners(): bool
+    {
+        return true;
     }
 
     /**
