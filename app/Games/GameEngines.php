@@ -9,7 +9,7 @@ use App\Exceptions\UnsupportedGameType;
 
 /**
  * F13: resolves the engine for a game type. Tebak Gambar joins in stage 5 together with
- * image uploads (E8, E9); Tebak Kata becomes playable in stage 4.
+ * image uploads (E8, E9).
  */
 final readonly class GameEngines
 {

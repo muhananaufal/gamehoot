@@ -52,6 +52,13 @@ interface GameEngine
     public function copyDetail(PackQuestion $source, Question $copy): void;
 
     /**
+     * D-2: saves an edit of a copied question that has not been on screen. The pack is not changed.
+     *
+     * @param  array<string, mixed>  $attributes  output of detailAttributes()
+     */
+    public function saveCopyDetail(Question $question, array $attributes): void;
+
+    /**
      * G5: status of a copied question before it is shown.
      */
     public function initialStatus(): QuestionStatus;

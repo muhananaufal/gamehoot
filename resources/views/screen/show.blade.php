@@ -2,7 +2,8 @@
     $withoutScheme = fn (string $url): string => (string) preg_replace('#^https?://#', '', $url);
 @endphp
 {{-- F23, E18: the projector screen, sized for 16:9 screens of any resolution. Lobby while no
-     game runs; the Pentahoot question, reveal and podium while one does (E2, E15, E17). --}}
+     game runs; the Pentahoot question, reveal and podium (E2, E15, E17, E20) or the Tebak Kata
+     boxes, leaderboard and final podium (E5, E11, E12) while one does. --}}
 <x-layouts.screen :title="__('realtime.screen.title') . ' · ' . $event->name" :event="$event">
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" />
     <div x-data="pentahootScreen({
@@ -13,7 +14,7 @@
         <header class="flex items-center justify-between gap-6">
             <div class="flex min-w-0 items-center gap-[1.2vw]">
                 <x-logo :size="48" outline="stroke-canvas" class="text-[clamp(20px,2.2vw,34px)]" />
-                <span x-cloak x-show="question" class="truncate text-[clamp(16px,1.7vw,26px)] text-muted"
+                <span x-cloak x-show="question && !finished" class="truncate text-[clamp(16px,1.7vw,26px)] text-muted"
                     x-text="question ? label('question_of', { N: question.number, TOTAL: game.count }) : ''"></span>
             </div>
             <span class="truncate text-[clamp(18px,1.8vw,28px)] text-muted" x-text="$store.realtime.snapshot?.event.name">{{ $event->name }}</span>
@@ -37,35 +38,78 @@
             </div>
         </main>
 
-        {{-- A game runs, no question is open. --}}
-        <main x-cloak x-show="$store.realtime.screen() === 'live' && game && (phase === 'none' || phase === 'ready' || phase === 'done')"
+        {{-- Pentahoot: no question open. --}}
+        <main x-cloak x-show="$store.realtime.screen() === 'live' && isPentahoot && !finished && (phase === 'none' || phase === 'ready' || phase === 'done')"
             class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
             <p class="font-display text-[clamp(36px,5vw,88px)] leading-tight font-bold" x-text="game?.title"></p>
             <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('pentahoot.next_soon') }}</p>
         </main>
 
-        {{-- E3, E15: the question, the countdown and how many answered. --}}
-        <main x-cloak x-show="$store.realtime.screen() === 'live' && (phase === 'live' || phase === 'closed')"
+        {{-- G7, E12: a finished Pentahoot game stays on screen until the next game starts. --}}
+        <main x-cloak x-show="$store.realtime.screen() === 'live' && isPentahoot && finished"
+            class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
+            <p class="font-display text-[clamp(36px,5vw,88px)] leading-tight font-bold" x-text="game?.title"></p>
+            <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('pentahoot.game_over') }}</p>
+        </main>
+
+        {{-- E3, E15: the Pentahoot question, the countdown and how many answered. --}}
+        <main x-cloak x-show="$store.realtime.screen() === 'live' && isPentahoot && !finished && (phase === 'live' || phase === 'closed')"
             class="flex grow items-center gap-[4vw]">
             <p class="grow font-display text-[clamp(36px,4.6vw,88px)] leading-tight font-semibold text-balance" x-text="question?.prompt"></p>
             <x-countdown seconds="seconds" class="size-[min(36vh,22vw)] text-[clamp(18px,1.8vw,30px)] [&>span:first-child]:text-[4.5em]" />
         </main>
 
-        {{-- E2, E4, E17: the reveal from the lowest rank up, then the podium. --}}
-        <main x-cloak x-show="$store.realtime.screen() === 'live' && phase === 'revealed'"
+        {{-- E2, E4, E17, E20: the reveal from the lowest rank up, at most ten rows, then the podium. --}}
+        <main x-cloak x-show="$store.realtime.screen() === 'live' && isPentahoot && !finished && phase === 'revealed'"
             class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
             <div class="flex items-baseline justify-between gap-6">
                 <p class="font-display text-[1.4em] leading-tight font-semibold" x-text="question?.prompt"></p>
                 <p class="shrink-0 text-muted" x-text="$store.realtime.count(labels.votes_total, question?.total_votes ?? 0)"></p>
             </div>
             <p x-show="results.length === 0" class="flex grow items-center justify-center font-display text-[2em] font-bold">{{ __('pentahoot.no_votes') }}</p>
-            <x-rank-list x-show="results.length > 0 && !final" rows="results" shown="isShown(row)" class="overflow-y-auto" />
+            <x-rank-list x-show="results.length > 0 && !final" rows="rows" shown="isShown(row)" />
             <x-podium x-show="results.length > 0 && final" stand="stand" class="grow justify-end" />
         </main>
 
+        {{-- Tebak Kata (E5, E11, E12, E17). --}}
+        <div x-data="kataScreen({ labels: @js(__('kata')) })" x-show="$store.realtime.screen() === 'live' && game" class="contents">
+            <main x-cloak x-show="view === 'next'" class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
+                <p class="font-display text-[clamp(36px,5vw,88px)] leading-tight font-bold" x-text="game?.title"></p>
+                <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('kata.next_soon') }}</p>
+            </main>
+
+            <main x-cloak x-show="view === 'question' || view === 'won' || view === 'surrendered'"
+                class="flex grow flex-col items-center justify-center gap-[4vh] text-center text-[clamp(18px,2vw,34px)]">
+                <p x-show="view === 'question'" class="text-muted">{{ __('kata.raise_hand') }}</p>
+                <p class="font-display text-[1.8em] leading-tight font-semibold text-balance" x-text="question?.prompt"></p>
+                <x-kata-boxes words="question?.boxes ?? []" class="text-[clamp(28px,4vw,72px)]" />
+                <p x-show="view === 'won'" class="rounded-panel bg-rank-1 px-[2vw] py-[1.5vh] font-display text-[1.4em] font-bold text-on-rank-1">
+                    <span>{{ __('kata.winner') }}:</span> <span x-text="question?.winner"></span>
+                </p>
+                <p x-show="view === 'surrendered'" class="font-display text-[1.3em] font-semibold text-muted">{{ __('kata.no_winner') }}</p>
+                <div x-show="view === 'question'" class="flex gap-[2vw] text-[0.8em] text-muted">
+                    <span class="flex items-center gap-2"><span class="size-[0.9em] rounded-sm bg-accent" aria-hidden="true"></span>{{ __('kata.legend_initial') }}</span>
+                    <span class="flex items-center gap-2"><span class="size-[0.9em] rounded-sm bg-rank-1" aria-hidden="true"></span>{{ __('kata.legend_hint') }}</span>
+                </div>
+            </main>
+
+            {{-- E11: the leaderboard after a win, with each name's move. --}}
+            <main x-cloak x-show="view === 'leaderboard'" class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
+                <p class="font-display text-[1.6em] font-bold">{{ __('kata.leaderboard') }}</p>
+                <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" note="moveLabel(row)" />
+                <p class="text-[0.7em] text-muted">{{ __('kata.tie_note') }}</p>
+            </main>
+
+            {{-- E12, E17: the final podium stays until the next game starts (G7). --}}
+            <main x-cloak x-show="view === 'final'" class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
+                <p class="text-center font-display text-[1.6em] font-bold"><span x-text="game?.title"></span> · {{ __('kata.final') }}</p>
+                <x-podium stand="stand" class="grow justify-end" />
+            </main>
+        </div>
+
         <x-live-status :event="$event" class="[&_h1]:text-[clamp(28px,4vw,64px)] [&_p]:text-[clamp(18px,2vw,32px)]" />
 
-        <footer x-show="$store.realtime.screen() === 'live' && (!game || phase === 'live' || phase === 'closed')"
+        <footer x-show="$store.realtime.screen() === 'live' && (!game || (isPentahoot && !finished && (phase === 'live' || phase === 'closed')))"
             class="flex items-center justify-between gap-6 rounded-panel bg-surface px-[2.5vw] py-[2.5vh] text-[clamp(18px,2vw,32px)]">
             <span x-text="game ? labels.answer_on_phone : @js(__('realtime.screen.waiting'))">{{ __('realtime.screen.waiting') }}</span>
             <span class="font-display font-semibold tabular-nums" aria-live="polite"

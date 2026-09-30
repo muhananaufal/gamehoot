@@ -10,6 +10,7 @@ use App\Enums\QuestionStatus;
 use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Game;
+use App\Models\PackQuestion;
 use App\Models\QuestionPack;
 use App\Models\User;
 use App\Realtime\StateChanged;
@@ -58,19 +59,32 @@ describe('games in an event (D-9)', function (): void {
             ->assertOk()
             ->assertSee('Warm-up')
             ->assertSee('Office Awards')
-            ->assertDontSee('Celebrities');
+            // Tebak Kata is playable from stage 4.
+            ->assertSee('Celebrities');
     });
 
-    it('refuses packs of another host and game types that cannot be played yet', function (): void {
+    it('refuses packs of another host', function (): void {
         $event = Pentahoot::event();
         $foreign = Pentahoot::pack(User::factory()->create());
+
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $foreign->id])->assertSessionHasErrors('pack_id');
+        expect(Game::query()->count())->toBe(0);
+    });
+
+    it('adds a Tebak Kata game from a pack, copying the answers and open boxes (D-9, stage 4)', function (): void {
+        $event = Pentahoot::event();
         $kata = new QuestionPack(['title' => 'Celebrities', 'game_type' => GameType::TebakKata]);
         $kata->owner()->associate(gamesOwner($event))->save();
+        $source = new PackQuestion(['position' => 1, 'points' => 2]);
+        $source->pack()->associate($kata)->save();
+        $source->kata()->forceCreate(['prompt' => 'Capital of France?', 'answer_text' => 'PARIS', 'initial_open_indexes' => [0]]);
 
-        actingAs(gamesOwner($event));
-        post("/host/{$event->id}/games", ['pack_id' => $foreign->id])->assertSessionHasErrors('pack_id');
-        post("/host/{$event->id}/games", ['pack_id' => $kata->id])->assertSessionHasErrors('pack_id');
-        expect(Game::query()->count())->toBe(0);
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $kata->id])->assertSessionHasNoErrors();
+
+        $copy = Game::query()->sole()->questions()->sole();
+        expect($copy->status)->toBe(QuestionStatus::Queued)
+            ->and($copy->points)->toBe(2)
+            ->and($copy->kata?->opened_indexes)->toBe([0]);
     });
 
     it('reloads an unstarted game from the latest pack', function (): void {
@@ -154,9 +168,31 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish")
             ->assertRedirect("/host/{$event->id}");
 
+        // G7, E12: the finished game stays on screen with its results until the next game starts.
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
-            ->and($event->refresh()->active_game_id)->toBeNull()
+            ->and($event->refresh()->active_game_id)->toBe($game->id)
             ->and(ActionLog::query()->where('action', LoggedAction::GameFinishedEarly)->count())->toBe(1);
+    });
+
+    it('starts the next game in place of a finished one on screen (G7, E12)', function (): void {
+        $event = Pentahoot::event();
+        $first = Pentahoot::running($event);
+        $first->forceFill(['status' => GameStatus::Finished])->save();
+        $next = Pentahoot::game($event, ['Next?'], 'Second round');
+
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$next->id}/start")
+            ->assertRedirect("/host/{$event->id}");
+
+        expect($event->refresh()->active_game_id)->toBe($next->id);
+    });
+
+    it('does not finish a game twice', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event);
+        $game->forceFill(['status' => GameStatus::Finished])->save();
+
+        actingAs(gamesOwner($event))->from("/host/{$event->id}")->post("/host/{$event->id}/games/{$game->id}/finish")
+            ->assertSessionHasErrors(['action' => 'The screen was out of date. It has been refreshed, try again.']);
     });
 
     it('finishes a completed game without an early-finish log entry', function (): void {

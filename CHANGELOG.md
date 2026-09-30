@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-01
+
+Tebak Kata stage: the word-guessing game, editing copied questions and a shorter projector reveal.
+
+### Added
+
+- Hosts can add Tebak Kata games to an event from their Tebak Kata packs.
+- Live control runs Tebak Kata questions: show any queued question, open letter boxes as hints, skip a question once, pick the winner from the name list after a confirmation, surrender, and show the leaderboard between questions. Hosts see the answer and a live board.
+- The Public View shows Tebak Kata letter boxes, the winner or "no winner", the leaderboard with how names moved, and a final podium. Phones mirror the screen when the event allows it and always show the final results.
+- Hosts can edit the copied questions of a game until each one has been on screen, without changing the pack.
+- The Results page and CSV export list the winner of every Tebak Kata question and the final board.
+
+### Changed
+
+- A finished game stays on the Public View and phones until the next game starts.
+- The projector reveal shows at most 10 rows: when many names tie, the tied group is summed up in one line, and the full list stays on phones, the Results page and the export.
+
 ## [0.3.0] - 2026-09-30
 
 Pentahoot stage: games in an event, voting from phones, the reveal and the results.
@@ -56,7 +73,8 @@ Foundation stage: accounts, events, question packs, name lists and joining from 
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
 
-[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.3.0...develop
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.4.0...develop
+[0.4.0]: https://github.com/devivace-groups/pentahoot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/devivace-groups/pentahoot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/devivace-groups/pentahoot/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/devivace-groups/pentahoot/releases/tag/v0.1.0

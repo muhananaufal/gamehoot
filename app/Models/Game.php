@@ -97,6 +97,7 @@ final class Game extends Model
             'type' => GameType::class,
             'status' => GameStatus::class,
             'position' => 'integer',
+            'leaderboard_at' => 'immutable_datetime',
         ];
     }
 }

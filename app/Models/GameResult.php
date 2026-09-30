@@ -15,6 +15,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class GameResult extends Model
 {
     /**
+     * E10, G10: reached_at keeps milliseconds for the tie-break; the default format cuts them.
+     *
+     * @var string
+     */
+    protected $dateFormat = 'Y-m-d H:i:s.v';
+
+    /**
      * @return BelongsTo<Game, $this>
      */
     public function game(): BelongsTo

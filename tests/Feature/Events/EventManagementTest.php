@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\EventStatus;
+use App\Enums\GameStatus;
 use App\Enums\LoggedAction;
 use App\Enums\ScreenTheme;
 use App\Models\ActionLog;
@@ -328,6 +329,15 @@ describe('closing and reopening (D-7)', function (): void {
 
         actingAs(ownerOf($event))->post("/host/{$event->id}/close")->assertSessionHasErrors('event');
         expect($event->refresh()->status)->toBe(EventStatus::Open);
+    });
+
+    it('closes while a finished game only shows its results (T6, G7)', function (): void {
+        $event = ownedEvent();
+        $game = Game::factory()->for($event)->create(['status' => GameStatus::Finished]);
+        $event->forceFill(['status' => EventStatus::Open, 'active_game_id' => $game->id])->save();
+
+        actingAs(ownerOf($event))->post("/host/{$event->id}/close")->assertSessionHasNoErrors();
+        expect($event->refresh()->status)->toBe(EventStatus::Finished);
     });
 });
 

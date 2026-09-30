@@ -26,5 +26,7 @@ return [
         'person_claim_released' => 'Released a claimed name',
         'game_finished_early' => 'Finished a game early',
         'question_reset' => 'Reset the votes of a question',
+        'question_winner_picked' => 'Picked a winner',
+        'question_surrendered' => 'Surrendered a question',
     ],
 ];

@@ -13,6 +13,7 @@ return [
         'answer_unsupported' => 'The answer may only contain letters, digits, spaces and the punctuation - \' . / &, with at least one letter or digit.',
         'open_index_out_of_range' => 'Opened boxes must be numbered from 0 to :max.',
         'all_boxes_open' => 'At least one box must stay closed.',
+        'winner_unknown' => 'Pick a name from this event\'s list.',
     ],
 
     // D-9, T8: the games of an event.
@@ -29,6 +30,13 @@ return [
     'deleted' => 'Game deleted.',
     'reloaded' => 'Questions reloaded from the pack.',
     'finished' => 'Game finished.',
+    'questions_title' => 'Questions of :title',
+    'questions_link' => 'Questions',
+    'questions_help' => 'These are copies of the pack. Edit one until it has been on screen; the pack is not changed.',
+    'question_saved' => 'Question saved. The pack is not changed.',
+    'edit_question' => 'Edit question :number',
+    'locked' => 'On screen already',
+    'save_question' => 'Save question',
     'reload' => 'Reload from pack',
     'reload_help' => 'Replaces the questions with the latest version of the pack.',
     'delete' => 'Delete',

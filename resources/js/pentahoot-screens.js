@@ -1,6 +1,6 @@
 // F20: the Alpine components of the three Pentahoot screens. They only read the shared
 // realtime store; the rules live in pentahoot.js and on the server.
-import { canVote, fill, phaseOf, podium, revealSteps, searchPeople, secondsLeft } from './pentahoot.js';
+import { canVote, capRows, fill, phaseOf, podium, revealSteps, searchPeople, secondsLeft } from './pentahoot.js';
 
 /** Redraw rate of countdowns and the closed phase (F4). */
 const TICK_MS = 250;
@@ -86,6 +86,14 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
         get store() {
             return this.$store.realtime;
         },
+        /** F13: these components draw Pentahoot games only; the Tebak screens have their own. */
+        get isPentahoot() {
+            return this.store.snapshot?.game?.type === 'pentahoot';
+        },
+        /** G7, E12: a finished game stays on screen until the next one starts. */
+        get finished() {
+            return this.store.snapshot?.game?.status === 'finished';
+        },
         get question() {
             return this.store.snapshot?.game?.question ?? null;
         },
@@ -110,6 +118,14 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
         get view() {
             if (!this.store.snapshot?.game) {
                 return 'waiting';
+            }
+
+            if (!this.isPentahoot) {
+                return 'other';
+            }
+
+            if (this.finished) {
+                return 'finished';
             }
 
             switch (this.phase) {
@@ -228,6 +244,14 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
         get store() {
             return this.$store.realtime;
         },
+        /** F13: these components draw Pentahoot games only; the Tebak screens have their own. */
+        get isPentahoot() {
+            return this.store.snapshot?.game?.type === 'pentahoot';
+        },
+        /** G7, E12: a finished game stays on screen until the next one starts. */
+        get finished() {
+            return this.store.snapshot?.game?.status === 'finished';
+        },
         get game() {
             return this.store.snapshot?.game ?? null;
         },
@@ -247,8 +271,12 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
         get results() {
             return this.question?.results ?? [];
         },
+        /** E20: the projector draws at most ten rows; a tie that does not fit is one summary row. */
+        get rows() {
+            return capRows(this.results);
+        },
         get steps() {
-            return revealSteps(this.results);
+            return revealSteps(this.rows);
         },
         get stand() {
             return podium(this.results);
@@ -315,6 +343,14 @@ export function pentahootHost({ actionUrl, labels }) {
 
         get store() {
             return this.$store.realtime;
+        },
+        /** F13: these components draw Pentahoot games only; the Tebak screens have their own. */
+        get isPentahoot() {
+            return this.store.snapshot?.game?.type === 'pentahoot';
+        },
+        /** G7, E12: a finished game stays on screen until the next one starts. */
+        get finished() {
+            return this.store.snapshot?.game?.status === 'finished';
         },
         get game() {
             return this.store.snapshot?.game ?? null;
