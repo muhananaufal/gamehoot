@@ -78,6 +78,16 @@ describe('Tebak Gambar question form (E8, F20)', function (): void {
             ->assertSee('Answer image');
     });
 
+    it('sends forms without images the usual way, not as multipart', function (): void {
+        $host = User::factory()->create();
+        $pack = new QuestionPack(['title' => 'Celebrities', 'game_type' => GameType::TebakKata]);
+        $pack->owner()->associate($host)->save();
+
+        actingAs($host)->get("/host/packs/{$pack->id}/questions/create")
+            ->assertOk()
+            ->assertDontSee('multipart/form-data', false);
+    });
+
     it('shows the stored images when editing, the answer image only through a signed URL (E9)', function (): void {
         $host = User::factory()->create();
         $pack = gambarPack($host);
