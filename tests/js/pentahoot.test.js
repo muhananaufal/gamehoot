@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     canVote,
+    capRows,
     fill,
     phaseOf,
     podium,
@@ -103,5 +104,38 @@ describe('A10 label placeholders', () => {
     it('fills counts into translated labels', () => {
         expect(fill('Question __N__ of __TOTAL__', { N: 3, TOTAL: 8 })).toBe('Question 3 of 8');
         expect(fill('__N__ / __TOTAL__ answered', { N: 0, TOTAL: 48 })).toBe('0 / 48 answered');
+    });
+});
+
+describe('E20 projector reveal cap', () => {
+    const tied = (rank, count, votes) =>
+        Array.from({ length: count }, (_, i) => ({ rank, name: `N${rank}-${i}`, votes }));
+
+    it('keeps whole rank groups while they fit, and sums up the group that would not', () => {
+        const rows = capRows([{ rank: 1, name: 'A', votes: 10 }, ...tied(2, 2, 8), ...tied(4, 15, 1)], 10);
+
+        expect(rows.map((row) => (row.summary ? `${row.rank}:${row.count}x${row.votes}` : row.name))).toEqual([
+            'A',
+            'N2-0',
+            'N2-1',
+            '4:15x1',
+        ]);
+    });
+
+    it('leaves short lists alone', () => {
+        const rows = [{ rank: 1, name: 'A', votes: 3 }, ...tied(2, 3, 1)];
+
+        expect(capRows(rows, 10)).toEqual(rows);
+    });
+
+    it('never cuts inside a tie, even when the first rank alone is too long', () => {
+        expect(capRows(tied(1, 12, 1), 10)).toEqual([{ rank: 1, summary: true, count: 12, votes: 1 }]);
+    });
+
+    it('sums up a podium step with more than three names (E17)', () => {
+        const stand = podium([...tied(1, 4, 5), { rank: 5, name: 'Z', votes: 1 }]);
+
+        expect(stand.first).toEqual([{ rank: 1, summary: true, count: 4, votes: 5 }]);
+        expect(stand.rest).toEqual([{ rank: 5, name: 'Z', votes: 1 }]);
     });
 });

@@ -33,6 +33,10 @@ return [
     'votes_total' => ['one' => '__N__ vote', 'other' => '__N__ votes'],
     'no_votes' => 'No votes',
     'votes' => 'votes',
+    // E20: one row standing for a large tie on the projector.
+    'tied_names' => ['one' => '__N__ name tied', 'other' => '__N__ names tied'],
+    'game_over' => 'Thanks for playing!',
+    'game_over_host' => 'This game is finished. Start the next one from the Games page.',
 
     // Live control (D-5, D-8, E13, E15, C-3)
     'no_game' => 'No game is running.',
