@@ -6,10 +6,13 @@ namespace App\Actions\Events;
 
 use App\Enums\ScreenTheme;
 use App\Models\Event;
+use App\Realtime\StatePublisher;
 use Illuminate\Support\Facades\DB;
 
-final class UpdateEventSettings
+final readonly class UpdateEventSettings
 {
+    public function __construct(private StatePublisher $publisher) {}
+
     public function handle(Event $event, string $name, string $slug, ScreenTheme $theme, bool $showOnDevices): void
     {
         DB::transaction(function () use ($event, $name, $slug, $theme, $showOnDevices): void {
@@ -22,6 +25,7 @@ final class UpdateEventSettings
             ]);
             $locked->bumpStateVersion();
             $locked->save();
+            $this->publisher->publish($locked);
         });
     }
 }

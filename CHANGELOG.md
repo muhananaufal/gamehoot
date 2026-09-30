@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-30
+
+Realtime stage: live screens over Reverb, the Public View lobby and Live control.
+
+### Added
+
+- Screens update live: phones, the Public View and the host's Live control page follow every change to the event without a reload.
+- The Public View (`/{event}/screen`) shows a lobby with the join link and a live count of players who joined, in the theme chosen for the event.
+- Hosts get a Live control page per event with the event status, how many names have been claimed, and the connection state.
+- Phones switch to the right screen by themselves when an event is closed, reopened or removed.
+- When the live connection drops, screens show a warning and keep updating every few seconds until it is back.
+- The app refuses to serve pages while a required realtime setting is missing, with a message naming it.
+
 ## [0.1.0] - 2026-09-29
 
 Foundation stage: accounts, events, question packs, name lists and joining from phones.
@@ -29,5 +42,6 @@ Foundation stage: accounts, events, question packs, name lists and joining from 
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
 
-[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.1.0...develop
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.2.0...develop
+[0.2.0]: https://github.com/devivace-groups/pentahoot/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/devivace-groups/pentahoot/releases/tag/v0.1.0

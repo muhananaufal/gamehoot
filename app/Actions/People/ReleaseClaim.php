@@ -8,6 +8,7 @@ use App\Enums\LoggedAction;
 use App\Models\Event;
 use App\Models\Person;
 use App\Models\User;
+use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -17,11 +18,13 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class ReleaseClaim
 {
-    public function __construct(private AuditLog $auditLog) {}
+    public function __construct(private AuditLog $auditLog, private StatePublisher $publisher) {}
 
     public function handle(Event $event, Person $person, User $actor): void
     {
         DB::transaction(function () use ($event, $person, $actor): void {
+            // F15, F23: same lock order as ClaimName (event, then person), and the lobby count changes.
+            $row = Event::query()->lockForUpdate()->findOrFail($event->id);
             $locked = Person::query()->lockForUpdate()->findOrFail($person->id);
 
             if ($locked->claimed_at === null) {
@@ -29,6 +32,9 @@ final readonly class ReleaseClaim
             }
 
             $locked->forceFill(['claim_token_hash' => null, 'claimed_at' => null])->save();
+            $row->bumpStateVersion();
+            $row->save();
+            $this->publisher->publish($row);
 
             $this->auditLog->record(LoggedAction::ClaimReleased, $actor, $event, ['person_id' => $locked->id]);
         });
