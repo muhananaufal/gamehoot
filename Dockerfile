@@ -11,11 +11,12 @@ COPY docker/php/conf.d/pentahoot.ini /usr/local/etc/php/conf.d/pentahoot.ini
 
 WORKDIR /var/www/html
 
-# Local development and CI: Composer, PCOV for coverage and mutation tests (K2), and the
-# sockets extension required by the Pest browser plugin.
+# Local development and CI: Composer, PCOV for coverage and mutation tests (K2), the
+# sockets extension required by the Pest browser plugin, and GD for the fake images of the
+# upload tests (E8). Production needs no GD: images are resized in the host's browser.
 FROM base AS dev
 
-RUN install-php-extensions pcov sockets
+RUN install-php-extensions pcov sockets gd
 
 COPY --from=composer:2.10.3 /usr/bin/composer /usr/local/bin/composer
 
