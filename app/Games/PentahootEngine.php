@@ -29,7 +29,12 @@ final class PentahootEngine implements LiveGameEngine
         return GameType::Pentahoot;
     }
 
-    public function questionRules(): array
+    public function imageFields(): array
+    {
+        return [];
+    }
+
+    public function questionRules(bool $creating): array
     {
         return [
             'prompt' => ['required', 'string', 'max:500'],

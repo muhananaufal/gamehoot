@@ -25,7 +25,7 @@ uses(RefreshDatabase::class);
 function engineErrors(GameType $type, array $input): array
 {
     /** @var array<string, list<string>> */
-    return Validator::make($input, app(GameEngines::class)->for($type)->questionRules())->errors()->toArray();
+    return Validator::make($input, app(GameEngines::class)->for($type)->questionRules(creating: true))->errors()->toArray();
 }
 
 function packQuestionFor(GameType $type): PackQuestion

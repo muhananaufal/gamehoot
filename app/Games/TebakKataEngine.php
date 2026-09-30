@@ -31,7 +31,12 @@ final readonly class TebakKataEngine implements LiveGameEngine
         return GameType::TebakKata;
     }
 
-    public function questionRules(): array
+    public function imageFields(): array
+    {
+        return [];
+    }
+
+    public function questionRules(bool $creating): array
     {
         return [
             'prompt' => ['required', 'string', 'max:500'],

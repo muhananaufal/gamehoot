@@ -11,6 +11,8 @@ use App\Http\Requests\Host\GameQuestionRequest;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Question;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -29,9 +31,9 @@ final class GameQuestionController
         return $this->page($event, $game, $engines, $question);
     }
 
-    public function update(GameQuestionRequest $request, Event $event, Game $game, Question $question, EditGameQuestion $editQuestion): RedirectResponse
+    public function update(GameQuestionRequest $request, Event $event, Game $game, Question $question, EditGameQuestion $editQuestion, #[CurrentUser] User $actor): RedirectResponse
     {
-        $editQuestion->handle($game, $question, $request->validated());
+        $editQuestion->handle($game, $question, $request->validated(), $actor);
 
         return redirect()->route('host.events.games.questions.index', [$event, $game])->with('status', __('games.question_saved'));
     }
