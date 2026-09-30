@@ -35,6 +35,13 @@ arch('game engines do not depend on HTTP classes')
     ->expect('App\Games')
     ->not->toUse(['App\Http', 'Illuminate\Http', 'Illuminate\Routing', 'Illuminate\Support\Facades\Request']);
 
+// F13, F22: engines change game state only; RunQuestionAction and the Actions publish it.
+// The snapshot builder needs the engines, so an engine that published would form a
+// constructor cycle the container resolves forever (it crashed PHP with SIGSEGV).
+arch('game engines do not publish realtime state')
+    ->expect('App\Games')
+    ->not->toUse('App\Realtime');
+
 arch('controllers do not query the database directly')
     ->expect('App\Http\Controllers')
     ->not->toUse('Illuminate\Support\Facades\DB');

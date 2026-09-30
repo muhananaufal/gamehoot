@@ -26,6 +26,7 @@ use App\Http\Controllers\Host\PersonClaimController;
 use App\Http\Controllers\Host\PersonController;
 use App\Http\Controllers\Host\PersonImportController;
 use App\Http\Controllers\Host\PersonLinksController;
+use App\Http\Controllers\Host\QuestionActionController;
 use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
 use App\Http\Controllers\Host\TrashController;
@@ -100,6 +101,10 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
                 Route::post('/{game}/start', GameStartController::class)->whereUuid('game')->name('start');
                 Route::post('/{game}/finish', GameFinishController::class)->whereUuid('game')->name('finish');
             });
+
+            // F13, C-3: question actions, run by the engine of the game type.
+            Route::post('/questions/{question}/{action}', QuestionActionController::class)
+                ->whereUuid('question')->where('action', '[a-z-]+')->name('questions.action')->can('update', 'event');
 
             // B-3, B-4, B-6, T5: the master name list.
             Route::prefix('/people')->name('people.')->scopeBindings()->middleware('can:update,event')->group(function (): void {

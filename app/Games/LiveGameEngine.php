@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Games;
 
 use App\Enums\Audience;
+use App\Exceptions\ActionRefused;
+use App\Models\Event;
 use App\Models\Game;
+use App\Models\Question;
+use App\Models\User;
 
 /**
  * F13: the part of an engine that runs a game live. Separate from GameEngine so a game type
@@ -28,4 +32,20 @@ interface LiveGameEngine extends GameEngine
      * @return array<string, mixed>
      */
     public function liveCounters(Game $game, Audience $audience): array;
+
+    /**
+     * The host actions this game type accepts on a question (POST /host/{event}/questions/{question}/{action}).
+     *
+     * @return list<string>
+     */
+    public function actions(): array;
+
+    /**
+     * Runs one host action. Called inside a transaction with the event row already locked
+     * (RunQuestionAction bumps the version and publishes); the engine locks the game and
+     * question rows it changes (G12).
+     *
+     * @throws ActionRefused when the question is not in the state the action expects (F6, C-3)
+     */
+    public function perform(string $action, Event $event, Question $question, User $actor): void;
 }

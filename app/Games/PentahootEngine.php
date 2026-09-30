@@ -7,16 +7,21 @@ namespace App\Games;
 use App\Enums\Audience;
 use App\Enums\GameType;
 use App\Enums\QuestionStatus;
+use App\Games\Pentahoot\PentahootActions;
+use App\Models\Event;
 use App\Models\Game;
 use App\Models\PackQuestion;
 use App\Models\Question;
 use App\Models\QuestionResult;
+use App\Models\User;
 use Illuminate\Support\Arr;
 
 final class PentahootEngine implements LiveGameEngine
 {
     /** Rows of the running tally shown to hosts only (F2). */
     private const int HOST_TALLY_ROWS = 10;
+
+    public function __construct(private PentahootActions $actions) {}
 
     public function type(): GameType
     {
@@ -88,6 +93,16 @@ final class PentahootEngine implements LiveGameEngine
         }
 
         return $snapshot;
+    }
+
+    public function actions(): array
+    {
+        return PentahootActions::ACTIONS;
+    }
+
+    public function perform(string $action, Event $event, Question $question, User $actor): void
+    {
+        $this->actions->perform($action, $event, $question, $actor);
     }
 
     public function liveCounters(Game $game, Audience $audience): array
