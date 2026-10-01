@@ -68,11 +68,11 @@
             </div>
             <p x-show="results.length === 0" class="flex grow items-center justify-center font-display text-[2em] font-bold">{{ __('pentahoot.no_votes') }}</p>
             <x-rank-list x-show="results.length > 0 && !final" rows="rows" shown="isShown(row)" />
-            <x-podium x-show="results.length > 0 && final" stand="stand" class="grow justify-end" />
+            <x-podium x-show="results.length > 0 && final" stand="stand" :score="__('pentahoot.votes_count')" class="grow justify-end" />
         </main>
 
         {{-- Tebak Kata and Tebak Gambar (E5, E9, E11, E12, E17). Only the question itself differs per game. --}}
-        <div x-data="tebakScreen({ types: ['tebak_kata', 'tebak_gambar'], labels: @js(__('tebak')) })" x-show="$store.realtime.screen() === 'live' && game" class="contents">
+        <div x-data="tebakScreen({ types: ['tebak_kata', 'tebak_gambar'], labels: @js(__('tebak')), projector: true })" x-show="$store.realtime.screen() === 'live' && game" class="contents">
             <main x-cloak x-show="view === 'next'" class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
                 <p class="font-display text-[clamp(36px,5vw,88px)] leading-tight font-bold" x-text="game?.title"></p>
                 <p class="text-[clamp(20px,2.4vw,40px)] text-muted">{{ __('tebak.next_soon') }}</p>
@@ -102,7 +102,7 @@
             {{-- E12, E17: the final podium stays until the next game starts (G7). --}}
             <main x-cloak x-show="view === 'final'" class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
                 <p class="text-center font-display text-[1.6em] font-bold"><span x-text="game?.title"></span> · {{ __('tebak.final') }}</p>
-                <x-podium stand="stand" class="grow justify-end" />
+                <x-podium stand="stand" :score="__('tebak.points')" class="grow justify-end" />
             </main>
         </div>
 

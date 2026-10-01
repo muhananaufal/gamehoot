@@ -1,6 +1,16 @@
 // F20: the Alpine components of the three Pentahoot screens. They only read the shared
 // realtime store; the rules live in pentahoot.js and on the server.
-import { canVote, capRows, fill, phaseOf, podium, revealSteps, searchPeople, secondsLeft } from './pentahoot.js';
+import {
+    canVote,
+    capRows,
+    fill,
+    phaseOf,
+    podium,
+    revealSteps,
+    SCREEN_ROWS,
+    searchPeople,
+    secondsLeft,
+} from './pentahoot.js';
 
 /** Redraw rate of countdowns and the closed phase (F4). */
 const TICK_MS = 250;
@@ -201,6 +211,10 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
                         ...(this.store.me ?? {}),
                         vote: { question_id: question.id, attempt: question.attempt, target: body.target.name },
                     };
+                } else if (body.code === 'ALREADY_VOTED') {
+                    // E4: an earlier try reached the server but its answer was lost; show that pick.
+                    await this.store.refresh?.();
+                    this.error = this.myVote ? '' : body.message;
                 } else {
                     this.error = body.message ?? this.labels.network_error;
                 }
@@ -278,8 +292,9 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
         get steps() {
             return revealSteps(this.rows);
         },
+        /** E20: the projector podium shares the ten-row budget. */
         get stand() {
-            return podium(this.results);
+            return podium(this.results, SCREEN_ROWS);
         },
 
         /** E2: a row shows once the reveal has reached its rank. */
@@ -439,8 +454,10 @@ export function pentahootHost({ actionUrl, labels }) {
 
                 if (status !== 204) {
                     this.error = body.message ?? this.labels.network_error;
-                    this.store.refresh?.();
                 }
+
+                // F1: this page loads the new state itself instead of waiting for the broadcast.
+                this.store.refresh?.();
             } catch {
                 this.error = this.labels.network_error;
             } finally {

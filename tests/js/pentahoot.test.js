@@ -3,6 +3,7 @@ import {
     canVote,
     capRows,
     fill,
+    initialsOf,
     phaseOf,
     podium,
     revealSteps,
@@ -137,5 +138,30 @@ describe('E20 projector reveal cap', () => {
 
         expect(stand.first).toEqual([{ rank: 1, summary: true, count: 4, votes: 5 }]);
         expect(stand.rest).toEqual([{ rank: 5, name: 'Z', votes: 1 }]);
+    });
+
+    it('keeps the projector podium within ten name rows, summing up the tie that does not fit (E20)', () => {
+        // Three on the steps and eight tied at rank 4: only seven rows are left below.
+        const results = [
+            { rank: 1, name: 'A', votes: 9 },
+            { rank: 2, name: 'B', votes: 7 },
+            { rank: 3, name: 'C', votes: 5 },
+            ...tied(4, 8, 1),
+        ];
+
+        expect(podium(results, 10).rest).toEqual([{ rank: 4, summary: true, count: 8, votes: 1 }]);
+        // Phones keep the whole list (E20).
+        expect(podium(results).rest).toHaveLength(8);
+    });
+});
+
+describe('E17 podium initials', () => {
+    it('takes the first letter of the first two words, upper case', () => {
+        expect(initialsOf('budi santoso wijaya')).toBe('BS');
+        expect(initialsOf('  Ana  ')).toBe('A');
+    });
+
+    it('keeps an emoji whole instead of splitting it into broken halves', () => {
+        expect(initialsOf('Rizky 🎉 Pratama')).toBe('R🎉');
     });
 });

@@ -4,6 +4,7 @@ import Pusher from 'pusher-js';
 import { imagePicker } from './image-picker.js';
 import { kataBoxes } from './kata-boxes.js';
 import { nameReview } from './name-review.js';
+import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
 import { connectRealtime, countLabel, fetchSnapshot, offlineEcho, realtimeStore, screenFor } from './realtime.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
@@ -35,6 +36,9 @@ if (realtimeConfig !== null) {
         },
         count(labels, value) {
             return countLabel(labels, value);
+        },
+        initials(name) {
+            return initialsOf(name);
         },
     });
 
