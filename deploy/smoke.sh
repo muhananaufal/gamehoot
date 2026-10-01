@@ -33,9 +33,11 @@ done
 # A WebSocket handshake from the app's own origin (Reverb checks allowed_origins). Server
 # frames are not masked, so the first message, pusher:connection_established, is plain text.
 origin="$(value APP_URL)"
+# The sample nonce of RFC 6455 (16 bytes in base64): required by the handshake, not a secret.
+nonce='dGhlIHNhbXBsZSBub25jZQ==' # gitleaks:allow
 first="$(curl -sN --max-time 4 \
     -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
-    -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H "Origin: ${origin}" \
+    -H "Sec-WebSocket-Key: ${nonce}" -H "Origin: ${origin}" \
     "http://127.0.0.1:${reverb_port}/app/${key}?protocol=7&client=smoke&version=1" 2>/dev/null || true)"
 
 if ! printf '%s' "$first" | grep -q 'pusher:connection_established'; then
