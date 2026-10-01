@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `php artisan db:seed --class=DemoSeeder` builds a demo event with 50 names and one game of each type; `LoadTestSeeder` builds an open event with 500 names for load tests. Neither runs in production.
 - Friendly error pages (page not found, no access, expired page, too many tries, server error, maintenance) with a way to reload or go back.
 
 ### Security
