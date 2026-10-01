@@ -5,7 +5,7 @@
 ])
 @php
     // O11: every target is at least 44 px high.
-    $classes = 'inline-flex h-11 items-center justify-center gap-2 rounded-control px-4 text-sm font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60 '
+    $classes = 'inline-flex h-11 items-center justify-center gap-2 rounded-control px-4 text-sm font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60 aria-busy:cursor-progress '
         . match ($variant) {
             'primary' => 'bg-accent text-on-accent hover:bg-accent-strong',
             'secondary' => 'border border-line-strong bg-surface text-ink hover:bg-subtle',
