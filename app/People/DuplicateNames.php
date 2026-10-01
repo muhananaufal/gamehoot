@@ -32,7 +32,9 @@ final class DuplicateNames
         foreach ($names as $index => $name) {
             $key = PersonName::normalize($name);
 
-            if (isset($existing[$key])) {
+            if (mb_strlen(PersonName::display($name)) > PersonName::MAX_LENGTH) {
+                $problems[$index] = NameClash::tooLong();
+            } elseif (isset($existing[$key])) {
                 $problems[$index] = NameClash::withExisting($existing[$key]);
             } elseif (isset($seen[$key])) {
                 $problems[$index] = NameClash::withRow($seen[$key] + 1, PersonName::display($name));

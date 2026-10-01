@@ -14,7 +14,16 @@ final readonly class NameClash
         public ?int $row,
         public ?string $existingName,
         public string $name = '',
+        public bool $tooLong = false,
     ) {}
+
+    /**
+     * B-4: longer than the name column takes (PersonName::MAX_LENGTH).
+     */
+    public static function tooLong(): self
+    {
+        return new self(null, null, '', true);
+    }
 
     /**
      * $name is the clashing name itself, used in the example of how to tell the two apart.
@@ -31,6 +40,10 @@ final readonly class NameClash
 
     public function message(): string
     {
+        if ($this->tooLong) {
+            return __('people.too_long', ['max' => PersonName::MAX_LENGTH]);
+        }
+
         return $this->existingName !== null
             ? __('people.duplicate_existing', ['name' => $this->existingName])
             : __('people.duplicate_row', ['row' => $this->row, 'name' => $this->name]);

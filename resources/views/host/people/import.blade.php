@@ -44,6 +44,7 @@
                 x-data="nameReview({
                     names: @js(array_column($rows, 'name')),
                     existing: @js($event->people()->pluck('name', 'name_normalized')),
+                    room: @js($room),
                     labels: @js(collect(['review' => 'people.review', 'ready' => 'people.ready', 'duplicates' => 'people.duplicates', 'save' => 'people.save_names'])
                         ->map(fn (string $key): array => [
                             'one' => trans_choice($key, 1, ['count' => '__N__']),
@@ -101,7 +102,7 @@
                                                 :class="problemAt(index) ? 'border-on-danger' : 'border-line-strong'">
                                         </td>
                                         <td class="px-3 py-2 text-sm" :class="problemAt(index) ? 'font-semibold text-on-danger' : 'text-muted'"
-                                            x-text="problemAt(index) === null ? '—' : (problemAt(index).existing !== undefined
+                                            x-text="problemAt(index) === null ? '—' : problemAt(index).tooLong ? @js(__('people.too_long', ['max' => \App\People\PersonName::MAX_LENGTH])) : (problemAt(index).existing !== undefined
                                                 ? @js(__('people.duplicate_existing', ['name' => '__N__'])).replace('__N__', problemAt(index).existing)
                                                 : @js(__('people.duplicate_row', ['row' => '__R__', 'name' => '__N__'])).replace('__R__', problemAt(index).row).replace('__N__', row.name.trim()))"></td>
                                         <td class="px-3 py-2 text-right">
@@ -116,12 +117,16 @@
                 </div>
 
                 @if ($errors->has('names') || $errors->has('names.*'))
-                    <p role="alert" class="text-sm font-semibold text-on-danger">{{ $errors->first('names') ?: __('people.fix_to_save') }}</p>
+                    {{-- The first real problem the server found, not a generic sentence. --}}
+                    <p role="alert" class="text-sm font-semibold text-on-danger">{{ $errors->first('names') ?: $errors->first('names.*') }}</p>
                 @endif
+
+                {{-- B-3: the review says up front when the list no longer fits. --}}
+                <p @if (count($rows) <= $room) x-cloak @endif x-show="overLimit" role="status" class="text-sm font-semibold text-on-danger">{{ trans_choice('people.room', $room, ['max' => \App\Http\Requests\Host\PersonNameRequest::MAX_NAMES]) }}</p>
 
                 <div class="flex items-center justify-end gap-3">
                     <p class="text-sm font-semibold text-on-danger" x-show="problemCount > 0">{{ __('people.fix_to_save') }}</p>
-                    <x-button type="submit" x-bind:disabled="problemCount > 0 || rows.length === 0"
+                    <x-button type="submit" x-bind:disabled="problemCount > 0 || overLimit || rows.length === 0"
                         x-text="label('save', rows.length)">
                         {{ trans_choice('people.save_names', count($rows)) }}
                     </x-button>

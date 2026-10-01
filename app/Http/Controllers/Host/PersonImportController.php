@@ -8,6 +8,7 @@ use App\Actions\People\EditNameList;
 use App\Exceptions\NameListLocked;
 use App\Http\Requests\Host\ConfirmImportRequest;
 use App\Http\Requests\Host\ImportPeopleRequest;
+use App\Http\Requests\Host\PersonNameRequest;
 use App\Models\Event;
 use App\People\DuplicateNames;
 use App\People\NameCsv;
@@ -78,6 +79,8 @@ final class PersonImportController
             'event' => $event,
             'separator' => $separator,
             'fileName' => $fileName,
+            // B-3: how many more names fit in the event.
+            'room' => max(0, PersonNameRequest::MAX_NAMES - $event->people()->count()),
             'rows' => array_map(fn (int $index, string $name): array => [
                 'name' => $name,
                 'problem' => $problems[$index] ?? null,

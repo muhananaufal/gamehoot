@@ -122,9 +122,53 @@ describe('name list (B-3, B-4)', function (): void {
         expect(Person::query()->count())->toBe(1);
         actingAs($host)->get("/host/{$event->id}/people")->assertSee('Name list is locked');
     });
+
+    it('tells whether new claims are still open, and locks or unlocks them right there', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['names_locked_at' => now()])->save();
+        $host = hostOf($event);
+        $lockForm = 'action="'.route('host.events.join-lock', $event).'"';
+
+        actingAs($host)->get("/host/{$event->id}/people")
+            ->assertSee('People who have not joined can still pick their name.')
+            ->assertSee($lockForm, false)
+            ->assertSee('Lock claims');
+
+        $event->forceFill(['join_locked_at' => now()])->save();
+        actingAs($host)->get("/host/{$event->id}/people")
+            ->assertSee('New claims are locked too: nobody new can pick a name.')
+            ->assertDontSee('can still pick their name')
+            ->assertSee('Unlock claims');
+    });
 });
 
 describe('CSV import with preview (B-4, T4)', function (): void {
+    it('marks a name that is too long in the review, and says so when saving anyway', function (): void {
+        $event = eventWithOwner();
+        $long = str_repeat('x', 101);
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => csvUpload("Budi\n{$long}\n")])
+            ->assertOk()
+            ->assertSee('Longer than 100 characters. Shorten it to save.');
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import/confirm", ['names' => ['Budi', $long]])
+            ->assertSessionHasErrors(['names.1' => 'Longer than 100 characters. Shorten it to save.']);
+
+        // The review that comes back names the real problem, not duplicates.
+        actingAs(hostOf($event))->get("/host/{$event->id}/people/import")
+            ->assertSee('Longer than 100 characters. Shorten it to save.')
+            ->assertDontSee('Fix the duplicates');
+    });
+
+    it('says in the review how many more names fit in the event (B-3)', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->count(499)->create();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => csvUpload("Budi Santoso\nRita Wulandari\n")])
+            ->assertOk()
+            ->assertSee('Only 1 more name fits in this event (at most 500). Remove rows to save.');
+    });
+
     it('shows a preview that flags duplicates in the file and with existing names, and saves nothing', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->create(['name' => 'Rita Wulandari', 'name_normalized' => 'rita wulandari']);
