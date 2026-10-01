@@ -103,6 +103,16 @@ CMD ["php-fpm"]
 # The nginx images moved from Debian bookworm to trixie after 1.29.1; still Debian (P2).
 FROM nginxinc/nginx-unprivileged:1.29.8-trixie AS web
 
+# P3: Debian security fixes reach this image before a new nginx image is published. CI passes
+# a new APT_REFRESH on every run, so the upgrade layer is never served stale from the cache.
+ARG APT_REFRESH=local
+USER root
+RUN echo "apt refresh: ${APT_REFRESH}" \
+    && apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+USER 101
+
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=production /var/www/html/public /var/www/html/public
 
