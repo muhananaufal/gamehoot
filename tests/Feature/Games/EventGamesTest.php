@@ -133,6 +133,17 @@ describe('games in an event (D-9)', function (): void {
 });
 
 describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
+    it('asks before the first game locks the name list, and not after', function (): void {
+        $event = Pentahoot::event();
+        Pentahoot::game($event);
+        $warning = 'Starting the first game locks the name list';
+
+        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertSee($warning);
+
+        $event->forceFill(['names_locked_at' => now()])->save();
+        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertDontSee($warning);
+    });
+
     it('starts a game, locks the name list and tells every screen', function (): void {
         $event = Pentahoot::event();
         $game = Pentahoot::game($event);

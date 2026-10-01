@@ -53,6 +53,7 @@ return [
     'delete' => 'Delete',
     'delete_confirm' => 'Delete “:title”? Its copied questions are removed too.',
     'start' => 'Start game',
+    'start_locks_names' => 'Starting the first game locks the name list: names can no longer be added, renamed or deleted. People who have not joined yet can still pick their name.',
     'finish' => 'Finish game',
     'finish_confirm' => 'Finish “:title”? Questions that are not done yet will not count.',
     'status' => [

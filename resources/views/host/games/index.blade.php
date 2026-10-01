@@ -34,10 +34,22 @@
                     </x-chip>
                     @if ($status === 'waiting')
                         <div class="flex flex-wrap items-center gap-2">
-                            <form method="POST" action="{{ route('host.events.games.start', [$event, $game]) }}">
-                                @csrf
-                                <x-button type="submit" :disabled="$game->questions_count === 0 || $gameRunning">{{ __('games.start') }}</x-button>
-                            </form>
+                            @if ($event->names_locked_at === null && $game->questions_count > 0 && ! $gameRunning)
+                                {{-- B-3: the first game locks the name list for good, so it is confirmed. --}}
+                                <x-confirm-dialog :title="__('games.start') . '?'" :trigger="__('games.start')" trigger-variant="primary">
+                                    <p class="text-[15px] text-muted">{{ __('games.start_locks_names') }}</p>
+                                    <form method="POST" action="{{ route('host.events.games.start', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
+                                        @csrf
+                                        <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
+                                        <x-button type="submit">{{ __('games.start') }}</x-button>
+                                    </form>
+                                </x-confirm-dialog>
+                            @else
+                                <form method="POST" action="{{ route('host.events.games.start', [$event, $game]) }}">
+                                    @csrf
+                                    <x-button type="submit" :disabled="$game->questions_count === 0 || $gameRunning">{{ __('games.start') }}</x-button>
+                                </form>
+                            @endif
                             @if ($game->source_pack_id)
                                 <form method="POST" action="{{ route('host.events.games.reload', [$event, $game]) }}">
                                     @csrf
