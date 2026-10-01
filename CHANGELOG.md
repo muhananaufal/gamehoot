@@ -18,9 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A stuck realtime server no longer slows every host action and vote for up to 30 seconds.
 - Refused actions such as late votes no longer fill the server log.
 
+### Added
+
+- Friendly error pages (page not found, no access, expired page, too many tries, server error, maintenance) with a way to reload or go back.
+
 ### Security
 
 - The database seeder no longer creates a test account with a known password.
+- Every page now sends security headers, including a Content Security Policy, and cannot be embedded in other sites.
+- Behind a reverse proxy, each phone is rate limited by its own address and links use HTTPS.
+- Production refuses to start with debug output on or with cookies allowed over plain HTTP.
 
 ## [0.5.0] - 2026-10-01
 
