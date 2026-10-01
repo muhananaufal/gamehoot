@@ -103,3 +103,30 @@ describe('F1 Tebak Live control after its own action', () => {
         expect(store.refresh).toHaveBeenCalledOnce();
     });
 });
+
+describe('B-6 a phone whose name the host released', () => {
+    it('goes back to the name list instead of staying on a vote it cannot send', async () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept(live);
+        store.refresh = vi.fn(async () => {});
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => answer(401, { code: 'NOT_CLAIMED', message: 'Pick your name first.' })),
+        );
+        const navigate = vi.fn();
+
+        const phone = pentahootPhone({
+            peopleUrl: '/people',
+            voteUrl: '/vote/__QUESTION__',
+            joinUrl: '/demo',
+            navigate,
+            labels: { network_error: 'Network' },
+        });
+        phone.$store = { realtime: store };
+        phone.chosen = { id: 'p2', name: 'Budi Santoso' };
+
+        await phone.send();
+
+        expect(navigate).toHaveBeenCalledWith('/demo');
+    });
+});

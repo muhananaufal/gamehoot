@@ -5,6 +5,7 @@
     <div x-data="pentahootPhone({
             peopleUrl: @js(route('join.people', $event)),
             voteUrl: @js(url("/{$event->slug}/questions/__QUESTION__/vote")),
+            joinUrl: @js(route('join.index', $event)),
             labels: @js(__('pentahoot')),
         })"
         x-show="$store.realtime.screen() === 'live'" class="flex grow flex-col">

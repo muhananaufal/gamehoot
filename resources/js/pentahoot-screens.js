@@ -65,7 +65,13 @@ function base(labels) {
  * The phone: wait, pick a name and vote (F3, F9, E3), see the sent answer (E4), then the
  * same top 5 as the Public View (E4b).
  */
-export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
+export function pentahootPhone({
+    peopleUrl,
+    voteUrl,
+    joinUrl = null,
+    navigate = (url) => window.location.assign(url),
+    labels,
+}) {
     return {
         ...base(labels),
         people: null,
@@ -212,6 +218,9 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
                         ...(this.store.me ?? {}),
                         vote: { question_id: question.id, attempt: question.attempt, target: body.target.name },
                     };
+                } else if (body.code === 'NOT_CLAIMED' && joinUrl !== null) {
+                    // B-6: the host released this name; the phone picks a name again.
+                    navigate(joinUrl);
                 } else if (body.code === 'ALREADY_VOTED') {
                     // E4: an earlier try reached the server but its answer was lost; show that pick.
                     await this.store.refresh?.();
