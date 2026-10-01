@@ -8,7 +8,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # P6: a new push cancels the old run of a feature branch, but never a run that may be
+  # deploying (develop, version tags).
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' && !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: read
@@ -62,12 +64,14 @@ jobs:
           '
 
   browser:
-    name: Pest browser (${{ matrix.browser }})
+    # P6: each browser runs in two shards, the slowest jobs of the pipeline.
+    name: Pest browser (${{ matrix.browser }} ${{ matrix.shard }}/2)
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         browser: [chrome, safari]
+        shard: [1, 2]
     services:
       mysql:
         image: mysql:8.4
@@ -99,12 +103,12 @@ jobs:
         run: |
           cp .env.example .env
           app_key="base64:$(openssl rand -base64 32)"
-          docker run --rm --network host -v "$PWD:/var/www/html"             -e APP_KEY="$app_key"             -e DB_HOST=127.0.0.1 -e DB_PORT=3306             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root             pentahoot-php:ci sh -c "php artisan storage:link && php artisan test --testsuite=Browser --browser ${{ matrix.browser }}"
+          docker run --rm --network host -v "$PWD:/var/www/html"             -e APP_KEY="$app_key"             -e DB_HOST=127.0.0.1 -e DB_PORT=3306             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root             pentahoot-php:ci sh -c "php artisan storage:link && php artisan test --testsuite=Browser --browser ${{ matrix.browser }} --shard=${{ matrix.shard }}/2"
       - name: Keep failure screenshots
         if: failure()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: browser-screenshots-${{ matrix.browser }}
+          name: browser-screenshots-${{ matrix.browser }}-${{ matrix.shard }}
           path: tests/Browser/Screenshots
 
   secrets:
@@ -149,3 +153,108 @@ jobs:
             -e DB_HOST=127.0.0.1 -e DB_PORT=3306 \
             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root \
             pentahoot-php:ci php artisan test --display-warnings
+
+  image:
+    # P1, P2, P3: the production images are built on every push and scanned, so a branch
+    # proves them before merge; only develop and version tags push them to the registry.
+    name: Production images
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      # Switched on per environment with the repository variables STAGING_DEPLOY and
+      # PRODUCTION_DEPLOY (value on) once its server is ready (chapter 15).
+      PUBLISH: ${{ (github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on') || (startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on') }}
+      REPO: ghcr.io/${{ github.repository_owner }}/pentahoot
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+      - name: Image tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+      - name: Build app image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          target: production
+          load: true
+          tags: ${{ env.REPO }}:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha,scope=production
+          cache-to: type=gha,scope=production,mode=max
+      - name: Build web image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          target: web
+          load: true
+          tags: ${{ env.REPO }}-web:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha,scope=production
+          build-args: APT_REFRESH=${{ github.run_id }}
+      - name: Scan images (Trivy)
+        run: |
+          for image in "$REPO:${{ steps.tag.outputs.tag }}" "$REPO-web:${{ steps.tag.outputs.tag }}"; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 \
+              image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+          done
+      - name: Push to the registry
+        if: env.PUBLISH == 'true'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          tag="${{ steps.tag.outputs.tag }}"
+          tags=("$tag")
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tags+=("${GITHUB_REF_NAME}"); fi
+          for name in "$REPO" "$REPO-web"; do
+            for t in "${tags[@]}"; do
+              docker tag "$name:$tag" "$name:$t"
+              docker push --quiet "$name:$t"
+            done
+          done
+
+  deploy-staging:
+    # O2, P4: develop deploys staging once every check of the same push is green (W18).
+    name: Deploy staging
+    if: github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on'
+    needs: [lint, static-analysis, audit, frontend, browser, secrets, test, image]
+    runs-on: ubuntu-24.04
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          TAG: ${{ needs.image.outputs.tag }}
+        run: bash deploy/remote.sh
+
+  deploy-production:
+    # O2, P5: a version tag on main deploys production after a manual approval of the
+    # production environment in GitHub. Never during an event.
+    name: Deploy production
+    if: startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on'
+    needs: [lint, static-analysis, audit, frontend, browser, secrets, test, image]
+    runs-on: ubuntu-24.04
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          TAG: ${{ github.ref_name }}
+        run: bash deploy/remote.sh
