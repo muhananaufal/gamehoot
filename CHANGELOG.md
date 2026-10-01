@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production refuses to start with debug output on or with cookies allowed over plain HTTP.
 - Uploaded images are re-encoded on the server, so camera details such as the GPS position never get stored.
 
+- Production-ready images and an automatic pipeline: every merge to develop deploys staging, and every version tag deploys production after approval. A failed deploy returns to the previous release by itself.
+- A step-by-step guide for preparing the staging and production servers on Google Cloud.
+
 ### Changed
 
 - The link of an open event can no longer be changed, because printed QR codes and open phones use it. Close the event first to change it.
