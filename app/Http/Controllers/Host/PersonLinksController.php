@@ -24,6 +24,8 @@ final class PersonLinksController
                 return;
             }
 
+            fwrite($out, CsvCell::BOM);
+
             fputcsv($out, ['Name', 'Link'], ',', '"', '');
 
             foreach ($people as $person) {

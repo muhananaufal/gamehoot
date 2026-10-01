@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Name lists saved as CSV by Excel on Windows keep their accented names instead of silently dropping them.
+- Exported CSV files (results and personal links) open in Excel with accents and emoji intact.
+- A phone that picks a name the host just removed sees a clear screen with a way back to the list.
+- Error messages name form fields the way the form labels them, explain a failed image upload, and match when an event link is already taken.
+- Reordering pack questions now confirms the change.
+- Live control and phones get a clear message for actions that are not available, instead of a generic error.
+- A stuck realtime server no longer slows every host action and vote for up to 30 seconds.
+- Refused actions such as late votes no longer fill the server log.
+
+### Security
+
+- The database seeder no longer creates a test account with a known password.
+
 ## [0.5.0] - 2026-10-01
 
 Tebak Gambar stage: the picture-guessing game with private answer images.

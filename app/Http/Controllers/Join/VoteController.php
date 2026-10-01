@@ -19,7 +19,10 @@ final class VoteController
 {
     public function __invoke(VoteRequest $request, Event $event, Question $question, CastVote $castVote): JsonResponse
     {
-        abort_unless($question->game()->where('event_id', $event->id)->exists(), 404);
+        // K4: a question of another event is closed for this phone.
+        if (! $question->game()->where('event_id', $event->id)->exists()) {
+            throw ActionRefused::voteClosed();
+        }
 
         $voter = ClaimCookie::person($request, $event) ?? throw ActionRefused::notClaimed();
         $target = $request->target();

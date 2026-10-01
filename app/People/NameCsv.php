@@ -23,6 +23,12 @@ final readonly class NameCsv
 
     public static function parse(string $contents): self
     {
+        // "Save as CSV" in Excel on Windows writes the local code page, not UTF-8. Reading it
+        // as UTF-8 would turn every accented name into an invalid string that gets dropped.
+        if (! mb_check_encoding($contents, 'UTF-8')) {
+            $contents = mb_convert_encoding($contents, 'UTF-8', 'Windows-1252');
+        }
+
         $contents = preg_replace('/^\x{FEFF}/u', '', $contents) ?? $contents;
         $lines = preg_split('/\r\n|\n|\r/', $contents) ?: [];
         $separator = self::detectSeparator($lines);

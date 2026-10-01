@@ -29,6 +29,13 @@ return [
                 'port' => env('REVERB_PORT', 8080),
                 'scheme' => env('REVERB_SCHEME', 'http'),
                 'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+                // F22: the Pusher client sends this timeout with every request, overriding the
+                // client default, so a stuck Reverb costs seconds, not a PHP worker for 30 s.
+                'timeout' => 2,
+            ],
+            'client_options' => [
+                'connect_timeout' => 1,
+                'timeout' => 2,
             ],
             // How browsers reach Reverb. Sent to the page at runtime, not baked into the
             // Vite build, so one image serves every environment (P1).
@@ -37,7 +44,6 @@ return [
                 'port' => (int) env('REVERB_CLIENT_PORT', 443),
                 'scheme' => env('REVERB_CLIENT_SCHEME', 'https'),
             ],
-            'client_options' => [],
         ],
 
         'log' => [

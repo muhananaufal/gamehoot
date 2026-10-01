@@ -209,8 +209,8 @@ describe('guards (F6, C-2, C-3)', function (): void {
         $foreign = Pentahoot::question(Pentahoot::running($other));
         $idle = Pentahoot::question(Pentahoot::game($event));
 
-        hostAction($event, $question, 'explode')->assertNotFound();
-        hostAction($event, $foreign, 'start')->assertNotFound();
+        hostAction($event, $question, 'explode')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
+        hostAction($event, $foreign, 'start')->assertNotFound()->assertJsonPath('code', 'NOT_FOUND');
         hostAction($event, $idle, 'start')->assertConflict()->assertJsonPath('code', 'STALE_ACTION');
     });
 

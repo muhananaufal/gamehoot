@@ -138,7 +138,7 @@ describe('pack questions', function (): void {
         $pack = packOf($host);
 
         actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'Too short', 'duration_seconds' => 2])
-            ->assertSessionHasErrors('duration_seconds');
+            ->assertSessionHasErrors(['duration_seconds' => 'The time to vote field must be between 5 and 300.']);
 
         expect($pack->questions()->count())->toBe(0);
     });
@@ -166,7 +166,8 @@ describe('pack questions', function (): void {
         $ids = $pack->questions()->pluck('id')->all();
 
         actingAs($host)->post("/host/packs/{$pack->id}/questions/reorder", ['order' => [$ids[2], $ids[0], $ids[1]]])
-            ->assertRedirect("/host/packs/{$pack->id}");
+            ->assertRedirect("/host/packs/{$pack->id}")
+            ->assertSessionHas('status', 'Question order saved.');
 
         expect(promptsInOrder($pack))->toBe(['C', 'A', 'B']);
     });

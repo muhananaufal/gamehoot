@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\ActionRefused;
+use App\Exceptions\ClaimRefused;
+use App\Exceptions\EventHasActiveGame;
+use App\Exceptions\NameListLocked;
+use App\Http\ApiError;
 use App\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,5 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+        );
+
+        // K5: a refused action is normal play (late vote, double click), not an error to log.
+        $exceptions->dontReport([ActionRefused::class, ClaimRefused::class, NameListLocked::class, EventHasActiveGame::class]);
+
+        // K4: {code, message} for framework errors too.
+        $exceptions->render(
+            fn (Throwable $exception, Request $request) => $request->expectsJson()
+                ? ApiError::render($exception, (bool) config('app.debug'))
+                : null,
         );
     })->create();

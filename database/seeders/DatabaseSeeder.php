@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * O10: only base data that is safe to run again in every environment. Pentahoot has none yet:
+ * accounts come from `php artisan pentahoot:create-super-admin` (asked at the prompt), and
+ * demo or load-test data from DemoSeeder and LoadTestSeeder, which refuse production.
+ */
 final class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Nothing to seed yet; kept so `db:seed` and deploy scripts have a safe entry point.
     }
 }

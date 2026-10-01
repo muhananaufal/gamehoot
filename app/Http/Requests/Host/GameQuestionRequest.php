@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Host;
 
 use App\Games\GameEngines;
+use App\Http\Views\QuestionFieldNames;
 use App\Models\Game;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -25,5 +26,15 @@ final class GameQuestionRequest extends FormRequest
         }
 
         return $engines->for($game->type)->questionRules(creating: false);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        $game = $this->route('game');
+
+        return $game instanceof Game ? QuestionFieldNames::for($game->type) : [];
     }
 }

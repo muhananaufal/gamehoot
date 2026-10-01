@@ -39,9 +39,11 @@ final readonly class CastVote
             // The same row order as the host actions (game, question, detail), read-only.
             $game = Game::query()->sharedLock()->findOrFail($question->game_id);
             $locked = Question::query()->sharedLock()->findOrFail($question->id);
-            $detail = QuestionPentahoot::query()->sharedLock()->findOrFail($question->id);
+            // Only Pentahoot questions take votes; a Tebak question has no detail row here.
+            $detail = QuestionPentahoot::query()->sharedLock()->find($question->id);
 
-            if ($event->status !== EventStatus::Open
+            if ($detail === null
+                || $event->status !== EventStatus::Open
                 || $event->active_game_id !== $game->id
                 || $game->status === GameStatus::Finished
                 || $game->current_question_id !== $locked->id

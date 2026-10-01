@@ -7,7 +7,7 @@
         <x-logo :size="80" :wordmark="false" outline="stroke-canvas" />
         <h1 class="font-display text-[28px] leading-tight font-bold">{{ $title }}</h1>
         <p class="max-w-xs text-lg text-muted">{{ __("join.screens.{$screen}.body", $replace) }}</p>
-        @if ($event && in_array($screen, ['taken', 'link_invalid'], true))
+        @if ($event && in_array($screen, ['taken', 'link_invalid', 'name_gone'], true))
             <x-button :href="route('join.index', $event)" variant="secondary" class="mt-2">{{ __('join.back_to_names') }}</x-button>
         @endif
         @if ($code)

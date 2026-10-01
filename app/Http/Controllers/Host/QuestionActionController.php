@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Host;
 
 use App\Actions\Games\RunQuestionAction;
+use App\Exceptions\ActionRefused;
 use App\Games\GameEngines;
 use App\Http\Requests\Host\QuestionActionRequest;
 use App\Models\Event;
@@ -25,7 +26,9 @@ final class QuestionActionController
         abort_if($game === null, 404);
 
         $engine = $engines->live($game->type);
-        abort_unless(in_array($action, $engine->actions(), true), 404);
+        if (! in_array($action, $engine->actions(), true)) {
+            throw ActionRefused::unavailable();
+        }
 
         $run->handle($engine, $action, $event, $question, $user, $request->validated());
 

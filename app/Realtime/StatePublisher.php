@@ -41,7 +41,7 @@ final readonly class StatePublisher
                     Log::warning('Realtime broadcast failed.', [
                         'event_id' => $event->id,
                         'audience' => $audience->value,
-                        'error' => $exception->getMessage(),
+                        'error' => self::describe($exception),
                     ]);
                 }
             }
@@ -62,10 +62,19 @@ final readonly class StatePublisher
                 Log::warning('Realtime broadcast failed.', [
                     'event_id' => $event->id,
                     'audience' => Audience::Public->value,
-                    'error' => $exception->getMessage(),
+                    'error' => self::describe($exception),
                 ]);
             }
         });
+    }
+
+    /**
+     * The Pusher client puts the signed request URL in its message; the query string (auth key
+     * and signature) stays out of the log.
+     */
+    private static function describe(Throwable $exception): string
+    {
+        return preg_replace('/\?\S*/', '', $exception->getMessage()) ?? $exception::class;
     }
 
     /**

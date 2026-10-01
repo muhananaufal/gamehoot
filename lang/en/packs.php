@@ -69,6 +69,7 @@ return [
     'deleted' => ':title deleted.',
     'question_added' => 'Question added.',
     'question_saved' => 'Question saved.',
+    'reordered' => 'Question order saved.',
     'question_deleted' => 'Question deleted.',
     'order_mismatch' => 'The order must list every question of this pack once.',
 ];
