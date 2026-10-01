@@ -5,6 +5,7 @@ Internal event game platform: Pentahoot voting awards, Tebak Kata, and Tebak Gam
 - Specification (every decision, with IDs): [`docs/pentahoot-spec.html`](docs/pentahoot-spec.html)
 - Working rules for developers and agents: [`AGENTS.md`](AGENTS.md)
 - Changes: [`CHANGELOG.md`](CHANGELOG.md)
+- Day-to-day steps with commands, debugging, and the project blueprint: chapters 16, 17 and 18 of the specification; debugging notes in [`docs/debugging/`](docs/debugging/)
 
 ## Local setup (O9)
 

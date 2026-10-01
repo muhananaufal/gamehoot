@@ -257,8 +257,10 @@
       <li><a href="#alur"><span>13</span>Alur pengembangan</a></li>
       <li><a href="#operasional"><span>14</span>Operasional</a></li>
       <li><a href="#rilis"><span>15</span>Rilis</a></li>
-      <li><a href="#blueprint"><span>16</span>Blueprint</a></li>
-      <li><a href="#sumber"><span>17</span>Sumber</a></li>
+      <li><a href="#panduan"><span>16</span>Panduan kerja</a></li>
+      <li><a href="#debugging"><span>17</span>Debugging</a></li>
+      <li><a href="#blueprint"><span>18</span>Blueprint</a></li>
+      <li><a href="#sumber"><span>19</span>Sumber</a></li>
     </ol>
   </nav>
 
@@ -1432,9 +1434,147 @@ curl -fsS https://[DOMAIN PRODUCTION]/up</pre></div></li>
       </ol>
     </section>
 
+    <section id="panduan">
+      <h2><span class="num">16</span>Panduan kerja harian</h2>
+      <p class="sub">Langkah yang sama dengan bab 13–15, ditulis berurutan untuk dipakai sehari-hari: dari ide sampai kode masuk <code>develop</code>, lalu sampai rilis. Aturannya tetap di bab 13–15; bab ini menunjukkan cara menjalankannya. Semua perintah dijalankan dari root repo.</p>
+
+      <h3>Sekali per laptop</h3>
+      <p>Ikuti "Local setup" di <code>README.md</code>: database lokal, <code>.env</code>, <code>docker compose build</code>, <code>composer install</code>, <code>migrate</code>, <code>storage:link</code>, <code>npm ci</code>, dan hook Git (<code>git config core.hooksPath .githooks</code>). Untuk data contoh, buat super-admin lalu jalankan <code>DemoSeeder</code>:</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">docker compose run --rm app php artisan pentahoot:create-super-admin   # email dan password ditanya
+docker compose run --rm -T app php artisan db:seed --class=DemoSeeder   # event /demo-gathering</pre>
+
+      <h3>Dari ide sampai merge ke develop</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Pahami dulu, lalu cek dokumen</b><p>Tulis masalahnya dalam satu kalimat: apa yang rusak atau dibutuhkan, dan siapa yang terdampak. Cari ID yang terkait di dokumen ini. Kalau perubahan menyentuh aturan main, data, atau arsitektur, ubah dokumen dulu dengan ID baru atau ID yang diperbarui, minta persetujuan pemilik proyek, baru ubah kode (W8).</p></div></li>
+        <li><span class="n">2</span><div><b>Buat branch dari develop</b><p>Satu branch untuk satu tugas: <code>feature/*</code>, <code>fix/*</code>, atau <code>refactor/*</code> (W1).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout develop
+git pull --rebase origin develop
+git checkout -b fix/vote-after-reload</pre></div></li>
+        <li><span class="n">3</span><div><b>Jalankan aplikasi</b><p>App di <code>http://localhost:8000</code>, Reverb di port 8080, Vite di 5173. Buka host di laptop, Public View di jendela kedua, dan halaman join di jendela private atau HP sungguhan.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">docker compose up</pre></div></li>
+        <li><span class="n">4</span><div><b>Tulis test dulu, lalu saksikan ia gagal</b><p>Test yang tidak pernah terlihat gagal tidak membuktikan apa pun. Untuk bug, test ini adalah bukti bug-nya (merah) dan tetap tinggal sebagai regression test (W6). Logika server di Pest, logika JS murni di Vitest, alur layar di test browser (W11).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">docker compose run --rm -T app php artisan test --filter="phone shows its pick"
+docker compose run --rm -T node npx vitest run tests/js/pentahoot-screens.test.js</pre></div></li>
+        <li><span class="n">5</span><div><b>Kerjakan sampai hijau, sedikit demi sedikit</b><p>Ubah sesedikit mungkin sampai test lulus. Satu giliran kerja paling banyak 3–4 berkas; kontrak, skema, dan DTO dikunci lebih dulu. Teks UI masuk berkas bahasa, warna lewat token tema (F20, F21).</p></div></li>
+        <li><span class="n">6</span><div><b>Coba sendiri di browser</b><p>Jalankan alurnya sungguhan: HP sekitar 390 px, proyektor 16:9, dan laptop. Console browser harus bersih. Coba juga sisi tepinya: klik dua kali, koneksi putus, nama panjang, daftar kosong, dua host sekaligus.</p></div></li>
+        <li><span class="n">7</span><div><b>Gerbang kualitas penuh</b><p>Semua harus lulus, dibaca dari output yang baru dijalankan, bukan dari ingatan. Untuk perubahan yang punya tampilan, build aset lalu jalankan test browser di kedua browser.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">docker compose run --rm -T app php artisan test
+docker compose run --rm -T app vendor/bin/pint --test
+docker compose run --rm -T app vendor/bin/phpstan analyse
+docker compose run --rm -T node npx eslint .
+docker compose run --rm -T node npx prettier --check resources/js tests/js "*.config.js"
+docker compose run --rm -T node npx vitest run
+# perubahan tampilan:
+docker compose run --rm -T node npm run build
+docker compose run --rm browser php artisan test --testsuite=Browser --browser chrome
+docker compose run --rm browser php artisan test --testsuite=Browser --browser safari</pre></div></li>
+        <li><span class="n">8</span><div><b>Commit atomik</b><p>Satu commit untuk satu alasan perubahan, Conventional Commits dalam Bahasa Inggris, ID keputusan di body, trailer <code>aetheris</code> wajib (W3). Hook lokal menjalankan Pint, ESLint, Prettier, dan cek format pesan; kalau hook menolak, rapikan lalu commit lagi.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git add app/Realtime/ClientConfig.php tests/Feature/Realtime/ScreensTest.php
+git commit -m "fix(join): send the phone's own vote with the first snapshot" \
+  -m "E4: a reload in the closed phase no longer flashes Time is up." \
+  -m "Co-authored-by: aetheris &lt;agents.aetheris@gmail.com&gt;"</pre></div></li>
+        <li><span class="n">9</span><div><b>Changelog</b><p>Commit terakhir di branch adalah <code>docs(changelog): ...</code> yang menambah baris di <code>[Unreleased]</code>, ditulis dari sudut pandang pemakai (W10).</p></div></li>
+        <li><span class="n">10</span><div><b>Push dan tunggu CI hijau</b><p>Rebase ke <code>develop</code> terbaru, push, lalu tunggu CI untuk commit terakhir. Merah berarti perbaiki di branch yang sama dan push lagi (W18). Kegagalan infrastruktur (misalnya registry Docker menjawab 502) boleh dijalankan ulang tanpa perubahan kode, dan alasannya disebut.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git fetch origin &amp;&amp; git rebase origin/develop
+git push --force-with-lease origin fix/vote-after-reload
+gh run watch                      # pilih run terbaru branch ini
+gh run rerun &lt;id&gt; --failed       # hanya untuk kegagalan infrastruktur</pre></div></li>
+        <li><span class="n">11</span><div><b>Merge ke develop</b><p>Tanpa pull request, tapi hanya setelah CI hijau (W2, W18). Setelah merge, staging ter-deploy otomatis (bab 15).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout develop
+git merge --no-ff fix/vote-after-reload
+git push origin develop
+git branch -d fix/vote-after-reload
+git push origin --delete fix/vote-after-reload</pre></div></li>
+        <li><span class="n">12</span><div><b>Cek di staging</b><p>Setelah job deploy hijau: buka <code>/up</code>, event demo, Public View, dan satu HP sungguhan lewat domain staging. Masalah yang hanya muncul di staging dicatat seperti bug lain (bab 17).</p></div></li>
+      </ol>
+
+      <h3>Dari develop sampai production</h3>
+      <p>Urutan lengkapnya di bab 15. Ringkasnya: pemilik proyek menyetujui rilis dan nomor versinya, branch <code>release/x.y.z</code> memindahkan <code>[Unreleased]</code> ke nomor versi, CI hijau, merge ke <code>main</code> dengan tag, persetujuan deploy di environment <code>production</code>, lalu cek manual dari satu HP dan satu laptop. <b>Tidak pernah ada deploy di hari event</b> (O2), dan backup manual dilakukan tepat sebelum dan sesudah event (O4).</p>
+
+      <h3>Daftar periksa singkat</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Saat</th><th>Yang dicek</th></tr></thead>
+          <tbody>
+            <tr><td>Sebelum menulis kode</td><td>Masalahnya jelas; ID di dokumen sudah ada atau diperbarui (W8); branch dari <code>develop</code> terbaru.</td></tr>
+            <tr><td>Sebelum commit</td><td>Test baru pernah terlihat merah lalu hijau; gerbang kualitas lulus; tidak ada <code>// TODO</code>, kredensial, atau bypass tipe; teks UI di berkas bahasa.</td></tr>
+            <tr><td>Sebelum merge</td><td>Changelog terisi; CI hijau untuk commit terakhir; untuk tampilan: dicek di HP, proyektor, laptop, kontras, target sentuh 44 px, keyboard (O11).</td></tr>
+            <tr><td>Sebelum rilis</td><td>Persetujuan pemilik proyek; tidak bentrok dengan jadwal event; staging sudah dicoba dengan HP sungguhan.</td></tr>
+            <tr><td>Hari event</td><td>Tidak ada deploy; backup sebelum dan sesudah; <code>/up</code> dan koneksi Reverb dicek sebelum mulai.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="debugging">
+      <h2><span class="num">17</span>Debugging</h2>
+      <p class="sub">Cara mencari penyebab ketika aplikasi tidak berjalan seperti seharusnya, kapan harus berhenti dan meminta bantuan, dan cara mencatatnya supaya tim berikutnya tidak mengulang pencarian yang sama.</p>
+
+      <h3>Prinsip</h3>
+      <ul>
+        <li><b>Akar masalah dulu, baru perbaikan.</b> Tambalan yang menebak menyembunyikan gejala dan memindahkan bug ke tempat lain.</li>
+        <li><b>Bukti sebelum klaim.</b> Bug dianggap terbukti kalau ada reproduksi yang gagal (merah). Bug dianggap selesai kalau reproduksi yang sama lulus (hijau) dan tetap tinggal sebagai regression test.</li>
+        <li><b>Satu perubahan per percobaan.</b> Kalau dua hal diubah sekaligus, tidak ada yang tahu mana yang menolong.</li>
+        <li><b>Saat event berlangsung, pulihkan dulu, debug kemudian.</b> Pakai jalan manual yang ada (Reset soal, lanjut ke soal berikutnya, layar tetap jalan lewat polling saat Reverb mati), catat gejalanya, dan cari penyebabnya setelah acara. Tidak ada deploy di hari event (O2).</li>
+      </ul>
+
+      <h3>Langkah</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Catat gejala persis</b><p>Halaman atau URL, jam, akun atau HP mana, apa yang diharapkan dan apa yang terjadi, teks error apa adanya. Setiap respons membawa header <code>X-Request-Id</code>, dan setiap baris log membawa <code>request_id</code> dan <code>event_id</code> (K5); catat id itu kalau ada. Respons JSON yang gagal selalu membawa <code>code</code> tetap (K4).</p></div></li>
+        <li><span class="n">2</span><div><b>Reproduksi sekecil mungkin</b><p>Ulangi di lokal dengan langkah paling sedikit. Data contoh dari <code>DemoSeeder</code>; banyak HP disimulasikan dengan jendela private atau skrip. Kalau hanya muncul di staging, bandingkan konfigurasinya (proxy, HTTPS, versi MySQL) sebelum menebak kodenya.</p></div></li>
+        <li><span class="n">3</span><div><b>Kumpulkan bukti dari tiap lapis</b><p>Browser: console dan tab Network (status, body <code>{code, message}</code>). Server: log harian. Realtime: snapshot di <code>/{event}/state</code> dan <code>/host/{event}/state</code>, serta log Reverb. Data: baca database lewat tinker, tanpa mengubah apa pun.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;"># log hari ini, disaring per request atau per event
+grep "[REQUEST ID]" storage/logs/laravel-$(date +%F).log
+grep "[EVENT UUID]" storage/logs/laravel-$(date +%F).log | tail -50
+# realtime
+docker compose logs --tail=100 reverb
+curl -s http://localhost:8000/[slug event]/state
+# data, hanya membaca
+docker compose run --rm app php artisan tinker
+&gt;&gt;&gt; App\Models\Event::where('slug', '[slug event]')->first()?->only(['status', 'active_game_id', 'state_version'])</pre></div></li>
+        <li><span class="n">4</span><div><b>Tulis hipotesis, uji satu per satu</b><p>Setiap hipotesis punya cara membuktikannya salah. Mulai dari yang paling murah diuji. Tandai hasilnya: terbukti, gugur, atau belum diuji.</p></div></li>
+        <li><span class="n">5</span><div><b>Bukti merah</b><p>Tulis test yang gagal karena bug itu (Pest, Vitest, atau test browser). Pastikan ia gagal karena alasan yang benar, bukan karena salah tulis test.</p></div></li>
+        <li><span class="n">6</span><div><b>Perbaikan sekecil mungkin</b><p>Perbaiki penyebabnya, bukan gejalanya. Kalau perbaikan mengubah aturan, catat dulu di dokumen ini (W8).</p></div></li>
+        <li><span class="n">7</span><div><b>Hijau, lalu buktikan test-nya jujur</b><p>Jalankan test sampai hijau. Kalau ragu test-nya benar-benar menguji bug itu, kembalikan perbaikannya sebentar (harus merah lagi), lalu pasang lagi (hijau). Setelah itu jalankan gerbang kualitas penuh dan coba sendiri di browser.</p></div></li>
+        <li><span class="n">8</span><div><b>Catat</b><p>Tulis catatan debug (format di bawah) untuk bug yang butuh lebih dari satu jam, yang muncul di staging atau production, atau yang penyebabnya tidak terduga.</p></div></li>
+      </ol>
+
+      <h3>Batas mentok</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Kondisi</th><th>Yang dilakukan</th></tr></thead>
+          <tbody>
+            <tr><td>3 percobaan perbaikan gagal</td><td>Berhenti menambal. Ganti jenis pertanyaan: apa yang berbeda dari versi yang masih jalan (<code>git log</code>, <code>git bisect</code>)? Asumsi mana tentang lingkungan yang belum dicek (proxy, cache, versi, zona waktu)? Mungkinkah rancangannya yang salah, bukan baris kodenya?</td></tr>
+            <tr><td>5 percobaan, atau 2 jam untuk satu masalah</td><td>Berhenti. Tulis catatan debug berstatus <i>terbuka</i> berisi semua yang sudah dicoba, lalu minta orang kedua atau pemilik proyek melihat. Memaksa lebih lama biasanya memperbesar kerusakan.</td></tr>
+            <tr><td>Penyebab ada di luar kode (server, jaringan, layanan lain)</td><td>Kumpulkan bukti (log, waktu, request id), laporkan ke pemilik server, dan pasang mitigasi di sisi aplikasi kalau ada (timeout, pesan yang jelas).</td></tr>
+            <tr><td>Saat event berlangsung</td><td>Jangan debug di production. Pulihkan dengan jalan manual, catat gejala dan jam, lanjutkan setelah acara.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Format catatan debug</h3>
+      <p>Satu berkas Markdown per masalah di <code>docs/debugging/</code>, bernama <code>YYYY-MM-DD-judul-singkat.md</code>, dan satu baris di tabel indeks <code>docs/debugging/README.md</code>. Pelajaran yang mengubah aturan masuk ke dokumen ini dengan ID (W8) dan ke tabel "Titik belok" di bab 18. Templatnya:</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;"># [Judul singkat]
+
+- Tanggal: YYYY-MM-DD
+- Status: terbuka | selesai
+- Lingkungan: lokal | staging | production (versi atau commit)
+- Request id / event id: ...
+
+## Gejala
+Apa yang terlihat, persis, termasuk teks error dan kode K4.
+
+## Reproduksi
+Langkah paling sedikit untuk memunculkannya.
+
+## Hipotesis
+| Hipotesis | Cara menguji | Hasil (terbukti / gugur / belum diuji) |
+
+## Akar masalah
+Penyebab sebenarnya, dengan berkas dan baris.
+
+## Perbaikan
+Commit, test yang membuktikan (merah lalu hijau), ID keputusan yang berubah.
+
+## Pelajaran
+Yang sebaiknya dilakukan berbeda lain kali.</pre>
+    </section>
+
     <section id="blueprint">
-      <h2><span class="num">16</span>Blueprint: cara kita merancang</h2>
-      <p class="sub">Catatan alur berpikir sesi perencanaan 28 September 2026, dari PRD sampai mockup. Bab lain berisi <b>apa</b> yang diputuskan; bab ini berisi <b>bagaimana</b> kita sampai ke sana, supaya bisa diulang untuk proyek berikutnya.</p>
+      <h2><span class="num">18</span>Blueprint: cara kita merancang</h2>
+      <p class="sub">Catatan alur berpikir sesi perencanaan 28 September 2026, dari PRD sampai mockup, ditambah pelajaran dari eksekusi tahap 1 sampai 6 (29 September sampai 1 Oktober 2026). Bab lain berisi <b>apa</b> yang diputuskan; bab ini berisi <b>bagaimana</b> kita sampai ke sana, supaya bisa diulang untuk proyek berikutnya.</p>
 
       <h3>Urutan yang ditempuh</h3>
       <div class="diagram">
@@ -1519,6 +1659,69 @@ flowchart TD
         </table>
       </div>
 
+      <h3>Urutan eksekusi</h3>
+      <p>Setelah spesifikasi dikunci, setiap tahap (bab 12) berjalan dengan pola yang sama. Satu tahap berakhir dengan rilis minor (W9), sehingga setiap tahap bisa dipakai dan diperiksa sendiri.</p>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart TD
+    A[Permintaan tahap atau perubahan] --> B[Panel multi sudut pandang + persetujuan pemilik]
+    B --> C[Ubah spesifikasi dulu: ID baru atau diperbarui, W8]
+    C --> D[Batch fondasi: kontrak, skema, DTO]
+    D --> E[Review pemilik]
+    E --> F[Batch berikutnya: test merah, implementasi, hijau]
+    F --> G[Gerbang kualitas + coba sendiri di browser]
+    G --> H[Commit atomik + changelog]
+    H --> I[Push, CI hijau, merge ke develop]
+    I --> J{Tahap selesai?}
+    J -- belum --> F
+    J -- ya --> K[Rilis minor: release/x.y.z, tag, back-merge]
+    K --> L[Audit sebelum tahap berikutnya]
+</pre>
+      </div>
+
+      <h3>Titik belok saat eksekusi</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Awalnya</th><th>Menjadi</th><th>Pelajaran</th></tr></thead>
+          <tbody>
+            <tr><td>Semua form paket soal dikirim multipart demi Tebak Gambar</td><td>Multipart hanya kalau engine punya field gambar; test browser Tebak Kata sempat merah</td><td>Perubahan pada bagian bersama diuji untuk semua jenis yang memakainya, bukan hanya yang sedang dikerjakan</td></tr>
+            <tr><td>Test lokal dijalankan dengan env override di <code>artisan serve</code></td><td>Override dibuang server itu, sehingga aplikasi memakai database dev; dicatat dan diganti server yang menerima env</td><td>Pastikan identitas lingkungan (database, port, header server) sebelum mempercayai hasil yang dilihat</td></tr>
+            <tr><td>Rencana: factory dipakai bersama oleh test dan seeder demo (O10)</td><td>Seeder memakai action aplikasi dan daftar tetap, karena staging memakai image production tanpa Faker</td><td>Untuk setiap kode, tanyakan di lingkungan mana ia akan jalan dan dependency apa yang ada di sana</td></tr>
+            <tr><td>Penolakan biasa (vote telat, klik ganda) dilaporkan sebagai error dengan stack trace</td><td>Penolakan domain tidak dilaporkan; log lokal sudah 36 MB saat audit</td><td>Bedakan "aturan menolak" dari "sistem rusak" sejak hari pertama; keduanya butuh perlakuan log berbeda</td></tr>
+            <tr><td>Timeout broadcast diatur di opsi klien HTTP</td><td>Klien Pusher mengirim timeout-nya sendiri di setiap request, jadi nilainya diatur di dua tempat (F22)</td><td>Konfigurasi library diverifikasi ke source yang terpasang, bukan ke ingatan atau nama opsinya</td></tr>
+            <tr><td>Semua test hijau dianggap tanda siap rilis</td><td>Audit manual menemukan 66 masalah setelah v0.5.0, dari teks basi sampai header keamanan yang tidak ada</td><td>Test membuktikan apa yang diuji saja. Sebelum rilis besar, jelajahi aplikasi seperti pemakai dan penyerang, terutama sisi tepinya</td></tr>
+            <tr><td>Temuan dilaporkan dari satu jalur uji (POST langsung)</td><td>Satu temuan ditarik karena UI sudah mencegahnya; satu lagi dikoreksi karena gejalanya ternyata kilatan setelah reload</td><td>Uji lewat jalur yang dipakai orang sungguhan dan lewat API secara terpisah; tarik temuan yang salah secara terbuka</td></tr>
+            <tr><td>CI merah karena registry Docker menjawab 502</td><td>Job dijalankan ulang tanpa perubahan kode, alasannya disebut</td><td>Pisahkan kegagalan infrastruktur dari kegagalan kode; jangan "memperbaiki" kode untuk masalah jaringan</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Metode audit sebelum rilis</h3>
+      <p>Dipakai sebelum tahap penyempurnaan dan sebelum rilis production. Setiap temuan dicatat bernomor dengan bukti (langkah, respons, screenshot), penyebab di kode (berkas dan baris, atau label <i>inferensi</i> kalau belum dibuktikan), dan rencana perbaikan. Area yang sudah diuji dan lolos juga dicatat, supaya tidak diuji ulang.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Lensa</th><th>Yang dicoba</th></tr></thead>
+          <tbody>
+            <tr><td>Setiap rute dan sisi tepinya</td><td>Input kosong, terlalu panjang, format salah; pengguna lain; state yang sudah berubah (klik ganda, dua host); id yang tidak ada atau milik event lain; JSON dan form biasa.</td></tr>
+            <tr><td>Per perangkat</td><td>HP 390 px, proyektor 16:9, laptop; tema terang dan gelap; keyboard; kontras dan target sentuh diukur, bukan dilihat.</td></tr>
+            <tr><td>Realtime dan jaringan</td><td>Server WebSocket dimatikan dan dinyalakan lagi, respons yang hilang, jam HP yang meleset, tab yang lama tertutup.</td></tr>
+            <tr><td>Konkurensi dan beban</td><td>Banyak HP sekaligus lewat skrip, dua aksi host bersamaan, batas rate limit dari satu IP.</td></tr>
+            <tr><td>Data aneh</td><td>Emoji, aksen, CSV dari Excel Windows, nama sangat panjang, daftar di batas maksimum, markup dan rumus di nama.</td></tr>
+            <tr><td>Keamanan</td><td>Header (CSP, frame), CSRF, akses lintas event, URL bertanda tangan, apa yang masuk log.</td></tr>
+            <tr><td>Operasional</td><td>Ukuran log, timeout ke layanan lain, perilaku di belakang proxy, halaman error, mode maintenance, seeder di production.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Pelajaran eksekusi</h3>
+      <ul>
+        <li>Test ditulis dulu dan disaksikan gagal; kalau ragu, perbaikan dikembalikan sebentar untuk membuktikan test-nya benar-benar menangkap bug (Revert-to-Fail).</li>
+        <li>Branch kecil yang cepat di-merge lebih mudah dijaga CI daripada satu branch besar; satu branch untuk satu alasan.</li>
+        <li>Pesan commit menyebut ID keputusan dan nomor temuan audit, sehingga setiap perubahan bisa dilacak ke alasannya.</li>
+        <li>Keputusan yang ditemukan saat mengerjakan (misalnya link event dikunci saat open) dicatat di spesifikasi sebelum kodenya, dan dilaporkan ke pemilik supaya bisa dibatalkan.</li>
+        <li>Untuk sesi panjang, simpan status kerja di catatan (apa yang sudah di-merge, apa yang tersisa), supaya pekerjaan bisa dilanjutkan tanpa menebak.</li>
+      </ul>
+
       <h3>Pelajaran desain</h3>
       <ul>
         <li>Mulai dari identitas yang punya arti di domainnya: lima warna peringkat untuk "top 5", logo segi lima dengan mata untuk "penta" dan "hoot".</li>
@@ -1537,11 +1740,14 @@ flowchart TD
         <li><span class="n">4</span><div><b>Tiga putaran review</b><p>Bandingkan dengan produk sejenis, tanya "hanya aman untuk saat ini?", lalu uji garis best practice vs over-engineering terhadap tenggat.</p></div></li>
         <li><span class="n">5</span><div><b>Mockup dan review konsistensi</b><p>Semua layar per perangkat, satu shell untuk halaman admin, satu komponen per pola.</p></div></li>
         <li><span class="n">6</span><div><b>Kunci, lalu eksekusi</b><p>Spesifikasi dikunci, item terbuka ditulis eksplisit, dan pekerjaan kode mulai dari batch fondasi dengan review setelahnya.</p></div></li>
+        <li><span class="n">7</span><div><b>Satu tahap, satu rilis minor</b><p>Ikuti "Urutan eksekusi" di atas dan bab 16. Setiap tahap: panel, dokumen dulu, batch kecil dengan TDD, CI hijau per branch, lalu rilis minor.</p></div></li>
+        <li><span class="n">8</span><div><b>Audit sebelum penyempurnaan</b><p>Jalankan "Metode audit sebelum rilis" dengan aplikasi sungguhan. Temuan bernomor dengan bukti dan penyebab menjadi bahan panel tahap penyempurnaan, digabung dengan catatan pemilik proyek.</p></div></li>
+        <li><span class="n">9</span><div><b>Catat yang dipelajari</b><p>Masalah sulit masuk catatan debug (bab 17); koreksi yang mengubah cara kerja masuk tabel titik belok di bab ini, supaya proyek berikutnya mulai dari sini.</p></div></li>
       </ol>
     </section>
 
     <section id="sumber">
-      <h2><span class="num">17</span>Sumber yang dipakai</h2>
+      <h2><span class="num">19</span>Sumber yang dipakai</h2>
       <p class="sub">Semua sumber dibuka pada 28 September 2026. Perilaku Kahoot dipakai hanya sebagai pembanding, bukan acuan.</p>
       <div class="table-scroll">
         <table>
