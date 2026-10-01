@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Every page now sends security headers, including a Content Security Policy, and cannot be embedded in other sites.
 - Behind a reverse proxy, each phone is rate limited by its own address and links use HTTPS.
 - Production refuses to start with debug output on or with cookies allowed over plain HTTP.
+- Uploaded images are re-encoded on the server, so camera details such as the GPS position never get stored.
+
+### Changed
+
+- An image upload that fails to save leaves no file behind, and hosting staff can clear older leftovers with `php artisan pentahoot:prune-media`.
 
 ## [0.5.0] - 2026-10-01
 

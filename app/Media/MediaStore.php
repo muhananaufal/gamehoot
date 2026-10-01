@@ -9,6 +9,7 @@ use App\Enums\MediaVisibility;
 use App\Models\MediaFile;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use LogicException;
@@ -62,7 +63,10 @@ final readonly class MediaStore
         ?string $originalName,
         ?MediaFile $parent,
     ): MediaFile {
-        $mime = (string) $file->getMimeType();
+        // O7: the type comes from the file's content, never from its name.
+        $source = (string) $file->getRealPath();
+        $size = getimagesize($source) ?: throw new LogicException('Not an image.');
+        $mime = $size['mime'];
         $extension = self::EXTENSIONS[$mime] ?? throw new LogicException("Unexpected image type {$mime}.");
         $path = "{$base}.{$extension}";
 
@@ -71,9 +75,11 @@ final readonly class MediaStore
             throw new LogicException("Refusing to overwrite {$path}.");
         }
 
-        $source = (string) $file->getRealPath();
-        $size = getimagesize($source) ?: throw new LogicException('Not an image.');
-        $disk->put($path, (string) file_get_contents($source));
+        $bytes = ImageEncoder::encode($source, $mime);
+        $disk->put($path, $bytes);
+
+        // G11: a save that rolls back leaves no file behind.
+        DB::afterRollBack(fn () => $disk->delete($path));
 
         $media = new MediaFile;
         $media->forceFill([
@@ -83,10 +89,10 @@ final readonly class MediaStore
             'variant' => $variant,
             'visibility' => $visibility,
             'mime' => $mime,
-            'size_bytes' => (int) $file->getSize(),
+            'size_bytes' => strlen($bytes),
             'width' => $size[0],
             'height' => $size[1],
-            'sha256' => (string) hash_file('sha256', $source),
+            'sha256' => hash('sha256', $bytes),
             'original_name' => $originalName,
             'created_by' => $uploader->id,
         ])->save();
