@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A phone that picks a name the host just removed sees a clear screen with a way back to the list.
 - Error messages name form fields the way the form labels them, explain a failed image upload, and match when an event link is already taken.
 - Reordering pack questions now confirms the change.
+- The projector podium never lists more than ten names; a big tie below the steps becomes one summary line. Scores show their unit, and emoji in names no longer break the initials.
+- Long questions shrink to fit the projector, so the countdown and the answered count stay visible.
+- A phone that lost the answer to its vote shows the pick it already sent, and a phone whose name was released goes back to the name list.
+- After a reload, a phone that already voted shows its pick at once instead of "Time is up".
+- Live control updates right after its own actions instead of waiting for the realtime message.
+- The "Show questions on player phones" switch can be clicked or tapped directly.
+- Word Guess and Picture Guess phones show the question counter once.
+- The image picker shows the picked file name, goes back to the stored image when a pick fails, and asks to pick images again after a form error.
+- The name import marks names longer than 100 characters, says how many more names fit in the event, and shows the real reason when saving fails.
+- Starting the first game, which locks the name list, now asks for confirmation.
+- The Names page says whether new claims are locked and can lock or unlock them directly.
+- Forms show that they are being sent and cannot be sent twice.
+- Outdated texts on the Games and Results pages were corrected, and the duplicate-name hint uses the actual name.
 - The Activity log now also lists opening the event, starting a game, revealing a question, new personal links, deleted names and games, link changes and co-host changes.
 - Live control and phones get a clear message for actions that are not available, instead of a generic error.
 - A stuck realtime server no longer slows every host action and vote for up to 30 seconds.
@@ -34,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The link of an open event can no longer be changed, because printed QR codes and open phones use it. Close the event first to change it.
+- The phone join page is much lighter for long name lists, and phones checking for updates no longer create server sessions.
 - An image upload that fails to save leaves no file behind, and hosting staff can clear older leftovers with `php artisan pentahoot:prune-media`.
 
 ## [0.5.0] - 2026-10-01
