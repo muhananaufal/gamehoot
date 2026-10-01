@@ -45,6 +45,14 @@ final class StoreEventRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    public function messages(): array
+    {
+        return ['slug.unique' => __('events.slug_taken')];
+    }
+
+    /**
+     * @return array<string, string>
+     */
     public function attributes(): array
     {
         return ['slug' => __('events.link_attribute')];

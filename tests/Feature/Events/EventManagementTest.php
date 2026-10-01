@@ -97,7 +97,7 @@ describe('creating an event', function (): void {
 
         actingAs(User::factory()->create())
             ->post('/host/events', ['name' => 'Anything', 'slug' => 'gathering-2026', 'screen_theme' => 'dark'])
-            ->assertSessionHasErrors(['slug' => 'The link has already been taken.']);
+            ->assertSessionHasErrors(['slug' => 'Another event already uses this link. Pick a new one.']);
     });
 
     it('rejects a link that is taken or badly formed', function (string $slug): void {

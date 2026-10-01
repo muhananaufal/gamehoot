@@ -139,6 +139,18 @@ describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
             ->assertSessionHasErrors('question_image_small');
     });
 
+    it('names fields as the form labels them and explains a failed upload', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+        $tooBigForPhp = new UploadedFile(UploadedFile::fake()->image('big.jpg', 1920, 1080)->getPathname(), 'big.jpg', 'image/jpeg', UPLOAD_ERR_INI_SIZE, true);
+
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", gambarForm(['title' => '', 'answer_image' => $tooBigForPhp]))
+            ->assertSessionHasErrors([
+                'title' => 'The question field is required.',
+                'answer_image' => 'The answer image could not be uploaded. Images over 2 MB are refused; pick a smaller one.',
+            ]);
+    });
+
     it('refuses HEIC with a clear message, and files that are not really JPG or PNG (E8, O7)', function (): void {
         $host = User::factory()->create();
         $pack = gambarPack($host);

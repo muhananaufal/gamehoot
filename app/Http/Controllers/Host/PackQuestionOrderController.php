@@ -15,6 +15,6 @@ final class PackQuestionOrderController
     {
         $reorder->handle($pack, $request->order());
 
-        return redirect()->route('host.packs.show', $pack);
+        return redirect()->route('host.packs.show', $pack)->with('status', __('packs.reordered'));
     }
 }

@@ -87,6 +87,7 @@ return [
 
     'slug_format' => 'The link may use lowercase letters, digits and single hyphens, 3 to 60 characters.',
     'slug_reserved' => 'This word is used by the app. Pick another link.',
+    'slug_taken' => 'Another event already uses this link. Pick a new one.',
     'restore_slug_taken' => 'Another event uses this link now. Pick a new one.',
     'cohost_unknown' => 'No active host account uses this email.',
     'cohost_is_owner' => 'This host owns the event.',
