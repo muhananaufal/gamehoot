@@ -1,7 +1,7 @@
 {{-- Tebak Gambar on the projector (E9, E14): the 1920 px question image, then the answer image
      beside it once revealed or once the question ends. --}}
 <div class="flex w-full flex-col items-center gap-[3vh]">
-    <p class="font-display text-[1.6em] leading-tight font-semibold text-balance" x-text="question.title"></p>
+    <p class="font-display leading-tight font-semibold text-balance [overflow-wrap:anywhere]" :class="promptFont" x-text="question.title"></p>
     <div class="flex w-full items-start justify-center gap-[2vw]">
         <img :src="question.image.large" :alt="question.title" data-test="question-image"
             class="max-h-[58vh] min-w-0 rounded-panel object-contain" :class="question.answer_image ? 'max-w-[46vw]' : 'max-w-[88vw]'">

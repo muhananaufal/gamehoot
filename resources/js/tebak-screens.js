@@ -2,7 +2,7 @@
 // the shared realtime store; the rules live in tebak.js, kata.js and on the server.
 import { legendOf } from './kata.js';
 import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
-import { fill, podium, searchPeople } from './pentahoot.js';
+import { fill, podium, promptSize, SCREEN_ROWS, searchPeople } from './pentahoot.js';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
@@ -44,8 +44,9 @@ function base(labels) {
 /**
  * The Public View and the phone mirror (E14) of the Tebak games of the given types: the question
  * (boxes or images), the winner or surrender, the leaderboard (E11) and the final podium (E12, E17).
+ * E20: only the projector (projector: true) caps the podium at ten name rows; phones list everyone.
  */
-export function tebakScreen({ types, labels }) {
+export function tebakScreen({ types, labels, projector = false }) {
     return {
         ...base(labels),
 
@@ -63,6 +64,10 @@ export function tebakScreen({ types, labels }) {
         get question() {
             return this.game?.question ?? null;
         },
+        /** E15: smaller type for longer prompts (Kata up to 500 characters). */
+        get promptFont() {
+            return promptSize(this.question?.prompt ?? this.question?.title).tebak;
+        },
         /** E14: phones mirror the questions only when the host turned it on. */
         get mirrored() {
             return this.store.snapshot?.event?.show_on_devices === true;
@@ -74,6 +79,7 @@ export function tebakScreen({ types, labels }) {
         get stand() {
             return podium(
                 (this.game?.final ?? []).map((row) => ({ rank: row.rank, name: row.name, votes: row.points })),
+                projector ? SCREEN_ROWS : Infinity,
             );
         },
     };
@@ -188,11 +194,13 @@ export function tebakHost({ type, actionUrl, people, labels }) {
                 if (response.status !== 204) {
                     const body = await response.json().catch(() => ({}));
                     this.error = body.message ?? this.labels.network_error;
-                    this.store.refresh?.();
                 } else if (action === 'winner') {
                     this.chosen = null;
                     this.query = '';
                 }
+
+                // F1: this page loads the new state itself instead of waiting for the broadcast.
+                this.store.refresh?.();
             } catch {
                 this.error = this.labels.network_error;
             } finally {

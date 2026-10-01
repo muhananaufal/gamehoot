@@ -49,6 +49,18 @@ describe('general join page (B-1, F12)', function (): void {
             ->assertDontSee('Bunga Lestari');
     });
 
+    it('sends a light page for a big list: one form, one button per name (A3)', function (): void {
+        $event = openEvent();
+        Person::factory()->for($event)->count(480)->sequence(fn ($sequence) => ['name' => "Participant Number {$sequence->index}"])->create();
+
+        $html = (string) get('/gathering-2026')->assertOk()->getContent();
+
+        expect(substr_count($html, 'action="'.route('join.claim', $event).'"'))->toBe(1)
+            ->and(substr_count($html, 'name="person"'))->toBe(480)
+            // 300 phones open this page at once when the QR code shows.
+            ->and(strlen($html))->toBeLessThan(120_000);
+    });
+
     it('says the event cannot be found for unknown and deleted events', function (): void {
         get('/no-such-event')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
 

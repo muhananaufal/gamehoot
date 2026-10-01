@@ -14,7 +14,12 @@
             @method('PUT')
             <h2 class="font-display text-xl font-semibold">{{ __('events.general') }}</h2>
             <x-field name="name" :label="__('events.name')" :value="$event->name" required maxlength="100" />
-            <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint')" required maxlength="60" autocapitalize="none" spellcheck="false" />
+            @if ($event->status === \App\Enums\EventStatus::Open)
+                {{-- F10: printed QR codes and open phones use the link of an open event. --}}
+                <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_locked_hint')" required readonly maxlength="60" autocapitalize="none" spellcheck="false" />
+            @else
+                <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint')" required maxlength="60" autocapitalize="none" spellcheck="false" />
+            @endif
             <h2 class="pt-2 font-display text-xl font-semibold">{{ __('events.screens') }}</h2>
             <x-theme-choice :value="$event->screen_theme->value" :themes="$themes" :hint="__('events.screen_theme_hint')" />
             <x-toggle name="show_on_devices" :label="__('events.show_on_devices')" :hint="__('events.show_on_devices_hint')" :checked="$event->show_on_devices" />

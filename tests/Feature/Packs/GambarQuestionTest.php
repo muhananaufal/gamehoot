@@ -151,6 +151,19 @@ describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
             ]);
     });
 
+    it('asks to pick the images again after an error, because browsers cannot refill file fields', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+
+        actingAs($host)->from("/host/packs/{$pack->id}/questions/create")
+            ->followingRedirects()
+            ->post("/host/packs/{$pack->id}/questions", gambarForm(['title' => '']))
+            ->assertSee('Picked images are not kept after an error. Pick them again.');
+
+        actingAs($host)->get("/host/packs/{$pack->id}/questions/create")
+            ->assertDontSee('Picked images are not kept after an error.');
+    });
+
     it('refuses HEIC with a clear message, and files that are not really JPG or PNG (E8, O7)', function (): void {
         $host = User::factory()->create();
         $pack = gambarPack($host);

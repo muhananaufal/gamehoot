@@ -60,7 +60,16 @@ describe('games in an event (D-9)', function (): void {
             ->assertSee('Warm-up')
             ->assertSee('Office Awards')
             // Tebak Kata is playable from stage 4.
-            ->assertSee('Celebrities');
+            ->assertSee('Celebrities')
+            ->assertDontSee('arrive in later releases');
+    });
+
+    it('tells a host without packs where to write one, whatever the game type', function (): void {
+        $event = Pentahoot::event();
+
+        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")
+            ->assertOk()
+            ->assertSee('You have no question packs yet. Write one under Question packs first.');
     });
 
     it('refuses packs of another host', function (): void {
@@ -124,6 +133,17 @@ describe('games in an event (D-9)', function (): void {
 });
 
 describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
+    it('asks before the first game locks the name list, and not after', function (): void {
+        $event = Pentahoot::event();
+        Pentahoot::game($event);
+        $warning = 'Starting the first game locks the name list';
+
+        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertSee($warning);
+
+        $event->forceFill(['names_locked_at' => now()])->save();
+        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertDontSee($warning);
+    });
+
     it('starts a game, locks the name list and tells every screen', function (): void {
         $event = Pentahoot::event();
         $game = Pentahoot::game($event);

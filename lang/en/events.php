@@ -88,6 +88,8 @@ return [
     'slug_format' => 'The link may use lowercase letters, digits and single hyphens, 3 to 60 characters.',
     'slug_reserved' => 'This word is used by the app. Pick another link.',
     'slug_taken' => 'Another event already uses this link. Pick a new one.',
+    'slug_locked' => 'The link cannot change while the event is open: printed QR codes and open phones use it. Close the event first.',
+    'link_locked_hint' => 'Close the event to change its link. Printed QR codes and phones that are already open use it.',
     'restore_slug_taken' => 'Another event uses this link now. Pick a new one.',
     'cohost_unknown' => 'No active host account uses this email.',
     'cohost_is_owner' => 'This host owns the event.',

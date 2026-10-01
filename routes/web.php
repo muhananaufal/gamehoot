@@ -48,8 +48,11 @@ use App\Http\Views\PhoneStatus;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 // F10: every named route is registered before the catch-all /{event} participant routes.
 Route::redirect('/', '/host');
@@ -167,8 +170,12 @@ Route::prefix('{event:slug}')->where(['event' => '[a-z0-9]+(?:-[a-z0-9]+)*'])->n
         ? ActionRefused::voteClosed()->render($request)
         : response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404))
     ->group(function (): void {
-        Route::get('/state', EventStateController::class)->name('state');
-        Route::get('/people', PeopleController::class)->name('people');
+        // F17, T2: phones poll these; they read only the claim cookie, so no session is started
+        // or written per request.
+        Route::withoutMiddleware([StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class])->group(function (): void {
+            Route::get('/state', EventStateController::class)->name('state');
+            Route::get('/people', PeopleController::class)->name('people');
+        });
         Route::post('/questions/{question}/vote', VoteController::class)->whereUuid('question')->name('vote')->middleware('throttle:vote');
     });
 

@@ -150,6 +150,16 @@ describe('settings', function (): void {
             ->and($event->state_version)->toBe(1);
     });
 
+    it('keeps the link while the event is open, since printed QR codes and open phones use it (F10)', function (): void {
+        $event = ownedEvent(attributes: ['slug' => 'gathering', 'status' => EventStatus::Open]);
+
+        actingAs(ownerOf($event))->put("/host/{$event->id}/settings", ['name' => 'Gathering', 'slug' => 'gathering-2026', 'screen_theme' => 'dark'])
+            ->assertSessionHasErrors(['slug' => 'The link cannot change while the event is open: printed QR codes and open phones use it. Close the event first.']);
+
+        expect($event->refresh()->slug)->toBe('gathering');
+        actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->assertSee('Close the event to change its link');
+    });
+
     it('keeps its own link when saving without changing it', function (): void {
         $event = ownedEvent(attributes: ['slug' => 'keep-me']);
 

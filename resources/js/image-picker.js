@@ -6,6 +6,8 @@ import { imageProblem, LARGE_WIDTH, resizeImage, SMALL_WIDTH } from './image-res
 export function imagePicker({ current = null, labels = {} } = {}) {
     return {
         preview: current,
+        // The visible name of the picked file: the browser field is cleared after resizing.
+        fileName: '',
         error: '',
         busy: false,
 
@@ -41,6 +43,7 @@ export function imagePicker({ current = null, labels = {} } = {}) {
                     this.put(this.$refs.large, large);
                     this.put(this.$refs.small, small);
                     this.preview = URL.createObjectURL(small);
+                    this.fileName = file.name;
                 }
             } catch {
                 this.fail(labels.unreadable);
@@ -56,8 +59,11 @@ export function imagePicker({ current = null, labels = {} } = {}) {
             input.files = files.files;
         },
 
+        /** A failed pick goes back to the stored image, so nothing looks attached that is not. */
         fail(message) {
             this.error = message;
+            this.preview = current;
+            this.fileName = '';
             this.$refs.large.value = '';
             this.$refs.small.value = '';
         },

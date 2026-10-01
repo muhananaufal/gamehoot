@@ -19,8 +19,8 @@
                         <div class="flex min-w-0 grow flex-col">
                             @include('host.packs.summary.' . $game->type->value, ['question' => $question])
                         </div>
-                        @if ($locked[$question->id])
-                            <x-chip>{{ __('games.locked') }}</x-chip>
+                        @if ($locked[$question->id] !== null)
+                            <x-chip>{{ __('games.locked_' . $locked[$question->id]) }}</x-chip>
                         @else
                             <x-button variant="link" :href="route('host.events.games.questions.edit', [$event, $game, $question])">{{ __('ui.edit') }}</x-button>
                         @endif

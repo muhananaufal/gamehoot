@@ -77,19 +77,50 @@ function summaryOf(group) {
  * E17: ranks 1 to 3 stand on the podium; a tie can leave a step empty, and a step with more
  * than three names shows one summary row (E20). Ranks 4 and 5 follow as small rows.
  */
-export function podium(results) {
+/**
+ * E15: font classes for the prompt on the projector, by length. A prompt may have 500
+ * characters; a fixed size pushed the countdown and the answered count off the screen.
+ * The class names are written out in full so Tailwind finds them.
+ */
+const PROMPT_SIZES = [
+    { upTo: 80, live: 'text-[clamp(36px,4.6vw,88px)]', reveal: 'text-[1.4em]', tebak: 'text-[1.8em]' },
+    { upTo: 160, live: 'text-[clamp(28px,3.4vw,64px)]', reveal: 'text-[1.15em]', tebak: 'text-[1.4em]' },
+    { upTo: 300, live: 'text-[clamp(22px,2.6vw,48px)]', reveal: 'text-[0.95em]', tebak: 'text-[1.15em]' },
+    { upTo: Infinity, live: 'text-[clamp(18px,2vw,38px)]', reveal: 'text-[0.95em]', tebak: 'text-[0.95em]' },
+];
+
+export function promptSize(prompt) {
+    const length = Array.from(prompt ?? '').length;
+    const { live, reveal, tebak } = PROMPT_SIZES.find((size) => length <= size.upTo);
+
+    return { live, reveal, tebak };
+}
+
+/**
+ * E17: the letters in a podium avatar. Array.from splits by code point, so an emoji stays whole
+ * instead of becoming half of a surrogate pair.
+ */
+export function initialsOf(name) {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => Array.from(part)[0].toUpperCase())
+        .join('');
+}
+
+export function podium(results, maxRows = Infinity) {
     const step = (rank) => {
         const rows = results.filter((row) => row.rank === rank);
 
         return rows.length > PODIUM_STEP_NAMES ? [summaryOf(rows)] : rows;
     };
+    const steps = { first: step(1), second: step(2), third: step(3) };
+    const rest = results.filter((row) => row.rank > 3);
+    // E20: on the projector the rows below the steps share the ten-row budget with them.
+    const left = maxRows - steps.first.length - steps.second.length - steps.third.length;
 
-    return {
-        first: step(1),
-        second: step(2),
-        third: step(3),
-        rest: results.filter((row) => row.rank > 3),
-    };
+    return { ...steps, rest: maxRows === Infinity ? rest : capRows(rest, Math.max(left, 1)) };
 }
 
 /**

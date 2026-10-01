@@ -47,7 +47,12 @@ final class GameQuestionController
             'event' => $event,
             'game' => $game,
             'questions' => $questions,
-            'locked' => $questions->mapWithKeys(fn (Question $question): array => [$question->id => $game->status === GameStatus::Finished || $engine->wasShown($question)])->all(),
+            // D-2: null while editable, otherwise the reason it is locked.
+            'locked' => $questions->mapWithKeys(fn (Question $question): array => [$question->id => match (true) {
+                $engine->wasShown($question) => 'shown',
+                $game->status === GameStatus::Finished => 'finished',
+                default => null,
+            }])->all(),
             'editing' => $editing?->load(['pentahoot', 'kata']),
         ]);
     }

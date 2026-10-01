@@ -21,20 +21,16 @@
             </div>
             <p class="text-sm text-muted">{{ __('join.claimed_hidden') }}</p>
 
-            <ul class="flex flex-col gap-2">
-                @foreach ($names as $person)
-                    <li x-show="shows({{ $loop->index }})">
-                        <form method="POST" action="{{ route('join.claim', $event) }}">
-                            @csrf
-                            <input type="hidden" name="person" value="{{ $person->id }}">
-                            <button type="submit" aria-label="{{ __('join.join_as', ['name' => $person->name]) }}"
-                                class="flex min-h-14 w-full items-center rounded-card border-2 border-line bg-surface px-4 text-left text-lg font-semibold hover:border-accent">
-                                {{ $person->name }}
-                            </button>
-                        </form>
-                    </li>
-                @endforeach
-            </ul>
+            {{-- A3: one form for the whole list and the button styles on the list, so a list of 500
+                 names stays small when hundreds of phones open it at once. --}}
+            <form method="POST" action="{{ route('join.claim', $event) }}" aria-label="{{ __('join.pick_title') }}">
+                @csrf
+                <ul class="flex flex-col gap-2 [&_button]:flex [&_button]:min-h-14 [&_button]:w-full [&_button]:items-center [&_button]:rounded-card [&_button]:border-2 [&_button]:border-line [&_button]:bg-surface [&_button]:px-4 [&_button]:text-left [&_button]:text-lg [&_button]:font-semibold [&_button:hover]:border-accent">
+                    @foreach ($names as $person)
+                        <li x-show="shows({{ $loop->index }})"><button type="submit" name="person" value="{{ $person->id }}">{{ $person->name }}</button></li>
+                    @endforeach
+                </ul>
+            </form>
             <p class="text-center text-sm text-muted" x-show="noMatch" x-cloak>{{ __('join.no_match') }}</p>
         @endif
 

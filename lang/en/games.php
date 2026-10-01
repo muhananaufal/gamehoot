@@ -32,7 +32,7 @@ return [
     'add' => 'Add game',
     'add_from_pack' => 'Add a game from a pack',
     'choose_pack' => 'Question pack',
-    'no_packs' => 'You have no Pentahoot packs yet. Write one under Question packs first.',
+    'no_packs' => 'You have no question packs yet. Write one under Question packs first.',
     'empty' => 'No games yet. Add one from a question pack.',
     'questions' => '{0} No questions|{1} 1 question|[2,*] :count questions',
     'added' => 'Game added. Its questions are copies of the pack.',
@@ -44,13 +44,16 @@ return [
     'questions_help' => 'These are copies of the pack. Edit one until it has been on screen; the pack is not changed.',
     'question_saved' => 'Question saved. The pack is not changed.',
     'edit_question' => 'Edit question :number',
-    'locked' => 'On screen already',
+    // D-2: why a copied question can no longer be edited.
+    'locked_shown' => 'On screen already',
+    'locked_finished' => 'Game finished',
     'save_question' => 'Save question',
     'reload' => 'Reload from pack',
     'reload_help' => 'Replaces the questions with the latest version of the pack.',
     'delete' => 'Delete',
     'delete_confirm' => 'Delete “:title”? Its copied questions are removed too.',
     'start' => 'Start game',
+    'start_locks_names' => 'Starting the first game locks the name list: names can no longer be added, renamed or deleted. People who have not joined yet can still pick their name.',
     'finish' => 'Finish game',
     'finish_confirm' => 'Finish “:title”? Questions that are not done yet will not count.',
     'status' => [
@@ -58,5 +61,4 @@ return [
         'running' => 'Running',
         'finished' => 'Finished',
     ],
-    'playable_later' => 'Word Guess and Picture Guess games arrive in later releases.',
 ];

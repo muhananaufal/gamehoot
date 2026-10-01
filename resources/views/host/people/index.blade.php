@@ -11,7 +11,15 @@
     @endunless
 
     @if ($locked)
-        <div role="status" class="rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">{{ __('people.locked_banner') }}</div>
+        {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
+        <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">
+            <p>{{ __('people.locked_banner') }} {{ $event->join_locked_at ? __('people.claims_closed') : __('people.claims_open') }}</p>
+            <form method="POST" action="{{ route('host.events.join-lock', $event) }}">
+                @csrf
+                <input type="hidden" name="locked" value="{{ $event->join_locked_at ? '0' : '1' }}">
+                <x-button type="submit" variant="secondary">{{ $event->join_locked_at ? __('events.unlock') : __('events.lock') }}</x-button>
+            </form>
+        </div>
     @endif
     @error('names')
         <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>

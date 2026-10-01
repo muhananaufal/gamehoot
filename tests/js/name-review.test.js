@@ -34,4 +34,18 @@ describe('B-4 name review', () => {
         review.remove(0);
         expect(review.label('save', review.rows.length)).toBe('Save 1 name');
     });
+
+    it('flags a name longer than the server takes, instead of calling it ready', () => {
+        expect(findDuplicates(['Budi', 'x'.repeat(101), 'y'.repeat(100)], {})).toEqual({ 1: { tooLong: true } });
+    });
+
+    it('knows when the list no longer fits in the event (B-3: at most 500 names)', () => {
+        const review = nameReview({ names: ['Ana', 'Budi', 'Citra'], room: 2 });
+        expect(review.overLimit).toBe(true);
+
+        review.remove(0);
+        expect(review.overLimit).toBe(false);
+        // Without a room given, nothing is over.
+        expect(nameReview({ names: ['Ana'] }).overLimit).toBe(false);
+    });
 });

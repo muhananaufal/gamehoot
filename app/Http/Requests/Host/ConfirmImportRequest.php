@@ -6,6 +6,7 @@ namespace App\Http\Requests\Host;
 
 use App\Models\Event;
 use App\People\DuplicateNames;
+use App\People\PersonName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -21,8 +22,16 @@ final class ConfirmImportRequest extends FormRequest
     {
         return [
             'names' => ['required', 'array', 'min:1'],
-            'names.*' => ['required', 'string', 'max:100'],
+            'names.*' => ['required', 'string', 'max:'.PersonName::MAX_LENGTH],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return ['names.*.max' => __('people.too_long', ['max' => PersonName::MAX_LENGTH])];
     }
 
     /**

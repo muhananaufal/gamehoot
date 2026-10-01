@@ -1,6 +1,8 @@
 @props([
     // A JavaScript expression for {first, second, third, rest} (pentahoot.js podium()).
     'stand',
+    // Plural forms of the score under each name, e.g. "5 votes" or "2 points" (E17).
+    'score',
 ])
 {{-- F20, E17: the final podium, 2 - 1 - 3, with ranks 4 and 5 as small rows below. A tie can
      put several names on one step or leave a step empty. --}}
@@ -12,11 +14,11 @@
                 <template x-for="row in {{ $stand }}.{{ $step }}" :key="row.summary ? 'summary' : row.name">
                     <div class="flex max-w-full flex-col items-center gap-1 text-center" :class="{{ $stand }}.{{ $step }}.length > 2 ? 'text-[0.7em]' : ''">
                         <span class="flex size-[2.6em] items-center justify-center rounded-full bg-surface font-display font-bold"
-                            x-text="row.summary ? row.count : row.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('')"></span>
+                            x-text="row.summary ? row.count : $store.realtime.initials(row.name)"></span>
                         {{-- E20: a step with more than three names shows one summary. --}}
                         <span class="max-w-full truncate font-semibold"
                             x-text="row.summary ? $store.realtime.count(@js(__('pentahoot.tied_names')), row.count) : row.name"></span>
-                        <span class="font-display font-semibold tabular-nums" x-text="row.votes"></span>
+                        <span class="font-display font-semibold tabular-nums" x-text="$store.realtime.count(@js($score), row.votes)"></span>
                     </div>
                 </template>
                 <div @class([

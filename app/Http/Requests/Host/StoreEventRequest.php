@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Enums\EventStatus;
 use App\Enums\ScreenTheme;
 use App\Models\Event;
 use App\Rules\EventSlug;
 use App\Support\EventLink;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -29,9 +31,16 @@ final class StoreEventRequest extends FormRequest
             $unique = $unique->ignore($event->id);
         }
 
+        // F10: printed QR codes and open phones and screens use the link of an open event.
+        $keepLink = function (string $attribute, mixed $value, Closure $fail) use ($event): void {
+            if ($event instanceof Event && $event->status === EventStatus::Open && $value !== $event->slug) {
+                $fail(__('events.slug_locked'));
+            }
+        };
+
         return [
             'name' => ['required', 'string', 'max:100'],
-            'slug' => ['required', 'string', new EventSlug, $unique],
+            'slug' => ['required', 'string', new EventSlug, $unique, $keepLink],
             'screen_theme' => ['required', Rule::enum(ScreenTheme::class)],
             'show_on_devices' => ['sometimes', 'boolean'],
         ];

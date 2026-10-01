@@ -9,7 +9,6 @@ return [
     'wrong_name' => 'Picked the wrong name? Ask the host to release it.',
     'no_names' => 'No names are available right now. Ask the host.',
     'no_match' => 'No name matches your search.',
-    'join_as' => 'Join as :name',
 
     'welcome' => 'You’re in, :name!',
     'waiting' => 'Waiting for the host to start the next game. Keep this page open.',

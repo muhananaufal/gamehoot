@@ -1,10 +1,11 @@
 <x-layouts.phone :title="$event->name" :event="$event" :person="$person">
-    <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" />
+    <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" :me="$me" />
     <x-connection-status class="mb-4" />
 
     <div x-data="pentahootPhone({
             peopleUrl: @js(route('join.people', $event)),
             voteUrl: @js(url("/{$event->slug}/questions/__QUESTION__/vote")),
+            joinUrl: @js(route('join.index', $event)),
             labels: @js(__('pentahoot')),
         })"
         x-show="$store.realtime.screen() === 'live'" class="flex grow flex-col">
@@ -23,7 +24,7 @@
             <p class="max-w-xs text-lg text-muted">{{ __('pentahoot.get_ready') }}</p>
         </div>
 
-        <div x-cloak x-show="question && view !== 'next' && view !== 'waiting'" class="flex items-center justify-between gap-3 pb-3 text-sm font-semibold text-muted">
+        <div x-cloak x-show="isPentahoot && question && view !== 'next' && view !== 'waiting'" class="flex items-center justify-between gap-3 pb-3 text-sm font-semibold text-muted">
             <span x-text="question ? label('question_of', { N: question.number, TOTAL: $store.realtime.snapshot.game.count }) : ''"></span>
             <span x-show="phase === 'live'" class="font-display text-lg text-ink tabular-nums" x-text="seconds"></span>
         </div>
@@ -77,7 +78,7 @@
             <p class="text-muted" x-text="question?.prompt"></p>
             <p x-show="results.length === 0" class="rounded-card bg-surface px-4 py-6 text-center font-semibold">{{ __('pentahoot.no_votes') }}</p>
             {{-- E17: the same podium as the Public View, with ranks 4 and 5 below it. --}}
-            <x-podium x-show="results.length > 0" stand="stand" class="pt-2" />
+            <x-podium x-show="results.length > 0" stand="stand" :score="__('pentahoot.votes_count')" class="pt-2" />
             <p x-show="results.length > 0" class="text-sm text-muted">{{ __('pentahoot.ties_note') }}</p>
             <p x-show="myVote" class="text-sm font-semibold"
                 x-text="myVote ? @js(__('pentahoot.your_pick_was', ['name' => '__NAME__'])).replace('__NAME__', myVote.target) : ''"></p>
@@ -96,7 +97,7 @@
     <div x-data="tebakScreen({ types: ['tebak_kata', 'tebak_gambar'], labels: @js(__('tebak')) })" x-cloak x-show="$store.realtime.screen() === 'live' && game" class="flex grow flex-col">
         <div x-show="view === 'final'" class="flex grow flex-col gap-4">
             <h1 class="font-display text-[22px] font-bold"><span x-text="game?.title"></span> · {{ __('tebak.final') }}</h1>
-            <x-podium stand="stand" class="pt-2" />
+            <x-podium stand="stand" :score="__('tebak.points')" class="pt-2" />
         </div>
 
         <div x-show="view !== 'final' && !mirrored" class="flex grow flex-col items-center justify-center gap-4 text-center" role="status">

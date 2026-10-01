@@ -33,6 +33,7 @@ return [
     'votes_total' => ['one' => '__N__ vote', 'other' => '__N__ votes'],
     'no_votes' => 'No votes',
     'votes' => 'votes',
+    'votes_count' => ['one' => '__N__ vote', 'other' => '__N__ votes'],
     // E20: one row standing for a large tie on the projector.
     'tied_names' => ['one' => '__N__ name tied', 'other' => '__N__ names tied'],
     'game_over' => 'Thanks for playing!',
