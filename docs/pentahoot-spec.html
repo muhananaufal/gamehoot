@@ -527,6 +527,7 @@ stateDiagram-v2
               <ul>
                 <li>Gambar diperkecil di browser host sampai lebar maksimal 1920 px, baru dicek batas 2 MB. Batas PRD tetap berlaku, hanya urutannya yang ditukar.</li>
                 <li>Format JPG atau PNG. File HEIC ditolak dengan pesan yang jelas.</li>
+                <li>Tahap 6: server membaca jenis gambar dari isinya (bukan nama atau header upload), lalu menyandikan ulang gambar dengan GD (JPEG kualitas 85, PNG tetap PNG dengan transparansi). Metadata kamera seperti posisi GPS, perangkat, dan waktu asli ikut terbuang, termasuk untuk request yang melewati browser. GD karena itu masuk ke image production.</li>
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
             <tr><td class="id">E9</td><td>
@@ -1020,7 +1021,8 @@ erDiagram
                 <li>Satu baris per file: disk, path, varian (<code>original</code>, <code>w1920</code>, <code>w720</code>), visibilitas, ukuran, dimensi, <code>sha256</code>, nama asli, pengunggah. Varian menunjuk ke file aslinya lewat <code>parent_id</code>.</li>
                 <li>Tahap 5: browser host tidak pernah mengirim file asli (E8), jadi baris induk (<code>parent_id</code> null) adalah versi <code>w1920</code> dan <code>w720</code> menjadi variannya. Varian <code>original</code> tetap ada di enum untuk upload yang kelak tidak dikompres di browser.</li>
                 <li>Soal hanya menyimpan <code>question_image_id</code> dan <code>answer_image_id</code>. Salinan soal (D-9) merujuk baris yang sama dengan paketnya.</li>
-                <li>File yatim bisa dilacak, file dobel bisa dikenali dari <code>sha256</code>, dan varian baru tidak butuh kolom baru.</li>
+                <li>File yatim bisa dilacak, file dobel bisa dikenali dari <code>sha256</code>, dan varian baru tidak butuh kolom baru. Ukuran dan <code>sha256</code> adalah milik file yang tersimpan (setelah disandikan ulang, E8).</li>
+                <li>Tahap 6: file yang ditulis di dalam transaksi yang kemudian di-rollback langsung dihapus (<code>DB::afterRollBack</code>). File yang tetap tertinggal (misalnya proses PHP mati di tengah upload) dibersihkan dengan <code>php artisan pentahoot:prune-media</code>, yang hanya menghapus file tanpa baris <code>media_files</code> dan berumur lebih dari satu jam. Perintah ini dijalankan manual, tanpa scheduler (F4).</li>
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">G12</td><td>Setiap aksi host dijalankan di dalam transaksi dengan <code>lockForUpdate</code> pada baris soal atau game yang diubah. Ini menutup kasus dua host membuka hint berbeda bersamaan lalu saling menimpa array <code>opened_indexes</code>, yang tidak tertangkap oleh update bersyarat F6 saja.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
