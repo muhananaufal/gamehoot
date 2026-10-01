@@ -6,6 +6,7 @@ import {
     fill,
     phaseOf,
     podium,
+    promptSize,
     revealSteps,
     SCREEN_ROWS,
     searchPeople,
@@ -284,6 +285,10 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
         },
         get results() {
             return this.question?.results ?? [];
+        },
+        /** E15: smaller type for longer prompts, so nothing leaves the projector. */
+        get promptFont() {
+            return promptSize(this.question?.prompt);
         },
         /** E20: the projector draws at most ten rows; a tie that does not fit is one summary row. */
         get rows() {

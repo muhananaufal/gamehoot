@@ -6,6 +6,7 @@ import {
     initialsOf,
     phaseOf,
     podium,
+    promptSize,
     revealSteps,
     searchPeople,
     secondsLeft,
@@ -163,5 +164,18 @@ describe('E17 podium initials', () => {
 
     it('keeps an emoji whole instead of splitting it into broken halves', () => {
         expect(initialsOf('Rizky 🎉 Pratama')).toBe('R🎉');
+    });
+});
+
+describe('E15 projector prompt size', () => {
+    it('shrinks long prompts in steps so the countdown stays on screen (500 characters allowed)', () => {
+        const short = promptSize('Best dressed tonight?');
+        const medium = promptSize('x'.repeat(150));
+        const long = promptSize('x'.repeat(300));
+        const longest = promptSize('x'.repeat(500));
+
+        expect(new Set([short.live, medium.live, long.live, longest.live]).size).toBe(4);
+        expect(new Set([short.reveal, medium.reveal, longest.reveal]).size).toBe(3);
+        expect(promptSize(null)).toEqual(short);
     });
 });

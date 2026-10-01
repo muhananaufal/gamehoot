@@ -55,7 +55,7 @@
         {{-- E3, E15: the Pentahoot question, the countdown and how many answered. --}}
         <main x-cloak x-show="$store.realtime.screen() === 'live' && isPentahoot && !finished && (phase === 'live' || phase === 'closed')"
             class="flex grow items-center gap-[4vw]">
-            <p class="grow font-display text-[clamp(36px,4.6vw,88px)] leading-tight font-semibold text-balance" x-text="question?.prompt"></p>
+            <p class="min-w-0 grow font-display leading-tight font-semibold text-balance [overflow-wrap:anywhere]" :class="promptFont.live" x-text="question?.prompt"></p>
             <x-countdown seconds="seconds" class="size-[min(36vh,22vw)] text-[clamp(18px,1.8vw,30px)] [&>span:first-child]:text-[4.5em]" />
         </main>
 
@@ -63,7 +63,7 @@
         <main x-cloak x-show="$store.realtime.screen() === 'live' && isPentahoot && !finished && phase === 'revealed'"
             class="flex grow flex-col gap-[3vh] text-[clamp(18px,2vw,34px)]">
             <div class="flex items-baseline justify-between gap-6">
-                <p class="font-display text-[1.4em] leading-tight font-semibold" x-text="question?.prompt"></p>
+                <p class="line-clamp-4 min-w-0 font-display leading-tight font-semibold [overflow-wrap:anywhere]" :class="promptFont.reveal" x-text="question?.prompt"></p>
                 <p class="shrink-0 text-muted" x-text="$store.realtime.count(labels.votes_total, question?.total_votes ?? 0)"></p>
             </div>
             <p x-show="results.length === 0" class="flex grow items-center justify-center font-display text-[2em] font-bold">{{ __('pentahoot.no_votes') }}</p>

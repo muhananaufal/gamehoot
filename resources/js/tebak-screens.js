@@ -2,7 +2,7 @@
 // the shared realtime store; the rules live in tebak.js, kata.js and on the server.
 import { legendOf } from './kata.js';
 import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
-import { fill, podium, SCREEN_ROWS, searchPeople } from './pentahoot.js';
+import { fill, podium, promptSize, SCREEN_ROWS, searchPeople } from './pentahoot.js';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
@@ -63,6 +63,10 @@ export function tebakScreen({ types, labels, projector = false }) {
         },
         get question() {
             return this.game?.question ?? null;
+        },
+        /** E15: smaller type for longer prompts (Kata up to 500 characters). */
+        get promptFont() {
+            return promptSize(this.question?.prompt ?? this.question?.title).tebak;
         },
         /** E14: phones mirror the questions only when the host turned it on. */
         get mirrored() {
