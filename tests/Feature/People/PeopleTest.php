@@ -163,7 +163,8 @@ describe('CSV import with preview (B-4, T4)', function (): void {
         actingAs(hostOf($event))
             ->post("/host/{$event->id}/people/import/confirm", ['names' => ['Budi', 'budi ', 'RITA']])
             ->assertRedirect("/host/{$event->id}/people/import")
-            ->assertSessionHasErrors(['names.1', 'names.2']);
+            // The example to tell them apart uses the clashing name, not a fixed one.
+            ->assertSessionHasErrors(['names.1' => 'Same as row 1. Add something to tell them apart, e.g. “budi (IT)”.', 'names.2']);
 
         expect(Person::query()->count())->toBe(1);
 

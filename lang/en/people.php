@@ -51,7 +51,7 @@ return [
     'fix_to_save' => 'Fix the duplicates to save',
     'save_names' => '{1} Save :count name|[0,*] Save :count names',
 
-    'duplicate_row' => 'Same as row :row. Add something to tell them apart, e.g. “Budi Santoso (IT)”.',
+    'duplicate_row' => 'Same as row :row. Add something to tell them apart, e.g. “:name (IT)”.',
     'duplicate_existing' => 'Same as “:name” already in this event (upper/lower case is ignored).',
     'duplicate_race' => 'Another host saved the same name a moment ago. Check the list and try again.',
     'too_many' => 'An event can have at most :max names.',

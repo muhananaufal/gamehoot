@@ -35,7 +35,7 @@ final class DuplicateNames
             if (isset($existing[$key])) {
                 $problems[$index] = NameClash::withExisting($existing[$key]);
             } elseif (isset($seen[$key])) {
-                $problems[$index] = NameClash::withRow($seen[$key] + 1);
+                $problems[$index] = NameClash::withRow($seen[$key] + 1, PersonName::display($name));
             } else {
                 $seen[$key] = $index;
             }

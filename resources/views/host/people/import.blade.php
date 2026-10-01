@@ -103,7 +103,7 @@
                                         <td class="px-3 py-2 text-sm" :class="problemAt(index) ? 'font-semibold text-on-danger' : 'text-muted'"
                                             x-text="problemAt(index) === null ? '—' : (problemAt(index).existing !== undefined
                                                 ? @js(__('people.duplicate_existing', ['name' => '__N__'])).replace('__N__', problemAt(index).existing)
-                                                : @js(__('people.duplicate_row', ['row' => '__R__'])).replace('__R__', problemAt(index).row))"></td>
+                                                : @js(__('people.duplicate_row', ['row' => '__R__', 'name' => '__N__'])).replace('__R__', problemAt(index).row).replace('__N__', row.name.trim()))"></td>
                                         <td class="px-3 py-2 text-right">
                                             <button type="button" @click="remove(row.id)" class="min-h-11 text-sm font-semibold text-on-danger"
                                                 :aria-label="@js(__('people.remove_row', ['row' => '__R__'])).replace('__R__', index + 1)">{{ __('people.remove') }}</button>

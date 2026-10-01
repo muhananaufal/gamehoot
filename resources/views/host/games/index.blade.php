@@ -89,7 +89,6 @@
                     <x-button type="submit">{{ __('games.add') }}</x-button>
                 </form>
             @endif
-            <p class="text-sm text-muted">{{ __('games.playable_later') }}</p>
         </section>
     </div>
 </x-layouts.host>

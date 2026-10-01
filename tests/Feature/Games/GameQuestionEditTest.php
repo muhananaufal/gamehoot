@@ -86,6 +86,8 @@ describe('editing copied questions (D-2)', function (): void {
 
         $game->forceFill(['status' => GameStatus::Finished])->save();
         put(copyUrl($event, $game, $fresh), $body)->assertSessionHasErrors('action');
+        // Each locked question says why: it was shown, or its game is over.
+        get("/host/{$event->id}/games/{$game->id}/questions")->assertSeeInOrder(['On screen already', 'Game finished']);
     });
 
     it('keeps other hosts out and questions inside their own game', function (): void {

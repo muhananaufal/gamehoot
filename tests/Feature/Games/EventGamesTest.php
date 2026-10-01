@@ -60,7 +60,16 @@ describe('games in an event (D-9)', function (): void {
             ->assertSee('Warm-up')
             ->assertSee('Office Awards')
             // Tebak Kata is playable from stage 4.
-            ->assertSee('Celebrities');
+            ->assertSee('Celebrities')
+            ->assertDontSee('arrive in later releases');
+    });
+
+    it('tells a host without packs where to write one, whatever the game type', function (): void {
+        $event = Pentahoot::event();
+
+        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")
+            ->assertOk()
+            ->assertSee('You have no question packs yet. Write one under Question packs first.');
     });
 
     it('refuses packs of another host', function (): void {
