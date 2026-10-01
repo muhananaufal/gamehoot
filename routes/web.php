@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\ActionRefused;
 use App\Http\Controllers\Admin\TrashController as AdminTrashController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
@@ -44,7 +45,10 @@ use App\Http\Controllers\Join\VoteController;
 use App\Http\Controllers\MediaController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Views\PhoneStatus;
+use App\Models\Question;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // F10: every named route is registered before the catch-all /{event} participant routes.
@@ -158,7 +162,10 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
 // F1, F3, F9: JSON endpoints for phones and the Public View; an unknown event answers with
 // the JSON error (K4). Votes are limited per claim token, not per IP (F11).
 Route::prefix('{event:slug}')->where(['event' => '[a-z0-9]+(?:-[a-z0-9]+)*'])->name('join.')
-    ->missing(fn () => response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404))
+    ->missing(fn (Request $request, ModelNotFoundException $missing) => $missing->getModel() === Question::class
+        // K4: a vote for a question that is gone (game reloaded, wrong id) is simply closed.
+        ? ActionRefused::voteClosed()->render($request)
+        : response()->json(['code' => 'EVENT_NOT_FOUND', 'message' => __('join.screens.not_found.title')], 404))
     ->group(function (): void {
         Route::get('/state', EventStateController::class)->name('state');
         Route::get('/people', PeopleController::class)->name('people');

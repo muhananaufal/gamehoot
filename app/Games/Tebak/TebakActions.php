@@ -121,7 +121,7 @@ final readonly class TebakActions
         $othersQueued = $game->questions()->where('status', QuestionStatus::Queued)->whereKeyNot($question->id)->exists();
 
         if ($question->skip_used || ! $othersQueued) {
-            throw ActionRefused::stale();
+            throw ActionRefused::unavailable();
         }
 
         $last = $game->questions()->max('position');

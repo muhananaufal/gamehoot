@@ -29,6 +29,15 @@ final class ActionRefused extends RuntimeException
     }
 
     /**
+     * K4: an action the state never allows (Skip with nothing else queued, a second Skip, an
+     * action the game type does not have), as opposed to a screen that fell behind.
+     */
+    public static function unavailable(): self
+    {
+        return new self('ACTION_UNAVAILABLE', 409);
+    }
+
+    /**
      * D-1: one active game per event.
      */
     public static function gameRunning(): self

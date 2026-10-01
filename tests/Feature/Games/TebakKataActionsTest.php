@@ -109,7 +109,7 @@ describe('skip (E6, D-5)', function (): void {
             ->and($game->refresh()->current_question_id)->toBeNull();
 
         kataAction($event, $first, 'show')->assertNoContent();
-        kataAction($event, $first, 'skip')->assertConflict();
+        kataAction($event, $first, 'skip')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
     });
 
     it('cannot skip when nothing else is left in the queue (E6)', function (): void {
@@ -118,7 +118,7 @@ describe('skip (E6, D-5)', function (): void {
         $only = kataQuestion($game, 1);
         kataAction($event, $only, 'show');
 
-        kataAction($event, $only, 'skip')->assertConflict();
+        kataAction($event, $only, 'skip')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
     });
 });
 
@@ -214,7 +214,7 @@ describe('guards (C-2, C-3)', function (): void {
         $question = kataQuestion(TebakKata::running($event), 1);
 
         actingAs(User::factory()->create())->postJson("/host/{$event->id}/questions/{$question->id}/show")->assertForbidden();
-        kataAction($event, $question, 'reveal')->assertNotFound();
+        kataAction($event, $question, 'reveal')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
     });
 
     it('locks a question that has been on screen against editing (D-2)', function (): void {
