@@ -9,7 +9,9 @@ use App\Exceptions\NameListLocked;
 use App\Http\Requests\Host\PersonNameRequest;
 use App\Models\Event;
 use App\Models\Person;
+use App\Models\User;
 use Closure;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,9 +56,9 @@ final class PersonController
         return $this->change($event, fn () => $this->names->rename($event, $person, $request->string('name')->toString()), 'people.renamed');
     }
 
-    public function destroy(Event $event, Person $person): RedirectResponse
+    public function destroy(Event $event, Person $person, #[CurrentUser] User $user): RedirectResponse
     {
-        return $this->change($event, fn () => $this->names->delete($event, $person), 'people.deleted');
+        return $this->change($event, fn () => $this->names->delete($event, $person, $user), 'people.deleted');
     }
 
     private function change(Event $event, Closure $change, string $message): RedirectResponse

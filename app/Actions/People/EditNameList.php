@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Actions\People;
 
+use App\Enums\LoggedAction;
 use App\Exceptions\NameListLocked;
 use App\Models\Event;
 use App\Models\Person;
+use App\Models\User;
 use App\People\JoinToken;
 use App\People\PersonName;
 use App\Realtime\StatePublisher;
+use App\Support\AuditLog;
 use Closure;
 use Illuminate\Support\Facades\DB;
 
@@ -20,7 +23,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class EditNameList
 {
-    public function __construct(private StatePublisher $publisher) {}
+    public function __construct(private StatePublisher $publisher, private AuditLog $auditLog) {}
 
     public function add(Event $event, string $name): Person
     {
@@ -54,9 +57,13 @@ final readonly class EditNameList
         });
     }
 
-    public function delete(Event $event, Person $person): void
+    public function delete(Event $event, Person $person, User $actor): void
     {
-        $this->locked($event, fn () => $person->delete());
+        $this->locked($event, function (Event $locked) use ($person, $actor): void {
+            $person->delete();
+            // E13: the name and its personal link are gone; the log keeps the name.
+            $this->auditLog->record(LoggedAction::PersonDeleted, $actor, $locked, ['name' => $person->name]);
+        });
     }
 
     /**

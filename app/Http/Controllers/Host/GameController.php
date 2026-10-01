@@ -43,9 +43,9 @@ final class GameController
         return redirect()->route('host.events.games.index', $event)->with('status', __('games.added'));
     }
 
-    public function destroy(Event $event, Game $game, DeleteGame $deleteGame): RedirectResponse
+    public function destroy(Event $event, Game $game, DeleteGame $deleteGame, #[CurrentUser] User $user): RedirectResponse
     {
-        $deleteGame->handle($event, $game);
+        $deleteGame->handle($event, $game, $user);
 
         return redirect()->route('host.events.games.index', $event)->with('status', __('games.deleted'));
     }
