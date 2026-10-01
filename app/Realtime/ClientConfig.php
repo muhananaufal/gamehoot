@@ -18,9 +18,13 @@ final readonly class ClientConfig
     public function __construct(private EventSnapshot $snapshots) {}
 
     /**
-     * @return array{socket: array{key: string, host: string, port: int, scheme: string}|null, stateUrl: string, channels: list<array{name: string, private: bool}>, initial: Snapshot}
+     * E4: a phone page passes its own name and vote ($me, as /state adds it), so the first
+     * render already knows whether this phone voted.
+     *
+     * @param  array{name: string, vote: array{question_id: string, attempt: int, target: string}|null}|null  $me
+     * @return array{socket: array{key: string, host: string, port: int, scheme: string}|null, stateUrl: string, channels: list<array{name: string, private: bool}>, initial: array<string, mixed>}
      */
-    public function for(Event $event, Audience $audience): array
+    public function for(Event $event, Audience $audience, ?array $me = null): array
     {
         $channels = [['name' => Audience::Public->channelName($event), 'private' => false]];
 
@@ -32,7 +36,7 @@ final readonly class ClientConfig
             'socket' => $this->socket(),
             'stateUrl' => $audience === Audience::Host ? route('host.events.state', $event) : route('join.state', $event),
             'channels' => $channels,
-            'initial' => $this->snapshots->for($event, $audience),
+            'initial' => $me === null ? $this->snapshots->for($event, $audience) : [...$this->snapshots->for($event, $audience), 'me' => $me],
         ];
     }
 

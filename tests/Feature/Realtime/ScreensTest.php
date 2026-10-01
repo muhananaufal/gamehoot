@@ -83,6 +83,18 @@ describe('player screen', function (): void {
 
         expect(realtimeConfigOf($response))->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false]]);
     });
+
+    it('puts the phone\'s own name and vote into the first snapshot, so a reload never flashes "Time is up" (E4)', function (): void {
+        $event = screensEvent();
+        $person = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $token = ClaimCookie::newToken();
+        $person->forceFill(['claim_token_hash' => ClaimCookie::hash($token), 'claimed_at' => now()])->save();
+
+        $initial = realtimeConfigOf(withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk())['initial'];
+
+        expect($initial)->toBeArray()->toHaveKey('me')
+            ->and($initial['me'])->toMatchArray(['name' => 'Budi Santoso']);
+    });
 });
 
 describe('Live control (F2, C-2)', function (): void {

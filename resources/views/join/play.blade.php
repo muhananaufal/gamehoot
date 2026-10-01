@@ -1,5 +1,5 @@
 <x-layouts.phone :title="$event->name" :event="$event" :person="$person">
-    <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" />
+    <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" :me="$me" />
     <x-connection-status class="mb-4" />
 
     <div x-data="pentahootPhone({
