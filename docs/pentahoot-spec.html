@@ -1288,7 +1288,7 @@ erDiagram
                 <li><code>DatabaseSeeder</code> hanya berisi data dasar yang aman dijalankan berulang di semua lingkungan.</li>
                 <li><code>DemoSeeder</code> (event contoh, sekitar 50 nama, satu paket per jenis game) menolak jalan kalau <code>APP_ENV=production</code>.</li>
                 <li><code>LoadTestSeeder</code> (500 nama) hanya untuk staging.</li>
-                <li>Factory dipakai bersama oleh test dan seeder demo.</li>
+                <li>Tahap 6, mengganti rencana awal "factory dipakai bersama oleh test dan seeder demo": staging memakai image production tanpa dependency dev (P2, P7), sehingga Faker dan factory tidak tersedia di sana. <code>DemoSeeder</code> dan <code>LoadTestSeeder</code> memakai action aplikasi dan daftar nama tetap, dan setiap soal melewati validasi yang sama dengan form host. Keduanya milik super-admin pertama (diminta dibuat dulu kalau belum ada), aman dijalankan berulang (event <code>demo-gathering</code> dan <code>load-test</code> hanya dibuat sekali), dan menolak <code>APP_ENV=production</code>. Gambar demo Tebak Gambar digambar dengan GD saat seeding. <code>LoadTestSeeder</code> membuka event dengan satu game Pentahoot berisi 10 soal untuk skrip F19.</li>
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">P1</td><td><b>Image disimpan di GitHub Container Registry</b> sebagai paket privat. Image dibangun sekali di CI dan diberi tag commit SHA serta nomor versi. VM hanya menarik image, tidak membangun.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
