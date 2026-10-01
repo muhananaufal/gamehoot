@@ -10,6 +10,9 @@ Baca berkas ini utuh sebelum menulis kode.
 | Semua keputusan produk dan teknis, lengkap dengan ID (A, B, C, D, E, F, G, K, O, P, T, W) | `docs/pentahoot-spec.html` (versi terbit: https://claude.ai/artifact/YApdMqJDKY2XEpsdLAj34A) |
 | Mockup UI tiga layar (HP, Public View, panel host) | https://claude.ai/artifact/QwAUn3xFXjzXWWFmxqhjL7 |
 | Kebutuhan asli dari PM | "PRD — Pentahoot Game Platform" (PDF, dipegang PM) |
+| Langkah kerja harian dengan perintahnya, dari branch sampai rilis | Bab 16 spesifikasi |
+| Cara debugging, batas mentok, dan format catatannya | Bab 17 spesifikasi; catatan di `docs/debugging/` |
+| Cara merancang dan mengeksekusi proyek seperti ini (blueprint) | Bab 18 spesifikasi |
 
 Aturan:
 
@@ -188,7 +191,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 | Beban | Skrip F19 di staging sebelum gladi |
 | Browser (W11) | Pest Browser Testing untuk alur end-to-end (host + Public View + HP dalam satu test, termasuk Safari/WebKit dan emulasi iPhone); Vitest untuk logika JS murni (F4, F15, F17, E5). Setiap test browser memanggil `assertNoJavaScriptErrors()`. Batasan plugin 5.0.1 (upload file tidak bisa diuji di browser, login lewat form hanya di Chromium) ada di W11 spesifikasi. |
 
-Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki sampai hijau, dan test itu tetap tinggal sebagai regression test.
+Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki sampai hijau, dan test itu tetap tinggal sebagai regression test. Bug yang butuh lebih dari satu jam, muncul di staging atau production, atau penyebabnya tidak terduga dicatat di `docs/debugging/` dengan format bab 17 spesifikasi. Setelah 3 percobaan perbaikan gagal, berhenti menambal dan ganti jenis pertanyaan; setelah 5 percobaan atau 2 jam, berhenti dan minta orang kedua.
 
 ## 8. Clean code
 
