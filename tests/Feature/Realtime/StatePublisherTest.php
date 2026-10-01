@@ -62,7 +62,9 @@ it('keeps the action alive and logs the event id when a broadcast fails (F22, K5
     Log::shouldReceive('warning')->twice()->withArgs(
         fn (string $message, array $context): bool => $message === 'Realtime broadcast failed.'
             && $context['event_id'] === $event->id
-            && in_array($context['audience'], ['public', 'host'], true),
+            && in_array($context['audience'], ['public', 'host'], true)
+            && str_contains($context['error'], 'Failed to connect to reverb port 8080')
+            && ! str_contains($context['error'], 'auth_signature'),
     );
 
     app(StatePublisher::class)->publish($event);

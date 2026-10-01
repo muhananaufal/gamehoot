@@ -29,6 +29,10 @@ return [
             'scaling' => [
                 'enabled' => false,
             ],
+            // Read by reverb:start; Pulse and Telescope are not installed, so the values only
+            // keep the server from warning at start-up.
+            'pulse_ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
+            'telescope_ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
         ],
 
     ],

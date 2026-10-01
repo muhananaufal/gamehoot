@@ -36,6 +36,7 @@ final class FailingBroadcaster implements Broadcaster
      */
     public function broadcast(array $channels, $event, array $payload = []): void
     {
-        throw new BroadcastException('Reverb is not reachable.');
+        // Pusher puts the signed request URL into its message.
+        throw new BroadcastException('Pusher error: cURL error 7: Failed to connect to reverb port 8080 for http://reverb:8080/apps/1/events?auth_key=key&auth_signature=secret-signature&body_md5=abc.');
     }
 }
