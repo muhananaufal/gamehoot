@@ -23,9 +23,19 @@
         <img :src="preview" alt="{{ __('packs.gambar.preview', ['image' => mb_strtolower($label)]) }}"
             class="max-h-48 w-fit max-w-full rounded-control border border-line-soft object-contain" data-test="{{ $field }}-preview">
     </template>
-    <input id="{{ $pickerId }}" type="file" accept="image/jpeg,image/png,image/heic,.heic,.heif" @change="pick($event)"
-        aria-describedby="{{ $pickerId }}-hint{{ $error ? " {$pickerId}-error" : '' }}"
-        class="min-h-11 text-sm file:mr-3 file:h-11 file:cursor-pointer file:rounded-control file:border file:border-line-strong file:bg-surface file:px-4 file:font-semibold file:text-ink">
+    {{-- The browser field is cleared after resizing, so the button and the file name are drawn here. --}}
+    <div class="flex flex-wrap items-center gap-3">
+        <input id="{{ $pickerId }}" type="file" accept="image/jpeg,image/png,image/heic,.heic,.heif" @change="pick($event)"
+            aria-describedby="{{ $pickerId }}-hint {{ $pickerId }}-file{{ $error ? " {$pickerId}-error" : '' }}"
+            class="peer sr-only">
+        <label for="{{ $pickerId }}" class="inline-flex h-11 cursor-pointer items-center rounded-control border border-line-strong bg-surface px-4 text-sm font-semibold text-ink peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">{{ __('packs.gambar.pick') }}</label>
+        <span id="{{ $pickerId }}-file" class="min-w-0 truncate text-sm text-muted"
+            x-text="fileName || (preview ? @js(__('packs.gambar.kept')) : @js(__('packs.gambar.none')))"></span>
+    </div>
+    {{-- Browsers cannot refill a file field after a validation error. --}}
+    @if ($errors->any() && ! $current)
+        <p class="text-sm font-semibold text-muted">{{ __('packs.gambar.pick_again') }}</p>
+    @endif
     <input type="file" name="{{ $field }}" x-ref="large" class="hidden" tabindex="-1" aria-hidden="true">
     <input type="file" name="{{ $field }}_small" x-ref="small" class="hidden" tabindex="-1" aria-hidden="true">
     <p x-show="busy" class="text-sm text-muted" role="status">{{ __('packs.gambar.preparing') }}</p>
