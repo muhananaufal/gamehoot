@@ -1294,11 +1294,11 @@ erDiagram
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">P1</td><td><b>Image disimpan di GitHub Container Registry</b> sebagai paket privat. Image dibangun sekali di CI dan diberi tag commit SHA serta nomor versi. VM hanya menarik image, tidak membangun.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
-            <tr><td class="id">P2</td><td><b>Kualitas image:</b> build bertahap, base image Debian (<code>php:8.4.26-fpm-bookworm</code>, bukan Alpine, karena Playwright untuk W11 hanya mendukung Debian/Ubuntu dan test harus berjalan di OS yang sama dengan production), container berjalan sebagai user non-root, versi base image dikunci, dependency dev tidak ikut, opcache aktif, <code>healthcheck</code> di setiap container.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
-            <tr><td class="id">P3</td><td><b>Scan keamanan di CI:</b> gitleaks untuk rahasia yang ter-commit dan Trivy untuk celah di image, melengkapi <code>composer audit</code> (O1).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
-            <tr><td class="id">P4</td><td><b>Urutan deploy:</b> migration, ganti container, lalu smoke test otomatis (<code>/up</code> dan satu koneksi WebSocket). Gagal berarti otomatis kembali ke image sebelumnya. Contoh di kantor: <code>smoke.sh</code> dan <code>staging-recover.sh</code> di <code>vivace-board</code>.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P2</td><td><b>Kualitas image:</b> build bertahap, base image Debian (<code>php:8.4.26-fpm-bookworm</code>, bukan Alpine, karena Playwright untuk W11 hanya mendukung Debian/Ubuntu dan test harus berjalan di OS yang sama dengan production), container berjalan sebagai user non-root, versi base image dikunci, dependency dev tidak ikut, opcache aktif, <code>healthcheck</code> di setiap container. Tahap 6: target <code>production</code> (php-fpm, juga dipakai container <code>reverb</code>) dan <code>web</code> (nginx) ada di <code>Dockerfile</code>. Image <code>web</code> memakai <code>nginxinc/nginx-unprivileged</code>; sejak 1.29.2 image itu berbasis Debian trixie, bukan bookworm. Itu tetap Debian, dan aturan bookworm hanya mengikat image PHP karena Playwright. Entrypoint menjalankan <code>php artisan optimize</code> dari env container sebelum perintahnya, sehingga config tidak pernah dibekukan di image.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P3</td><td><b>Scan keamanan di CI:</b> gitleaks untuk rahasia yang ter-commit dan Trivy untuk celah di image, melengkapi <code>composer audit</code> (O1). Tahap 6: Trivy 0.74.0 memindai kedua image di setiap push dan menggagalkan CI untuk celah CRITICAL yang sudah ada perbaikannya (<code>--ignore-unfixed</code>).</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P4</td><td><b>Urutan deploy:</b> migration, ganti container, lalu smoke test otomatis (<code>/up</code> dan satu koneksi WebSocket). Gagal berarti otomatis kembali ke image sebelumnya. Contoh di kantor: <code>smoke.sh</code> dan <code>staging-recover.sh</code> di <code>vivace-board</code>. Tahap 6: <code>deploy/deploy.sh</code> (pull, migrate, <code>up -d --wait</code>, smoke, rollback ke tag di <code>.image-tag</code>) dan <code>deploy/smoke.sh</code> (<code>/up</code> lewat container <code>web</code>, lalu handshake WebSocket yang harus menerima <code>pusher:connection_established</code>) disalin ke VM oleh <code>deploy/remote.sh</code> di setiap deploy. Image dibangun dan dipindai di setiap push, tetapi hanya didorong ke registry dari <code>develop</code> dan tag versi, sehingga branch membuktikan image-nya sebelum merge.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">P5</td><td><b>Persetujuan deploy production di GitHub</b>, misalnya lewat environment dengan persetujuan manual, sehingga W2 juga dijaga oleh platform. Fitur persisnya diverifikasi saat remote dibuat.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
-            <tr><td class="id">P6</td><td><b>Susunan job CI:</b> lint, analisis statis, test, mutation test, dan browser test dijalankan paralel. Browser test berjalan sebagai matrix Chrome dan Safari (WebKit), dan screenshot kegagalan disimpan sebagai artifact. Cache Composer dan npm. Run lama dibatalkan kalau ada push baru ke branch yang sama.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
+            <tr><td class="id">P6</td><td><b>Susunan job CI:</b> lint, analisis statis, test, mutation test, dan browser test dijalankan paralel. Browser test berjalan sebagai matrix Chrome dan Safari (WebKit), dan screenshot kegagalan disimpan sebagai artifact. Cache Composer dan npm. Run lama dibatalkan kalau ada push baru ke branch yang sama. Tahap 6: test browser dibagi dua shard per browser (<code>--shard=1/2</code>, <code>2/2</code>), job paling lama di pipeline. Run lama hanya dibatalkan di branch fitur, tidak pernah di <code>develop</code> atau tag, supaya deploy tidak terputus di tengah jalan.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">P7</td><td><b>Data staging terpisah.</b> Staging memakai database sendiri dan hanya berisi data demo (O10). Data production tidak pernah disalin ke staging.</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">O11</td><td>
               <p><b>Definition of Done</b>, berlaku sebagai gerbang sejak fitur pertama. Satu fitur baru boleh di-merge ke <code>develop</code> kalau:</p>
@@ -1336,6 +1336,87 @@ erDiagram
       <h2><span class="num">15</span>Rilis staging dan production</h2>
       <p class="sub">Langkah sekali jalan untuk menyiapkan tiap lingkungan, lalu langkah yang diulang di setiap rilis. Bagian dalam kurung siku, seperti [DOMAIN STAGING], diisi saat server disiapkan. Perintah di bab ini ditulis sebagai acuan urutan; nama service, path, dan flag persisnya dipastikan saat <code>compose.yaml</code> dan workflow CI ditulis di tahap 1, lalu bab ini diperbarui kalau ada yang berbeda.</p>
 
+      <h3>Server di Google Cloud (Compute Engine), disiapkan sekali per lingkungan</h3>
+      <p>Pelengkap langkah 1–2 dan 6 staging di bawah, untuk VM di Google Cloud (A7). Dikerjakan oleh orang yang punya akses ke project GCP. Perintah <code>gcloud</code> dicocokkan dengan referensi resmi Google Cloud; instalasi Docker dan Caddy dari dokumentasi resmi masing-masing (bab 19). Ganti <code>staging</code> dengan <code>production</code> untuk lingkungan kedua; kedua lingkungan memakai VM, IP, <code>.env</code>, dan kunci yang berbeda.</p>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Project dan lokasi</b><p>Pilih project dan zona yang dekat dengan venue. Ukuran mesin dipilih lalu dibuktikan dengan uji beban F19 di staging, bukan ditebak.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gcloud config set project [PROJECT ID]</pre></div></li>
+        <li><span class="n">2</span><div><b>IP statis</b><p>IP tetap, supaya DNS domain tidak perlu diubah setiap VM dinyalakan ulang.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gcloud compute addresses create pentahoot-staging-ip --region=[REGION]
+gcloud compute addresses describe pentahoot-staging-ip --region=[REGION] --format="value(address)"</pre></div></li>
+        <li><span class="n">3</span><div><b>VM Debian 12</b><p>Disk boot ini juga menjadi disk permanen untuk gambar dan log (volume Docker <code>media</code> dan <code>logs</code>, F16).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gcloud compute instances create pentahoot-staging \
+  --zone=[ZONE] \
+  --machine-type=[MACHINE TYPE] \
+  --image-family=debian-12 --image-project=debian-cloud \
+  --boot-disk-size=30GB \
+  --tags=pentahoot-web \
+  --address=[IP STATIS]</pre></div></li>
+        <li><span class="n">4</span><div><b>Firewall</b><p>Hanya 80 dan 443 yang dibuka untuk umum. Port aplikasi (8000) dan Reverb (8080) hanya terikat ke <code>127.0.0.1</code> di VM, sehingga hanya Caddy yang bisa mencapainya. SSH memakai kunci saja, tanpa password.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gcloud compute firewall-rules create pentahoot-web \
+  --allow tcp:80,tcp:443 \
+  --target-tags pentahoot-web \
+  --source-ranges 0.0.0.0/0 \
+  --direction INGRESS \
+  --network default</pre></div></li>
+        <li><span class="n">5</span><div><b>DNS</b><p>Record A <code>[DOMAIN STAGING]</code> mengarah ke IP statis.</p></div></li>
+        <li><span class="n">6</span><div><b>Docker di VM</b><p>Masuk dengan <code>gcloud compute ssh pentahoot-staging --zone=[ZONE]</code>, lalu pasang Docker dari repository resmi Docker.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+sudo tee /etc/apt/sources.list.d/docker.sources &lt;&lt;EOF
+Types: deb
+URIs: https://download.docker.com/linux/debian
+Suites: $(. /etc/os-release &amp;&amp; echo "$VERSION_CODENAME")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</pre></div></li>
+        <li><span class="n">7</span><div><b>User deploy dan kunci SSH CI</b><p>Satu user khusus deploy dengan kunci yang hanya dipakai GitHub Actions. Anggota grup <code>docker</code> setara root di VM itu, jadi kunci ini diperlakukan seperti kunci root dan hanya disimpan di GitHub Secrets.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;"># di VM
+sudo adduser --disabled-password --gecos "" deploy
+sudo usermod -aG docker deploy
+sudo mkdir -p /home/deploy/.ssh /srv/pentahoot
+sudo chown deploy:deploy /srv/pentahoot
+
+# di laptop: buat kunci khusus CI, lalu pasang kunci publiknya di VM
+ssh-keygen -t ed25519 -C "pentahoot-ci-staging" -f pentahoot-ci-staging -N ""
+# isi pentahoot-ci-staging.pub ke /home/deploy/.ssh/authorized_keys (pemilik deploy, mode 600)
+ssh-keyscan [IP STATIS] &gt; known_hosts-staging</pre></div></li>
+        <li><span class="n">8</span><div><b>Secrets di GitHub</b><p>Di environment <code>staging</code> (dan <code>production</code>, dengan nilai sendiri): <code>SSH_HOST</code> = IP statis, <code>SSH_USER</code> = <code>deploy</code>, <code>SSH_KEY</code> = isi berkas kunci privat, <code>SSH_KNOWN_HOSTS</code> = isi <code>known_hosts-staging</code>, <code>DEPLOY_PATH</code> = <code>/srv/pentahoot</code>. Environment <code>production</code> diberi required reviewer pemilik proyek (P5). Setelah disimpan, berkas kunci privat di laptop dihapus.</p></div></li>
+        <li><span class="n">9</span><div><b>Caddy untuk TLS dan WebSocket</b><p>Caddy di VM mengurus sertifikat HTTPS otomatis dan meneruskan WebSocket. Jalur <code>/app/*</code> ke Reverb, sisanya ke container <code>web</code>.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">sudo apt install --yes debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+sudo chmod o+r /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
+
+# /etc/caddy/Caddyfile
+[DOMAIN STAGING] {
+    handle /app/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+    handle {
+        reverse_proxy 127.0.0.1:8000
+    }
+}
+
+sudo systemctl reload caddy</pre></div></li>
+        <li><span class="n">10</span><div><b>Database</b><p>Database dan user khusus di server MySQL yang sudah ada (langkah 3 staging di bawah). Kalau MySQL ada di VM lain di project yang sama, buka port 3306 hanya untuk IP internal VM ini, lalu isi <code>DB_HOST</code> dengan IP internal MySQL. Kalau MySQL di VM yang sama, pakai <code>host.docker.internal</code> dan izinkan koneksi dari jaringan Docker.</p></div></li>
+        <li><span class="n">11</span><div><b>Isi folder deploy</b><p>Sebagai user <code>deploy</code>: salin <code>deploy/env.example</code> dari repo menjadi <code>/srv/pentahoot/.env</code> dan isi nilainya, lalu login ke registry dengan token baca (langkah 5 staging). Berkas <code>compose.yaml</code>, <code>deploy.sh</code>, dan <code>smoke.sh</code> disalin otomatis oleh job deploy. Deploy pertama dijalankan lewat CI (merge ke <code>develop</code>), lalu super-admin dibuat dengan perintah di langkah 7 staging.</p></div></li>
+      </ol>
+
+      <h3>Gladi deploy di laptop</h3>
+      <p>Sebelum server pertama ada, atau setelah mengubah <code>Dockerfile</code>, <code>deploy/</code>, atau konfigurasi nginx, alur deploy bisa dicoba utuh di laptop dengan skrip yang sama. Image dibangun lokal, <code>.env</code> berisi nilai production (<code>APP_ENV=production</code>, <code>MEDIA_ACCEL=true</code>, port host lain dari stack dev), dan nama project compose dibedakan supaya stack dev tidak tersentuh. Dicoba pada 1 Oktober 2026: deploy sukses, lalu rilis yang sengaja dirusak (nginx menjawab 503 untuk <code>/up</code>) kembali otomatis ke rilis sebelumnya.</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">docker build --target production -t pentahoot:gladi-1 .
+docker build --target web -t pentahoot-web:gladi-1 .
+mkdir -p ../pentahoot-gladi &amp;&amp; cp deploy/compose.yaml deploy/deploy.sh deploy/smoke.sh ../pentahoot-gladi/
+# ../pentahoot-gladi/.env: dari deploy/env.example, dengan IMAGE_REPO=pentahoot,
+# APP_URL=http://localhost:8090, WEB_PORT=8090, REVERB_HOST_PORT=8091, REVERB_CLIENT_PORT=8091,
+# REVERB_CLIENT_SCHEME=http, REVERB_ALLOWED_ORIGINS=localhost, dan database lokal
+cd ../pentahoot-gladi
+COMPOSE_PROJECT_NAME=pentahoot-gladi SKIP_PULL=1 ./deploy.sh gladi-1
+COMPOSE_PROJECT_NAME=pentahoot-gladi IMAGE_TAG=gladi-1 docker compose down -v   # selesai</pre>
+
       <h3>Staging: disiapkan sekali</h3>
       <ol class="phases">
         <li><span class="n">1</span><div><b>Akses server</b><p>Senior menyiapkan VM (boleh sama dengan production atau terpisah), memasang Docker, membuat user deploy dengan kunci SSH khusus, dan membuka port 80/443.</p></div></li>
@@ -1353,6 +1434,7 @@ echo "[TOKEN READ:PACKAGES]" | docker login ghcr.io -u [USER GITHUB] --password-
         <li><span class="n">7</span><div><b>Deploy pertama</b><p>Tarik image, jalankan migration, buat super-admin dengan <code>php artisan pentahoot:create-super-admin</code>, jalankan <code>DemoSeeder</code>, lalu smoke test (P4).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">cd [FOLDER DEPLOY]
 IMAGE_TAG=[SHA] docker compose pull
 docker compose run --rm app php artisan migrate --force
+export IMAGE_TAG=$(cat .image-tag)                                     # tag yang sedang berjalan
 docker compose run --rm app php artisan pentahoot:create-super-admin   # email &amp; password ditanya interaktif
 docker compose run --rm app php artisan db:seed --class=DemoSeeder     # staging saja
 docker compose up -d
@@ -1773,6 +1855,11 @@ flowchart TD
             <tr><td>Pest arch testing: preset Laravel, Strict, Security, dan aturan seperti larangan <code>dd</code>/<code>dump</code>. Mutation testing: <code>--mutate</code>, batas skor <code>--min</code>, butuh Xdebug 3 atau PCOV.</td><td><a href="https://pestphp.com/docs/arch-testing">Pest — Arch Testing</a>, <a href="https://pestphp.com/docs/mutation-testing">Pest — Mutation Testing</a></td></tr>
             <tr><td>Tailwind v4.3: <code>@theme</code> membuat utility class dari token dan mengeksposnya sebagai CSS variable. Dark mode default mengikuti <code>prefers-color-scheme</code>, dan bisa diganti manual lewat <code>@custom-variant dark</code> dengan class atau atribut data.</td><td><a href="https://tailwindcss.com/docs/theme">Tailwind — Theme variables</a>, <a href="https://tailwindcss.com/docs/dark-mode">Tailwind — Dark mode</a></td></tr>
             <tr><td>Pola deploy lewat SSH ke server PHP 8.2. Preseden Blade + Alpine + Echo + Reverb.</td><td>Repo internal <code>mp-so</code> (workflow deploy) dan <code>mp-marketing-panel</code></td></tr>
+                      <tr><td>Tahap 6: flag <code>gcloud compute instances create</code>, <code>addresses create</code>/<code>describe</code>, dan <code>firewall-rules create</code>.</td><td><a href="https://docs.cloud.google.com/sdk/gcloud/reference/compute/instances/create">gcloud reference — compute</a></td></tr>
+            <tr><td>Tahap 6: image Debian 12 di Compute Engine memakai family <code>debian-12</code> dari project <code>debian-cloud</code>.</td><td><a href="https://wiki.debian.org/Cloud/GoogleComputeEngineImage">Debian Wiki — Google Compute Engine image</a></td></tr>
+            <tr><td>Tahap 6: instalasi Docker Engine di Debian dari repository apt resmi; grup <code>docker</code> setara hak root.</td><td><a href="https://docs.docker.com/engine/install/debian/">Docker — Install on Debian</a>, <a href="https://docs.docker.com/engine/install/linux-postinstall/">Linux post-install</a></td></tr>
+            <tr><td>Tahap 6: Caddy meneruskan WebSocket lewat <code>reverse_proxy</code>; instalasi apt, <code>/etc/caddy/Caddyfile</code>, dan <code>systemctl reload caddy</code>.</td><td><a href="https://caddyserver.com/docs/caddyfile/directives/reverse_proxy">Caddy — reverse_proxy</a>, <a href="https://caddyserver.com/docs/install">Install</a>, <a href="https://caddyserver.com/docs/running">Running</a></td></tr>
+            <tr><td>Tahap 6: image <code>nginxinc/nginx-unprivileged</code> versi 1.29.8 tersedia sebagai varian Debian trixie; varian bookworm berhenti di 1.29.1. Trivy 0.74.0 adalah rilis stabil terbaru.</td><td><a href="https://hub.docker.com/r/nginxinc/nginx-unprivileged/tags">Docker Hub — nginx-unprivileged</a>, <a href="https://hub.docker.com/r/aquasec/trivy/tags">aquasec/trivy</a></td></tr>
           </tbody>
         </table>
       </div>
