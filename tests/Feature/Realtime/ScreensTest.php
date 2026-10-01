@@ -92,8 +92,7 @@ describe('player screen', function (): void {
 
         $initial = realtimeConfigOf(withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk())['initial'];
 
-        expect($initial)->toBeArray()->toHaveKey('me')
-            ->and($initial['me'])->toMatchArray(['name' => 'Budi Santoso']);
+        expect($initial)->toBeArray()->toHaveKey('me.name', 'Budi Santoso');
     });
 });
 
