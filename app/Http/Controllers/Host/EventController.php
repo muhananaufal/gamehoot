@@ -47,7 +47,7 @@ final class EventController
         ]);
     }
 
-    public function update(StoreEventRequest $request, Event $event, UpdateEventSettings $updateSettings): RedirectResponse
+    public function update(StoreEventRequest $request, Event $event, UpdateEventSettings $updateSettings, #[CurrentUser] User $user): RedirectResponse
     {
         $updateSettings->handle(
             $event,
@@ -55,6 +55,7 @@ final class EventController
             $request->string('slug')->toString(),
             $request->theme(),
             $request->boolean('show_on_devices'),
+            $user,
         );
 
         return redirect()->route('host.events.edit', $event)->with('status', __('events.saved'));

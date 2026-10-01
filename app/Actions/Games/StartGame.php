@@ -6,10 +6,13 @@ namespace App\Actions\Games;
 
 use App\Enums\EventStatus;
 use App\Enums\GameStatus;
+use App\Enums\LoggedAction;
 use App\Exceptions\ActionRefused;
 use App\Models\Event;
 use App\Models\Game;
+use App\Models\User;
 use App\Realtime\StatePublisher;
+use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -18,14 +21,14 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class StartGame
 {
-    public function __construct(private StatePublisher $publisher) {}
+    public function __construct(private StatePublisher $publisher, private AuditLog $auditLog) {}
 
     /**
      * @throws ActionRefused
      */
-    public function handle(Event $event, Game $game): void
+    public function handle(Event $event, Game $game, User $actor): void
     {
-        DB::transaction(function () use ($event, $game): void {
+        DB::transaction(function () use ($event, $game, $actor): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
             $lockedGame = Game::query()->lockForUpdate()->findOrFail($game->id);
 
@@ -56,6 +59,8 @@ final readonly class StartGame
             $locked->names_locked_at ??= now();
             $locked->bumpStateVersion();
             $locked->save();
+            // E13: starting a game locks the name list for good (B-3).
+            $this->auditLog->record(LoggedAction::GameStarted, $actor, $locked, ['game_id' => $lockedGame->id]);
             $this->publisher->publish($locked);
         });
     }

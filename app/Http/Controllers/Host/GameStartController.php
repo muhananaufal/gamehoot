@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Host;
 use App\Actions\Games\StartGame;
 use App\Models\Event;
 use App\Models\Game;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -14,9 +16,9 @@ use Illuminate\Http\RedirectResponse;
  */
 final class GameStartController
 {
-    public function __invoke(Event $event, Game $game, StartGame $startGame): RedirectResponse
+    public function __invoke(Event $event, Game $game, StartGame $startGame, #[CurrentUser] User $user): RedirectResponse
     {
-        $startGame->handle($event, $game);
+        $startGame->handle($event, $game, $user);
 
         return redirect()->route('host.events.live', $event);
     }

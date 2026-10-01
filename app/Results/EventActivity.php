@@ -11,10 +11,11 @@ use App\Models\Person;
 use App\Models\QuestionGambar;
 use App\Models\QuestionKata;
 use App\Models\QuestionPentahoot;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 
 /**
- * E13: the irreversible actions of an event, newest first: when, who, what, and on which
+ * E13: the logged actions of an event, newest first: when, who, what, and on which
  * question, game or name. Shown to hosts only; K5 concerns the application log files.
  *
  * @phpstan-type Entry array{at: CarbonImmutable, actor: string, action: string, subject: ?string}
@@ -57,6 +58,21 @@ final class EventActivity
         // A released claim names the list entry the host changed, as on the Names page.
         if (isset($payload['person_id']) && is_string($payload['person_id'])) {
             return self::text(Person::query()->whereKey($payload['person_id'])->value('name'));
+        }
+
+        if (isset($payload['account_id']) && is_string($payload['account_id'])) {
+            return self::text(User::query()->whereKey($payload['account_id'])->value('name'));
+        }
+
+        // Deleted names and games are gone from their tables; the entry kept what they were called.
+        $kept = $payload['name'] ?? $payload['title'] ?? null;
+
+        if (is_string($kept)) {
+            return $kept;
+        }
+
+        if (isset($payload['from'], $payload['to']) && is_string($payload['from']) && is_string($payload['to'])) {
+            return "/{$payload['from']} → /{$payload['to']}";
         }
 
         return null;

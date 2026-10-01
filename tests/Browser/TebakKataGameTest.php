@@ -56,7 +56,7 @@ it('shows a Tebak Kata question on the projector and mirrors it on phones only w
     $screen->assertSee('Leaderboard')->assertSee('Same points: whoever got there first ranks higher.');
 
     // E14 off: phones point to the screen instead of mirroring it.
-    app(UpdateEventSettings::class)->handle($event->refresh(), $event->name, $event->slug, $event->screen_theme, false);
+    app(UpdateEventSettings::class)->handle($event->refresh(), $event->name, $event->slug, $event->screen_theme, false, $event->owner()->firstOrFail());
     $phone->assertSee('Watch the screen and answer out loud to the host.')->assertNoJavaScriptErrors();
 
     // E12, E17: the final podium, on the projector and (as text, whatever E14 says) on phones.

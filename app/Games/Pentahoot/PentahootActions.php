@@ -49,7 +49,7 @@ final readonly class PentahootActions
         match ($action) {
             'start' => $this->start($game, $locked, $detail, $now),
             'stop' => $this->stop($game, $locked, $detail, $now),
-            'reveal' => $this->reveal($game, $locked, $detail, $now),
+            'reveal' => $this->reveal($event, $game, $locked, $detail, $now, $actor),
             'next' => $this->next($game, $locked),
             'reset' => $this->reset($event, $game, $locked, $detail, $actor),
             default => throw ActionRefused::stale(),
@@ -96,7 +96,7 @@ final readonly class PentahootActions
     /**
      * E1, E3, G10: reveal once no vote can arrive anymore, and freeze the top 5 of this attempt.
      */
-    private function reveal(Game $game, Question $question, QuestionPentahoot $detail, CarbonImmutable $now): void
+    private function reveal(Event $event, Game $game, Question $question, QuestionPentahoot $detail, CarbonImmutable $now, User $actor): void
     {
         $this->expectCurrent($game, $question, QuestionStatus::Live);
 
@@ -116,6 +116,8 @@ final readonly class PentahootActions
         }
 
         $question->forceFill(['status' => QuestionStatus::Revealed])->save();
+        // E13: the result is frozen from here on.
+        $this->auditLog->record(LoggedAction::QuestionRevealed, $actor, $event, ['question_id' => $question->id]);
     }
 
     private function next(Game $game, Question $question): void
