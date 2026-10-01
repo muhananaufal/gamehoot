@@ -36,6 +36,15 @@ describe('public state (F1)', function (): void {
         stateEvent()->delete();
         getJson('/gathering-2026/state')->assertNotFound()->assertJsonPath('code', 'EVENT_NOT_FOUND');
     });
+
+    it('starts no session, so hundreds of polling phones write nothing to the sessions table', function (string $path): void {
+        stateEvent();
+
+        $cookies = collect(getJson("/gathering-2026/{$path}")->headers->getCookies())->map->getName()->all();
+
+        expect($cookies)->not->toContain(config('session.cookie'))
+            ->and($cookies)->not->toContain('XSRF-TOKEN');
+    })->with(['state', 'people']);
 });
 
 describe('host state (F2, C-2)', function (): void {
