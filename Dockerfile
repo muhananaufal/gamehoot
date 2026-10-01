@@ -5,18 +5,18 @@ FROM php:8.4.26-fpm-bookworm AS base
 
 COPY --from=mlocati/php-extension-installer:2.12.0 /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions pdo_mysql bcmath intl zip pcntl opcache
+# GD encodes every uploaded image again on the server, dropping camera metadata (E8, O7).
+RUN install-php-extensions pdo_mysql bcmath intl zip pcntl opcache gd
 
 COPY docker/php/conf.d/pentahoot.ini /usr/local/etc/php/conf.d/pentahoot.ini
 
 WORKDIR /var/www/html
 
 # Local development and CI: Composer, PCOV for coverage and mutation tests (K2), the
-# sockets extension required by the Pest browser plugin, and GD for the fake images of the
-# upload tests (E8). Production needs no GD: images are resized in the host's browser.
+# sockets extension required by the Pest browser plugin.
 FROM base AS dev
 
-RUN install-php-extensions pcov sockets gd
+RUN install-php-extensions pcov sockets
 
 COPY --from=composer:2.10.3 /usr/bin/composer /usr/local/bin/composer
 
