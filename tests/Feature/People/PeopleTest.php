@@ -230,7 +230,7 @@ describe('claims and personal links (B-1, B-6, T5)', function (): void {
 
         $response->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
         expect($response->streamedContent())
-            ->toContain('Name,Link')
+            ->toStartWith("\u{FEFF}Name,Link")
             ->toContain('"Budi Santoso",'.url('/gathering-2026/j/k7Qx9mP2k7Qx9mP2'));
     });
 

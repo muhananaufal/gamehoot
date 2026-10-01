@@ -26,6 +26,8 @@ final class ResultsExportController
                 return;
             }
 
+            fwrite($out, CsvCell::BOM);
+
             fputcsv($out, ['Game', 'Question', 'Prompt', 'Rank', 'Name', 'Score'], ',', '"', '');
 
             foreach ($results->games as $game) {
