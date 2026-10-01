@@ -7,7 +7,9 @@ use App\Exceptions\ClaimRefused;
 use App\Exceptions\EventHasActiveGame;
 use App\Exceptions\NameListLocked;
 use App\Http\ApiError;
+use App\Http\Middleware\AddLogContext;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectUsersTo('/host');
+
+        // O7: on every response, including 404s for unknown paths that match no route.
+        $middleware->append(SecurityHeaders::class);
+        // K5: after route model binding, so the event id is known.
+        $middleware->web(append: [AddLogContext::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
