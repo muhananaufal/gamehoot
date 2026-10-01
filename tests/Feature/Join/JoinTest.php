@@ -75,6 +75,17 @@ describe('general join page (B-1, F12)', function (): void {
 });
 
 describe('claiming a name (B-1, G3)', function (): void {
+    it('shows a phone screen when the picked name was removed from the list meanwhile', function (): void {
+        $event = openEvent();
+        $removed = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $removed->delete();
+
+        post('/gathering-2026/claim', ['person' => $removed->id])
+            ->assertNotFound()
+            ->assertSee('This name is no longer on the list')
+            ->assertSee('NAME_NOT_FOUND');
+    });
+
     it('claims a name for this phone and stores only the hash of the token', function (): void {
         $event = openEvent();
         $budi = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);

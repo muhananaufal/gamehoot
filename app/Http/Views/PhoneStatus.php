@@ -44,6 +44,14 @@ final class PhoneStatus
         return self::screen($event, 'link_invalid', 'LINK_INVALID', 404);
     }
 
+    /**
+     * The host removed the picked name while the phone had the list open.
+     */
+    public static function nameGone(Event $event): Response
+    {
+        return self::screen($event, 'name_gone', 'NAME_NOT_FOUND', 404);
+    }
+
     public static function notFound(): Response
     {
         return response()->view('join.status', ['event' => null, 'screen' => 'not_found', 'code' => 'EVENT_NOT_FOUND', 'replace' => []], 404);

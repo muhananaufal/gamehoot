@@ -37,7 +37,11 @@ final class JoinController
 
     public function store(ClaimRequest $request, Event $event, ClaimName $claimName): Response|RedirectResponse
     {
-        $person = $event->people()->findOrFail($request->string('person')->toString());
+        $person = $event->people()->find($request->string('person')->toString());
+
+        if ($person === null) {
+            return PhoneStatus::nameGone($event);
+        }
 
         try {
             $token = $claimName->handle($event, $person);

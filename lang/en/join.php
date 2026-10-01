@@ -38,6 +38,10 @@ return [
             'title' => 'This name is already in use',
             'body' => '“:name” is playing on another phone. If that’s you on a new phone, ask the host to release the name, then try again.',
         ],
+        'name_gone' => [
+            'title' => 'This name is no longer on the list',
+            'body' => 'The host changed the name list. Go back and pick your name again.',
+        ],
         'link_invalid' => [
             'title' => 'This link no longer works',
             'body' => 'The host made a new personal link for this name. Ask the host for your new link, or pick your name from the list.',
