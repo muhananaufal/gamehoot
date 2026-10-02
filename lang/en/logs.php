@@ -11,6 +11,8 @@ return [
     'when' => 'When',
     'who' => 'Who',
     'what' => 'What',
+    'search' => 'Search the log',
+    'no_match' => 'No entry matches.',
     'actions' => [
         'account_created' => 'Created a host account',
         'account_password_reset' => 'Reset a password',
