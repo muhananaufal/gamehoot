@@ -36,6 +36,9 @@
         </x-slot:actions>
     @endunless
 
+    <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
+    {{-- U12: join status, the lock banner and the list refresh when the event's version moves on. --}}
+    <div id="names-live" x-data="liveRegion" class="flex flex-col gap-5">
     @if ($locked)
         {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
         <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">
@@ -126,6 +129,7 @@
             </div>
         </div>
     @endif
+    </div>
 
     <section class="flex flex-wrap items-center justify-between gap-4 rounded-card bg-surface p-5" aria-labelledby="links-heading">
         <div class="flex max-w-2xl flex-col gap-1">

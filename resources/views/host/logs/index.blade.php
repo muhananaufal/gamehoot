@@ -1,7 +1,9 @@
 {{-- E13: irreversible actions of the event, newest first, in WIB (T10). --}}
 <x-layouts.host :title="__('logs.title') . ' · ' . $event->name" :event="$event"
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [$event->name, null], [__('logs.title'), null]]">
-    <section class="flex flex-col gap-4 rounded-card bg-surface p-6">
+    <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
+    {{-- U12: new entries appear while the page is open. --}}
+    <section id="log-live" x-data="liveRegion" class="flex flex-col gap-4 rounded-card bg-surface p-6">
         <p class="text-sm text-muted">{{ __('logs.subtitle') }}</p>
         @if ($entries === [])
             <p class="text-muted">{{ __('logs.empty') }}</p>
