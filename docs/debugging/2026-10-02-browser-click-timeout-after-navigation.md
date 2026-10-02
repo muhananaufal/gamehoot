@@ -2,12 +2,14 @@
 
 - Tanggal: 2026-10-02
 - Status: penyebab diketahui; tidak diubah di kode (lingkungan lokal)
-- Lingkungan: Docker lokal di Windows + WSL, `pentahoot-php:browser`, Chrome dan Safari; sekali di CI Safari (tahap 6, "Show leaderboard")
+- Lingkungan: Docker lokal di Windows + WSL, `pentahoot-php:browser`, Chrome dan Safari; di CI Safari dua kali (tahap 6 "Show leaderboard", lalu "confirm-winner")
 - Request id / event id: tidak relevan (test server Pest)
 
 ## Gejala
 
 `HostSetupTest` "lets a host create an event and add names" gagal 3 dari 7 kali di lokal dengan `Timeout 30000ms exceeded` pada `->press('Create event')`. Sekali juga pada `->press('Save question')` (Tebak Kata, Safari). Screenshot kegagalan selalu menunjukkan halaman **tujuan** (Names, paket soal) yang sudah termuat dan datanya sudah tersimpan. Run berikutnya dengan kode yang sama lolos.
+
+Kejadian di CI (2026-10-02, Safari, `TebakKataGameTest`): `->click('@confirm-winner')` timeout. Tombol itu menutup dialognya lalu mengirim aksi; percobaan ulang mencari tombol yang kini berada di dialog tertutup. Job dijalankan ulang tanpa perubahan kode; hasilnya hijau (run 36966911781, attempt 2).
 
 ## Reproduksi
 
