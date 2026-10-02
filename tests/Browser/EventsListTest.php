@@ -17,7 +17,11 @@ it('filters events by a range picked in the calendar, quickly and from the keybo
     Event::factory()->for($host, 'owner')->create(['name' => 'Fresh Party', 'created_at' => CarbonImmutable::now()]);
     actingAs($host);
 
-    $page = visit('/host')->click('[aria-label="Filter by created date"]')->wait(0.3);
+    // The button opens a modal; a retried click would hit it behind the modal
+    // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page = visit('/host');
+    $page->script('document.querySelector("[aria-label=\'Filter by created date\']").click()');
+    $page->wait(0.3);
 
     // Opening puts the keyboard on a day of the grid (W3C APG).
     $page->assertScript('document.activeElement?.dataset.day?.length === 10');
