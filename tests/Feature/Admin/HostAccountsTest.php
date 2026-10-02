@@ -137,11 +137,16 @@ it('lets a super-admin search and filter host accounts, see when each was added,
     // A name inside the click handler stays inside its attribute and its JS string.
     expect($html)->toContain('askFor(\'disable\', \'Ann \u0022Q\u0022 \u003Cb\u003E\', ');
 
-    expect($html)->toContain('x-data="tableView({ sort: \'name\' })"')
+    expect($html)->toContain('x-data="tableView({ key: \'accounts\', sort: \'name\' })"')
         ->and($html)->toContain('aria-label="Search accounts"')
-        ->and($html)->toMatch('/<tr data-row data-search="dina host dina@example\.test" data-filter="active"/')
+        ->and($html)->toContain('Rows per page')
+        ->and($html)->toMatch('/<tr data-row data-search="dina host dina@example\.test" data-filter="active" data-sort-name="Dina Host" data-sort-added="\d+"/')
         ->and($html)->toMatch('/data-filter="disabled"/')
-        ->and($html)->toContain('Added 1 Sep 2026')
+        // U6: Added is its own sortable column; the info cards are gone.
+        ->and($html)->toContain('aria-sort="ariaSort(\'added\')"')
+        ->and($html)->toContain('1 Sep 2026')
+        ->and($html)->not->toContain('Added 1 Sep 2026')
+        ->and($html)->not->toContain('transfer them to another host if needed')
         ->and($html)->toContain('$store.confirm.askFor(\'disable\', \'Dina Host\', ')
         ->and($html)->not->toContain('@js(');
 });
@@ -153,4 +158,19 @@ it('disables an account from the confirmation dialog, which sends the choice in 
     actingAs($admin)->put("/admin/users/{$host->id}/status?disabled=1")->assertRedirect();
 
     expect($host->refresh()->disabled_at)->not->toBeNull();
+});
+
+it('marks your own account next to your name and resets passwords in a dialog (U5, U6)', function (): void {
+    $admin = User::factory()->superAdmin()->create(['name' => 'Muha Admin']);
+    $host = User::factory()->create(['name' => 'Dina Host']);
+
+    $html = (string) actingAs($admin)->get('/admin/users')->assertOk()->getContent();
+    expect($html)->toMatch('/Muha Admin<\/span>\s*<span[^>]*>You<\/span>/')
+        ->and($html)->toContain('Reset password for Dina Host')
+        ->and($html)->toContain("id=\"reset-{$host->id}-password\"");
+
+    // A rejected password reopens that account's dialog with the error.
+    actingAs($admin)->from('/admin/users')->followingRedirects()
+        ->put("/admin/users/{$host->id}/password", ['password' => 'short', 'password_confirmation' => 'short', 'resetting' => $host->id])
+        ->assertSee('x-init=" $refs.dialog.showModal() "', false);
 });
