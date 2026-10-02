@@ -37,5 +37,8 @@ it('hands the saved message of the last request to the toast area, read out poli
 });
 
 it('has no toast message when nothing was saved', function (): void {
-    expect(Blade::render('<x-toasts />'))->toContain('aria-live="polite"')->not->toContain('$store.toasts.push(');
+    $html = Blade::render('<x-toasts />');
+
+    expect($html)->toContain('aria-live="polite"')
+        ->and($html)->not->toContain('$store.toasts.push(');
 });
