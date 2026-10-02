@@ -26,17 +26,12 @@ final class PersonController
 
     public function index(Request $request, Event $event): View
     {
+        // U4: every name is sent; search, filter and sort happen in the browser.
         $people = $event->people()->orderBy('name')->get();
-        $filter = $request->string('filter')->toString();
 
         return view('host.people.index', [
             'event' => $event,
-            'people' => match ($filter) {
-                'joined' => $people->whereNotNull('claimed_at')->values(),
-                'waiting' => $people->whereNull('claimed_at')->values(),
-                default => $people,
-            },
-            'filter' => in_array($filter, ['joined', 'waiting'], true) ? $filter : 'all',
+            'people' => $people,
             'counts' => [
                 'all' => $people->count(),
                 'joined' => $people->whereNotNull('claimed_at')->count(),
