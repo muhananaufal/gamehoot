@@ -6,9 +6,12 @@ use App\Enums\GameType;
 use App\Models\PackQuestion;
 use App\Models\QuestionPack;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
+use function Pest\Laravel\travelTo;
 
 uses(RefreshDatabase::class);
 
@@ -191,5 +194,45 @@ describe('pack questions', function (): void {
         $question = $other->questions()->firstOrFail();
 
         actingAs($host)->get("/host/packs/{$pack->id}/questions/{$question->id}/edit")->assertNotFound();
+    });
+});
+
+describe('the Question packs page (U2, U6, U9, U10)', function (): void {
+    it('keeps New pack in the top bar and guides an empty page', function (): void {
+        $host = User::factory()->create();
+
+        $html = (string) actingAs($host)->get('/host/packs')->assertOk()->getContent();
+        expect(Str::before($html, '<main'))->toContain('New pack')
+            ->and(Str::after($html, '<main'))->toContain('mascot-idle')
+            ->and(Str::after($html, '<main'))->toContain('No packs yet.');
+
+        packOf($host);
+        actingAs($host)->get('/host/packs')->assertSee('Pick a pack on the left, or create a new one.');
+    });
+
+    it('puts Add question in the top bar, Delete pack in a menu, and says when the pack changed', function (): void {
+        $host = User::factory()->create();
+        travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
+        $pack = packOf($host);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->assertOk()->getContent();
+
+        expect(Str::before($html, '<main'))->toContain('Add question')
+            ->and($html)->toContain('data-delete="1"')
+            ->and($html)->not->toContain('variant="link-destructive"')
+            ->and($html)->toContain('Changed 2 Oct, 11:30');
+    });
+
+    it('lets questions be dragged into a new order, keeping the arrow buttons', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        foreach (['A', 'B'] as $prompt) {
+            actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => $prompt, 'duration_seconds' => 20]);
+        }
+
+        actingAs($host)->get("/host/packs/{$pack->id}")
+            ->assertSee('x-data="sortableList"', false)
+            ->assertSee('draggable="true"', false)
+            ->assertSee('Move question 1 down');
     });
 });

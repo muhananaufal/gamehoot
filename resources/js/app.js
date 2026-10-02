@@ -12,6 +12,7 @@ import { nameReview } from './name-review.js';
 import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
 import { connectRealtime, countLabel, fetchSnapshot, offlineEcho, realtimeStore, screenFor } from './realtime.js';
+import { sortableList } from './sortable-list.js';
 import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
@@ -23,6 +24,7 @@ Alpine.store('toasts', toastStore());
 Alpine.store('confirm', confirmStore());
 Alpine.store('rowMenu', rowMenuStore());
 Alpine.data('tableView', tableView);
+Alpine.data('sortableList', sortableList);
 
 Alpine.data('hostShell', () => hostShell());
 Alpine.data('themeToggle', themeToggle);
