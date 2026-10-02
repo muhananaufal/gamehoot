@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pressing Enter in a dialog field (such as Add name or New pack) sends the form instead of closing the dialog.
 - Name lists saved as CSV by Excel on Windows keep their accented names instead of silently dropping them.
 - Exported CSV files (results and personal links) open in Excel with accents and emoji intact.
 - A phone that picks a name the host just removed sees a clear screen with a way back to the list.
