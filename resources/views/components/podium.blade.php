@@ -12,7 +12,7 @@
         @foreach (['second' => ['h-[16vh]', 'text-rank-2'], 'first' => ['h-[23vh]', 'text-on-rank-1'], 'third' => ['h-[11vh]', 'text-rank-3']] as $step => [$height, $number])
             <div class="flex flex-col items-center justify-end gap-2">
                 <template x-for="row in {{ $stand }}.{{ $step }}" :key="row.summary ? 'summary' : row.name">
-                    <div class="flex max-w-full flex-col items-center gap-1 text-center" :class="{{ $stand }}.{{ $step }}.length > 2 ? 'text-[0.7em]' : ''">
+                    <div class="podium-name flex max-w-full flex-col items-center gap-1 text-center" :class="{{ $stand }}.{{ $step }}.length > 2 ? 'text-[0.7em]' : ''">
                         <span class="flex size-[2.6em] items-center justify-center rounded-full bg-surface font-display font-bold"
                             x-text="row.summary ? row.count : $store.realtime.initials(row.name)"></span>
                         {{-- E20: a step with more than three names shows one summary. --}}
@@ -21,8 +21,10 @@
                         <span class="font-display font-semibold tabular-nums" x-text="$store.realtime.count(@js($score), row.votes)"></span>
                     </div>
                 </template>
+                {{-- U8: the steps rise 3, 2, 1 (resources/css/app.css). --}}
                 <div @class([
-                    'flex w-full shrink-0 items-start justify-center rounded-t-card pt-2 font-display text-[1.6em] font-bold',
+                    'podium-step flex w-full shrink-0 items-start justify-center rounded-t-card pt-2 font-display text-[1.6em] font-bold',
+                    'podium-step-' . ['first' => 1, 'second' => 2, 'third' => 3][$step],
                     $height,
                     'bg-rank-1' => $step === 'first',
                     'bg-surface' => $step !== 'first',

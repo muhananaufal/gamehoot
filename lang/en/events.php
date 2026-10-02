@@ -65,6 +65,7 @@ return [
     'trash' => 'Deleted events',
     'trash_help' => 'Deleted events keep all their names, games and results. Restoring brings everything back. If the original link was taken by another event, choose a new one.',
     'trash_empty' => 'No deleted events.',
+    'trash_empty_hint' => 'A deleted event waits here, so it can be restored with its names and results.',
     'was_link' => 'was /:slug',
     'owner' => 'Owner',
     'deleted' => 'Deleted',

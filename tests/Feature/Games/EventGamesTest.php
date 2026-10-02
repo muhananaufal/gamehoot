@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Games\StartGame;
 use App\Enums\EventStatus;
 use App\Enums\GameStatus;
 use App\Enums\GameType;
@@ -14,6 +15,7 @@ use App\Models\PackQuestion;
 use App\Models\QuestionPack;
 use App\Models\User;
 use App\Realtime\StateChanged;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as Events;
 use Tests\Support\Pentahoot;
@@ -23,6 +25,7 @@ use function Pest\Laravel\delete;
 use function Pest\Laravel\from;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
+use function Pest\Laravel\travelTo;
 
 uses(RefreshDatabase::class);
 
@@ -234,4 +237,18 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/start")
             ->assertSessionHasErrors(['action' => 'This game has already been played.']);
     });
+});
+
+it('says when each started game started, from the activity log (U6)', function (): void {
+    $event = Pentahoot::event();
+    $owner = $event->owner()->firstOrFail();
+    $game = Pentahoot::game($event, title: 'Office Awards');
+    Pentahoot::game($event, title: 'Second Round');
+
+    travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
+    app(StartGame::class)->handle($event, $game, $owner);
+
+    actingAs($owner)->get("/host/{$event->id}/games")
+        ->assertSeeInOrder(['Office Awards', 'Started 2 Oct, 11:30', 'Second Round'])
+        ->assertSee('Added', false);
 });

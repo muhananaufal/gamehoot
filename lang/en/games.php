@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 return [
+    'started_at' => 'Started :time',
+    'added_at' => 'Added :date',
     'types' => [
         'pentahoot' => 'Pentahoot',
         'tebak_kata' => 'Word Guess',
@@ -33,7 +35,8 @@ return [
     'add_from_pack' => 'Add a game from a pack',
     'choose_pack' => 'Question pack',
     'no_packs' => 'You have no question packs yet. Write one under Question packs first.',
-    'empty' => 'No games yet. Add one from a question pack.',
+    'empty_title' => 'No games yet.',
+    'empty' => 'Pick a question pack on the right to add the first game. Games are played in this order.',
     'questions' => '{0} No questions|{1} 1 question|[2,*] :count questions',
     'added' => 'Game added. Its questions are copies of the pack.',
     'deleted' => 'Game deleted.',
