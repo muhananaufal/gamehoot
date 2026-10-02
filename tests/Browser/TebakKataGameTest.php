@@ -82,9 +82,14 @@ it('runs a Tebak Kata question from Live control: show, hint, winner and leaderb
         ->assertSeeIn('@open-box-2', 'A')
         ->type('winner-search', 'rit')
         ->click('Rita Wulandari')
-        ->click('Pick winner')
-        ->click('@confirm-winner')
-        ->assertSee('Winner:')
+        ->click('Pick winner');
+
+    // The confirm button closes its dialog and sends the action. A plain click() is retried
+    // when it takes over a second, and the retry then waits for a button in a closed dialog
+    // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page->script('document.querySelector("[data-test=confirm-winner]").click()');
+
+    $page->assertSee('Winner:')
         // A dialog left open would make the whole page inert.
         ->assertScript('[...document.querySelectorAll("dialog")].every((dialog) => !dialog.open)')
         ->click('@show-leaderboard')

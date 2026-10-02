@@ -31,7 +31,7 @@ Kejadian di CI (2026-10-02, Safari, `TebakKataGameTest`): `->click('@confirm-win
 
 ## Perbaikan
 
-Tidak ada perubahan kode aplikasi: aplikasinya benar. Test tidak diubah, karena mengganti setiap klik yang berpindah halaman di semua test browser lebih berisiko daripada masalahnya. CI tetap menjadi acuan: kegagalan seperti ini di lokal dijalankan ulang saat mesin tidak sibuk. Kalau muncul berulang di CI, pertimbangkan klik lewat `->script()` untuk langkah yang berpindah halaman, diikuti asersi yang menunggu halaman tujuan.
+Tidak ada perubahan kode aplikasi: aplikasinya benar. Test tidak diubah, karena mengganti setiap klik yang berpindah halaman di semua test browser lebih berisiko daripada masalahnya. CI tetap menjadi acuan: kegagalan seperti ini di lokal dijalankan ulang saat mesin tidak sibuk. Kasus `confirm-winner` muncul lagi di run CI berikutnya (run 36968819563, Safari); screenshot artifact `browser-screenshots-safari-2` menunjukkan "Winner: Rita Wulandari" sudah tampil, jadi klik pertama berhasil. Langkah itu di `TebakKataGameTest` kini memakai `->script()` yang langsung memanggil `click()` lalu menunggu "Winner:", sehingga tidak ada percobaan ulang aksi yang tidak idempoten. Klik lain yang berpindah halaman diubah dengan cara yang sama hanya kalau muncul berulang di CI.
 
 ## Pelajaran
 
