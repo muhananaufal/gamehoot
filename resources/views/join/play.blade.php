@@ -11,8 +11,9 @@
         x-show="$store.realtime.screen() === 'live'" class="flex grow flex-col">
 
         {{-- No game yet: the waiting room. --}}
-        <div x-show="view === 'waiting'" class="flex grow flex-col items-center justify-center gap-5 text-center">
-            <x-logo :size="96" :wordmark="false" outline="stroke-canvas" />
+        {{-- U8: joining succeeded, so the welcome pops in and the mascot floats while waiting. --}}
+        <div x-show="view === 'waiting'" class="pop-in flex grow flex-col items-center justify-center gap-5 text-center">
+            <x-logo :size="96" :wordmark="false" outline="stroke-canvas" class="mascot-idle" />
             <h1 class="font-display text-[32px] leading-tight font-bold">{{ __('join.welcome', ['name' => $person->name]) }}</h1>
             <p class="max-w-xs text-lg text-muted">{{ __('join.waiting') }}</p>
         </div>

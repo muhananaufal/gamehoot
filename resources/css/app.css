@@ -262,6 +262,58 @@
     .mascot-idle {
         animation: mascot-float 3.2s ease-in-out infinite;
     }
+
+    /* U8: joining succeeded on the phone. */
+    .pop-in {
+        animation: pop-in 240ms ease-out both;
+    }
+
+    /* U8: a ranking or reveal row appears. */
+    .row-enter {
+        animation: row-enter 200ms ease-out both;
+    }
+
+    /* U8: the final podium rises 3, 2, 1, then the names appear. */
+    .podium-step {
+        transform-origin: bottom;
+        animation: podium-rise 300ms ease-out both;
+    }
+
+    .podium-step-3 {
+        animation-delay: 0ms;
+    }
+
+    .podium-step-2 {
+        animation-delay: 250ms;
+    }
+
+    .podium-step-1 {
+        animation-delay: 500ms;
+    }
+
+    .podium-name {
+        animation: pop-in 240ms ease-out 800ms both;
+    }
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+}
+
+@keyframes row-enter {
+    from {
+        opacity: 0;
+        transform: translateY(0.4rem);
+    }
+}
+
+@keyframes podium-rise {
+    from {
+        transform: scaleY(0);
+    }
 }
 
 @keyframes mascot-float {
@@ -281,7 +333,11 @@
         transform: none;
     }
 
-    .mascot-idle {
+    .mascot-idle,
+    .pop-in,
+    .row-enter,
+    .podium-step,
+    .podium-name {
         animation: none;
     }
 }
