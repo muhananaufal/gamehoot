@@ -1,0 +1,37 @@
+# Test browser timeout di klik yang berpindah halaman, padahal halamannya sudah termuat
+
+- Tanggal: 2026-10-02
+- Status: penyebab diketahui; tidak diubah di kode (lingkungan lokal)
+- Lingkungan: Docker lokal di Windows + WSL, `pentahoot-php:browser`, Chrome dan Safari; sekali di CI Safari (tahap 6, "Show leaderboard")
+- Request id / event id: tidak relevan (test server Pest)
+
+## Gejala
+
+`HostSetupTest` "lets a host create an event and add names" gagal 3 dari 7 kali di lokal dengan `Timeout 30000ms exceeded` pada `->press('Create event')`. Sekali juga pada `->press('Save question')` (Tebak Kata, Safari). Screenshot kegagalan selalu menunjukkan halaman **tujuan** (Names, paket soal) yang sudah termuat dan datanya sudah tersimpan. Run berikutnya dengan kode yang sama lolos.
+
+## Reproduksi
+
+1. Jalankan `HostSetupTest` di container browser lokal beberapa kali berturut-turut.
+2. Kegagalan muncul tidak tentu di klik yang mengirim form dan berpindah halaman.
+
+## Hipotesis
+
+| Hipotesis | Cara menguji | Hasil |
+| :-- | :-- | :-- |
+| Halaman tujuan error atau JS-nya rusak | Test diagnostik: setelah klik, baca `Alpine.store('toasts')` dan `assertNoJavaScriptErrors()` | Gugur: toast ada, tanpa error |
+| Teks tombol ambigu (lebih dari satu "Create event") | Cari teks di view dan berkas bahasa | Gugur: hanya satu |
+| Aset dev Vite (`public/hot`) menggantung | Cek `public/hot`, baca `ViteFonts` | Gugur: `public/hot` tidak ada |
+| Klik sukses tetapi dianggap gagal, lalu diulang di halaman baru | Baca `Execution::waitForExpectation()` dan `AwaitableWebpage::__call()` di plugin | Terbukti (lihat akar masalah) |
+
+## Akar masalah
+
+`pest-plugin-browser` menjalankan setiap aksi lewat `Execution::waitForExpectation()`: satu percobaan diberi timeout Playwright **1 detik**, lalu diulang sampai batas 30 detik. Klik yang mengirim form menunggu navigasinya. Di Docker lokal satu permintaan butuh 2–3 detik, jadi percobaan pertama sering melewati 1 detik dan dianggap gagal, **padahal form sudah terkirim**. Percobaan berikutnya mencari tombol yang sama di halaman tujuan, tidak menemukannya, dan berakhir dengan timeout 30 detik. Di CI permintaan lebih cepat, sehingga jarang terjadi.
+
+## Perbaikan
+
+Tidak ada perubahan kode aplikasi: aplikasinya benar. Test tidak diubah, karena mengganti setiap klik yang berpindah halaman di semua test browser lebih berisiko daripada masalahnya. CI tetap menjadi acuan: kegagalan seperti ini di lokal dijalankan ulang saat mesin tidak sibuk. Kalau muncul berulang di CI, pertimbangkan klik lewat `->script()` untuk langkah yang berpindah halaman, diikuti asersi yang menunggu halaman tujuan.
+
+## Pelajaran
+
+- Screenshot di halaman tujuan berarti aksinya sudah terjadi; yang perlu dicurigai adalah mekanisme retry, bukan aplikasinya.
+- Baca cara test runner mengulang aksi sebelum mencurigai kode: aksi yang tidak idempoten (kirim form) dan retry otomatis adalah kombinasi yang rapuh.
