@@ -58,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The link of an open event can no longer be changed, because printed QR codes and open phones use it. Close the event first to change it.
 - The phone join page is much lighter for long name lists, and phones checking for updates no longer create server sessions.
 - An image upload that fails to save leaves no file behind, and hosting staff can clear older leftovers with `php artisan pentahoot:prune-media`.
+- The Names page can be searched, filtered by status and sorted without reloading, shows when each name joined, and keeps Rename, Release, New link and Delete in one menu per row. Add name sits in the top bar, deleting a name asks first, and a list of 480 names loads about three times lighter.
+- The event list can be searched, filtered and sorted without reloading, and shows when each event was created and last changed and who owns a co-hosted event. An event name opens its Live control.
+- Questions in a pack can be dragged into a new order; the arrow buttons stay. New pack and Add question sit in the top bar, and Delete pack moves into a menu with a confirmation.
+- Empty pages (no events, no packs, a pack without questions) explain the next step with the mascot instead of a blank panel.
 
 ## [0.5.0] - 2026-10-01
 
