@@ -29,5 +29,8 @@
     },
     "engines": {
         "node": ">=24.15.0 <25"
+    },
+    "dependencies": {
+        "unpoly": "3.14.3"
     }
 }
