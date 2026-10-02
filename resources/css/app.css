@@ -296,6 +296,42 @@
     }
 }
 
+/* U13, U18: Unpoly modals (create forms) look like the panel's own dialogs, in both themes. */
+up-modal-backdrop {
+    background: color-mix(in srgb, var(--color-nav) 70%, transparent);
+}
+
+up-modal up-modal-box {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    border-radius: var(--radius-panel);
+    padding: 0;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+up-modal up-modal-dismiss {
+    top: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    font-size: 1.5rem;
+}
+
+up-modal up-modal-dismiss:hover {
+    background-color: var(--color-subtle);
+    color: var(--color-ink);
+}
+
+/* Unpoly's progress bar in the accent colour. */
+up-progress-bar {
+    background-color: var(--color-accent);
+}
+
 /* U16: a button that is sending keeps its width; its label is hidden behind a spinner in the
    ink colour of its variant (--busy-ink, set by components/button.blade.php). */
 button[aria-busy='true'] {

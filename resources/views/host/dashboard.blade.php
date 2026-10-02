@@ -10,7 +10,7 @@
 @endphp
 <x-layouts.host :title="__('host.dashboard.title')" :breadcrumbs="[[__('host.dashboard.title'), null]]">
     <x-slot:actions>
-        <x-button :href="route('host.events.create')"><x-icon name="plus" />{{ __('events.new_event') }}</x-button>
+        <x-button :href="route('host.events.create')" up-layer="new modal" up-history="false" up-accept-location="/host/*/people" up-size="medium"><x-icon name="plus" />{{ __('events.new_event') }}</x-button>
     </x-slot:actions>
 
     @if ($events->isEmpty())

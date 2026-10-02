@@ -37,3 +37,33 @@ it('keeps plain page loads on the phone and the Public View', function (): void 
     expect((string) get('/gathering')->getContent())->not->toContain('data-host-shell')
         ->and((string) get('/gathering/screen')->getContent())->not->toContain('data-host-shell');
 });
+
+it('puts the page title and its actions at the top of the content, not in the top bar (U2)', function (): void {
+    $html = (string) actingAs(User::factory()->create())->get('/host')->assertOk()->getContent();
+
+    expect(Str::between($html, '<header', '</header>'))->not->toContain('New event')
+        ->and(Str::after($html, '<main'))->toMatch('/<h1[^>]*>\s*Events\s*<\/h1>/')
+        ->and(Str::after($html, '<main'))->toContain('New event');
+});
+
+it('opens New event and Add host as modals that close on their result page (U13)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+
+    expect((string) actingAs($admin)->get('/host')->getContent())
+        ->toMatch('/<a href="[^"]*\/host\/events\/create"[^>]*up-layer="new modal"[^>]*up-accept-location="\/host\/\*\/people"/')
+        ->and((string) actingAs($admin)->get('/admin/users')->getContent())
+        ->toMatch('/<a href="[^"]*\/admin\/users\/create"[^>]*up-layer="new modal"[^>]*up-accept-location="\/admin\/users"/');
+
+    // The modal leaves the address alone, so a refresh stays on the list behind it.
+    expect((string) actingAs($admin)->get('/host')->getContent())->toMatch('/up-layer="new modal"[^>]*up-history="false"/')
+        ->and((string) actingAs($admin)->get('/admin/users')->getContent())->toMatch('/up-layer="new modal"[^>]*up-history="false"/');
+
+    // Cancel closes the modal; up-dismiss must stay empty (its value is read as JSON).
+    $createPage = (string) actingAs($admin)->get('/host/events/create')->getContent();
+    expect($createPage)->toContain('up-dismiss=""')
+        ->and($createPage)->not->toContain('up-dismiss="up-dismiss"');
+
+    // The form pages mark what a modal shows: the form, not the page around it.
+    expect((string) actingAs($admin)->get('/host/events/create')->getContent())->toMatch('/up-main="modal"[^>]*>[\s\S]*<form method="POST"/')
+        ->and((string) actingAs($admin)->get('/admin/users/create')->getContent())->toMatch('/up-main="modal"[^>]*>[\s\S]*<form method="POST"/');
+});

@@ -9,7 +9,7 @@
 <x-layouts.host :title="__('accounts.host_accounts')"
     :breadcrumbs="[[__('host.nav.admin'), null], [__('accounts.host_accounts'), null]]">
     <x-slot:actions>
-        <x-button :href="route('admin.users.create')"><x-icon name="plus" />{{ __('accounts.add_host') }}</x-button>
+        <x-button :href="route('admin.users.create')" up-layer="new modal" up-history="false" up-accept-location="/admin/users" up-size="medium"><x-icon name="plus" />{{ __('accounts.add_host') }}</x-button>
     </x-slot:actions>
 
     {{-- U4: search, filter and sort in the browser; the state stays in the URL. --}}

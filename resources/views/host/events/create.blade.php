@@ -14,6 +14,8 @@
             ]" />
         </section>
 
+        {{-- U13: what a New event modal shows; the steps beside it are only on the full page. --}}
+        <div up-main="modal">
         <form method="POST" action="{{ route('host.events.store') }}" class="flex max-w-2xl flex-col gap-5 rounded-card bg-surface p-6" novalidate>
             @csrf
             <h1 class="font-display text-2xl font-bold">{{ __('events.step_name') }}</h1>
@@ -22,9 +24,10 @@
             <x-theme-choice value="dark" :themes="$themes" :hint="__('events.screen_theme_hint')" />
             <x-toggle name="show_on_devices" :label="__('events.show_on_devices')" :hint="__('events.show_on_devices_hint')" />
             <div class="flex justify-end gap-2.5 pt-2">
-                <x-button variant="secondary" :href="route('host.dashboard')">{{ __('ui.cancel') }}</x-button>
+                <x-button variant="secondary" :href="route('host.dashboard')" up-dismiss="">{{ __('ui.cancel') }}</x-button>
                 <x-button type="submit">{{ __('events.create') }}</x-button>
             </div>
         </form>
+        </div>
     </div>
 </x-layouts.host>
