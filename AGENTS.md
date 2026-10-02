@@ -43,7 +43,7 @@ Aturan:
 - **Waktu dari server.** `ends_at` + `server_now`, tanpa job terjadwal (F4). Suara diterima sampai `ends_at` + 1 detik (E3).
 - **Semua file lewat disk `media`** dan tabel `media_files` (F16, G11). Gambar jawaban privat, hanya lewat temporary signed URL saat Reveal (E9).
 - **Channel realtime memakai UUID event**, bukan slug (F18).
-- **Frontend (F20):** halaman host memakai satu layout (sidebar kiri + top bar breadcrumb dan aksi), tanpa menu di top bar; satu Alpine store bersama menerima snapshot, mengecek `state_version`, dan mengatur reconnect; view hanya membaca store. Elemen berulang (baris peringkat, podium, kotak huruf, countdown, pencarian nama, timeline progres) berupa komponen Blade. Timeline progres selalu vertikal dengan satu komponen. Semua teks UI (Bahasa Inggris) ada di berkas bahasa, tidak ditulis langsung di view.
+- **Frontend (F20):** halaman host memakai satu layout (sidebar kiri + top bar berisi breadcrumb saja; aksi halaman di kepala konten, U2); satu Alpine store bersama menerima snapshot, mengecek `state_version`, dan mengatur reconnect; view hanya membaca store. Elemen berulang (baris peringkat, podium, kotak huruf, countdown, pencarian nama, timeline progres) berupa komponen Blade. Timeline progres selalu vertikal dengan satu komponen. Semua teks UI (Bahasa Inggris) ada di berkas bahasa, tidak ditulis langsung di view.
 - **Tema (F21):** warna hanya lewat token semantik Tailwind (`bg-surface`, `text-ink`, `bg-rank-1`, ...). Tema gelap mengganti nilai token di `[data-theme=dark]`. **Dilarang** hex arbitrer (`bg-[#...]`) dan palet bawaan (`bg-gray-900`) di view; dicek di CI.
 - **Podium (E17)** hanya untuk hasil final; selama permainan tetap daftar peringkat.
 
