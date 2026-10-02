@@ -66,6 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Names, Games and Activity log pages update by themselves when phones join, a game starts or finishes, or a co-host acts, without reloading and without losing your search or filter.
 - The Activity log can be searched and sorted by time.
 - Host accounts can be searched and filtered by status, show when each account was added, and Disable asks for confirmation first.
+- The Games page shows when each game was added or started.
+- Joining on a phone, ranking rows and the final podium now have short animations; they stay off when the device asks for reduced motion.
+- Empty Names, Games, Results and Deleted events pages explain the next step.
 
 ## [0.5.0] - 2026-10-01
 
