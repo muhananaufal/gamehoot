@@ -20,7 +20,8 @@
     ];
 @endphp
 <x-layouts.base :title="$title">
-    <div x-data="hostShell" class="flex min-h-dvh" @keydown.escape.window="menuOpen = false">
+    {{-- U18: links and forms inside data-host-shell move without reloading (resources/js/navigation.js). --}}
+    <div x-data="hostShell" data-host-shell class="flex min-h-dvh" @keydown.escape.window="menuOpen = false">
         {{-- F20: one sidebar; on phones it becomes a drawer. --}}
         <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-nav/70 lg:hidden" @click="menuOpen = false"></div>
         {{-- U1: the sidebar scrolls on its own, so theme and sign out stay in view on long pages. --}}
@@ -36,7 +37,7 @@
                 </button>
             </div>
 
-            <nav class="flex min-h-0 grow flex-col gap-0.5 overflow-y-auto px-3.5 pb-3" aria-label="{{ __('host.nav.main') }}">
+            <nav id="host-nav" up-hungry class="flex min-h-0 grow flex-col gap-0.5 overflow-y-auto px-3.5 pb-3" aria-label="{{ __('host.nav.main') }}">
                 <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.workspace') }}</span>
                 <x-host-nav-link :href="route('host.dashboard')" icon="calendar" :active="request()->routeIs('host.dashboard')">
                     {{ __('host.nav.events') }}
@@ -94,7 +95,7 @@
                     <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
                 </div>
                 <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" up-submit="false">
                     @csrf
                     <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
                         class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
@@ -108,7 +109,8 @@
             try { if (localStorage.getItem('pentahoot-sidebar') === 'collapsed') document.getElementById('host-sidebar').dataset.collapsed = 'true'; } catch (e) {}
         </script>
 
-        <div class="flex min-w-0 grow flex-col">
+        {{-- U18: the part a navigation replaces; the sidebar keeps its scroll and only its links update (up-hungry). --}}
+        <div id="host-content" up-main class="flex min-w-0 grow flex-col">
             <header class="sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-line bg-bar px-4 lg:px-7">
                 <button type="button" class="-ml-2 flex size-11 items-center justify-center rounded-control lg:hidden"
                     @click="menuOpen = true" aria-controls="host-sidebar" :aria-expanded="menuOpen.toString()"
@@ -139,9 +141,9 @@
             <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
                 {{ $slot }}
             </main>
+            <x-toasts />
         </div>
     </div>
-    <x-toasts />
     <x-confirm-host />
     <x-row-menu-host />
 </x-layouts.base>
