@@ -2,7 +2,9 @@ import Alpine from 'alpinejs';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { watchFormSubmits } from './form-busy.js';
+import { confirmStore } from './confirm-store.js';
 import { hostShell } from './host-shell.js';
+import { rowMenuStore } from './row-actions.js';
 import { imagePicker } from './image-picker.js';
 import { toastStore } from './toasts.js';
 import { kataBoxes } from './kata-boxes.js';
@@ -10,6 +12,8 @@ import { nameReview } from './name-review.js';
 import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
 import { connectRealtime, countLabel, fetchSnapshot, offlineEcho, realtimeStore, screenFor } from './realtime.js';
+import { sortableList } from './sortable-list.js';
+import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
 
@@ -17,6 +21,10 @@ watchFormSubmits();
 
 // U3: one toast area per page, used by session messages and by page actions (Copy link).
 Alpine.store('toasts', toastStore());
+Alpine.store('confirm', confirmStore());
+Alpine.store('rowMenu', rowMenuStore());
+Alpine.data('tableView', tableView);
+Alpine.data('sortableList', sortableList);
 
 Alpine.data('hostShell', () => hostShell());
 Alpine.data('themeToggle', themeToggle);

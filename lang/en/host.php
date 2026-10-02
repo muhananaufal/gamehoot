@@ -36,8 +36,14 @@ return [
         'cohost' => 'Co-host',
         'names_count' => '{0} No names yet|{1} 1 name|[2,*] :count names',
         'games_count' => '{0} No games yet|{1} 1 game|[2,*] :count games',
-        'empty' => 'No events yet.',
-        'empty_filtered' => 'No events with this status.',
+        'empty_title' => 'No events yet.',
+        'empty' => 'Write a question pack first, then make an event, add the names and pick its games.',
+        'empty_filtered' => 'No event matches.',
+        'search' => 'Search events',
+        'changed' => 'Changed',
+        'changed_at' => ':time',
+        'created' => 'Created :date',
+        'owned_by' => 'Co-host · owner :name',
     ],
 
     'event_status' => [

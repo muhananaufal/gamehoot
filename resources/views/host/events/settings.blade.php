@@ -104,7 +104,7 @@
                             <p class="text-[15px] text-muted">{{ __('events.close_confirm', ['name' => $event->name]) }}</p>
                             <form method="POST" action="{{ route('host.events.close', $event) }}" class="flex justify-end gap-2.5 pt-1.5">
                                 @csrf
-                                <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
+                                <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                 <x-button type="submit">{{ __('events.close') }}</x-button>
                             </form>
                         </x-confirm-dialog>
@@ -130,7 +130,7 @@
                                 @method('DELETE')
                                 <x-field name="confirm_name" :label="__('events.delete_confirm_label') . ': ' . $event->name" autocomplete="off" />
                                 <div class="flex justify-end gap-2.5 pt-1.5">
-                                    <x-button variant="secondary" formmethod="dialog" type="submit" formnovalidate>{{ __('ui.cancel') }}</x-button>
+                                    <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                     <x-button type="submit" variant="destructive">{{ __('events.delete') }}</x-button>
                                 </div>
                             </form>

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\Finder\SplFileInfo;
 
 it('makes the whole switch of a toggle clickable, not only its text (E14)', function (): void {
     $html = Blade::render('<x-toggle name="show_on_devices" label="Show questions" />');
@@ -41,4 +43,15 @@ it('has no toast message when nothing was saved', function (): void {
 
     expect($html)->toContain('aria-live="polite"')
         ->and($html)->not->toContain('$store.toasts.push(');
+});
+
+it('never lets Cancel submit a dialog form, so Enter in a field sends the form (U2, U5)', function (): void {
+    // The first submit button of a form answers Enter. A Cancel with formmethod="dialog" placed
+    // first closed the Add name dialog on Enter without adding the name.
+    $offending = array_values(array_filter(
+        File::allFiles(resource_path('views')),
+        fn (SplFileInfo $file): bool => str_contains($file->getContents(), 'formmethod="dialog"'),
+    ));
+
+    expect(array_map(fn (SplFileInfo $file): string => $file->getRelativePathname(), $offending))->toBe([]);
 });

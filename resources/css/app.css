@@ -241,10 +241,47 @@
         opacity: 1;
         transform: none;
     }
+
+    .menu-enter {
+        transition:
+            opacity 120ms ease-out,
+            transform 120ms ease-out;
+    }
+
+    .menu-from {
+        opacity: 0;
+        transform: translateY(-0.25rem) scale(0.98);
+    }
+
+    .menu-to {
+        opacity: 1;
+        transform: none;
+    }
+
+    /* U8, U10: the mascot of empty pages and the phone's waiting room floats slowly. */
+    .mascot-idle {
+        animation: mascot-float 3.2s ease-in-out infinite;
+    }
+}
+
+@keyframes mascot-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .toast-from {
+    .toast-from,
+    .menu-from {
         transform: none;
+    }
+
+    .mascot-idle {
+        animation: none;
     }
 }

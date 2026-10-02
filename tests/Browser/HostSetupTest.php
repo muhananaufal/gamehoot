@@ -41,12 +41,17 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
         ->press('Create event')
         ->assertSee('Event created. Next, add the names of the people who can play.')
         ->assertPathEndsWith('/people')
+        // U2: Add name opens a dialog in the top bar; Enter sends it instead of cancelling.
+        ->click('Add name')
         ->type('add-person-name', 'Budi Santoso')
-        ->press('Add name')
+        ->keys('add-person-name', 'Enter')
         ->assertSee('Name added.')
+        ->click('Add name')
         ->type('add-person-name', 'budi  SANTOSO')
-        ->press('Add name')
+        ->keys('add-person-name', 'Enter')
         ->assertSee('Same as “Budi Santoso” already in this event')
+        // The dialog stays open with the error; Escape closes it.
+        ->keys('add-person-name', 'Escape')
         // The CSV upload itself is covered by feature tests: the browser plugin's test server
         // does not forward multipart bodies (W11).
         ->click('Import CSV')

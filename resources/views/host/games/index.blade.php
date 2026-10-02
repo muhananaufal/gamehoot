@@ -40,7 +40,7 @@
                                     <p class="text-[15px] text-muted">{{ __('games.start_locks_names') }}</p>
                                     <form method="POST" action="{{ route('host.events.games.start', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
                                         @csrf
-                                        <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
+                                        <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                         <x-button type="submit">{{ __('games.start') }}</x-button>
                                     </form>
                                 </x-confirm-dialog>
@@ -61,7 +61,7 @@
                                 <form method="POST" action="{{ route('host.events.games.destroy', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
+                                    <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                     <x-button type="submit" variant="destructive">{{ __('games.delete') }}</x-button>
                                 </form>
                             </x-confirm-dialog>

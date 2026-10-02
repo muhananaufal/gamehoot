@@ -7,8 +7,10 @@ use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Person;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 
@@ -49,7 +51,7 @@ describe('name list (B-3, B-4)', function (): void {
 
         actingAs(hostOf($event))->get("/host/{$event->id}/people")
             ->assertOk()
-            ->assertSeeInOrder(['Budi Santoso', 'Playing on a phone', '/gathering-2026/j/k7Qx9mP2k7Qx9mP2', 'Yusuf Hidayat', 'Not joined']);
+            ->assertSeeInOrder(['Budi Santoso', 'Playing on a phone', '/j/k7Qx9mP2k7Qx9mP2', 'Yusuf Hidayat', 'Not joined']);
     });
 
     it('is closed to hosts of other events', function (): void {
@@ -295,5 +297,46 @@ describe('claims and personal links (B-1, B-6, T5)', function (): void {
         $person = Person::factory()->for($other)->create();
 
         actingAs(hostOf($event))->post("/host/{$event->id}/people/{$person->id}/release-claim")->assertNotFound();
+    });
+});
+
+describe('the Names page (U2, U4, U5, U6)', function (): void {
+    it('puts Add name in the top bar and lets the list be searched and filtered in the browser', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'claimed_at' => now(), 'claim_token_hash' => hash('sha256', 'x')]);
+        Person::factory()->for($event)->create(['name' => 'Rita Wulandari']);
+
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->assertOk()->getContent();
+
+        expect(Str::before($html, '<main'))->toContain('Add name')
+            ->and($html)->toContain('x-data="tableView(')
+            ->and($html)->toMatch('/<tr data-row data-search="budi santoso[^"]*" data-filter="joined"/')
+            ->and($html)->toMatch('/<tr data-row data-search="rita wulandari[^"]*" data-filter="waiting"/')
+            ->and($html)->toContain('aria-label="Search names"');
+    });
+
+    it('says when each name joined', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'claimed_at' => CarbonImmutable::parse('2026-10-15 03:05:00'), 'claim_token_hash' => hash('sha256', 'x')]);
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")->assertSee('Joined 15 Oct, 10:05');
+    });
+
+    it('asks before deleting a name, and keeps one confirmation dialog for the whole page', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->count(30)->create();
+
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+
+        expect(substr_count($html, '<dialog'))->toBeLessThanOrEqual(2)
+            ->and($html)->toContain('$store.confirm.askFor(')
+            ->and($html)->not->toContain('variant="link-destructive"');
+    });
+
+    it('stays light for a list of 480 names', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->count(480)->sequence(fn ($s) => ['name' => "Participant Number {$s->index}"])->create();
+
+        expect(strlen((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent()))->toBeLessThan(700_000);
     });
 });
