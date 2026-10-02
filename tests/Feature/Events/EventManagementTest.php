@@ -281,6 +281,22 @@ describe('deleting and restoring (D-3)', function (): void {
         expect($event->fresh()?->slug)->toBe('gathering-2026-b');
     });
 
+    it('asks before restoring and keeps the dialog open when the link is taken (U5)', function (): void {
+        $event = ownedEvent(attributes: ['name' => 'Gathering 2026', 'slug' => 'gathering-2026']);
+        $owner = ownerOf($event);
+        actingAs($owner)->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+        $page = (string) actingAs($owner)->get('/host/trash')->getContent();
+        expect($page)->toContain('Restore Gathering 2026?')
+            ->and($page)->not->toMatch('/x-init="\s*\$refs\.dialog\.showModal\(\)/');
+
+        ownedEvent(attributes: ['slug' => 'gathering-2026']);
+        actingAs($owner)->from('/host/trash')->followingRedirects()
+            ->post("/host/trash/{$event->id}/restore", ['slug' => 'gathering-2026', 'restoring' => $event->id])
+            ->assertSee('Another event uses this link now. Pick a new one.')
+            ->assertSee('x-init=" $refs.dialog.showModal() "', false);
+    });
+
     it('lets a super-admin see and restore any deleted event, but not a co-host (C-2, C-4)', function (): void {
         $event = ownedEvent(attributes: ['name' => 'Sales Kickoff', 'slug' => 'sales-kickoff']);
         $cohost = cohostOf($event);

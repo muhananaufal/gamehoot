@@ -72,6 +72,8 @@ return [
     'deleted_by' => 'by :name · :date',
     'restore' => 'Restore',
     'restore_link' => 'Link to restore under',
+    'restore_title' => 'Restore :name?',
+    'restore_confirm' => 'The event comes back with its names, games and results, in the status it had when it was deleted.',
 
     'created' => 'Event created. Next, add the names of the people who can play.',
     'saved' => 'Settings saved.',

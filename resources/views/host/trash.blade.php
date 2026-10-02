@@ -23,14 +23,22 @@
                         {{ __('events.deleted_by', ['name' => $event->deletedBy?->name ?? '—', 'date' => $event->deleted_at?->timezone(config('app.display_timezone'))->format('j M Y')]) }}
                     </span>
                 </div>
-                <form method="POST" action="{{ route($restoreRoute, $event) }}" class="flex flex-wrap items-end gap-2.5" novalidate>
-                    @csrf
-                    <input type="hidden" name="restoring" value="{{ $event->id }}">
-                    <div class="grow">
-                        <x-field name="slug" :label="__('events.restore_link')" :value="$original" :id="'restore-' . $event->id" :submitted="old('restoring') === $event->id" maxlength="60" />
-                    </div>
-                    <x-button type="submit" variant="secondary">{{ __('events.restore') }}</x-button>
-                </form>
+                {{-- U5: restoring is confirmed; the link it comes back under is chosen in the dialog. --}}
+                <div class="flex lg:justify-end">
+                    <x-confirm-dialog :title="__('events.restore_title', ['name' => $event->name])" :trigger="__('events.restore')"
+                        :open="old('restoring') === $event->id && $errors->any()">
+                        <p class="text-[15px] text-muted">{{ __('events.restore_confirm') }}</p>
+                        <form method="POST" action="{{ route($restoreRoute, $event) }}" class="flex flex-col gap-3" novalidate>
+                            @csrf
+                            <input type="hidden" name="restoring" value="{{ $event->id }}">
+                            <x-field name="slug" :label="__('events.restore_link')" :value="$original" :id="'restore-' . $event->id" :submitted="old('restoring') === $event->id" maxlength="60" />
+                            <div class="flex justify-end gap-2.5 pt-1.5">
+                                <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                                <x-button type="submit">{{ __('events.restore') }}</x-button>
+                            </div>
+                        </form>
+                    </x-confirm-dialog>
+                </div>
             </section>
         @empty
             <x-empty-state :title="__('events.trash_empty')" :body="__('events.trash_empty_hint')" />
