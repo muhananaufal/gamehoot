@@ -27,7 +27,7 @@
         <aside id="host-sidebar" :data-collapsed="collapsed"
             class="group fixed inset-y-0 left-0 z-40 flex h-dvh w-64 -translate-x-full flex-col bg-nav text-[15px] text-nav-ink transition-[transform,width] duration-200 ease-out lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0 lg:data-[collapsed=true]:w-[4.75rem]"
             :class="{ 'translate-x-0': menuOpen }">
-            <div class="flex shrink-0 items-center justify-between px-5.5 pt-4 pb-4 lg:group-data-[collapsed=true]:px-4">
+            <div class="flex shrink-0 items-center justify-between px-5.5 pt-4 pb-4 lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0">
                 <span class="lg:group-data-[collapsed=true]:hidden"><x-logo :size="32" class="text-[22px]" /></span>
                 <span class="hidden lg:group-data-[collapsed=true]:block"><x-logo :size="32" :wordmark="false" /></span>
                 <button type="button" class="flex size-11 items-center justify-center rounded-control text-nav-icon lg:hidden"
@@ -55,7 +55,7 @@
                         <a href="{{ route('host.events.live', $item) }}" title="{{ $item->name }}"
                             @if ($current && request()->routeIs('host.events.live')) aria-current="page" @endif
                             @class([
-                                'flex h-11 shrink-0 items-center gap-3 rounded-control px-3',
+                                'flex h-11 shrink-0 items-center gap-3 rounded-control px-3 lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0',
                                 'font-bold text-nav-ink' => $current,
                                 'font-medium text-nav-muted hover:bg-nav-active hover:text-nav-ink' => ! $current,
                             ])>
@@ -93,10 +93,7 @@
                     <span class="truncate text-sm font-bold">{{ $user->name }}</span>
                     <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
                 </div>
-                <button type="button" x-data="themeToggle" @click="toggle()" aria-label="{{ __('host.nav.switch_theme') }}" title="{{ __('host.nav.switch_theme') }}"
-                    class="flex size-11 shrink-0 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
-                    <x-icon name="moon" />
-                </button>
+                <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
