@@ -93,6 +93,8 @@ it('opens the host pages without JavaScript errors', function (): void {
         '/host/events/create',
         "/host/{$event->id}/settings",
         "/host/{$event->id}/people",
+        "/host/{$event->id}/games",
+        "/host/{$event->id}/logs",
         '/host/packs',
         '/host/trash',
         '/admin/users',

@@ -125,3 +125,32 @@ describe('host accounts', function (): void {
         expect($admin->refresh()->disabled_at)->toBeNull();
     });
 });
+
+it('lets a super-admin search and filter host accounts, see when each was added, and confirm Disable (U4, U5, U6)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+    User::factory()->create(['name' => 'Dina Host', 'email' => 'dina@example.test', 'created_at' => '2026-09-01 03:00:00']);
+    User::factory()->create(['name' => 'Old Host', 'disabled_at' => now()]);
+    User::factory()->create(['name' => 'Ann "Q" <b>']);
+
+    $html = (string) actingAs($admin)->get('/admin/users')->assertOk()->getContent();
+
+    // A name inside the click handler stays inside its attribute and its JS string.
+    expect($html)->toContain('askFor(\'disable\', \'Ann \u0022Q\u0022 \u003Cb\u003E\', ');
+
+    expect($html)->toContain('x-data="tableView({ sort: \'name\' })"')
+        ->and($html)->toContain('aria-label="Search accounts"')
+        ->and($html)->toMatch('/<tr data-row data-search="dina host dina@example\.test" data-filter="active"/')
+        ->and($html)->toMatch('/data-filter="disabled"/')
+        ->and($html)->toContain('Added 1 Sep 2026')
+        ->and($html)->toContain('$store.confirm.askFor(\'disable\', \'Dina Host\', ')
+        ->and($html)->not->toContain('@js(');
+});
+
+it('disables an account from the confirmation dialog, which sends the choice in the address (U5)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+    $host = User::factory()->create();
+
+    actingAs($admin)->put("/admin/users/{$host->id}/status?disabled=1")->assertRedirect();
+
+    expect($host->refresh()->disabled_at)->not->toBeNull();
+});
