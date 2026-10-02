@@ -17,11 +17,14 @@ uses(RefreshDatabase::class);
 it('signs a host in through the form (C-5)', function (): void {
     User::factory()->create(['email' => 'arif@company.test', 'password' => 'browser-test-42']);
 
-    visit('/login')
+    $page = visit('/login')
         ->type('email', 'arif@company.test')
-        ->type('password', 'browser-test-42')
-        ->press('Sign in')
-        ->assertSee('No events yet.')
+        ->type('password', 'browser-test-42');
+    // The submit navigates; a retried press() would look for the button on the next page
+    // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page->script('document.querySelector("form button[type=submit]").click()');
+
+    $page->assertSee('No events yet.')
         ->assertNoJavaScriptErrors();
 })->skip(
     fn (): bool => Playwright::defaultBrowserType() === BrowserType::SAFARI,
@@ -34,14 +37,20 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
 
     actingAs($host);
 
-    visit('/host')
-        ->assertSee('No events yet.')
-        ->click('New event')
-        ->type('name', 'Gathering 2026')
-        ->press('Create event')
-        ->assertSee('Event created. Next, add the names of the people who can play.')
+    // U13: New event opens a modal; once created, the main page shows the new event's Names page
+    // and the modal closes. Clicks that open or send a modal go through a script, so the browser
+    // plugin cannot retry them (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page = visit('/host')->assertSee('No events yet.');
+    $page->script('[...document.querySelectorAll("main a")].find((a) => a.innerText.includes("New event")).click()');
+    $page->assertScript('!! document.querySelector("up-modal form")')
+        ->assertPathEndsWith('/host')
+        ->type('name', 'Gathering 2026');
+    $page->script('[...document.querySelector("up-modal").querySelectorAll("button[type=submit]")].pop().click()');
+
+    $page->assertSee('Event created. Next, add the names of the people who can play.')
         ->assertPathEndsWith('/people')
-        // U2: Add name opens a dialog in the top bar; Enter sends it instead of cancelling.
+        ->assertScript('! document.querySelector("up-modal")')
+        // U2: Add name opens a dialog in the content header; Enter sends it instead of cancelling.
         ->click('Add name')
         ->type('add-person-name', 'Budi Santoso')
         ->keys('add-person-name', 'Enter')
