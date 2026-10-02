@@ -145,4 +145,6 @@
         </div>
     </div>
     <x-toasts />
+    <x-confirm-host />
+    <x-row-menu-host />
 </x-layouts.base>
