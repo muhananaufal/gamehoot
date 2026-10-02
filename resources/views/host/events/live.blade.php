@@ -57,11 +57,11 @@
             <dl class="grid gap-4 md:grid-cols-2">
                 <div class="flex min-w-0 flex-col gap-1">
                     <dt class="text-sm font-bold text-muted">{{ __('realtime.live.join_link') }}</dt>
-                    <dd class="truncate"><a href="{{ route('join.index', $event) }}" class="text-accent underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ route('join.index', $event) }}</a></dd>
+                    <dd class="truncate"><a href="{{ route('join.index', $event) }}" class="text-link underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ route('join.index', $event) }}</a></dd>
                 </div>
                 <div class="flex min-w-0 flex-col gap-1">
                     <dt class="text-sm font-bold text-muted">{{ __('realtime.live.screen_link') }}</dt>
-                    <dd class="truncate"><a href="{{ route('join.screen', $event) }}" class="text-accent underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ route('join.screen', $event) }}</a></dd>
+                    <dd class="truncate"><a href="{{ route('join.screen', $event) }}" class="text-link underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ route('join.screen', $event) }}</a></dd>
                 </div>
             </dl>
         </section>

@@ -52,7 +52,7 @@
                     @foreach ($events as $event)
                         <tr class="border-b border-line-soft last:border-0">
                             <td class="px-6 py-4">
-                                <a href="{{ route('host.events.edit', $event) }}" class="block text-base font-bold hover:text-accent">{{ $event->name }}</a>
+                                <a href="{{ route('host.events.edit', $event) }}" class="block text-base font-bold hover:text-link">{{ $event->name }}</a>
                                 <span class="text-[13px] text-muted">/{{ $event->slug }}</span>
                             </td>
                             <td class="px-4 py-4">

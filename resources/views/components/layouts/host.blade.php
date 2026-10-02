@@ -102,7 +102,7 @@
                         @if ($loop->last)
                             <span class="truncate font-bold" aria-current="page">{{ $label }}</span>
                         @else
-                            <a href="{{ $url }}" class="truncate text-muted hover:text-ink">{{ $label }}</a>
+                            <a href="{{ $url }}" class="inline-flex min-h-11 items-center truncate text-muted hover:text-ink">{{ $label }}</a>
                             <span class="text-line-strong" aria-hidden="true">/</span>
                         @endif
                     @endforeach

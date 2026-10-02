@@ -87,7 +87,7 @@
                             </td>
                             <td class="px-4 py-3" x-data="{ copied: false }">
                                 <span class="font-mono text-sm text-muted">/{{ $event->slug }}/j/{{ $person->join_token }}</span>
-                                <button type="button" class="ml-2 min-h-11 text-sm font-semibold text-accent"
+                                <button type="button" class="ml-2 min-h-11 text-sm font-semibold text-link"
                                     @click="navigator.clipboard.writeText(@js($linkBase . $person->join_token)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"
                                     x-text="copied ? @js(__('people.copied')) : @js(__('people.copy'))">{{ __('people.copy') }}</button>
                             </td>

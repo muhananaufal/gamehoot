@@ -44,7 +44,7 @@
             @endif
             <span class="flex min-w-0 flex-col pt-1">
                 @if ($step['click'] ?? null)
-                    <button type="button" class="min-h-11 -mt-2.5 text-left font-bold enabled:hover:text-accent disabled:cursor-default"
+                    <button type="button" class="min-h-11 -mt-2.5 text-left font-bold enabled:hover:text-link disabled:cursor-default"
                         @click="{{ $step['click'] }}" :disabled="!({{ $step['clickable'] ?? 'true' }})">{{ $step['label'] }}</button>
                 @else
                     <span @class(['font-bold', 'text-muted' => $state === 'todo' && ! $live])>{{ $step['label'] }}</span>
