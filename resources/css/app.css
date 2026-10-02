@@ -48,13 +48,16 @@
     --color-destructive: #c2410c;
     --color-on-destructive: #ffffff;
 
-    /* Sidebar: dark in both themes */
-    --color-nav: #1a1433;
-    --color-nav-ink: #ffffff;
-    --color-nav-muted: #cfc8f2;
-    --color-nav-icon: #a79fd6;
-    --color-nav-label: #8f87c4;
-    --color-nav-active: #2e2656;
+    /* Links and link-style buttons: lighter than accent in the dark theme (U11, audit 63) */
+    --color-link: #5b3fd9;
+
+    /* Sidebar (U1, U11): follows the theme, a shade darker than the page in light */
+    --color-nav: #ebe8f7;
+    --color-nav-ink: #1a1433;
+    --color-nav-muted: #3e3860;
+    --color-nav-icon: #5e587a;
+    --color-nav-label: #5e587a;
+    --color-nav-active: #dcd6f3;
 
     /* Ranks (E1, E17): rank 1 is a filled yellow in both themes */
     --color-rank-1: #ffc933;
@@ -97,6 +100,15 @@
         --color-on-warning: #f0c66e;
         --color-danger: #3d1f17;
         --color-on-danger: #ff9a6b;
+
+        --color-link: #b3a6ff;
+
+        --color-nav: #1a1433;
+        --color-nav-ink: #ffffff;
+        --color-nav-muted: #cfc8f2;
+        --color-nav-icon: #a79fd6;
+        --color-nav-label: #8f87c4;
+        --color-nav-active: #2e2656;
 
         --color-rank-2: #ff6b4a;
         --color-rank-3: #2ed3a0;
