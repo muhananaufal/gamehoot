@@ -9,6 +9,8 @@
         'sun' => '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>',
         'eye' => '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle>',
         'eye-off' => '<path d="M3 3l18 18M10.6 5.1A9.8 9.8 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.1 3.9M6.6 6.6A17 17 0 002 12s3.6 7 10 7a9.6 9.6 0 005.4-1.6M9.9 9.9a3 3 0 004.2 4.2"></path>',
+        'chevron-left' => '<path d="M15 6l-6 6 6 6"></path>',
+        'chevron-right' => '<path d="M9 6l6 6-6 6"></path>',
         'pencil' => '<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"></path>',
         'logout' => '<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"></path>',
         'menu' => '<path d="M4 6h16M4 12h16M4 18h16"></path>',

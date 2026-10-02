@@ -9,12 +9,15 @@
             <x-empty-state :title="__('logs.empty')" class="py-8" />
         @else
             {{-- U4: search and sort in the browser; the state stays in the URL. --}}
-            <div x-data="tableView({ sort: 'at', dir: 'desc' })" class="flex flex-col gap-3">
+            <div x-data="tableView({ key: 'logs:{{ $event->id }}', sort: 'at', dir: 'desc' })" class="flex flex-col gap-3">
+                <div class="flex flex-wrap items-center gap-2">
                 <label class="relative flex w-full items-center sm:w-72">
                     <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
                     <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('logs.search') }}" placeholder="{{ __('logs.search') }}" autocomplete="off"
                         class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
                 </label>
+                <x-reset-filters />
+                </div>
                 <div class="max-lg:overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="text-left text-muted">
@@ -42,6 +45,7 @@
                         </tbody>
                     </table>
                     <p x-show="shown === 0" x-cloak class="py-6 text-center text-muted">{{ __('logs.no_match') }}</p>
+                    <x-table-pager class="px-0" />
                 </div>
             </div>
         @endif

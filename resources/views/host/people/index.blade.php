@@ -60,7 +60,7 @@
         </x-empty-state>
     @else
         {{-- U4: search, filter and sort in the browser; the state stays in the URL. --}}
-        <div x-data="tableView({ sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase) })"
+        <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase) })"
             x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($menu)" class="flex flex-col gap-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('people.status') }}">
@@ -70,11 +70,14 @@
                             :class="filter === @js($key) ? 'bg-inverse text-on-inverse' : 'border border-line-strong bg-surface text-ink hover:bg-subtle'">{{ __('people.' . $key) }} · {{ $counts[$key] }}</button>
                     @endforeach
                 </div>
+            <div class="flex flex-wrap items-center gap-2">
                 <label class="relative flex w-full items-center sm:w-72">
                     <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
                     <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('people.search') }}" placeholder="{{ __('people.search') }}" autocomplete="off"
                         class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
                 </label>
+                <x-reset-filters />
+            </div>
             </div>
 
             {{-- Sideways scrolling only on narrow screens: a scrolling box would pin the header to the box, not the page. --}}
@@ -128,6 +131,7 @@
                     </tbody>
                 </table>
                 <p x-show="shown === 0" x-cloak class="px-6 py-8 text-center text-muted">{{ __('people.no_match') }}</p>
+                <x-table-pager />
             </div>
         </div>
     @endif
