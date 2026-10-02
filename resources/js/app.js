@@ -8,6 +8,7 @@ import { rowMenuStore } from './row-actions.js';
 import { imagePicker } from './image-picker.js';
 import { toastStore } from './toasts.js';
 import { kataBoxes } from './kata-boxes.js';
+import { liveRegion } from './live-region.js';
 import { nameReview } from './name-review.js';
 import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
@@ -25,6 +26,7 @@ Alpine.store('confirm', confirmStore());
 Alpine.store('rowMenu', rowMenuStore());
 Alpine.data('tableView', tableView);
 Alpine.data('sortableList', sortableList);
+Alpine.data('liveRegion', liveRegion);
 
 Alpine.data('hostShell', () => hostShell());
 Alpine.data('themeToggle', themeToggle);

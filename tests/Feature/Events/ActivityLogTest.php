@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Events\SetJoinLock;
 use App\Enums\LoggedAction;
 use App\Models\ActionLog;
 use App\Models\Event;
@@ -128,4 +129,16 @@ it('shows the new entries in words on the Activity log page', function (): void 
         ->assertOk()
         ->assertSee('Important actions, newest first.')
         ->assertSeeInOrder(['Added a co-host', 'Dina (HR)', 'Deleted a name', 'Budi Santoso']);
+});
+
+it('lets the host search the log and sort it by time in the browser (U4)', function (): void {
+    $event = Event::factory()->open()->create();
+    $host = hostOfEvent($event);
+    app(SetJoinLock::class)->handle($event, true, $host);
+
+    $html = (string) actingAs($host)->get("/host/{$event->id}/logs")->assertOk()->getContent();
+
+    expect($html)->toContain('x-data="tableView({ sort: \'at\', dir: \'desc\' })"')
+        ->and($html)->toContain('aria-label="Search the log"')
+        ->and($html)->toMatch('/<tr data-row data-search="[^"]*locked new name claims[^"]*" data-sort-at="\d+"/');
 });
