@@ -63,6 +63,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The event list can be searched, filtered and sorted without reloading, and shows when each event was created and last changed and who owns a co-hosted event. An event name opens its Live control.
 - Questions in a pack can be dragged into a new order; the arrow buttons stay. New pack and Add question sit in the top bar, and Delete pack moves into a menu with a confirmation.
 - Empty pages (no events, no packs, a pack without questions) explain the next step with the mascot instead of a blank panel.
+- The Names, Games and Activity log pages update by themselves when phones join, a game starts or finishes, or a co-host acts, without reloading and without losing your search or filter.
+- The Activity log can be searched and sorted by time.
+- Host accounts can be searched and filtered by status, show when each account was added, and Disable asks for confirmation first.
 
 ## [0.5.0] - 2026-10-01
 
