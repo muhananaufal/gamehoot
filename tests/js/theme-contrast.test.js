@@ -56,10 +56,28 @@ describe.each([
 
     it('draws sidebar icons at 3:1 at least (non-text contrast)', () => {
         expect(contrast(tokens['nav-icon'], tokens.nav)).toBeGreaterThanOrEqual(3);
+        expect(contrast(tokens['nav-accent'], tokens['nav-active'])).toBeGreaterThanOrEqual(3);
     });
 });
 
 it('gives the light theme a light sidebar and the dark theme a dark one (U1, U11)', () => {
     expect(luminance(light.nav)).toBeGreaterThan(0.6);
     expect(luminance(dark.nav)).toBeLessThan(0.05);
+});
+
+it('shows the hand cursor on everything clickable, and not-allowed when disabled (U7)', () => {
+    const rule = css.match(/([^{}]+)\{\s*cursor:\s*pointer;\s*\}/);
+    expect(rule, 'a cursor: pointer rule').not.toBeNull();
+    for (const selector of [
+        'button',
+        "[role='button']",
+        'label[for]',
+        'summary',
+        "input[type='checkbox']",
+        "input[type='radio']",
+    ]) {
+        expect(rule[1]).toContain(selector);
+    }
+
+    expect(css).toMatch(/:disabled[^{]*\{\s*cursor:\s*not-allowed;/);
 });
