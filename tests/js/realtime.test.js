@@ -69,14 +69,20 @@ function fakeEcho() {
         },
     });
 
+    const left = [];
+
     return {
         listeners,
+        left,
         channel,
         private: (name) => channel(`private-${name}`),
+        leave: (name) => left.push(name),
         connector: {
             onConnectionChange(callback) {
                 onChange = callback;
-                return () => {};
+                return () => {
+                    onChange = () => {};
+                };
             },
         },
         status: (value) => onChange(value),
@@ -90,9 +96,14 @@ function fakeDocument() {
         addEventListener: (type, handler) => {
             handlers[type] = handler;
         },
+        removeEventListener: (type, handler) => {
+            if (handlers[type] === handler) {
+                delete handlers[type];
+            }
+        },
         show() {
             this.visibilityState = 'visible';
-            handlers.visibilitychange();
+            handlers.visibilitychange?.();
         },
     };
 }
@@ -211,6 +222,70 @@ describe('F17, T2, T3 connection', () => {
         await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
         expect(store.version).toBe(3);
+    });
+});
+
+describe('U18 leaving a page', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('stops listening, polling and following the page once the page is replaced', async () => {
+        const echo = fakeEcho();
+        const doc = fakeDocument();
+        const store = realtimeStore({ now: () => Date.now() });
+        let version = 1;
+        const fetchState = vi.fn(async () => snapshot(version++, Date.now()));
+        const connection = connectRealtime({
+            store,
+            echo,
+            channels: [
+                { name: 'event.abc.public', private: false },
+                { name: 'event.abc.host', private: true },
+            ],
+            fetchState,
+            random: () => 0.5,
+            doc,
+        });
+        await vi.runOnlyPendingTimersAsync();
+        echo.status('failed');
+
+        connection.stop();
+        const calls = fetchState.mock.calls.length;
+        const held = store.version;
+
+        expect(echo.left).toEqual(['event.abc.public', 'event.abc.host']);
+        // No more polling, no reaction to the socket, the tab or late broadcasts.
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS + POLL_JITTER_MS + 1);
+        echo.status('connected');
+        doc.show();
+        echo.listeners['event.abc.public.state'](snapshot(99));
+        await vi.runOnlyPendingTimersAsync();
+
+        expect(fetchState.mock.calls.length).toBe(calls);
+        expect(store.version).toBe(held);
+    });
+});
+
+describe('U18 joining a page while the socket is already up', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('shows the page as live at once, since no connection change will come', async () => {
+        const echo = fakeEcho();
+        echo.connector.connectionStatus = () => 'connected';
+        const store = realtimeStore({ now: () => Date.now() });
+
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.xyz.public', private: false }],
+            fetchState: async () => snapshot(3, Date.now()),
+            random: () => 0.5,
+            doc: fakeDocument(),
+        });
+        await vi.runOnlyPendingTimersAsync();
+
+        expect(store.connection).toBe('connected');
     });
 });
 
