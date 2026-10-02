@@ -6,6 +6,7 @@ return [
     'sign_in_title' => 'Host sign in',
     'email' => 'Email',
     'password' => 'Password',
+    'show_password' => 'Show password',
     'password_confirmation' => 'Repeat the password',
     'password_hint' => 'At least 12 characters, with letters and digits.',
     'sign_in' => 'Sign in',

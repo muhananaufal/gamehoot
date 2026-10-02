@@ -92,3 +92,10 @@ it('signs a host out', function (): void {
 
     assertGuest();
 });
+
+it('offers the theme switch and a show-password button on the sign in page (U17)', function (): void {
+    get('/login')
+        ->assertOk()
+        ->assertSee('x-data="themeToggle"', false)
+        ->assertSee('aria-label="Show password"', false);
+});

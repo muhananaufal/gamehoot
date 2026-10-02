@@ -19,7 +19,8 @@
 @endphp
 <div class="flex flex-col gap-1.5">
     <label for="{{ $id }}" class="text-sm font-semibold">{{ $label }}</label>
-    <div @class(['flex h-11 overflow-hidden rounded-control border bg-field', $border])>
+    {{-- U17: a password can be shown and hidden again; the input type follows the button. --}}
+    <div @class(['flex h-11 overflow-hidden rounded-control border bg-field', $border]) @if ($type === 'password') x-data="{ shown: false }" @endif>
         @if ($prefix)
             <span class="flex items-center border-r border-line-strong bg-subtle px-3 text-[15px] text-muted" aria-hidden="true">{{ $prefix }}</span>
         @endif
@@ -27,7 +28,15 @@
             @if ($type !== 'password') value="{{ $submitted ? old($name, $value) : $value }}" @endif
             @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if ($error) aria-invalid="true" @endif
+            @if ($type === 'password') :type="shown ? 'text' : 'password'" @endif
             {{ $attributes->merge(['class' => 'min-w-0 grow bg-transparent px-3 text-[15px] text-ink']) }}>
+        @if ($type === 'password')
+            <button type="button" @click="shown = ! shown" :aria-pressed="shown.toString()" aria-label="{{ __('accounts.show_password') }}" title="{{ __('accounts.show_password') }}"
+                class="flex w-11 shrink-0 items-center justify-center text-muted hover:text-ink">
+                <span x-show="! shown" class="flex"><x-icon name="eye" /></span>
+                <span x-show="shown" x-cloak class="flex"><x-icon name="eye-off" /></span>
+            </button>
+        @endif
     </div>
     @if ($hint)
         <p id="{{ $id }}-hint" class="text-sm text-muted">{{ $hint }}</p>
