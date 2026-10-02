@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 return [
+    'started_at' => 'Started :time',
+    'added_at' => 'Added :date',
     'types' => [
         'pentahoot' => 'Pentahoot',
         'tebak_kata' => 'Word Guess',

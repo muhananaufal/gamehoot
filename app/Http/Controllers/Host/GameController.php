@@ -9,6 +9,7 @@ use App\Actions\Games\DeleteGame;
 use App\Enums\GameType;
 use App\Games\GameEngines;
 use App\Http\Requests\Host\StoreGameRequest;
+use App\Http\Views\GameTimes;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\QuestionPack;
@@ -27,6 +28,7 @@ final class GameController
         return view('host.games.index', [
             'event' => $event,
             'games' => $event->games()->orderBy('position')->withCount('questions')->get(),
+            'startedAt' => GameTimes::startedFor($event),
             'packs' => QuestionPack::query()
                 ->whereBelongsTo($user, 'owner')
                 ->whereIn('game_type', array_map(fn (GameType $type): string => $type->value, $engines->playableTypes()))

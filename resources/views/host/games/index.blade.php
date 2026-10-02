@@ -30,6 +30,14 @@
                     <div class="flex min-w-0 grow flex-col gap-0.5">
                         <h3 class="truncate font-bold">{{ $game->position }}. {{ $game->title }}</h3>
                         <p class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · <a href="{{ route('host.events.games.questions.index', [$event, $game]) }}" class="text-link underline-offset-4 hover:underline">{{ trans_choice('games.questions', $game->questions_count) }}</a></p>
+                        {{-- U6: when it was added, or when it started (from the activity log), in WIB (T10). --}}
+                        <p class="text-[13px] text-muted">
+                            @if (isset($startedAt[$game->id]))
+                                {{ __('games.started_at', ['time' => $startedAt[$game->id]->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}
+                            @else
+                                {{ __('games.added_at', ['date' => $game->created_at?->timezone(config('app.display_timezone'))->format('j M')]) }}
+                            @endif
+                        </p>
                     </div>
                     <x-chip :tone="match ($status) { 'running' => 'success', 'finished' => 'warning', default => 'neutral' }" :dot="$running">
                         {{ __('games.status.' . $status) }}
