@@ -55,7 +55,9 @@
     @enderror
 
     @if ($people->isEmpty())
-        <p class="rounded-card bg-surface px-6 py-10 text-center text-muted">{{ __('people.empty') }}</p>
+        <x-empty-state :title="__('people.empty_title')" :body="__('people.empty')">
+            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
+        </x-empty-state>
     @else
         {{-- U4: search, filter and sort in the browser; the state stays in the URL. --}}
         <div x-data="tableView({ sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase) })"

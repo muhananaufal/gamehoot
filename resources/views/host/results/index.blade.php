@@ -83,6 +83,8 @@
             @endif
         </section>
     @empty
-        <p class="rounded-card bg-surface p-6 text-muted">{{ __('results.empty') }}</p>
+        <x-empty-state :title="__('results.empty_title')" :body="__('results.empty')">
+            <x-button variant="secondary" :href="route('host.events.live', $event)">{{ __('realtime.live.title') }}</x-button>
+        </x-empty-state>
     @endforelse
 </x-layouts.host>

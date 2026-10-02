@@ -81,7 +81,7 @@
                     @endif
                 </article>
             @empty
-                <p class="border-t border-line-soft pt-4 text-muted">{{ __('games.empty') }}</p>
+                <x-empty-state :title="__('games.empty_title')" :body="__('games.empty')" class="bg-subtle py-8" />
             @endforelse
         </section>
 

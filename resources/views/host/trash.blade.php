@@ -33,7 +33,7 @@
                 </form>
             </section>
         @empty
-            <p class="rounded-card bg-surface px-6 py-10 text-center text-muted">{{ __('events.trash_empty') }}</p>
+            <x-empty-state :title="__('events.trash_empty')" :body="__('events.trash_empty_hint')" />
         @endforelse
     </div>
 </x-layouts.host>
