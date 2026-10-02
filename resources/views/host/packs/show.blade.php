@@ -74,7 +74,6 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex flex-col">
                             <span class="text-xs font-bold tracking-[0.08em] text-muted uppercase">{{ __('packs.pack_label', ['type' => __('games.types.' . $pack->game_type->value)]) }}</span>
-                            <h1 class="font-display text-2xl font-bold">{{ $pack->title }}</h1>
                             {{-- U6: when the pack last changed, in WIB (T10). --}}
                             <span class="text-[13px] text-muted">{{ __('packs.changed', ['time' => $pack->updated_at?->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</span>
                         </div>

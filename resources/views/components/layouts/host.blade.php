@@ -133,12 +133,16 @@
                         @endif
                     @endforeach
                 </nav>
-                @isset($actions)
-                    <div class="flex items-center gap-2.5">{{ $actions }}</div>
-                @endisset
             </header>
 
             <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
+                {{-- U2: the page title and its actions head the content; the top bar only shows where you are. --}}
+                @isset($actions)
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h1 class="font-display text-[26px] font-bold">{{ last($breadcrumbs)[0] }}</h1>
+                        <div class="flex flex-wrap items-center gap-2.5">{{ $actions }}</div>
+                    </div>
+                @endisset
                 {{ $slot }}
             </main>
             <x-toasts />

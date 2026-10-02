@@ -202,7 +202,8 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
         $host = User::factory()->create();
 
         $html = (string) actingAs($host)->get('/host/packs')->assertOk()->getContent();
-        expect(Str::before($html, '<main'))->toContain('New pack')
+        expect(Str::between($html, '<header', '</header>'))->not->toContain('New pack')
+            ->and(Str::after($html, '<main'))->toContain('New pack')
             ->and(Str::after($html, '<main'))->toContain('mascot-idle')
             ->and(Str::after($html, '<main'))->toContain('No packs yet.');
 
@@ -217,7 +218,8 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
 
         $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->assertOk()->getContent();
 
-        expect(Str::before($html, '<main'))->toContain('Add question')
+        expect(Str::between($html, '<header', '</header>'))->not->toContain('Add question')
+            ->and(Str::after($html, '<main'))->toContain('Add question')
             ->and($html)->toContain('data-delete="1"')
             ->and($html)->not->toContain('variant="link-destructive"')
             ->and($html)->toContain('Changed 2 Oct, 11:30');

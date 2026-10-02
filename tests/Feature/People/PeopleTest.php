@@ -308,7 +308,8 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
 
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->assertOk()->getContent();
 
-        expect(Str::before($html, '<main'))->toContain('Add name')
+        expect(Str::between($html, '<header', '</header>'))->not->toContain('Add name')
+            ->and(Str::after($html, '<main'))->toContain('Add name')
             ->and($html)->toContain('x-data="tableView(')
             ->and($html)->toMatch('/<tr data-row data-search="budi santoso[^"]*" data-filter="joined"/')
             ->and($html)->toMatch('/<tr data-row data-search="rita wulandari[^"]*" data-filter="waiting"/')
