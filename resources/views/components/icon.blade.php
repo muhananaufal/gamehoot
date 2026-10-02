@@ -11,6 +11,15 @@
         'settings' => '<circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path>',
         'broadcast' => '<circle cx="12" cy="12" r="2"></circle><path d="M8.5 15.5a5 5 0 010-7M15.5 8.5a5 5 0 010 7M5.6 18.4a9 9 0 010-12.8M18.4 5.6a9 9 0 010 12.8"></path>',
         'close' => '<path d="M6 6l12 12M18 6L6 18"></path>',
+        'check' => '<path d="M5 12.5l4.5 4.5L19 7.5"></path>',
+        'more' => '<circle cx="5" cy="12" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="19" cy="12" r="1.2"></circle>',
+        'search' => '<circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path>',
+        'sort' => '<path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"></path>',
+        'grip' => '<circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle>',
+        'plus' => '<path d="M12 5v14M5 12h14"></path>',
+        'copy' => '<rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 011-1h10"></path>',
+        'sidebar' => '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path>',
+        'external' => '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"></path>',
     ];
 @endphp
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

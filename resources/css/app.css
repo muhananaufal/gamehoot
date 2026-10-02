@@ -48,13 +48,17 @@
     --color-destructive: #c2410c;
     --color-on-destructive: #ffffff;
 
-    /* Sidebar: dark in both themes */
-    --color-nav: #1a1433;
-    --color-nav-ink: #ffffff;
-    --color-nav-muted: #cfc8f2;
-    --color-nav-icon: #a79fd6;
-    --color-nav-label: #8f87c4;
-    --color-nav-active: #2e2656;
+    /* Links and link-style buttons: lighter than accent in the dark theme (U11, audit 63) */
+    --color-link: #5b3fd9;
+
+    /* Sidebar (U1, U11): follows the theme, a shade darker than the page in light */
+    --color-nav: #ebe8f7;
+    --color-nav-ink: #1a1433;
+    --color-nav-muted: #3e3860;
+    --color-nav-icon: #5e587a;
+    --color-nav-label: #5e587a;
+    --color-nav-active: #dcd6f3;
+    --color-nav-accent: #5b3fd9;
 
     /* Ranks (E1, E17): rank 1 is a filled yellow in both themes */
     --color-rank-1: #ffc933;
@@ -97,6 +101,16 @@
         --color-on-warning: #f0c66e;
         --color-danger: #3d1f17;
         --color-on-danger: #ff9a6b;
+
+        --color-link: #b3a6ff;
+
+        --color-nav: #1a1433;
+        --color-nav-ink: #ffffff;
+        --color-nav-muted: #cfc8f2;
+        --color-nav-icon: #a79fd6;
+        --color-nav-label: #8f87c4;
+        --color-nav-active: #2e2656;
+        --color-nav-accent: #ffc933;
 
         --color-rank-2: #ff6b4a;
         --color-rank-3: #2ed3a0;
@@ -177,8 +191,60 @@
         appearance: none;
     }
 
+    /* U7: the hand cursor tells that something can be clicked; Tailwind v4 leaves buttons on
+       the default arrow. Disabled controls show that they cannot. */
+    button,
+    [role='button'],
+    label[for],
+    summary,
+    select,
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='file']::file-selector-button {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [aria-disabled='true'],
+    input:disabled,
+    select:disabled {
+        cursor: not-allowed;
+    }
+
     /* F21: no browser-default scrollbars */
     * {
         scrollbar-color: var(--color-line-strong) transparent;
+    }
+}
+
+/* U8: motion only at key moments. 100-300 ms, ease-out on the way in and a little faster on
+   the way out (NN/g); with reduced motion only the opacity changes (MDN). */
+@layer components {
+    .toast-enter {
+        transition:
+            opacity 200ms ease-out,
+            transform 200ms ease-out;
+    }
+
+    .toast-leave {
+        transition:
+            opacity 150ms ease-in,
+            transform 150ms ease-in;
+    }
+
+    .toast-from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+
+    .toast-to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast-from {
+        transform: none;
     }
 }

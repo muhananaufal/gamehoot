@@ -2,7 +2,9 @@ import Alpine from 'alpinejs';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { watchFormSubmits } from './form-busy.js';
+import { hostShell } from './host-shell.js';
 import { imagePicker } from './image-picker.js';
+import { toastStore } from './toasts.js';
 import { kataBoxes } from './kata-boxes.js';
 import { nameReview } from './name-review.js';
 import { initialsOf } from './pentahoot.js';
@@ -13,6 +15,10 @@ import { themeToggle } from './theme.js';
 
 watchFormSubmits();
 
+// U3: one toast area per page, used by session messages and by page actions (Copy link).
+Alpine.store('toasts', toastStore());
+
+Alpine.data('hostShell', () => hostShell());
 Alpine.data('themeToggle', themeToggle);
 Alpine.data('kataBoxes', kataBoxes);
 Alpine.data('imagePicker', imagePicker);

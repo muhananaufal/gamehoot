@@ -52,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The sidebar follows the light and dark theme, lists your five most recent events with the open event's pages under its name, scrolls on its own so theme and sign out stay in view, and can be narrowed to icons on wide screens.
+- Confirmations such as "Settings saved" appear as short toasts instead of a box at the top of the page; copying a personal link confirms the same way.
+- Links are easier to read in the dark theme, link-style buttons are easier to tap, and everything clickable shows the hand cursor.
 - The link of an open event can no longer be changed, because printed QR codes and open phones use it. Close the event first to change it.
 - The phone join page is much lighter for long name lists, and phones checking for updates no longer create server sessions.
 - An image upload that fails to save leaves no file behind, and hosting staff can clear older leftovers with `php artisan pentahoot:prune-media`.

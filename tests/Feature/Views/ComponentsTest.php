@@ -18,3 +18,27 @@ it('writes the score under each podium name with its unit (E17)', function (): v
         ->toContain('__N__ points')
         ->toContain('$store.realtime.initials(row.name)');
 });
+
+it('keeps link-style buttons 44 px tall and in the link color (O11, U11)', function (string $variant): void {
+    $html = Blade::render('<x-button :variant="$variant">Copy</x-button>', ['variant' => $variant]);
+
+    expect($html)->toContain('min-h-11')
+        ->and($html)->not->toMatch('/\btext-accent\b/');
+})->with(['link', 'link-destructive']);
+
+it('hands the saved message of the last request to the toast area, read out politely (U3)', function (): void {
+    session()->flash('status', 'Pack saved.');
+
+    $html = Blade::render('<x-toasts />');
+
+    expect($html)->toContain('aria-live="polite"')
+        ->toContain('$store.toasts.push(')
+        ->toContain('Pack saved.');
+});
+
+it('has no toast message when nothing was saved', function (): void {
+    $html = Blade::render('<x-toasts />');
+
+    expect($html)->toContain('aria-live="polite"')
+        ->and($html)->not->toContain('$store.toasts.push(');
+});

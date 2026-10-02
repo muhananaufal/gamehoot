@@ -6,6 +6,7 @@ use App\Actions\Accounts\ResetPassword;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertGuest;
@@ -42,11 +43,15 @@ it('filters events by status', function (): void {
     Event::factory()->for($host, 'owner')->create(['name' => 'Draft One']);
     Event::factory()->for($host, 'owner')->open()->create(['name' => 'Open One']);
 
-    actingAs($host)->get('/host?status=open')
-        ->assertSee('Open One')
-        ->assertDontSee('Draft One')
+    $html = (string) actingAs($host)->get('/host?status=open')
         ->assertSee('All · 2')
-        ->assertSee('Open · 1');
+        ->assertSee('Open · 1')
+        ->getContent();
+
+    // The filter applies to the list; the sidebar still lists recent events of any status (U1).
+    $main = Str::after($html, '<main');
+    expect($main)->toContain('Open One')
+        ->and($main)->not->toContain('Draft One');
 });
 
 it('ends an open session once a super-admin resets the password (C-5)', function (): void {

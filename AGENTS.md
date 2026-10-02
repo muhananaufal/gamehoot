@@ -7,7 +7,7 @@ Baca berkas ini utuh sebelum menulis kode.
 
 | Apa | Di mana |
 | :-- | :-- |
-| Semua keputusan produk dan teknis, lengkap dengan ID (A, B, C, D, E, F, G, K, O, P, T, W) | `docs/pentahoot-spec.html` (versi terbit: https://claude.ai/artifact/YApdMqJDKY2XEpsdLAj34A) |
+| Semua keputusan produk dan teknis, lengkap dengan ID (A, B, C, D, E, F, G, K, O, P, T, U, W) | `docs/pentahoot-spec.html` (versi terbit: https://claude.ai/artifact/YApdMqJDKY2XEpsdLAj34A) |
 | Mockup UI tiga layar (HP, Public View, panel host) | https://claude.ai/artifact/QwAUn3xFXjzXWWFmxqhjL7 |
 | Kebutuhan asli dari PM | "PRD — Pentahoot Game Platform" (PDF, dipegang PM) |
 | Langkah kerja harian dengan perintahnya, dari branch sampai rilis | Bab 16 spesifikasi |

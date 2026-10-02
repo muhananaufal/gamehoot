@@ -18,6 +18,9 @@ return [
         'close_menu' => 'Close menu',
         'breadcrumb' => 'Breadcrumb',
         'switch_theme' => 'Switch theme',
+        'recent' => 'Recent events',
+        'collapse' => 'Collapse sidebar',
+        'expand' => 'Expand sidebar',
     ],
 
     'dashboard' => [
