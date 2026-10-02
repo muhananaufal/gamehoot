@@ -11,7 +11,7 @@
             <template x-if="$store.confirm.method !== 'POST'">
                 <input type="hidden" name="_method" :value="$store.confirm.method">
             </template>
-            <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
+            <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
             <button type="submit" x-text="$store.confirm.confirmLabel"
                 class="inline-flex h-11 items-center justify-center rounded-control px-4 text-sm font-bold whitespace-nowrap transition-colors"
                 :class="$store.confirm.tone === 'destructive' ? 'bg-destructive text-on-destructive hover:opacity-90' : 'bg-accent text-on-accent hover:bg-accent-strong'"></button>

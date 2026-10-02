@@ -28,7 +28,7 @@
                     <input type="hidden" name="form" value="add-person">
                     <x-field name="name" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" maxlength="100" autocomplete="off" autofocus />
                     <div class="flex justify-end gap-2.5 pt-1.5">
-                        <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
+                        <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                         <x-button type="submit">{{ __('people.add') }}</x-button>
                     </div>
                 </form>
