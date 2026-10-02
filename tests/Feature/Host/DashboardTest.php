@@ -49,7 +49,9 @@ it('filters, searches and sorts events in the browser, with the counts per statu
         ->assertSee('Open · 1')
         ->getContent();
 
-    expect($html)->toContain('x-data="tableView(')
+    expect($html)->toContain('x-data="tableView({ key: \'events\', sort: \'created\', dir: \'desc\' })"')
+        ->and($html)->toContain('Rows per page')
+        ->and($html)->toMatch('/data-sort-created="\d+" data-date="\d{4}-\d{2}-\d{2}"/')
         ->and($html)->toMatch('/<tr data-row data-search="open one[^"]*" data-filter="open"/')
         ->and($html)->toMatch('/<tr data-row data-search="draft one[^"]*" data-filter="draft"/')
         ->and($html)->toContain('aria-label="Search events"');
@@ -64,10 +66,11 @@ it('says when each event was made and last changed, and who owns a co-hosted one
     travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
     $cohosted->touch();
 
+    // Created is a sortable column; when it last changed sits under the event link (U6).
     actingAs($host)->get('/host')
-        ->assertSee('Created 1 Oct 2026')
-        ->assertSee('2 Oct, 11:30')
-        ->assertSee('Co-host · owner Dina (HR)');
+        ->assertSeeInOrder(['Gathering', 'Changed 2 Oct, 11:30', 'Co-host · owner Dina (HR)', '1 Oct 2026'])
+        ->assertSee('aria-sort="ariaSort(\'created\')"', false)
+        ->assertDontSee('Created 1 Oct 2026');
 });
 
 it('ends an open session once a super-admin resets the password (C-5)', function (): void {
@@ -78,4 +81,19 @@ it('ends an open session once a super-admin resets the password (C-5)', function
 
     get('/host')->assertRedirect('/login');
     assertGuest();
+});
+
+it('filters events by a created date range from a themed calendar (U15)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create(['created_at' => '2026-10-01 18:30:00']);
+    // 18:30 UTC on 1 Oct is 2 Oct in WIB (T10).
+    travelTo(CarbonImmutable::parse('2026-10-02 20:00:00'));
+
+    $html = (string) actingAs($host)->get('/host')->assertOk()->getContent();
+
+    // 20:00 UTC on 2 Oct is already 3 Oct in WIB, so "today" in the picker is 3 Oct.
+    expect($html)->toContain("x-data=\"dateRangePicker({ today: '2026-10-03' })\"")
+        ->and($html)->toContain('data-date="2026-10-02"')
+        ->and($html)->toContain('role="grid"')
+        ->and($html)->toContain('aria-label="Filter by created date"');
 });

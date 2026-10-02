@@ -7,6 +7,7 @@ import { hostShell } from './host-shell.js';
 import { rowMenuStore } from './row-actions.js';
 import { imagePicker } from './image-picker.js';
 import { toastStore } from './toasts.js';
+import { dateRangePicker } from './date-range.js';
 import { kataBoxes } from './kata-boxes.js';
 import { liveRegion } from './live-region.js';
 import { nameReview } from './name-review.js';
@@ -27,6 +28,7 @@ Alpine.store('rowMenu', rowMenuStore());
 Alpine.data('tableView', tableView);
 Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
+Alpine.data('dateRangePicker', dateRangePicker);
 
 Alpine.data('hostShell', () => hostShell());
 Alpine.data('themeToggle', themeToggle);
