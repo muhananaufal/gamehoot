@@ -25,7 +25,7 @@ Aturan:
 - **Laravel 13 + PHP 8.4, dijalankan di Docker** di lokal, CI, staging, dan production: container `app` (php-fpm), `web` (nginx), `reverb` (A8). Pola compose mengikuti staging `vivace-board`. Base image **Debian bookworm**, bukan Alpine: Playwright (W11) hanya mendukung Debian/Ubuntu (P2).
 - **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). Sampai versi server diketahui (O-B), hanya pakai fitur MySQL 8.0 ke atas; CI menguji MySQL 8.0 dan 8.4.
 - **Laravel Reverb** satu server, **tanpa Redis**, **tanpa queue worker** (F5, F7).
-- **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**.
+- **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**. Panel host memakai **Unpoly** untuk navigasi tanpa reload dan modal dari halaman server (U18); halaman peserta dan Public View tidak.
 - **Pest v5** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
 - Server production: **VM lewat SSH** dengan disk permanen (A7), menjalankan Docker.
 - **Bahasa antarmuka: Inggris** (A10). Isi yang ditulis host bebas bahasa.
