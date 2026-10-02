@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\ViewErrorBag;
 use Symfony\Component\Finder\SplFileInfo;
 
 it('makes the whole switch of a toggle clickable, not only its text (E14)', function (): void {
@@ -55,3 +56,31 @@ it('never lets Cancel submit a dialog form, so Enter in a field sends the form (
 
     expect(array_map(fn (SplFileInfo $file): string => $file->getRelativePathname(), $offending))->toBe([]);
 });
+
+it('shows where the theme switch goes: sun while dark, moon while light (U17)', function (): void {
+    $html = Blade::render('<x-theme-toggle />');
+
+    expect($html)->toContain('x-data="themeToggle"')
+        ->and($html)->toMatch('/<span x-show="dark"[^>]*>\s*<svg/')
+        ->and($html)->toMatch('/<span x-show="! dark"[^>]*>\s*<svg/')
+        ->and($html)->toContain('aria-label="Switch theme"');
+});
+
+it('lets every password field be shown and hidden (U17)', function (): void {
+    view()->share('errors', new ViewErrorBag);
+    $html = Blade::render('<x-field name="password" type="password" label="Password" />');
+
+    expect($html)->toContain(':type="shown ? \'text\' : \'password\'"')
+        ->and($html)->toContain(':aria-pressed="shown.toString()"')
+        ->and($html)->toContain('aria-label="Show password"');
+});
+
+it('gives every button variant the ink colour of its busy spinner (U16)', function (string $variant, string $ink): void {
+    expect(Blade::render("<x-button variant=\"{$variant}\">Save</x-button>"))->toContain("[--busy-ink:var(--color-{$ink})]");
+})->with([
+    ['primary', 'on-accent'],
+    ['secondary', 'ink'],
+    ['destructive', 'on-destructive'],
+    ['link', 'link'],
+    ['link-destructive', 'on-danger'],
+]);

@@ -296,6 +296,36 @@
     }
 }
 
+/* U16: a button that is sending keeps its width; its label is hidden behind a spinner in the
+   ink colour of its variant (--busy-ink, set by components/button.blade.php). */
+button[aria-busy='true'] {
+    position: relative;
+    color: transparent !important;
+}
+
+button[aria-busy='true'] > * {
+    visibility: hidden;
+}
+
+button[aria-busy='true']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 9999px;
+    border: 2px solid var(--busy-ink, var(--color-ink));
+    border-right-color: transparent;
+    animation: busy-spin 700ms linear infinite;
+}
+
+@keyframes busy-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 @keyframes pop-in {
     from {
         opacity: 0;
