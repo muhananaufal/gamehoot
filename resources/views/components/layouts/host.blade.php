@@ -113,9 +113,9 @@
             </header>
 
             <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
-                <x-flash />
                 {{ $slot }}
             </main>
         </div>
     </div>
+    <x-toasts />
 </x-layouts.base>

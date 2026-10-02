@@ -194,3 +194,35 @@
         scrollbar-color: var(--color-line-strong) transparent;
     }
 }
+
+/* U8: motion only at key moments. 100-300 ms, ease-out on the way in and a little faster on
+   the way out (NN/g); with reduced motion only the opacity changes (MDN). */
+@layer components {
+    .toast-enter {
+        transition:
+            opacity 200ms ease-out,
+            transform 200ms ease-out;
+    }
+
+    .toast-leave {
+        transition:
+            opacity 150ms ease-in,
+            transform 150ms ease-in;
+    }
+
+    .toast-from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+
+    .toast-to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast-from {
+        transform: none;
+    }
+}

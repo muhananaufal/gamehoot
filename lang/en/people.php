@@ -15,7 +15,7 @@ return [
     'status_joined' => 'Playing on a phone',
     'status_waiting' => 'Not joined',
     'copy' => 'Copy',
-    'copied' => 'Copied',
+    'copied' => 'Personal link of :name copied.',
     'rename' => 'Rename',
     'save' => 'Save',
     'delete' => 'Delete',

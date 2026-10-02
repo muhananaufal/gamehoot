@@ -85,11 +85,11 @@
                                     <x-chip>{{ __('people.status_waiting') }}</x-chip>
                                 @endif
                             </td>
-                            <td class="px-4 py-3" x-data="{ copied: false }">
+                            <td class="px-4 py-3">
                                 <span class="font-mono text-sm text-muted">/{{ $event->slug }}/j/{{ $person->join_token }}</span>
+                                {{-- U3: the toast area announces the copy (aria-live), audit finding 67. --}}
                                 <button type="button" class="ml-2 min-h-11 text-sm font-semibold text-link"
-                                    @click="navigator.clipboard.writeText(@js($linkBase . $person->join_token)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"
-                                    x-text="copied ? @js(__('people.copied')) : @js(__('people.copy'))">{{ __('people.copy') }}</button>
+                                    @click="navigator.clipboard.writeText(@js($linkBase . $person->join_token)).then(() => $store.toasts.push(@js(__('people.copied', ['name' => $person->name]))))">{{ __('people.copy') }}</button>
                             </td>
                             <td class="px-5 py-3">
                                 <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm font-semibold">
