@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Accounts\Username;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Person;
@@ -102,5 +103,26 @@ describe('G4 soft delete', function (): void {
 
         expect(Event::query()->find($event->id))->toBeNull()
             ->and(Event::withTrashed()->find($event->id)?->deleted_by)->toBe($admin->id);
+    });
+});
+
+describe('C-6, C-7 accounts', function (): void {
+    it('rejects the same username twice, also on a deleted account', function (): void {
+        $first = User::factory()->create(['username' => 'dinahr']);
+        $first->delete();
+
+        User::factory()->create(['username' => 'dinahr']);
+    })->throws(QueryException::class, 'Duplicate entry');
+
+    it('keeps a deleted account in the database but out of normal queries', function (): void {
+        $user = User::factory()->create();
+        $user->delete();
+
+        expect(User::query()->find($user->id))->toBeNull()
+            ->and(User::withTrashed()->find($user->id)?->trashed())->toBeTrue();
+    });
+
+    it('gives every factory account a valid username', function (): void {
+        expect(User::factory()->create()->username)->toMatch(Username::PATTERN);
     });
 });
