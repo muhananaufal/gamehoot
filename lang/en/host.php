@@ -40,6 +40,7 @@ return [
         'empty' => 'Write a question pack first, then make an event, add the names and pick its games.',
         'empty_filtered' => 'No event matches.',
         'search' => 'Search name, link or owner',
+        'all_statuses' => 'All statuses',
         'changed' => 'Changed',
         'changed_at' => 'Changed :time',
         'created_column' => 'Created',

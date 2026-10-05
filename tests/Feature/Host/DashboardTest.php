@@ -45,11 +45,14 @@ it('filters, searches and sorts events in the browser, with the counts per statu
     Event::factory()->for($host, 'owner')->open()->create(['name' => 'Open One']);
 
     $html = (string) actingAs($host)->get('/host')
-        ->assertSee('All · 2')
-        ->assertSee('Open · 1')
+        ->assertSee('All statuses')
         ->getContent();
+    // U22: the status dropdown carries a count per status (the page escapes its quotes).
+    $options = str_replace(chr(92).'u0022', '"', $html);
 
-    expect($html)->toContain('x-data="tableView({ key: \'events\', sort: \'created\', dir: \'desc\' })"')
+    expect($options)->toContain('"label":"All statuses","count":2')
+        ->toContain('"label":"Open","count":1')
+        ->and($html)->toContain('x-data="tableView({ key: \'events\', sort: \'created\', dir: \'desc\' })"')
         ->and($html)->toContain('Rows per page')
         ->and($html)->toMatch('/data-sort-created="\d+" data-date="\d{4}-\d{2}-\d{2}"/')
         ->and($html)->toMatch('/<tr data-row data-search="open one[^"]*" data-filter="open"/')

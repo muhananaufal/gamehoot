@@ -48,6 +48,7 @@ describe('U4 table view state in localStorage', () => {
             q: '',
             filter: 'all',
             who: 'all',
+            kind: 'all',
             sort: 'name',
             dir: 'asc',
             from: '',
@@ -260,5 +261,18 @@ describe('U5 row menu buttons get their label once per page', () => {
         labelButtons({ querySelectorAll: () => [button] }, { menu: { label: 'Actions for __N__', title: 'Actions' } });
 
         expect(attrs['aria-label']).toBe('Actions for Budi');
+    });
+});
+
+describe('U4 a second filter (role on Host accounts)', () => {
+    it('keeps rows of the chosen kind, remembers it and counts it as a filter', () => {
+        const rows = [row({}), row({})].map((r, i) => ({ ...r, kind: ['admin', 'host'][i] }));
+
+        expect(rows.filter((r) => matchesRow(r, { q: '', filter: 'all', kind: 'host' }))).toHaveLength(1);
+
+        const storage = memory();
+        saveState(storage, 'accounts', { ...loadState(storage, 'accounts', DEFAULTS), kind: 'host' }, DEFAULTS);
+        expect(loadState(storage, 'accounts', DEFAULTS).kind).toBe('host');
+        expect(filtersActive({ ...loadState(memory(), 'x', DEFAULTS), kind: 'host' })).toBe(true);
     });
 });

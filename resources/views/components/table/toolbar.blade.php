@@ -4,14 +4,10 @@
      and the search box in the far right corner. --}}
 <div {{ $attributes->merge(['class' => 'flex flex-wrap items-center justify-between gap-3']) }}>
     <div class="flex flex-wrap items-center gap-2">
-        <label class="inline-flex h-11 items-center gap-2 text-sm text-muted">
-            <span>{{ __('ui.rows_per_page') }}</span>
-            <select x-model.number="size" class="h-11 cursor-pointer rounded-control border border-line-strong bg-field px-3 text-[15px] font-semibold text-ink tabular-nums">
-                @foreach ([10, 25, 50, 100] as $option)
-                    <option value="{{ $option }}">{{ $option }}</option>
-                @endforeach
-            </select>
-        </label>
+        <div class="inline-flex h-11 items-center gap-2 text-sm text-muted">
+            <span aria-hidden="true">{{ __('ui.rows_per_page') }}</span>
+            <x-select :options="array_map(fn (int $size): array => ['value' => $size, 'label' => (string) $size], [10, 25, 50, 100])" :label="__('ui.rows_per_page')" x-model="size" />
+        </div>
         {{ $slot }}
     </div>
     <div class="flex flex-wrap items-center gap-2">

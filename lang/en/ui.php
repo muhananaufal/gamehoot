@@ -9,6 +9,8 @@ return [
     'next_page' => 'Next page',
     'pages' => 'Pages',
     'actions' => 'Actions',
+    'search' => 'Search',
+    'no_match' => 'Nothing matches.',
     'page_number' => 'Page __P__',
     'reset_filters' => 'Reset filters',
     'date' => 'Date',

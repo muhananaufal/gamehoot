@@ -14,6 +14,7 @@
         ['key' => 'delete', 'label' => __('accounts.delete'), 'type' => 'confirm', 'danger' => true, 'reason' => __('accounts.delete_owns_events'), 'url' => route('admin.users.destroy', '__P__')],
     ];
     $active = $users->whereNull('disabled_at')->count();
+    $admins = $users->where('is_super_admin', true)->count();
     $tz = config('app.display_timezone');
 @endphp
 <x-layouts.host :title="__('accounts.host_accounts')"
@@ -28,14 +29,18 @@
 
     {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
     <div x-data="tableView({ key: 'accounts', sort: 'name' })" x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($menu)" class="flex flex-col gap-4">
-        <x-table.toolbar :search="__('accounts.search')">
-            <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('accounts.status') }}">
-                @foreach (['all' => [__('accounts.all'), $users->count()], 'active' => [__('accounts.status_active'), $active], 'disabled' => [__('accounts.status_disabled'), $users->count() - $active]] as $key => [$label, $count])
-                    <button type="button" @click="filter = @js($key)" :aria-pressed="(filter === @js($key)).toString()"
-                        class="inline-flex h-11 items-center rounded-control px-3.5 text-sm font-semibold"
-                        :class="filter === @js($key) ? 'bg-inverse text-on-inverse' : 'border border-line-strong bg-surface text-ink hover:bg-subtle'">{{ $label }} · {{ $count }}</button>
-                @endforeach
-            </div>
+        <x-table.toolbar :search="__('accounts.search')" :today="now()->timezone($tz)->format('Y-m-d')" :date-label="__('accounts.date_filter')">
+            {{-- U4, U22: role and status are dropdowns with a count per choice. --}}
+            <x-select :options="[
+                ['value' => 'all', 'label' => __('accounts.all_roles'), 'count' => $users->count()],
+                ['value' => 'admin', 'label' => __('accounts.role_super_admin'), 'count' => $admins],
+                ['value' => 'host', 'label' => __('accounts.role_host'), 'count' => $users->count() - $admins],
+            ]" :label="__('accounts.role')" x-model="kind" />
+            <x-select :options="[
+                ['value' => 'all', 'label' => __('accounts.all_statuses'), 'count' => $users->count()],
+                ['value' => 'active', 'label' => __('accounts.status_active'), 'count' => $active],
+                ['value' => 'disabled', 'label' => __('accounts.status_disabled'), 'count' => $users->count() - $active],
+            ]" :label="__('accounts.status')" x-model="filter" />
         </x-table.toolbar>
 
         <div class="rounded-card bg-surface max-lg:overflow-x-auto">
@@ -64,7 +69,7 @@
                                 'data-delete' => $self ? null : ($account->all_owned_events_count > 0 ? 'off' : '1'),
                             ]);
                         @endphp
-                        <tr data-row data-search="{{ mb_strtolower($account->name . ' ' . $account->username . ' ' . $account->email) }}" data-filter="{{ $account->disabled_at ? 'disabled' : 'active' }}"
+                        <tr data-row data-search="{{ mb_strtolower($account->name . ' ' . $account->username . ' ' . $account->email) }}" data-filter="{{ $account->disabled_at ? 'disabled' : 'active' }}" data-kind="{{ $account->is_super_admin ? 'admin' : 'host' }}" data-date="{{ $account->created_at?->timezone($tz)->format('Y-m-d') }}"
                             data-sort-name="{{ $account->name }}" data-sort-username="{{ $account->username }}" data-sort-email="{{ $account->email }}" data-sort-role="{{ $account->is_super_admin ? 1 : 2 }}" data-sort-status="{{ $account->disabled_at ? 2 : 1 }}" data-sort-added="{{ $account->created_at?->getTimestamp() }}"
                             class="border-b border-line-soft last:border-0">
                             <td class="py-3.5 pr-4 pl-6">

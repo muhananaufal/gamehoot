@@ -14,15 +14,10 @@
             <div x-data="tableView({ key: 'logs:{{ $event->id }}', sort: 'at', dir: 'desc' })" class="flex flex-col gap-4">
                 <x-table.toolbar :search="__('logs.search')" :today="now()->timezone($tz)->format('Y-m-d')" :date-label="__('logs.date_filter')">
                     <x-slot:right>
-                        <label class="inline-flex h-11 items-center gap-2 text-sm text-muted">
-                            <span>{{ __('logs.who') }}</span>
-                            <select x-model="who" class="h-11 cursor-pointer rounded-control border border-line-strong bg-field px-3 text-[15px] font-semibold text-ink">
-                                <option value="all">{{ __('logs.everyone') }}</option>
-                                @foreach ($actors as $actor)
-                                    <option value="{{ $actor['id'] }}">{{ $actor['name'] }}</option>
-                                @endforeach
-                            </select>
-                        </label>
+                        <x-select :options="[
+                            ['value' => 'all', 'label' => __('logs.everyone')],
+                            ...array_map(fn (array $actor): array => ['value' => $actor['id'], 'label' => $actor['name']], $actors),
+                        ]" :label="__('logs.who')" x-model="who" />
                     </x-slot:right>
                 </x-table.toolbar>
 

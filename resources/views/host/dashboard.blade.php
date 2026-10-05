@@ -27,18 +27,11 @@
         {{-- U4: filter, search, sort and pages in the browser; the view state stays in localStorage. --}}
         <div x-data="tableView({ key: 'events', sort: 'created', dir: 'desc' })" class="flex flex-col gap-4">
             <x-table.toolbar :search="__('host.dashboard.search')" :today="now()->timezone($tz)->format('Y-m-d')" :date-label="__('host.dashboard.date_filter')">
-                <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('host.dashboard.status') }}">
-                    @foreach ([null, ...EventStatus::cases()] as $filter)
-                        @php
-                            $key = $filter?->value ?? 'all';
-                            $label = $filter ? __('host.event_status.' . $filter->value) : __('host.dashboard.all');
-                            $count = $filter ? $counts->get($filter->value, 0) : $total;
-                        @endphp
-                        <button type="button" @click="filter = @js($key)" :aria-pressed="(filter === @js($key)).toString()"
-                            class="inline-flex h-11 items-center rounded-control px-3.5 text-sm font-semibold"
-                            :class="filter === @js($key) ? 'bg-inverse text-on-inverse' : 'border border-line-strong bg-surface text-ink hover:bg-subtle'">{{ $label }} · {{ $count }}</button>
-                    @endforeach
-                </div>
+                {{-- U4, U22: the status filter is a dropdown with a count per status. --}}
+                <x-select :options="[
+                    ['value' => 'all', 'label' => __('host.dashboard.all_statuses'), 'count' => $total],
+                    ...array_map(fn (EventStatus $status): array => ['value' => $status->value, 'label' => __('host.event_status.' . $status->value), 'count' => $counts->get($status->value, 0)], EventStatus::cases()),
+                ]" :label="__('host.dashboard.status')" x-model="filter" />
             </x-table.toolbar>
 
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">

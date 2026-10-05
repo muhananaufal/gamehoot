@@ -94,13 +94,12 @@
             x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($menu); const retry = document.getElementById('rename-retry'); if (retry) { const r = JSON.parse(retry.textContent); $store.confirm.askRow({ dataset: r.row }, r.previous) }"
             class="flex flex-col gap-4">
             <x-table.toolbar :search="__('people.search')">
-                <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('people.status') }}">
-                    @foreach (['all', 'joined', 'waiting'] as $key)
-                        <button type="button" @click="filter = @js($key)" :aria-pressed="(filter === @js($key)).toString()"
-                            class="inline-flex h-11 items-center rounded-control px-3.5 text-sm font-semibold"
-                            :class="filter === @js($key) ? 'bg-inverse text-on-inverse' : 'border border-line-strong bg-surface text-ink hover:bg-subtle'">{{ __('people.' . $key) }} · {{ $counts[$key] }}</button>
-                    @endforeach
-                </div>
+                {{-- U4, U22: the status filter is a dropdown with a count per status. --}}
+                <x-select :options="[
+                    ['value' => 'all', 'label' => __('people.all_statuses'), 'count' => $counts['all']],
+                    ['value' => 'joined', 'label' => __('people.joined'), 'count' => $counts['joined']],
+                    ['value' => 'waiting', 'label' => __('people.waiting'), 'count' => $counts['waiting']],
+                ]" :label="__('people.status')" x-model="filter" />
             </x-table.toolbar>
 
             {{-- Sideways scrolling only on narrow screens: a scrolling box would pin the header to the box, not the page. --}}

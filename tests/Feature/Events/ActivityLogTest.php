@@ -155,7 +155,8 @@ it('filters the log by who did it and by date, and sorts every column (U4)', fun
     $html = (string) actingAs($owner)->get("/host/{$event->id}/logs")->assertOk()->getContent();
 
     // Owner first, then the co-hosts: everyone who can act on the event.
-    expect($html)->toMatch('/<select x-model="who"[\s\S]*?Everyone[\s\S]*?Owner Ana[\s\S]*?Co Budi/')
+    // U22: the Who dropdown lists Everyone, the owner, then the co-hosts.
+    expect($html)->toMatch('/selectBox\(\{ options: [^\n]*Everyone[^\n]*Owner Ana[^\n]*Co Budi[\s\S]*?x-model="who"/')
         ->and($html)->toContain('data-who="'.$cohost->id.'"')
         // 18:30 UTC on 4 Oct is 5 Oct in WIB (T10).
         ->and($html)->toContain('data-date="2026-10-05"')

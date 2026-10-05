@@ -10,6 +10,7 @@ return [
     'status' => 'Status',
     'link' => 'Personal link',
     'all' => 'All',
+    'all_statuses' => 'All statuses',
     'joined' => 'Playing',
     'waiting' => 'Not joined',
     'status_joined' => 'Playing',

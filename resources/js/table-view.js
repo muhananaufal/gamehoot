@@ -28,6 +28,7 @@ export function loadState(storage, key, defaults) {
         q: text(stored.q),
         filter: text(stored.filter) || 'all',
         who: text(stored.who) || 'all',
+        kind: text(stored.kind) || 'all',
         sort: text(stored.sort) || defaults.sort,
         dir: DIRECTIONS.includes(stored.dir) ? stored.dir : defaults.dir,
         from: DATE.test(text(stored.from)) ? stored.from : '',
@@ -43,6 +44,7 @@ export function saveState(storage, key, state, defaults) {
         q: '',
         filter: 'all',
         who: 'all',
+        kind: 'all',
         sort: defaults.sort,
         dir: defaults.dir,
         from: '',
@@ -74,12 +76,13 @@ export function filtersActive(state) {
         state.q.trim() !== '' ||
         state.filter !== 'all' ||
         (state.who ?? 'all') !== 'all' ||
+        (state.kind ?? 'all') !== 'all' ||
         state.from !== '' ||
         state.to !== ''
     );
 }
 
-export function matchesRow(row, { q, filter, who = 'all', from = '', to = '' }) {
+export function matchesRow(row, { q, filter, who = 'all', kind = 'all', from = '', to = '' }) {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const text = row.search.toLowerCase();
     const date = row.date ?? '';
@@ -89,6 +92,7 @@ export function matchesRow(row, { q, filter, who = 'all', from = '', to = '' }) 
     return (
         (filter === 'all' || row.filter === filter) &&
         (who === 'all' || row.who === who) &&
+        (kind === 'all' || row.kind === kind) &&
         inRange &&
         words.every((word) => text.includes(word))
     );
@@ -241,7 +245,10 @@ export function tableView({
             this.flip = body ? flipList(body, { selector: 'tr[data-row]' }) : null;
             // A new search, filter, order or page size starts again at page 1.
             this.$watch(
-                () => [this.q, this.filter, this.who, this.sort, this.dir, this.from, this.to, this.size].join('|'),
+                () =>
+                    [this.q, this.filter, this.who, this.kind, this.sort, this.dir, this.from, this.to, this.size].join(
+                        '|',
+                    ),
                 () => {
                     this.page = 1;
                     this.apply();
@@ -272,7 +279,7 @@ export function tableView({
         },
 
         reset() {
-            Object.assign(this, { q: '', filter: 'all', who: 'all', from: '', to: '' });
+            Object.assign(this, { q: '', filter: 'all', who: 'all', kind: 'all', from: '', to: '' });
         },
 
         previous() {
@@ -284,12 +291,20 @@ export function tableView({
         },
 
         apply() {
-            const state = { q: this.q, filter: this.filter, who: this.who, from: this.from, to: this.to };
+            const state = {
+                q: this.q,
+                filter: this.filter,
+                who: this.who,
+                kind: this.kind,
+                from: this.from,
+                to: this.to,
+            };
             const view = this.rows().map((el) => ({
                 el,
                 search: el.dataset.search ?? '',
                 filter: el.dataset.filter ?? '',
                 who: el.dataset.who ?? '',
+                kind: el.dataset.kind ?? '',
                 date: el.dataset.date ?? '',
                 sort: Object.fromEntries(
                     Object.entries(el.dataset)

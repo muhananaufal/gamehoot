@@ -103,11 +103,13 @@ describe('one table look (U4)', function (): void {
     it('puts rows per page first and the search box in the far right corner, after the date', function (): void {
         $html = Blade::render('<x-table.toolbar search="Search name or link" today="2026-10-05" date-label="Created">FILTERS</x-table.toolbar>');
 
-        expect($html)->toContain('x-model.number="size"')
+        // U22: rows per page is the themed dropdown with 10, 25, 50 and 100.
+        expect($html)->toContain('x-model="size"')
             ->toContain('placeholder="Search name or link"')
-            ->and((int) strpos($html, 'x-model.number="size"'))->toBeLessThan((int) strpos($html, 'FILTERS'))
-            ->and((int) strpos($html, 'dateRangePicker'))->toBeLessThan((int) strpos($html, 'type="search"'))
-            ->and(substr_count($html, '<option'))->toBe(4);
+            ->and($html)->not->toContain('<select')
+            ->and((int) strpos($html, 'x-model="size"'))->toBeLessThan((int) strpos($html, 'FILTERS'))
+            ->and((int) strpos($html, 'dateRangePicker'))->toBeLessThan((int) strpos($html, 'placeholder="Search name or link"'))
+            ->and(substr_count(str_replace(chr(92).'u0022', '"', $html), '"value":'))->toBe(4);
     });
 
     it('numbers the pages under the table, marking the current one', function (): void {
@@ -115,7 +117,7 @@ describe('one table look (U4)', function (): void {
 
         expect($html)->toContain('x-for="(item, index) in pageNumbers"')
             ->toContain(":aria-current=\"item === page ? 'page' : null\"")
-            ->and($html)->not->toContain('x-model.number="size"');
+            ->and($html)->not->toContain('x-model="size"');
     });
 });
 
@@ -159,5 +161,27 @@ describe('third manual round: table details (U4, U13)', function (): void {
 
     it('keeps dialogs left aligned wherever their button sits', function (): void {
         expect(Blade::render('<x-confirm-dialog title="T" trigger="Go">Body</x-confirm-dialog>'))->toMatch('/<dialog[^>]*text-left/');
+    });
+});
+
+describe('custom dropdown (U22)', function (): void {
+    it('renders a themed combobox instead of a browser select, bound with x-model or sent with a form', function (): void {
+        $bound = Blade::render('<x-select :options="[[\'value\' => \'all\', \'label\' => \'All\', \'count\' => 3]]" label="Status" x-model="filter" />');
+        $form = Blade::render('<x-select name="game_type" :options="[[\'value\' => \'pentahoot\', \'label\' => \'Pentahoot\']]" value="pentahoot" label="Game type" />');
+
+        expect($bound)->toContain('x-modelable="value"')->toContain('x-model="filter"')
+            ->toContain('role="combobox"')->toContain('role="listbox"')->toContain('aria-label="Status"')
+            ->and($bound)->not->toContain('<select')
+            ->and($form)->toContain('<input type="hidden" name="game_type"');
+    });
+
+    it('leaves no browser select in the host panel views', function (): void {
+        $selects = collect(File::allFiles(resource_path('views')))
+            ->filter(fn (SplFileInfo $file): bool => str_contains($file->getContents(), '<select'))
+            ->map(fn (SplFileInfo $file): string => $file->getRelativePathname())
+            ->values()
+            ->all();
+
+        expect($selects)->toBe([]);
     });
 });

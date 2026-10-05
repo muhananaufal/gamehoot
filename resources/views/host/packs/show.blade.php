@@ -24,18 +24,11 @@
                 @csrf
                 <input type="hidden" name="form" value="create-pack">
                 <x-field name="title" :label="__('packs.pack_title')" id="new-pack-title" :submitted="old('form') === 'create-pack'" maxlength="100" autofocus />
-                <fieldset class="flex flex-col gap-1.5">
-                    <legend class="mb-1.5 text-sm font-semibold">{{ __('packs.game_type') }}</legend>
-                    @foreach ($types as $type)
-                        <label class="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px]">
-                            <input type="radio" name="game_type" value="{{ $type->value }}" class="size-5" @checked(old('game_type', GameType::Pentahoot->value) === $type->value)>
-                            {{ __('games.types.' . $type->value) }}
-                        </label>
-                    @endforeach
-                    @error('game_type')
-                        <p class="text-sm font-semibold text-on-danger">{{ $message }}</p>
-                    @enderror
-                </fieldset>
+                <div class="flex flex-col gap-1.5">
+                    <span class="text-sm font-semibold">{{ __('packs.game_type') }}</span>
+                    <x-select name="game_type" :options="array_map(fn (GameType $type): array => ['value' => $type->value, 'label' => __('games.types.' . $type->value)], $types)"
+                        :value="old('game_type', GameType::Pentahoot->value)" :label="__('packs.game_type')" class="w-full" />
+                </div>
                 <div class="flex justify-end gap-2.5 pt-1.5">
                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                     <x-button type="submit">{{ __('packs.create') }}</x-button>
@@ -64,16 +57,14 @@
                         class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
                 </label>
                 <div class="grid grid-cols-2 gap-2">
-                    <select x-model="type" aria-label="{{ __('packs.filter_type') }}" class="h-11 min-w-0 cursor-pointer rounded-control border border-line-strong bg-field px-2 text-sm font-semibold text-ink">
-                        <option value="all">{{ __('packs.all_types') }}</option>
-                        @foreach ($types as $groupType)
-                            <option value="{{ $groupType->value }}">{{ __('games.types.' . $groupType->value) }}</option>
-                        @endforeach
-                    </select>
-                    <select x-model="sort" aria-label="{{ __('packs.sort') }}" class="h-11 min-w-0 cursor-pointer rounded-control border border-line-strong bg-field px-2 text-sm font-semibold text-ink">
-                        <option value="name">{{ __('packs.sort_name') }}</option>
-                        <option value="changed">{{ __('packs.sort_changed') }}</option>
-                    </select>
+                    <x-select :options="[
+                        ['value' => 'all', 'label' => __('packs.all_types')],
+                        ...array_map(fn (GameType $type): array => ['value' => $type->value, 'label' => __('games.types.' . $type->value)], $types),
+                    ]" :label="__('packs.filter_type')" x-model="type" class="min-w-0" />
+                    <x-select :options="[
+                        ['value' => 'name', 'label' => __('packs.sort_name')],
+                        ['value' => 'changed', 'label' => __('packs.sort_changed')],
+                    ]" :label="__('packs.sort')" x-model="sort" class="min-w-0" />
                 </div>
                 @foreach ($types as $groupType)
                     @continue(! $packs->has($groupType->value))
