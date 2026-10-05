@@ -1,5 +1,6 @@
 // F20: the Alpine components of the Tebak screens (Tebak Kata and Tebak Gambar). They only read
 // the shared realtime store; the rules live in tebak.js, kata.js and on the server.
+import { withBusyButton } from './action-busy.js';
 import { legendOf } from './kata.js';
 import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
 import { fill, podium, promptSize, SCREEN_ROWS, searchPeople } from './pentahoot.js';
@@ -176,36 +177,39 @@ export function tebakHost({ type, actionUrl, people, labels }) {
             this.busy = true;
             this.error = '';
 
-            try {
-                const response = await fetch(
-                    actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
-                    {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Accept: 'application/json',
-                            'X-CSRF-TOKEN': csrfToken(),
+            // U16: the button that started the action shows the spinner until it ends.
+            await withBusyButton(async () => {
+                try {
+                    const response = await fetch(
+                        actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
+                        {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': csrfToken(),
+                            },
+                            body: JSON.stringify(input),
                         },
-                        body: JSON.stringify(input),
-                    },
-                );
+                    );
 
-                if (response.status !== 204) {
-                    const body = await response.json().catch(() => ({}));
-                    this.error = body.message ?? this.labels.network_error;
-                } else if (action === 'winner') {
-                    this.chosen = null;
-                    this.query = '';
+                    if (response.status !== 204) {
+                        const body = await response.json().catch(() => ({}));
+                        this.error = body.message ?? this.labels.network_error;
+                    } else if (action === 'winner') {
+                        this.chosen = null;
+                        this.query = '';
+                    }
+
+                    // F1: this page loads the new state itself instead of waiting for the broadcast.
+                    this.store.refresh?.();
+                } catch {
+                    this.error = this.labels.network_error;
+                } finally {
+                    this.busy = false;
                 }
-
-                // F1: this page loads the new state itself instead of waiting for the broadcast.
-                this.store.refresh?.();
-            } catch {
-                this.error = this.labels.network_error;
-            } finally {
-                this.busy = false;
-            }
+            });
         },
     };
 }

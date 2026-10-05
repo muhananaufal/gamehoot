@@ -1,5 +1,6 @@
 // F20: the Alpine components of the three Pentahoot screens. They only read the shared
 // realtime store; the rules live in pentahoot.js and on the server.
+import { withBusyButton } from './action-busy.js';
 import {
     canVote,
     capRows,
@@ -461,22 +462,25 @@ export function pentahootHost({ actionUrl, labels }) {
             this.busy = true;
             this.error = '';
 
-            try {
-                const { status, body } = await postJson(
-                    actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
-                );
+            // U16: the button that started the action shows the spinner until it ends.
+            await withBusyButton(async () => {
+                try {
+                    const { status, body } = await postJson(
+                        actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
+                    );
 
-                if (status !== 204) {
-                    this.error = body.message ?? this.labels.network_error;
+                    if (status !== 204) {
+                        this.error = body.message ?? this.labels.network_error;
+                    }
+
+                    // F1: this page loads the new state itself instead of waiting for the broadcast.
+                    this.store.refresh?.();
+                } catch {
+                    this.error = this.labels.network_error;
+                } finally {
+                    this.busy = false;
                 }
-
-                // F1: this page loads the new state itself instead of waiting for the broadcast.
-                this.store.refresh?.();
-            } catch {
-                this.error = this.labels.network_error;
-            } finally {
-                this.busy = false;
-            }
+            });
         },
     };
 }
