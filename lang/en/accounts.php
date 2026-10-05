@@ -5,6 +5,10 @@ declare(strict_types=1);
 return [
     'sign_in_title' => 'Host sign in',
     'email' => 'Email',
+    'username' => 'Username',
+    'username_hint' => 'Lower case letters, digits, dots, underscores or hyphens; used to sign in.',
+    'username_rule' => 'The username may only hold lower case letters, digits, dots, underscores and hyphens (3-30).',
+    'login' => 'Username or email',
     'password' => 'Password',
     'show_password' => 'Show password',
     'password_confirmation' => 'Repeat the password',

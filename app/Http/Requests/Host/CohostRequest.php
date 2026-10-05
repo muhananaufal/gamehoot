@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Accounts\FindAccount;
 use App\Http\Concerns\LiveValidation;
 use App\Models\Event;
 use App\Models\User;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 
 /**
  * C-2: add a co-host, or pick the new owner for a transfer. Either must be an active
@@ -26,7 +26,8 @@ final class CohostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            $this->field() => ['required', 'string', 'email', function (string $attribute, mixed $value, Closure $fail): void {
+            // C-6: a username or an email.
+            $this->field() => ['required', 'string', function (string $attribute, mixed $value, Closure $fail): void {
                 $account = $this->account();
                 $event = $this->event();
 
@@ -43,7 +44,7 @@ final class CohostRequest extends FormRequest
 
     public function account(): ?User
     {
-        return User::query()->where('email', Str::lower($this->string($this->field())->trim()->toString()))->first();
+        return FindAccount::byLogin($this->string($this->field())->toString());
     }
 
     public function event(): Event

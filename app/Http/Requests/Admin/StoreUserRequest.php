@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Accounts\Username;
 use App\Http\Concerns\LiveValidation;
 use App\Models\User;
 use App\Validation\AccountRules;
@@ -29,6 +30,17 @@ final class StoreUserRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['email' => Str::lower($this->string('email')->trim()->toString())]);
+        $this->merge([
+            'email' => Str::lower($this->string('email')->trim()->toString()),
+            'username' => Username::normalize($this->string('username')->toString()),
+        ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return AccountRules::messages();
     }
 }

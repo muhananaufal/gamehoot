@@ -7,6 +7,7 @@ use App\Models\ActionLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -63,6 +64,7 @@ describe('host accounts', function (): void {
 
         actingAs($admin)->post('/admin/users', [
             'name' => 'Sari Wijaya',
+            'username' => 'SariW',
             'email' => 'Sari@Company.test',
             'password' => 'correct-horse-42',
             'password_confirmation' => 'correct-horse-42',
@@ -70,6 +72,7 @@ describe('host accounts', function (): void {
 
         $sari = User::query()->where('email', 'sari@company.test')->firstOrFail();
         expect($sari->is_super_admin)->toBeFalse()
+            ->and($sari->username)->toBe('sariw')
             ->and(Hash::check('correct-horse-42', $sari->password))->toBeTrue()
             ->and(loggedActions(LoggedAction::AccountCreated))->toBe(1);
 
@@ -79,15 +82,29 @@ describe('host accounts', function (): void {
             ->and($log->payload)->toBe(['account_id' => $sari->id]);
     });
 
-    it('rejects a weak password and a taken email', function (): void {
-        User::factory()->create(['email' => 'sari@company.test']);
+    it('rejects a weak password, a taken email and a taken or badly formed username (C-6)', function (): void {
+        $old = User::factory()->create(['email' => 'sari@company.test', 'username' => 'sariw']);
+        $old->delete();
 
         actingAs(superAdmin())->post('/admin/users', [
             'name' => 'Sari Wijaya',
+            'username' => 'sariw',
             'email' => 'sari@company.test',
             'password' => 'password',
             'password_confirmation' => 'password',
-        ])->assertSessionHasErrors(['email', 'password']);
+        ])->assertSessionHasErrors(['username', 'email', 'password']);
+
+        actingAs(superAdmin())->post('/admin/users', ['name' => 'Sari', 'username' => 'sari wijaya'])
+            ->assertSessionHasErrors(['username' => 'The username may only hold lower case letters, digits, dots, underscores and hyphens (3-30).']);
+    });
+
+    it('shows the Add host modal with a title, full-width fields and a username', function (): void {
+        $html = (string) actingAs(superAdmin())->get('/admin/users/create')->getContent();
+        $modal = Str::after($html, 'up-main="modal"');
+
+        expect($modal)->toContain('<h2')->toContain('Add host')
+            ->toContain('name="username"')
+            ->and($modal)->not->toContain('max-w-lg');
     });
 
     it('resets a password and logs it (C-5, E13)', function (): void {

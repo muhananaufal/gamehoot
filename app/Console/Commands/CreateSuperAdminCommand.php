@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Accounts\Username;
 use App\Actions\Accounts\CreateAccount;
 use App\Validation\AccountRules;
 use Illuminate\Console\Attributes\Description;
@@ -22,12 +23,14 @@ final class CreateSuperAdminCommand extends Command
     {
         $input = [
             'name' => $this->text($this->ask('Name')),
+            // C-6: read in lower case, like every typed username.
+            'username' => Username::normalize($this->text($this->ask('Username (lower case, no spaces)'))),
             'email' => $this->text($this->ask('Email')),
             'password' => $this->text($this->secret('Password (at least 12 characters, letters and digits)')),
             'password_confirmation' => $this->text($this->secret('Repeat the password')),
         ];
 
-        $validator = Validator::make($input, AccountRules::newAccount());
+        $validator = Validator::make($input, AccountRules::newAccount(), AccountRules::messages());
 
         if ($validator->fails()) {
             foreach ($validator->errors()->all() as $message) {
@@ -37,7 +40,7 @@ final class CreateSuperAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $user = $createAccount->handle($input['name'], $input['email'], $input['password'], superAdmin: true, actor: null);
+        $user = $createAccount->handle($input['name'], $input['username'], $input['email'], $input['password'], superAdmin: true, actor: null);
 
         $this->info("Super-admin {$user->email} created.");
 

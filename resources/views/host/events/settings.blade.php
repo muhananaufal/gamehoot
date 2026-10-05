@@ -89,7 +89,7 @@
                 @if ($isOwner)
                     <form method="POST" action="{{ route('host.events.cohosts.store', $event) }}" class="flex flex-col gap-3 border-t border-line-soft pt-4" novalidate>
                         @csrf
-                        <x-field name="email" type="email" :label="__('events.cohost_email')" autocomplete="off" />
+                        <x-field name="email" :label="__('events.cohost_email')" autocomplete="off" autocapitalize="none" spellcheck="false" />
                         <x-button type="submit" variant="secondary" class="self-start">{{ __('events.add_cohost') }}</x-button>
                     </form>
                 @endif
@@ -137,7 +137,7 @@
                             <p class="text-[15px] text-muted">{{ __('events.transfer_confirm', ['name' => $event->name]) }}</p>
                             <form method="POST" action="{{ route('host.events.transfer', $event) }}" class="flex flex-col gap-3" novalidate>
                                 @csrf
-                                <x-field name="new_owner_email" type="email" :label="__('events.new_owner_email')" autocomplete="off" required />
+                                <x-field name="new_owner_email" :label="__('events.new_owner_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
                                 <div class="flex justify-end gap-2.5 pt-1.5">
                                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                     <x-button type="submit" variant="destructive">{{ __('events.transfer') }}</x-button>

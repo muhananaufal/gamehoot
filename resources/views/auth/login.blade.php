@@ -3,7 +3,7 @@
 
     <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4" novalidate>
         @csrf
-        <x-field name="email" type="email" :label="__('accounts.email')" autocomplete="username" required autofocus :live="false" />
+        <x-field name="login" :label="__('accounts.login')" :placeholder="__('accounts.login')" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus :live="false" />
         <x-field name="password" type="password" :label="__('accounts.password')" autocomplete="current-password" required />
         <x-button type="submit" class="mt-1.5 h-12 font-display text-[19px] font-semibold">{{ __('accounts.sign_in') }}</x-button>
     </form>

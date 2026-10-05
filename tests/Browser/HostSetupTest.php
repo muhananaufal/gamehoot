@@ -18,7 +18,7 @@ it('signs a host in through the form (C-5)', function (): void {
     User::factory()->create(['email' => 'arif@company.test', 'password' => 'browser-test-42']);
 
     $page = visit('/login')
-        ->type('email', 'arif@company.test')
+        ->type('login', 'arif@company.test')
         ->type('password', 'browser-test-42');
     // The submit navigates; a retried press() would look for the button on the next page
     // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).

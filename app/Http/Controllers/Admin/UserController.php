@@ -32,6 +32,7 @@ final class UserController
     {
         $account = $createAccount->handle(
             $request->string('name')->toString(),
+            $request->string('username')->toString(),
             $request->string('email')->toString(),
             $request->string('password')->toString(),
             superAdmin: false,

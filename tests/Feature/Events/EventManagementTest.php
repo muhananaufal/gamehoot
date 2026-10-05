@@ -444,3 +444,34 @@ describe('the Settings page (U20)', function (): void {
             ->toContain('End the running game before closing the event.');
     });
 });
+
+describe('inviting by username (C-6)', function (): void {
+    it('adds a co-host and transfers ownership by username, in any case', function (): void {
+        $event = ownedEvent();
+        $owner = ownerOf($event);
+        $arif = User::factory()->create(['username' => 'arifrahman']);
+        $sari = User::factory()->create(['username' => 'sariw']);
+
+        actingAs($owner)->post("/host/{$event->id}/cohosts", ['email' => ' ArifRahman '])->assertSessionHasNoErrors();
+        actingAs($owner)->post("/host/{$event->id}/transfer", ['new_owner_email' => 'sariw'])->assertSessionHasNoErrors();
+
+        expect($event->refresh()->owner_id)->toBe($sari->id)
+            ->and($event->cohosts()->whereKey($arif->id)->exists())->toBeTrue();
+    });
+
+    it('does not find a deleted account', function (): void {
+        $event = ownedEvent();
+        User::factory()->create(['username' => 'gone'])->delete();
+
+        actingAs(ownerOf($event))->post("/host/{$event->id}/cohosts", ['email' => 'gone'])
+            ->assertSessionHasErrors(['email' => 'No active host has this username or email.']);
+    });
+
+    it('asks for a username or email on the Settings page', function (): void {
+        $event = ownedEvent();
+
+        actingAs(ownerOf($event))->get("/host/{$event->id}/settings")
+            ->assertSee('Co-host username or email')
+            ->assertSee('New owner username or email');
+    });
+});

@@ -16,7 +16,7 @@
 
         {{-- U13: what a New event modal shows; the steps beside it are only on the full page. --}}
         <div up-main="modal">
-        <form method="POST" action="{{ route('host.events.store') }}" class="flex max-w-2xl flex-col gap-5 rounded-card bg-surface p-6" novalidate>
+        <form method="POST" action="{{ route('host.events.store') }}" class="flex flex-col gap-5 rounded-card bg-surface p-6" novalidate>
             @csrf
             <h1 class="font-display text-2xl font-bold">{{ __('events.step_name') }}</h1>
             <x-field name="name" :label="__('events.name')" required autofocus maxlength="100" />
