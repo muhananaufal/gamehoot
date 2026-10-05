@@ -150,9 +150,8 @@ describe('third manual round: table details (U4, U13)', function (): void {
         $html = Blade::render('<x-table.th sort="name">Name</x-table.th>');
 
         expect($html)->toContain('first:rounded-tl-card')->toContain('last:rounded-tr-card')
-            ->toContain("x-show=\"sort === 'name' && dir === 'asc'\"")
-            ->toContain("x-show=\"sort === 'name' && dir === 'desc'\"")
-            ->toContain("x-show=\"sort !== 'name'\"");
+            ->toContain(":class=\"sort === 'name' && dir === 'asc' ? 'opacity-100' : 'opacity-30'\"")
+            ->toContain(":class=\"sort === 'name' && dir === 'desc' ? 'opacity-100' : 'opacity-30'\"");
     });
 
     it('centres the action column', function (): void {
