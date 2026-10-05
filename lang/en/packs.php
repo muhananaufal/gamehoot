@@ -28,7 +28,7 @@ return [
     'delete_question_title' => 'Delete __N__?',
     'delete_question_confirm' => 'The question is removed from this pack. Games already made from the pack keep their own copy.',
     'question_number' => 'question :number',
-    'search' => 'Search packs',
+    'search' => 'Search pack title or game type',
     'move_up' => 'Move question :number up',
     'move_down' => 'Move question :number down',
     'rename' => 'Rename',

@@ -66,7 +66,7 @@
                         @foreach ($group as $item)
                             {{-- Another pack changes the page title and breadcrumb too, so the whole content moves. --}}
                             <a href="{{ route('host.packs.show', $item) }}" @if ($pack?->is($item)) aria-current="page" @endif
-                                x-show="@js(mb_strtolower($item->title)).includes(q.trim().toLowerCase())"
+                                x-show="@js(mb_strtolower($item->title . ' ' . __('games.types.' . $groupType->value))).includes(q.trim().toLowerCase())"
                                 @class([
                                     'flex min-h-11 items-center justify-between gap-2 rounded-control px-3 text-[15px]',
                                     'bg-subtle font-bold' => $pack?->is($item),

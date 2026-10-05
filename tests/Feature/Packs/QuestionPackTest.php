@@ -250,7 +250,7 @@ describe('the pack editor on one page (U14)', function (): void {
 
         expect($html)->toContain('id="pack-list"')
             ->and($html)->toContain('id="pack-panel"')
-            ->and($html)->toContain('aria-label="Search packs"')
+            ->and($html)->toContain('placeholder="Search pack title or game type"')
             // Another pack changes the title and breadcrumb, so its link moves the whole content.
             ->and($html)->toMatch('/<a href="[^"]*\/host\/packs\/'.$pack->id.'"\s+aria-current="page"/')
             ->and($html)->toMatch('/<form method="POST" action="[^"]*\/questions\/reorder"[^>]*up-target="#pack-panel, #pack-list"/');
