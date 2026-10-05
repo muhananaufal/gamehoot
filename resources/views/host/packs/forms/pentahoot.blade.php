@@ -12,17 +12,23 @@
     @endif
 </div>
 
-<fieldset class="flex flex-col gap-2" x-data="{ duration: {{ $duration }} }">
+{{-- U14: quick times, or Custom with its own seconds field, so it is clear they are one setting. --}}
+<fieldset class="flex flex-col gap-2" x-data="{ duration: {{ $duration }}, custom: {{ in_array($duration, [10, 20, 30, 60], true) ? 'false' : 'true' }} }">
     <legend class="mb-1 text-sm font-semibold">{{ __('packs.pentahoot.duration') }}</legend>
     <div class="flex flex-wrap gap-2">
         @foreach ([10, 20, 30, 60] as $preset)
-            <button type="button" @click="duration = {{ $preset }}" :aria-pressed="(duration === {{ $preset }}).toString()"
+            <button type="button" @click="duration = {{ $preset }}; custom = false" :aria-pressed="(! custom && duration === {{ $preset }}).toString()"
                 class="h-11 rounded-control border border-line-strong px-4 text-sm font-semibold"
-                :class="duration === {{ $preset }} ? 'bg-inverse text-on-inverse' : 'bg-surface text-ink hover:bg-subtle'">
+                :class="! custom && duration === {{ $preset }} ? 'bg-inverse text-on-inverse' : 'bg-surface text-ink hover:bg-subtle'">
                 {{ __('packs.seconds', ['count' => $preset]) }}
             </button>
         @endforeach
+        <button type="button" @click="custom = true" :aria-pressed="custom.toString()"
+            class="h-11 rounded-control border border-line-strong px-4 text-sm font-semibold"
+            :class="custom ? 'bg-inverse text-on-inverse' : 'bg-surface text-ink hover:bg-subtle'">{{ __('packs.pentahoot.custom') }}</button>
     </div>
-    <x-field name="duration_seconds" type="number" :label="__('packs.pentahoot.duration_seconds')" :value="$duration"
-        :hint="__('packs.pentahoot.duration_hint')" min="5" max="300" x-model.number="duration" />
+    <div x-show="custom" x-cloak>
+        <x-field name="duration_seconds" type="number" :label="__('packs.pentahoot.duration_seconds')" :value="$duration"
+            :hint="__('packs.pentahoot.duration_hint')" min="5" max="300" x-model.number="duration" />
+    </div>
 </fieldset>

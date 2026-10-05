@@ -6,15 +6,24 @@
         ? [[__('packs.title'), route('host.packs.index')], [$pack->title, null]]
         : [[__('packs.title'), null]];
     $formOpen = $creating || $editing;
-    $orderIds = $questions?->pluck('id')->all() ?? [];
     $createFailed = old('form') === 'create-pack' && $errors->any();
     // U14: working on questions swaps only the pack panel and this pack's question count in the
     // list; the list itself is never sent again (measured: 1,000 packs made the page 668 KB).
     $swap = '#pack-panel' . ($pack ? ', #pack-count-' . $pack->id : '');
     $confirmTexts = [
         'delete' => ['title' => __('packs.delete_pack') . '?', 'body' => __('packs.delete_pack_confirm'), 'label' => __('packs.delete_pack'), 'method' => 'DELETE', 'tone' => 'destructive'],
+        'rename' => ['title' => __('packs.rename_pack'), 'label' => __('packs.rename'), 'method' => 'PUT', 'tone' => 'primary',
+            'field' => ['name' => 'title', 'label' => __('packs.pack_title'), 'maxlength' => 100, 'form' => 'rename-pack']],
         'deleteQuestion' => ['title' => __('packs.delete_question_title', ['name' => '__N__']), 'body' => __('packs.delete_question_confirm'), 'label' => __('packs.delete_question'), 'method' => 'DELETE', 'tone' => 'destructive'],
     ];
+    // U14: Rename and Delete sit in the pack card's menu.
+    $packMenu = $pack ? [
+        ['key' => 'rename', 'label' => __('packs.rename'), 'type' => 'confirm', 'url' => route('host.packs.update', '__P__')],
+        ['key' => 'delete', 'label' => __('packs.delete_pack'), 'type' => 'confirm', 'danger' => true, 'url' => route('host.packs.destroy', '__P__')],
+    ] : [];
+    $renameRetry = $pack && old('form') === 'rename-pack' && $errors->has('title')
+        ? ['name' => $pack->title, 'url' => route('host.packs.update', $pack), 'id' => $pack->id, 'previous' => ['value' => old('title'), 'error' => $errors->first('title')]]
+        : null;
 @endphp
 <x-layouts.host :title="$pack ? $pack->title : __('packs.title')" :breadcrumbs="$breadcrumbs">
     {{-- U2: New pack opens a short form; inside a pack, Add question is the main action. --}}
@@ -90,28 +99,23 @@
                     <x-empty-state :title="__('packs.pick_title')" :body="__('packs.pick_pack')" />
                 @else
                     <section class="flex min-w-0 flex-col gap-4 rounded-card bg-surface p-6"
-                        x-data x-init="$store.confirm.texts = @js($confirmTexts)">
+                        x-data x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($packMenu); const retry = document.getElementById('rename-retry'); if (retry) { const r = JSON.parse(retry.textContent); $store.confirm.askFor('rename', r.name, r.url, r.id, r.previous) }">
+                        @if ($renameRetry)
+                            <script type="application/json" id="rename-retry">@json($renameRetry)</script>
+                        @endif
+                        {{-- U14: the pack's title heads the card, its game type and last change below; Rename and Delete in the menu. --}}
                         <div class="flex items-start justify-between gap-3">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-bold tracking-[0.08em] text-muted uppercase">{{ __('packs.pack_label', ['type' => __('games.types.' . $pack->game_type->value)]) }}</span>
+                            <div class="flex min-w-0 flex-col gap-0.5">
+                                <h2 class="font-display text-2xl font-bold break-words">{{ $pack->title }}</h2>
                                 {{-- U6: when the pack last changed, in WIB (T10). --}}
-                                <span class="text-[13px] text-muted">{{ __('packs.changed', ['time' => $pack->updated_at?->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</span>
+                                <span class="text-sm text-muted">{{ __('games.types.' . $pack->game_type->value) }} · {{ __('packs.changed', ['time' => $pack->updated_at?->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</span>
                             </div>
-                            {{-- U2: destructive actions never sit in the page header. U5: the pack has one, so it is an icon button, not a menu. --}}
-                            <button type="button" class="row-action" aria-label="{{ __('packs.delete_pack_named', ['title' => $pack->title]) }}" title="{{ __('packs.delete_pack') }}"
-                                @click="$store.confirm.askFor('delete', {{ Js::from($pack->title) }}, {{ Js::from(route('host.packs.destroy', $pack)) }})"><i data-icon="trash"></i></button>
+                            <div class="flex shrink-0 items-center gap-2">
+                                <span class="text-sm text-muted tabular-nums">{{ trans_choice('packs.question_count', $questions->count()) }}</span>
+                                <button type="button" class="row-action" data-menu data-id="{{ $pack->id }}" data-name="{{ $pack->title }}" data-rename="1" data-delete="1"
+                                    @click="$store.rowMenu.openFrom($el)" aria-haspopup="menu" aria-label="{{ __('packs.pack_actions', ['title' => $pack->title]) }}" title="{{ __('ui.actions') }}"><i data-icon="more-vertical"></i></button>
+                            </div>
                         </div>
-
-                        {{-- Renaming changes the page title and breadcrumb: the whole content moves. --}}
-                        <form method="POST" action="{{ route('host.packs.update', $pack) }}" class="flex flex-wrap items-end gap-2.5" novalidate>
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="form" value="rename-pack">
-                            <div class="grow">
-                                <x-field name="title" :label="__('packs.pack_title')" :value="$pack->title" id="rename-pack" :submitted="old('form') === 'rename-pack'" maxlength="100" />
-                            </div>
-                            <x-button type="submit" variant="secondary">{{ __('packs.rename') }}</x-button>
-                        </form>
 
                         <p class="rounded-control bg-subtle px-4 py-3 text-sm text-on-subtle">{{ __('packs.copy_note') }}</p>
 
@@ -121,19 +125,14 @@
                             </x-empty-state>
                         @else
                             {{-- U9: drag a question by its handle; the arrows stay for keyboards and screen readers. --}}
-                            <div x-data="sortableList">
+                            <div x-data="sortableList" data-save-failed="{{ __('packs.order_failed') }}">
                                 <form method="POST" action="{{ route('host.packs.questions.reorder', $pack) }}" up-target="{{ $swap }}" up-history="true" x-ref="orderForm" class="hidden">
                                     @csrf
                                 </form>
-                                <ol class="flex flex-col gap-2">
+                                {{-- U8: rows slide to their new place (x-flip). --}}
+                                <ol class="flex flex-col gap-2" x-flip.moves>
                                     @foreach ($questions as $question)
-                                        @php
-                                            $number = $loop->iteration;
-                                            $up = $orderIds;
-                                            $down = $orderIds;
-                                            if (! $loop->first) { [$up[$loop->index - 1], $up[$loop->index]] = [$up[$loop->index], $up[$loop->index - 1]]; }
-                                            if (! $loop->last) { [$down[$loop->index + 1], $down[$loop->index]] = [$down[$loop->index], $down[$loop->index + 1]]; }
-                                        @endphp
+                                        @php $number = $loop->iteration; @endphp
                                         <li data-id="{{ $question->id }}" draggable="true"
                                             @dragstart="start($event, {{ $loop->index }})" @dragenter.prevent="enter({{ $loop->index }})" @dragover.prevent
                                             @drop.prevent="drop({{ $loop->index }})" @dragend="end()"
@@ -142,24 +141,19 @@
                                             <span class="flex h-11 w-6 shrink-0 cursor-grab items-center justify-center text-muted active:cursor-grabbing" title="{{ __('packs.drag') }}" aria-hidden="true">
                                                 <x-icon name="grip" />
                                             </span>
-                                            <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-sm font-bold">{{ $number }}</span>
+                                            <span data-number class="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-sm font-bold">{{ $number }}</span>
                                             <div class="flex min-w-0 grow flex-col">
                                                 @include('host.packs.summary.' . $pack->game_type->value, ['question' => $question])
                                             </div>
                                             <div class="flex shrink-0 items-center">
-                                                @foreach ([['up', $up, ! $loop->first], ['down', $down, ! $loop->last]] as [$direction, $order, $enabled])
-                                                    <form method="POST" action="{{ route('host.packs.questions.reorder', $pack) }}" up-target="{{ $swap }}" up-history="true">
-                                                        @csrf
-                                                        @foreach ($order as $id)
-                                                            <input type="hidden" name="order[]" value="{{ $id }}">
-                                                        @endforeach
-                                                        <button type="submit" @disabled(! $enabled) aria-label="{{ __('packs.move_' . $direction, ['number' => $number]) }}"
-                                                            class="flex size-11 items-center justify-center rounded-control text-muted hover:bg-subtle disabled:opacity-30">
-                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                                <path d="{{ $direction === 'up' ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6' }}"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
+                                                {{-- U14: the arrows move the row at once; the order is saved once after the last click. --}}
+                                                @foreach ([['up', -1, ! $loop->first], ['down', 1, ! $loop->last]] as [$direction, $delta, $enabled])
+                                                    <button type="button" data-move="{{ $direction }}" @click="nudge($el, {{ $delta }})" @disabled(! $enabled) aria-label="{{ __('packs.move_' . $direction, ['number' => $number]) }}"
+                                                        class="flex size-11 items-center justify-center rounded-control text-muted hover:bg-subtle disabled:opacity-30">
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="{{ $direction === 'up' ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6' }}"></path>
+                                                        </svg>
+                                                    </button>
                                                 @endforeach
                                                 {{-- U14: edit and delete are icon buttons on the row; delete asks first (U5). --}}
                                                 <a href="{{ route('host.packs.questions.edit', [$pack, $question]) }}" up-target="{{ $swap }}" up-history="true"

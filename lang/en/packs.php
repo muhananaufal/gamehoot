@@ -17,7 +17,10 @@ return [
     'no_questions' => 'No questions yet.',
     'no_questions_hint' => 'Write the first question. Games copy the questions when they are made, so later edits stay here.',
     'changed' => 'Changed :time',
-    'delete_pack_named' => 'Delete pack :title',
+    'pack_actions' => 'Actions for :title',
+    'rename_pack' => 'Rename pack',
+    'order_failed' => 'The new order could not be saved. The saved order is back.',
+    'question_count' => '{0} No questions|{1} 1 question|[2,*] :count questions',
     'drag' => 'Drag to move',
     'add_question' => 'Add question',
     'edit_question' => 'Edit question :number',
@@ -50,6 +53,7 @@ return [
         'duration' => 'Time to vote',
         'duration_hint' => 'Any value from 5 to 300 seconds. Default 20.',
         'duration_seconds' => 'Seconds',
+        'custom' => 'Custom',
     ],
 
     'kata' => [
