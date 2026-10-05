@@ -5,14 +5,20 @@ const fakeUp = () => {
     const handlers = {};
     const rendered = [];
 
-    return {
+    const up = {
         handlers,
         rendered,
+        animations: {},
+        motion: { config: { enabled: true } },
+        layer: { config: { modal: {} } },
+        animation: (name, fn) => (up.animations[name] = fn),
         link: { config: { followSelectors: [], noFollowSelectors: [] } },
         form: { config: { submitSelectors: [], noSubmitSelectors: [] } },
         on: (name, handler) => (handlers[name] = handler),
         render: (options) => rendered.push(options),
     };
+
+    return up;
 };
 
 describe('U18 navigation without reloads', () => {
@@ -86,5 +92,58 @@ describe('U18 navigation without reloads', () => {
         });
 
         expect([formAgain, otherPage, opening]).toEqual([untouched(), untouched(), untouched()]);
+    });
+
+    const fakeElement = (matching) => {
+        const calls = [];
+
+        return {
+            calls,
+            matches: (selector) => selector.split(',').some((part) => part.trim() === matching),
+            animate: (frames, options) => {
+                calls.push({ frames, options });
+
+                return { finished: Promise.resolve() };
+            },
+        };
+    };
+
+    it('lets new page content and the pack panel arrive with a short rise (U8)', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+        const content = fakeElement('#host-content');
+        const panel = fakeElement('#pack-panel');
+        const sidebar = fakeElement('#host-nav');
+
+        for (const target of [content, panel, sidebar]) {
+            up.handlers['up:fragment:inserted']({ target });
+        }
+
+        expect(content.calls).toHaveLength(1);
+        expect(content.calls[0].options.duration).toBeLessThanOrEqual(300);
+        expect(panel.calls).toHaveLength(1);
+        // The sidebar and the toasts update in place, without moving.
+        expect(sidebar.calls).toHaveLength(0);
+    });
+
+    it('keeps everything still when the device asks for reduced motion', () => {
+        const up = fakeUp();
+        up.motion.config.enabled = false;
+        configureNavigation(up);
+        const content = fakeElement('#host-content');
+
+        up.handlers['up:fragment:inserted']({ target: content });
+
+        expect(content.calls).toHaveLength(0);
+    });
+
+    it('opens modals with a small pop instead of a plain fade', async () => {
+        const up = fakeUp();
+        configureNavigation(up);
+        const box = fakeElement('up-modal-box');
+
+        expect(up.layer.config.modal.openAnimation).toBe('pop-in');
+        await up.animations['pop-in'](box, { duration: 175, easing: 'ease' });
+        expect(box.calls[0].frames[0]).toMatchObject({ opacity: 0 });
     });
 });

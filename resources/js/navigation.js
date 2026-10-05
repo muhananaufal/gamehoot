@@ -2,6 +2,9 @@
 // inside the panel shell are followed; phone pages and the Public View keep plain page loads.
 // Opt out per element with up-follow="false" / up-submit="false" (e.g. sign out).
 
+/** U8: the parts of a page that animate when they are swapped in. */
+const ENTERING = '#host-content, #pack-panel';
+
 export function configureNavigation(up) {
     // Unpoly puts modals at the end of <body>, outside the shell: their links and forms count too.
     up.link.config.followSelectors.push('[data-host-shell] a[href]', 'up-modal a[href]');
@@ -33,4 +36,39 @@ export function configureNavigation(up) {
             peel: 'accept',
         });
     });
+
+    // U8: new page content and the pack panel arrive with a short rise. Only what was swapped
+    // moves: the sidebar and the toasts update in place. Unpoly turns its motion off for
+    // prefers-reduced-motion, and so does this.
+    up.on('up:fragment:inserted', (event) => {
+        if (!up.motion.config.enabled || !event.target.matches(ENTERING)) {
+            return;
+        }
+
+        // A transform on the whole content column would pin its fixed toasts to it while moving;
+        // the page body alone rises.
+        const element = event.target.querySelector?.('main') ?? event.target;
+
+        element.animate(
+            [
+                { opacity: 0, transform: 'translateY(6px)' },
+                { opacity: 1, transform: 'none' },
+            ],
+            { duration: 180, easing: 'ease-out' },
+        );
+    });
+
+    // U8: modals pop in a little instead of only fading.
+    up.animation(
+        'pop-in',
+        (element, { duration, easing }) =>
+            element.animate(
+                [
+                    { opacity: 0, transform: 'scale(0.96)' },
+                    { opacity: 1, transform: 'none' },
+                ],
+                { duration, easing },
+            ).finished,
+    );
+    up.layer.config.modal.openAnimation = 'pop-in';
 }

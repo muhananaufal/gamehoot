@@ -298,6 +298,28 @@
     }
 }
 
+/* U8: the panel's own dialogs (confirmations, the date picker) open with a short pop. */
+dialog[open] {
+    animation: dialog-in 180ms ease-out;
+}
+
+dialog[open]::backdrop {
+    animation: backdrop-in 180ms ease-out;
+}
+
+@keyframes dialog-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+}
+
+@keyframes backdrop-in {
+    from {
+        opacity: 0;
+    }
+}
+
 /* U13, U18: Unpoly modals (create forms) look like the panel's own dialogs, in both themes. */
 up-modal-backdrop {
     background: color-mix(in srgb, var(--color-nav) 70%, transparent);
@@ -402,6 +424,8 @@ button[aria-busy='true']::after {
     }
 
     .mascot-idle,
+    dialog[open],
+    dialog[open]::backdrop,
     .pop-in,
     .row-enter,
     .podium-step,

@@ -13,7 +13,7 @@ function ruleOf(selector) {
     return start === -1 ? '' : css.slice(start, css.indexOf('}', start));
 }
 
-const KEY_MOMENTS = ['.pop-in', '.row-enter', '.podium-step', '.podium-name'];
+const KEY_MOMENTS = ['.pop-in', '.row-enter', '.podium-step', '.podium-name', 'dialog[open]'];
 
 describe('U8 key-moment motion', () => {
     it.each(KEY_MOMENTS)('%s animates in 100-300 ms', (selector) => {
