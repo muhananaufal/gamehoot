@@ -67,3 +67,24 @@ it('opens New event and Add host as modals that close on their result page (U13)
     expect((string) actingAs($admin)->get('/host/events/create')->getContent())->toMatch('/up-main="modal"[^>]*>[\s\S]*<form method="POST"/')
         ->and((string) actingAs($admin)->get('/admin/users/create')->getContent())->toMatch('/up-main="modal"[^>]*>[\s\S]*<form method="POST"/');
 });
+
+it('keeps the shared confirmation dialog and row menu inside the panel, so their forms move without reloading (U5, U18)', function (): void {
+    $html = (string) actingAs(User::factory()->create())->get('/host')->getContent();
+
+    $dom = new DOMDocument;
+    libxml_use_internal_errors(true);
+    $dom->loadHTML($html);
+    libxml_clear_errors();
+    $xpath = new DOMXPath($dom);
+
+    $count = function (string $query) use ($xpath): int {
+        $nodes = $xpath->query($query);
+
+        return $nodes === false ? 0 : $nodes->length;
+    };
+
+    expect($count('//*[@data-host-shell]//dialog[@aria-labelledby="confirm-title"]//form'))->toBe(1)
+        ->and($count('//*[@data-host-shell]//*[@role="menu"]'))->toBeGreaterThan(0)
+        // A save that swaps only part of a page (the pack editor, U14) still brings its message.
+        ->and($count('//*[@id="toasts"][@up-hungry]'))->toBe(1);
+});

@@ -238,3 +238,35 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
             ->assertSee('Move question 1 down');
     });
 });
+
+describe('the pack editor on one page (U14)', function (): void {
+    it('swaps only the pack panel and list when moving around, with a searchable list', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'A', 'duration_seconds' => 20]);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->assertOk()->getContent();
+
+        expect($html)->toContain('id="pack-list"')
+            ->and($html)->toContain('id="pack-panel"')
+            ->and($html)->toContain('aria-label="Search packs"')
+            // Another pack changes the title and breadcrumb, so its link moves the whole content.
+            ->and($html)->toMatch('/<a href="[^"]*\/host\/packs\/'.$pack->id.'"\s+aria-current="page"/')
+            ->and($html)->toMatch('/<form method="POST" action="[^"]*\/questions\/reorder"[^>]*up-target="#pack-panel, #pack-list"/');
+    });
+
+    it('edits and deletes a question from icon buttons on its row, and the form has no delete of its own', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'A', 'duration_seconds' => 20]);
+        $question = $pack->questions()->firstOrFail();
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}/questions/{$question->id}/edit")->assertOk()->getContent();
+
+        // The address follows, so Back, refresh and links to one question work (U14).
+        expect($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit" up-target="#pack-panel, #pack-list" up-history="true"/')
+            ->and($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit"[^>]*aria-label="Edit question 1"/')
+            ->and($html)->toContain("\$store.confirm.askFor('deleteQuestion', 'question 1',")
+            ->and($html)->not->toContain('value="DELETE"');
+    });
+});
