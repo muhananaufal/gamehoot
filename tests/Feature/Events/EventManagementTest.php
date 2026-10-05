@@ -297,6 +297,22 @@ describe('deleting and restoring (D-3)', function (): void {
             ->assertSee('x-init=" $refs.dialog.showModal() "', false);
     });
 
+    it('lists deleted events in the shared table, sortable, with Restore as an icon button (U4, U5)', function (): void {
+        $event = ownedEvent(attributes: ['name' => 'Gathering 2026', 'slug' => 'gathering-2026']);
+        $owner = ownerOf($event);
+        actingAs($owner)->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+        $html = (string) actingAs($owner)->get('/host/trash')->getContent();
+
+        expect($html)->toContain("tableView({ key: 'trash', sort: 'deleted', dir: 'desc' })")
+            ->toContain('placeholder="Search name or link"')
+            ->toContain('aria-label="Restore Gathering 2026"');
+
+        foreach (['name', 'deleted'] as $key) {
+            expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
+        }
+    });
+
     it('lets a super-admin see and restore any deleted event, but not a co-host (C-2, C-4)', function (): void {
         $event = ownedEvent(attributes: ['name' => 'Sales Kickoff', 'slug' => 'sales-kickoff']);
         $cohost = cohostOf($event);

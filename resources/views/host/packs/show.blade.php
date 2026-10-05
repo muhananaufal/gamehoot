@@ -86,19 +86,16 @@
                     <x-empty-state :title="__('packs.pick_title')" :body="__('packs.pick_pack')" />
                 @else
                     <section class="flex min-w-0 flex-col gap-4 rounded-card bg-surface p-6"
-                        x-data x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js([['key' => 'delete', 'label' => __('packs.delete_pack'), 'type' => 'confirm', 'danger' => true, 'url' => route('host.packs.destroy', '__P__')]])">
+                        x-data x-init="$store.confirm.texts = @js($confirmTexts)">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex flex-col">
                                 <span class="text-xs font-bold tracking-[0.08em] text-muted uppercase">{{ __('packs.pack_label', ['type' => __('games.types.' . $pack->game_type->value)]) }}</span>
                                 {{-- U6: when the pack last changed, in WIB (T10). --}}
                                 <span class="text-[13px] text-muted">{{ __('packs.changed', ['time' => $pack->updated_at?->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</span>
                             </div>
-                            {{-- U2: destructive actions never sit in the page header; they go in the menu. --}}
-                            <button type="button" data-menu data-id="{{ $pack->id }}" data-name="{{ $pack->title }}" data-delete="1" @click="$store.rowMenu.openFrom($el)"
-                                aria-haspopup="menu" aria-label="{{ __('packs.pack_actions', ['title' => $pack->title]) }}"
-                                class="flex size-11 shrink-0 items-center justify-center rounded-control text-muted hover:bg-subtle hover:text-ink">
-                                <x-icon name="more" />
-                            </button>
+                            {{-- U2: destructive actions never sit in the page header. U5: the pack has one, so it is an icon button, not a menu. --}}
+                            <button type="button" class="row-action" aria-label="{{ __('packs.delete_pack_named', ['title' => $pack->title]) }}" title="{{ __('packs.delete_pack') }}"
+                                @click="$store.confirm.askFor('delete', {{ Js::from($pack->title) }}, {{ Js::from(route('host.packs.destroy', $pack)) }})"><i data-icon="trash"></i></button>
                         </div>
 
                         {{-- Renaming changes the page title and breadcrumb: the whole content moves. --}}

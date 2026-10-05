@@ -59,9 +59,7 @@ describe('results (D-3, G10)', function (): void {
             ->assertOk()
             ->assertSeeInOrder(['Office Awards', 'Most punctual?', 'Rita Wulandari', '5', '=cmd Budi', '3', 'Best presenter?', 'No votes', 'Most helpful?', 'Not played'])
             // T10: stored in UTC, shown in WIB.
-            ->assertSee('Last change: 15 Oct 2026, 10:30 WIB')
-            // G10 for every game type, not only Pentahoot's Reveal.
-            ->assertSee('when the winner is picked');
+            ->assertSee('Last change: 15 Oct 2026, 10:30 WIB');
     });
 
     it('reads only the frozen table, not the raw votes (G10)', function (): void {
@@ -187,4 +185,12 @@ describe('activity log (E13)', function (): void {
     it('keeps other hosts out', function (): void {
         actingAs(User::factory()->create())->get('/host/'.playedEvent()->id.'/logs')->assertForbidden();
     });
+});
+
+it('shows no explanation paragraph under the title (U21)', function (): void {
+    $event = Event::factory()->open()->create();
+
+    actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}/results")
+        ->assertOk()
+        ->assertDontSee('Results are frozen when they are decided');
 });

@@ -17,7 +17,7 @@ return [
     'no_questions' => 'No questions yet.',
     'no_questions_hint' => 'Write the first question. Games copy the questions when they are made, so later edits stay here.',
     'changed' => 'Changed :time',
-    'pack_actions' => 'Actions for :title',
+    'delete_pack_named' => 'Delete pack :title',
     'drag' => 'Drag to move',
     'add_question' => 'Add question',
     'edit_question' => 'Edit question :number',

@@ -5,13 +5,12 @@
         <x-button :href="route('host.events.results.export', $event)" variant="secondary">{{ __('results.export') }}</x-button>
     </x-slot:actions>
 
-    <section class="flex flex-col gap-2 rounded-card bg-surface p-6">
-        <p class="text-sm text-muted">{{ __('results.subtitle') }}</p>
-        @if ($results->lastChange)
+    @if ($results->lastChange)
+        <section class="flex flex-col gap-2 rounded-card bg-surface p-6">
             <p class="text-sm font-semibold">{{ __('results.last_change', ['time' => $results->lastChange->timezone(config('app.display_timezone'))->format('j M Y, H:i')]) }}</p>
             <p class="text-sm text-muted">{{ __('results.reopened_note') }}</p>
-        @endif
-    </section>
+        </section>
+    @endif
 
     @forelse ($results->games as $game)
         <section class="flex flex-col gap-4 rounded-card bg-surface p-6">

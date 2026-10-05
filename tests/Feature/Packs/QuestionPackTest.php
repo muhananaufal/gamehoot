@@ -211,7 +211,7 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
         actingAs($host)->get('/host/packs')->assertSee('Pick a pack on the left, or create a new one.');
     });
 
-    it('puts Add question in the top bar, Delete pack in a menu, and says when the pack changed', function (): void {
+    it('puts Add question in the top bar, Delete pack as an icon button, and says when the pack changed (U5)', function (): void {
         $host = User::factory()->create();
         travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
         $pack = packOf($host);
@@ -220,7 +220,8 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
 
         expect(Str::between($html, '<header', '</header>'))->not->toContain('Add question')
             ->and(Str::after($html, '<main'))->toContain('Add question')
-            ->and($html)->toContain('data-delete="1"')
+            ->and($html)->not->toContain('data-menu')
+            ->and($html)->toContain('aria-label="Delete pack Office Awards"')
             ->and($html)->not->toContain('variant="link-destructive"')
             ->and($html)->toContain('Changed 2 Oct, 11:30');
     });
