@@ -5,13 +5,14 @@ declare(strict_types=1);
 // E13: labels for the logged actions (the irreversible ones and changes of access or links), keyed by LoggedAction value with dots as underscores.
 return [
     'title' => 'Activity log',
-    'subtitle' => 'Important actions, newest first. That is everything that cannot be undone, plus changes to access and links. Times are in WIB.',
     'empty' => 'Nothing has been logged for this event yet.',
     'system' => 'System',
-    'when' => 'When',
+    'when' => 'When (WIB)',
     'who' => 'Who',
     'what' => 'What',
-    'search' => 'Search the log',
+    'search' => 'Search action, who or what',
+    'everyone' => 'Everyone',
+    'date_filter' => 'Filter by date',
     'no_match' => 'No entry matches.',
     'actions' => [
         'account_created' => 'Created a host account',

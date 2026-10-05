@@ -127,7 +127,7 @@ it('shows the new entries in words on the Activity log page', function (): void 
 
     actingAs($host)->get("/host/{$event->id}/logs")
         ->assertOk()
-        ->assertSee('Important actions, newest first.')
+        ->assertDontSee('Important actions, newest first.')
         ->assertSeeInOrder(['Added a co-host', 'Dina (HR)', 'Deleted a name', 'Budi Santoso']);
 });
 
@@ -140,6 +140,28 @@ it('lets the host search the log and sort it by time in the browser (U4)', funct
 
     expect($html)->toContain("x-data=\"tableView({ key: 'logs:{$event->id}', sort: 'at', dir: 'desc' })\"")
         ->and($html)->toContain('Rows per page')
-        ->and($html)->toContain('aria-label="Search the log"')
+        ->and($html)->toContain('placeholder="Search action, who or what"')
         ->and($html)->toMatch('/<tr data-row data-search="[^"]*locked new name claims[^"]*" data-sort-at="\d+"/');
+});
+
+it('filters the log by who did it and by date, and sorts every column (U4)', function (): void {
+    $owner = User::factory()->create(['name' => 'Owner Ana']);
+    $event = Event::factory()->for($owner, 'owner')->open()->create();
+    $cohost = User::factory()->create(['name' => 'Co Budi']);
+    $event->cohosts()->attach($cohost);
+    travelTo(CarbonImmutable::parse('2026-10-04 18:30:00'));
+    app(SetJoinLock::class)->handle($event, true, $cohost);
+
+    $html = (string) actingAs($owner)->get("/host/{$event->id}/logs")->assertOk()->getContent();
+
+    // Owner first, then the co-hosts: everyone who can act on the event.
+    expect($html)->toMatch('/<select x-model="who"[\s\S]*?Everyone[\s\S]*?Owner Ana[\s\S]*?Co Budi/')
+        ->and($html)->toContain('data-who="'.$cohost->id.'"')
+        // 18:30 UTC on 4 Oct is 5 Oct in WIB (T10).
+        ->and($html)->toContain('data-date="2026-10-05"')
+        ->and($html)->toContain('dateRangePicker');
+
+    foreach (['at', 'who', 'what'] as $key) {
+        expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
+    }
 });
