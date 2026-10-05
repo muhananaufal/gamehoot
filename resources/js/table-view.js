@@ -25,6 +25,7 @@ export function loadState(storage, key, defaults) {
     return {
         q: text(stored.q),
         filter: text(stored.filter) || 'all',
+        who: text(stored.who) || 'all',
         sort: text(stored.sort) || defaults.sort,
         dir: DIRECTIONS.includes(stored.dir) ? stored.dir : defaults.dir,
         from: DATE.test(text(stored.from)) ? stored.from : '',
@@ -39,6 +40,7 @@ export function saveState(storage, key, state, defaults) {
     const base = {
         q: '',
         filter: 'all',
+        who: 'all',
         sort: defaults.sort,
         dir: defaults.dir,
         from: '',
@@ -66,17 +68,56 @@ export function saveState(storage, key, state, defaults) {
 
 /** Whether anything narrows the list (sort order and page size do not). */
 export function filtersActive(state) {
-    return state.q.trim() !== '' || state.filter !== 'all' || state.from !== '' || state.to !== '';
+    return (
+        state.q.trim() !== '' ||
+        state.filter !== 'all' ||
+        (state.who ?? 'all') !== 'all' ||
+        state.from !== '' ||
+        state.to !== ''
+    );
 }
 
-export function matchesRow(row, { q, filter, from = '', to = '' }) {
+export function matchesRow(row, { q, filter, who = 'all', from = '', to = '' }) {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const text = row.search.toLowerCase();
     const date = row.date ?? '';
     const inRange =
         (from === '' && to === '') || (date !== '' && (from === '' || date >= from) && (to === '' || date <= to));
 
-    return (filter === 'all' || row.filter === filter) && inRange && words.every((word) => text.includes(word));
+    return (
+        (filter === 'all' || row.filter === filter) &&
+        (who === 'all' || row.who === who) &&
+        inRange &&
+        words.every((word) => text.includes(word))
+    );
+}
+
+/**
+ * The page numbers of a numbered pager: the first, the last, and the current page with one
+ * neighbour on each side (three at the ends), with '…' for gaps. A gap of a single page shows
+ * that page instead, since '…' would take the same room.
+ */
+export function pageItems(page, pages) {
+    const start = Math.max(1, Math.min(page - 1, pages - 2));
+    const end = Math.min(pages, start + 2);
+    const numbers = [...new Set([1, pages, ...Array.from({ length: end - start + 1 }, (_, i) => start + i)])].sort(
+        (a, b) => a - b,
+    );
+    const items = [];
+
+    for (const number of numbers) {
+        const previous = items.at(-1);
+
+        if (typeof previous === 'number' && number - previous === 2) {
+            items.push(previous + 1);
+        } else if (typeof previous === 'number' && number - previous > 2) {
+            items.push('…');
+        }
+
+        items.push(number);
+    }
+
+    return items;
 }
 
 /** The rows of one page; the page is kept inside the list when rows disappear. */
@@ -123,6 +164,10 @@ export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', 
             return filtersActive(this);
         },
 
+        get pageNumbers() {
+            return pageItems(this.page, this.pages);
+        },
+
         /**
          * U5: one listener for every row button. [data-menu] opens the page's row menu;
          * [data-copy] copies its text and confirms with a toast (U3).
@@ -132,6 +177,15 @@ export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', 
 
             if (menu) {
                 this.$store.rowMenu.openFrom(menu);
+
+                return;
+            }
+
+            // U5: a row button that asks first (new link, rename, delete); the page sent the texts.
+            const ask = event.target.closest('[data-ask]');
+
+            if (ask) {
+                this.$store.confirm.askRow(ask);
 
                 return;
             }
@@ -149,7 +203,7 @@ export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', 
             this.apply();
             // A new search, filter, order or page size starts again at page 1.
             this.$watch(
-                () => [this.q, this.filter, this.sort, this.dir, this.from, this.to, this.size].join('|'),
+                () => [this.q, this.filter, this.who, this.sort, this.dir, this.from, this.to, this.size].join('|'),
                 () => {
                     this.page = 1;
                     this.apply();
@@ -176,7 +230,7 @@ export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', 
         },
 
         reset() {
-            Object.assign(this, { q: '', filter: 'all', from: '', to: '' });
+            Object.assign(this, { q: '', filter: 'all', who: 'all', from: '', to: '' });
         },
 
         previous() {
@@ -188,11 +242,12 @@ export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', 
         },
 
         apply() {
-            const state = { q: this.q, filter: this.filter, from: this.from, to: this.to };
+            const state = { q: this.q, filter: this.filter, who: this.who, from: this.from, to: this.to };
             const view = this.rows().map((el) => ({
                 el,
                 search: el.dataset.search ?? '',
                 filter: el.dataset.filter ?? '',
+                who: el.dataset.who ?? '',
                 date: el.dataset.date ?? '',
                 sort: Object.fromEntries(
                     Object.entries(el.dataset)

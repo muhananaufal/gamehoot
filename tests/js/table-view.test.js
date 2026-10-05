@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { compareRows, filtersActive, loadState, matchesRow, pageOf, saveState } from '../../resources/js/table-view.js';
+import {
+    compareRows,
+    filtersActive,
+    loadState,
+    matchesRow,
+    pageItems,
+    pageOf,
+    saveState,
+} from '../../resources/js/table-view.js';
 
 const row = (values) => ({
     search: values.search ?? '',
@@ -38,6 +46,7 @@ describe('U4 table view state in localStorage', () => {
         expect(loadState(memory(), 'names', DEFAULTS)).toEqual({
             q: '',
             filter: 'all',
+            who: 'all',
             sort: 'name',
             dir: 'asc',
             from: '',
@@ -155,5 +164,39 @@ describe('U4 matching and sorting rows', () => {
             '1790906731',
             '',
         ]);
+    });
+});
+
+describe('U4 numbered pagination', () => {
+    it('lists every page while there are few', () => {
+        expect(pageItems(1, 1)).toEqual([1]);
+        expect(pageItems(3, 5)).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    it('keeps the first, the last and the neighbours of the current page, with gaps between', () => {
+        expect(pageItems(1, 9)).toEqual([1, 2, 3, '…', 9]);
+        expect(pageItems(5, 9)).toEqual([1, '…', 4, 5, 6, '…', 9]);
+        expect(pageItems(9, 9)).toEqual([1, '…', 7, 8, 9]);
+    });
+
+    it('shows a single hidden page as its number instead of a gap', () => {
+        expect(pageItems(4, 9)).toEqual([1, 2, 3, 4, 5, '…', 9]);
+    });
+});
+
+describe('U4 who did it (Activity log)', () => {
+    it('keeps rows of the chosen person only', () => {
+        const rows = [row({ who: 'u1' }), row({ who: 'u2' })].map((r, i) => ({ ...r, who: ['u1', 'u2'][i] }));
+
+        expect(rows.filter((r) => matchesRow(r, { q: '', filter: 'all', who: 'u2' }))).toHaveLength(1);
+        expect(rows.filter((r) => matchesRow(r, { q: '', filter: 'all', who: 'all' }))).toHaveLength(2);
+    });
+
+    it('remembers the choice and counts it as a filter', () => {
+        const storage = memory();
+        saveState(storage, 'logs', { ...loadState(storage, 'logs', DEFAULTS), who: 'u2' }, DEFAULTS);
+
+        expect(loadState(storage, 'logs', DEFAULTS).who).toBe('u2');
+        expect(filtersActive({ ...loadState(memory(), 'x', DEFAULTS), who: 'u2' })).toBe(true);
     });
 });
