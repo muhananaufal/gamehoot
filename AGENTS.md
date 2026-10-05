@@ -54,7 +54,7 @@ Aturan:
 - Satu penanda untuk satu fakta: `events.active_game_id`, `games.current_question_id` (G7).
 - Hasil **dibekukan** ke `question_results` saat Reveal dan `game_results` saat game selesai. Halaman Hasil dan export hanya membaca tabel beku (G10).
 - Jaminan di level database: unique `(question_id, voter_person_id)`, unique `(event_id, name_normalized)`, FK `restrict` untuk data yang dipakai hasil (G2, G13).
-- Hanya `events` dan `question_packs` yang memakai soft delete (G4, D-9).
+- Hanya `events`, `question_packs`, dan `users` yang memakai soft delete (G4, D-9, C-7).
 
 ## 5. Alur git (W1–W7)
 
