@@ -130,3 +130,29 @@ describe('B-6 a phone whose name the host released', () => {
         expect(navigate).toHaveBeenCalledWith('/demo');
     });
 });
+
+describe('D-8 Live control after the last question', () => {
+    const hostWith = (game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const host = pentahootHost({ actionUrl: '/act', labels: {} });
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('knows every question is done once the last one moved on', () => {
+        expect(hostWith({ question: null, statuses: ['done', 'done'] }).allDone).toBe(true);
+    });
+
+    it('is not done while a question is still open or waiting', () => {
+        expect(hostWith({ question: null, statuses: ['done', 'ready'] }).allDone).toBe(false);
+        expect(
+            hostWith({
+                question: { id: 'q2', number: 2, status: 'revealed', attempt: 1 },
+                statuses: ['done', 'revealed'],
+            }).allDone,
+        ).toBe(false);
+        expect(hostWith({ question: null, statuses: [] }).allDone).toBe(false);
+    });
+});

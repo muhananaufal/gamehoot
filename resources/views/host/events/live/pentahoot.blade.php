@@ -27,7 +27,12 @@
 
         {{-- The question on screen: countdown, answers, and the actions its state allows. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
-            <p x-show="!question || phase === 'done'" class="text-muted">{{ __('pentahoot.no_question') }}</p>
+            <p x-show="(!question || phase === 'done') && !allDone" class="text-muted">{{ __('pentahoot.no_question') }}</p>
+            {{-- D-8: after the last question the only step left is finishing the game. --}}
+            <div x-cloak x-show="allDone" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
+                <p class="font-semibold">{{ __('pentahoot.all_done') }}</p>
+                @include('host.events.live.finish', ['label' => __('games.finish')])
+            </div>
             <template x-if="question && phase !== 'done'">
                 <div class="flex flex-col gap-5">
                     <div class="flex items-center justify-between gap-3">
@@ -90,13 +95,6 @@
     {{-- D-8, E13: finishing early leaves unfinished questions out and is logged. --}}
     <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
         <span class="font-semibold">{{ $game->title }}</span>
-        <x-confirm-dialog :title="__('games.finish') . '?'" :trigger="__('games.finish')">
-            <p class="text-[15px] text-muted">{{ __('games.finish_confirm', ['title' => $game->title]) }}</p>
-            <form method="POST" action="{{ route('host.events.games.finish', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
-                @csrf
-                <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                <x-button type="submit">{{ __('games.finish') }}</x-button>
-            </form>
-        </x-confirm-dialog>
+        @include('host.events.live.finish', ['label' => __('games.finish')])
     </section>
 </div>

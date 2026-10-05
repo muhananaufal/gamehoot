@@ -201,3 +201,16 @@ describe('Tebak Gambar screens (stage 5)', function (): void {
         get('/year-end-party/screen')->assertOk()->assertDontSee('Paris')->assertDontSee($answerImage);
     });
 });
+
+describe('Live control after the last question (D-8)', function (): void {
+    it('tells the host every question is done and offers to finish the game right there', function (string $kind): void {
+        $event = Pentahoot::event();
+        $kind === 'pentahoot' ? Pentahoot::running($event) : TebakKata::running($event);
+
+        $html = (string) actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")->assertOk()->getContent();
+        $flag = $kind === 'pentahoot' ? 'allDone' : 'allResolved';
+
+        // The notice shows only once nothing is left, and holds its own Finish game form.
+        expect($html)->toMatch('/x-show="'.$flag.'"[^>]*>[\s\S]*?All questions are done[\s\S]*?\/games\/[0-9a-f-]+\/finish/');
+    })->with(['pentahoot', 'tebak']);
+});

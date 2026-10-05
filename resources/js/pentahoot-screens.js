@@ -414,6 +414,12 @@ export function pentahootHost({ actionUrl, labels }) {
         get allAnswered() {
             return this.phase === 'live' && this.total > 0 && this.answered >= this.total;
         },
+        /** D-8: nothing is left to open, so the next step is finishing the game. */
+        get allDone() {
+            const statuses = this.game?.statuses ?? [];
+
+            return !this.question && statuses.length > 0 && statuses.every((status) => status === 'done');
+        },
         get busyQuestion() {
             return this.phase === 'live' || this.phase === 'closed' || this.phase === 'revealed';
         },
