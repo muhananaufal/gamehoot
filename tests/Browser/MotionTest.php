@@ -64,9 +64,10 @@ it('pops a create modal in, fully visible once it settles (U8)', function (): vo
         JS);
     $page->wait(2);
 
-    $opacities = $page->script('window.__opacities');
+    $sampled = $page->script('window.__opacities');
+    $opacities = array_map(fn (mixed $value): float => is_numeric($value) ? (float) $value : -1.0, is_array($sampled) ? array_values($sampled) : []);
     expect($opacities)->not->toBeEmpty()
-        ->and(min($opacities))->toBeLessThan(1)
-        ->and(end($opacities))->toBe(1);
+        ->and($opacities === [] ? 1.0 : min($opacities))->toBeLessThan(1)
+        ->and($opacities === [] ? 0.0 : $opacities[count($opacities) - 1])->toBe(1.0);
     $page->assertNoJavaScriptErrors();
 });

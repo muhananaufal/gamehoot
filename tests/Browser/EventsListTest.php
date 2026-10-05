@@ -44,8 +44,10 @@ it('filters events by a range picked in the calendar, quickly and from the keybo
 
     $visible = 'JSON.stringify([...document.querySelectorAll("tr[data-row]")].filter((row) => ! row.hidden).map((row) => row.querySelector("a").innerText))';
 
-    $page->click('Apply')
-        ->assertScript($visible, '["Fresh Party"]')
+    // Apply closes the dialog, which now leaves with a short transition (U8): a retried click
+    // would no longer find it, so it goes through a script too.
+    $page->script('[...document.querySelectorAll("dialog[open] button")].find((b) => b.innerText.trim() === "Apply").click()');
+    $page->assertScript($visible, '["Fresh Party"]')
         ->click('Reset filters')
         ->assertScript($visible, '["Fresh Party","Early Party"]')
         ->assertNoJavaScriptErrors();
