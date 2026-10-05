@@ -12,6 +12,9 @@
             <template x-if="$store.confirm.method !== 'POST'">
                 <input type="hidden" name="_method" :value="$store.confirm.method">
             </template>
+            <template x-for="[name, value] in Object.entries($store.confirm.data)" :key="name">
+                <input type="hidden" :name="name" :value="value">
+            </template>
             {{-- U5: one field to fill in (rename), reopened with the server's error when refused. --}}
             <template x-if="$store.confirm.field">
                 <div class="flex flex-col gap-1.5">

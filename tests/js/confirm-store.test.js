@@ -130,3 +130,30 @@ describe('U5 row buttons that take id and name from their row', () => {
         expect(confirm.action).toBe('/p/p9');
     });
 });
+
+describe('U4 choices sent in the form, never in the address', () => {
+    it('carries hidden form values of its kind', () => {
+        const confirm = confirmStore();
+        confirm.texts = {
+            disable: {
+                title: 'Disable __N__?',
+                label: 'Disable',
+                method: 'PUT',
+                url: '/u/__P__/status',
+                data: { disabled: '1' },
+            },
+        };
+
+        confirm.askRow({ dataset: { ask: 'disable', id: 'u1', name: 'Dina' } });
+
+        expect(confirm.action).toBe('/u/u1/status');
+        expect(confirm.data).toEqual({ disabled: '1' });
+    });
+
+    it('sends no hidden values when its kind has none', () => {
+        const confirm = confirmStore();
+        confirm.ask({ title: 'T', action: '/a', confirmLabel: 'OK' });
+
+        expect(confirm.data).toEqual({});
+    });
+});

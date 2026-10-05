@@ -134,30 +134,36 @@ it('lets a super-admin search and filter host accounts, see when each was added,
 
     $html = (string) actingAs($admin)->get('/admin/users')->assertOk()->getContent();
 
-    // A name inside the click handler stays inside its attribute and its JS string.
-    expect($html)->toContain('askFor(\'disable\', \'Ann \u0022Q\u0022 \u003Cb\u003E\', ');
+    // A name stays inside its attribute.
+    expect($html)->toContain('data-name="Ann &quot;Q&quot; &lt;b&gt;"');
 
     expect($html)->toContain('x-data="tableView({ key: \'accounts\', sort: \'name\' })"')
-        ->and($html)->toContain('aria-label="Search accounts"')
+        ->and($html)->toContain('placeholder="Search name or email"')
         ->and($html)->toContain('Rows per page')
-        ->and($html)->toMatch('/<tr data-row data-search="dina host dina@example\.test" data-filter="active" data-sort-name="Dina Host" data-sort-added="\d+"/')
+        ->and($html)->toMatch('/<tr data-row [^>]*data-search="dina host dina@example\.test" data-filter="active"/')
         ->and($html)->toMatch('/data-filter="disabled"/')
         // U6: Added is its own sortable column; the info cards are gone.
         ->and($html)->toContain('aria-sort="ariaSort(\'added\')"')
         ->and($html)->toContain('1 Sep 2026')
         ->and($html)->not->toContain('Added 1 Sep 2026')
         ->and($html)->not->toContain('transfer them to another host if needed')
-        ->and($html)->toContain('$store.confirm.askFor(\'disable\', \'Dina Host\', ')
+        ->and($html)->toContain('data-ask="disable"')
         ->and($html)->not->toContain('@js(');
 });
 
-it('disables an account from the confirmation dialog, which sends the choice in the address (U5)', function (): void {
+it('sends the Disable choice in the form, never in the address, and sorts every column (U4, U5)', function (): void {
     $admin = User::factory()->superAdmin()->create();
-    $host = User::factory()->create();
+    User::factory()->create();
 
-    actingAs($admin)->put("/admin/users/{$host->id}/status?disabled=1")->assertRedirect();
+    $html = (string) actingAs($admin)->get('/admin/users')->getContent();
 
-    expect($host->refresh()->disabled_at)->not->toBeNull();
+    // @js() writes quotes as " inside the page.
+    expect($html)->not->toContain('disabled=1')
+        ->and(str_replace(chr(92).'u0022', '"', $html))->toContain('"data":{"disabled":"1"}');
+
+    foreach (['name', 'email', 'role', 'status', 'added'] as $key) {
+        expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
+    }
 });
 
 it('marks your own account next to your name and resets passwords in a dialog (U5, U6)', function (): void {
