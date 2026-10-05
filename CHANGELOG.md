@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Icons in the narrowed sidebar are centred.
+- After the last question, Live control points to Finish game instead of asking to pick a question that does not exist.
+- Live control no longer reloads the whole page when another game starts or ends.
 - Pressing Enter in a dialog field (such as Add name or New pack) sends the form instead of closing the dialog.
 - Name lists saved as CSV by Excel on Windows keep their accented names instead of silently dropping them.
 - Exported CSV files (results and personal links) open in Excel with accents and emoji intact.
@@ -81,6 +83,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Buttons show a spinner while they save, including the buttons on Live control.
 - Page changes, modals and dialogs have short animations, off when the device asks for reduced motion.
 - The theme switch shows a sun or a moon for where it goes, the sign in page has the theme switch, and every password field can be shown and hidden.
+- Every table looks the same: rows per page and filters above it, the date range and the search box on the right, numbered pages below, and every column sorts. Search boxes say what they search.
+- Row actions are icon buttons in the row when there are one or two, instead of a menu. On Names, copy link, new link, release, rename and delete are icons, and renaming opens a dialog.
+- Export links (CSV) sits at the top of the Names page and warns before the download. Joined names read "Playing".
+- The event list shows your role (Owner or Co-host) as a pill next to each event name.
+- The Activity log can be filtered by who did it and by date. Results and the Activity log no longer open with an explanation paragraph.
+- Settings shows the event status next to General, makes Close event and Transfer ownership red, asks before a transfer, and lists the owner first and then each co-host with the date they were added. A field that cannot change right now looks switched off, and Close event is off with its reason while a game runs.
+- Deleted events are listed in a table with Restore as an icon button.
+- Every dialog closes on a click outside it.
+- Form fields are checked as you leave them, so mistakes such as a link already in use show before you save.
+- Pages, modals, dialogs, table rows and ranking changes move with a soft spring; nothing moves when the device asks for reduced motion.
+- Question packs can be searched by game type too.
 
 ## [0.5.0] - 2026-10-01
 
