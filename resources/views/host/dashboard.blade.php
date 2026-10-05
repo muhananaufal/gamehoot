@@ -6,6 +6,12 @@
         EventStatus::Draft => 'neutral',
         EventStatus::Finished => 'warning',
     };
+    // U4: the Status column sorts in the order an event goes through.
+    $statusOrder = fn (EventStatus $s): int => match ($s) {
+        EventStatus::Draft => 1,
+        EventStatus::Open => 2,
+        EventStatus::Finished => 3,
+    };
     $tz = config('app.display_timezone');
 @endphp
 <x-layouts.host :title="__('host.dashboard.title')" :breadcrumbs="[[__('host.dashboard.title'), null]]">
@@ -18,9 +24,9 @@
             <x-button variant="secondary" :href="route('host.packs.index')">{{ __('host.nav.question_packs') }}</x-button>
         </x-empty-state>
     @else
-        {{-- U4: filter, search and sort in the browser; the state stays in the URL. --}}
+        {{-- U4: filter, search, sort and pages in the browser; the view state stays in localStorage. --}}
         <div x-data="tableView({ key: 'events', sort: 'created', dir: 'desc' })" class="flex flex-col gap-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
+            <x-table.toolbar :search="__('host.dashboard.search')" :today="now()->timezone($tz)->format('Y-m-d')" :date-label="__('host.dashboard.date_filter')">
                 <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('host.dashboard.status') }}">
                     @foreach ([null, ...EventStatus::cases()] as $filter)
                         @php
@@ -33,39 +39,31 @@
                             :class="filter === @js($key) ? 'bg-inverse text-on-inverse' : 'border border-line-strong bg-surface text-ink hover:bg-subtle'">{{ $label }} · {{ $count }}</button>
                     @endforeach
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                <label class="relative flex w-full items-center sm:w-72">
-                    <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
-                    <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('host.dashboard.search') }}" placeholder="{{ __('host.dashboard.search') }}" autocomplete="off"
-                        class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
-                </label>
-                <x-date-range-picker :today="now()->timezone($tz)->format('Y-m-d')" :label="__('host.dashboard.date_filter')" />
-                <x-reset-filters />
-                </div>
-            </div>
+            </x-table.toolbar>
 
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left">
                     <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                         <tr>
-                            <th scope="col" class="px-6 py-1" :aria-sort="ariaSort('name')">
-                                <button type="button" class="inline-flex min-h-11 items-center gap-1.5 uppercase hover:text-ink" @click="sortBy('name')">{{ __('host.dashboard.event') }} <x-icon name="sort" class="size-3.5" /></button>
-                            </th>
-                            <th scope="col" class="px-4 py-3">{{ __('host.dashboard.status') }}</th>
-                            <th scope="col" class="px-4 py-3">{{ __('host.dashboard.names') }}</th>
-                            <th scope="col" class="px-4 py-3">{{ __('host.dashboard.games') }}</th>
-                            <th scope="col" class="px-4 py-1" :aria-sort="ariaSort('created')">
-                                <button type="button" class="inline-flex min-h-11 items-center gap-1.5 uppercase hover:text-ink" @click="sortBy('created')">{{ __('host.dashboard.created_column') }} <x-icon name="sort" class="size-3.5" /></button>
-                            </th>
+                            <x-table.th sort="name">{{ __('host.dashboard.event') }}</x-table.th>
+                            <x-table.th sort="status">{{ __('host.dashboard.status') }}</x-table.th>
+                            <x-table.th sort="names">{{ __('host.dashboard.names') }}</x-table.th>
+                            <x-table.th sort="games">{{ __('host.dashboard.games') }}</x-table.th>
+                            <x-table.th sort="created">{{ __('host.dashboard.created_column') }}</x-table.th>
                         </tr>
                     </thead>
                     <tbody class="[&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0">
                         @foreach ($events as $event)
                             <tr data-row data-search="{{ mb_strtolower($event->name . ' ' . $event->slug . ' ' . $event->owner?->name) }}" data-filter="{{ $event->status->value }}"
-                                data-sort-name="{{ $event->name }}" data-sort-created="{{ $event->created_at?->getTimestamp() }}" data-date="{{ $event->created_at?->timezone($tz)->format('Y-m-d') }}">
+                                data-sort-name="{{ $event->name }}" data-sort-status="{{ $statusOrder($event->status) }}" data-sort-names="{{ $event->people_count }}" data-sort-games="{{ $event->games_count }}"
+                                data-sort-created="{{ $event->created_at?->getTimestamp() }}" data-date="{{ $event->created_at?->timezone($tz)->format('Y-m-d') }}">
                                 <td class="px-6 py-3.5">
-                                    <a href="{{ route('host.events.live', $event) }}" class="block text-base font-bold hover:text-link">{{ $event->name }}</a>
-                                    {{-- U6: when it was made, and whose it is when the host only co-hosts it. --}}
+                                    {{-- U21: the host's role is a pill next to the name; the owner of a co-hosted event stays below. --}}
+                                    <span class="flex flex-wrap items-center gap-2">
+                                        <a href="{{ route('host.events.live', $event) }}" class="text-base font-bold hover:text-link">{{ $event->name }}</a>
+                                        <x-chip :tone="$event->owner_id === $user->id ? 'accent' : 'neutral'">{{ $event->owner_id === $user->id ? __('host.dashboard.owner') : __('host.dashboard.cohost') }}</x-chip>
+                                    </span>
+                                    {{-- U6: when it last changed, and whose it is when the host only co-hosts it. --}}
                                     <span class="text-[13px] text-muted">/{{ $event->slug }} · {{ __('host.dashboard.changed_at', ['time' => $event->updated_at?->timezone($tz)->format('j M, H:i')]) }}@if ($event->owner_id !== $user->id) · {{ __('host.dashboard.owned_by', ['name' => $event->owner?->name]) }}@endif</span>
                                 </td>
                                 <td class="px-4 py-3.5">

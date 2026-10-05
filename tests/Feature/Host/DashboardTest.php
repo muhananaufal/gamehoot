@@ -54,7 +54,7 @@ it('filters, searches and sorts events in the browser, with the counts per statu
         ->and($html)->toMatch('/data-sort-created="\d+" data-date="\d{4}-\d{2}-\d{2}"/')
         ->and($html)->toMatch('/<tr data-row data-search="open one[^"]*" data-filter="open"/')
         ->and($html)->toMatch('/<tr data-row data-search="draft one[^"]*" data-filter="draft"/')
-        ->and($html)->toContain('aria-label="Search events"');
+        ->and($html)->toContain('placeholder="Search name, link or owner"');
 });
 
 it('says when each event was made and last changed, and who owns a co-hosted one (U6)', function (): void {
@@ -68,7 +68,7 @@ it('says when each event was made and last changed, and who owns a co-hosted one
 
     // Created is a sortable column; when it last changed sits under the event link (U6).
     actingAs($host)->get('/host')
-        ->assertSeeInOrder(['Gathering', 'Changed 2 Oct, 11:30', 'Co-host · owner Dina (HR)', '1 Oct 2026'])
+        ->assertSeeInOrder(['Gathering', 'Co-host', 'Changed 2 Oct, 11:30', 'Owned by Dina (HR)', '1 Oct 2026'])
         ->assertSee('aria-sort="ariaSort(\'created\')"', false)
         ->assertDontSee('Created 1 Oct 2026');
 });
@@ -96,4 +96,22 @@ it('filters events by a created date range from a themed calendar (U15)', functi
         ->and($html)->toContain('data-date="2026-10-02"')
         ->and($html)->toContain('role="grid"')
         ->and($html)->toContain('aria-label="Filter by created date"');
+});
+
+it('marks the role of the host on each event with a pill next to its name (U21)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create(['name' => 'Mine']);
+
+    actingAs($host)->get('/host')->assertSeeInOrder(['Mine', 'Owner', '/'])->assertDontSee('Owned by');
+});
+
+it('sorts the events by every column (U4)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create();
+
+    $html = (string) actingAs($host)->get('/host')->getContent();
+
+    foreach (['name', 'status', 'names', 'games', 'created'] as $key) {
+        expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
+    }
 });

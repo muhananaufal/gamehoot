@@ -39,13 +39,13 @@ return [
         'empty_title' => 'No events yet.',
         'empty' => 'Write a question pack first, then make an event, add the names and pick its games.',
         'empty_filtered' => 'No event matches.',
-        'search' => 'Search events',
+        'search' => 'Search name, link or owner',
         'changed' => 'Changed',
         'changed_at' => 'Changed :time',
         'created_column' => 'Created',
         'date_filter' => 'Filter by created date',
         'created' => 'Created :date',
-        'owned_by' => 'Co-host · owner :name',
+        'owned_by' => 'Owned by :name',
     ],
 
     'event_status' => [
