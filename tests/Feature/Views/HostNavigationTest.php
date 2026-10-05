@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Symfony\Component\Finder\SplFileInfo;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -87,4 +89,16 @@ it('keeps the shared confirmation dialog and row menu inside the panel, so their
         ->and($count('//*[@data-host-shell]//*[@role="menu"]'))->toBeGreaterThan(0)
         // A save that swaps only part of a page (the pack editor, U14) still brings its message.
         ->and($count('//*[@id="toasts"][@up-hungry]'))->toBe(1);
+});
+
+it('never reloads the whole page in the host panel; Unpoly reloads the content instead (U18)', function (): void {
+    $views = collect(File::allFiles(resource_path('views')))
+        ->reject(fn (SplFileInfo $file): bool => str_contains($file->getPathname(), DIRECTORY_SEPARATOR.'join'.DIRECTORY_SEPARATOR)
+            || str_contains($file->getPathname(), DIRECTORY_SEPARATOR.'screen'.DIRECTORY_SEPARATOR))
+        ->filter(fn (SplFileInfo $file): bool => str_contains($file->getContents(), 'location.reload'))
+        ->map(fn (SplFileInfo $file): string => $file->getRelativePathname())
+        ->values()
+        ->all();
+
+    expect($views)->toBe([]);
 });
