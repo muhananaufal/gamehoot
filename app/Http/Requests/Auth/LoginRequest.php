@@ -76,6 +76,6 @@ final class LoginRequest extends FormRequest
      */
     private function throttleKey(?User $user): string
     {
-        return 'login:'.($user?->id ?? Str::lower($this->string('login')->trim()->toString()));
+        return 'login:'.($user !== null ? $user->id : Str::lower($this->string('login')->trim()->toString()));
     }
 }

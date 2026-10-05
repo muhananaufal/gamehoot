@@ -30,6 +30,16 @@ final class User extends Authenticatable
     }
 
     /**
+     * C-7: owned events including deleted ones; an account with any cannot be deleted.
+     *
+     * @return HasMany<Event, $this>
+     */
+    public function allOwnedEvents(): HasMany
+    {
+        return $this->hasMany(Event::class, 'owner_id')->withTrashed();
+    }
+
+    /**
      * C-2: events where this user is a co-host.
      *
      * @return BelongsToMany<Event, $this>

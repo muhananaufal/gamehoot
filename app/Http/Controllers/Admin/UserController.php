@@ -11,7 +11,6 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -24,7 +23,7 @@ final class UserController
     {
         return view('admin.users.index', [
             // C-7: an account that owns events (deleted ones too) cannot be deleted.
-            'users' => User::query()->withCount(['ownedEvents' => fn (Builder $events) => $events->withTrashed()])->orderBy('name')->get(),
+            'users' => User::query()->withCount('allOwnedEvents')->orderBy('name')->get(),
         ]);
     }
 
