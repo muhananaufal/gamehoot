@@ -100,6 +100,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - On Names, Copy stays beside the personal link and the other actions move to a "⋯" menu in an Actions column. Tables title their action column.
 - The Add host modal has a title and fields as wide as the box.
 - The question pack list stays quick with many packs: switching packs no longer reloads the list, groups per game type can be folded, and the list can be filtered by game type and ordered by name or by recent change, remembered per browser.
+- Sorted columns show their direction (the active arrow solid, the other faint), table heads have rounded corners, and action columns are centred.
+- Every dropdown in the host panel is a themed list that works with the keyboard, shows a count per choice for status filters, gets a search box with many choices, and is never cut off inside a scrolling list. Status filters on Events, Names and Host accounts are dropdowns; Host accounts can also filter by role and by the date an account was added.
+- Forms point out empty required fields, too long text, a wrong email or username before sending, without waiting for the server.
+- New event and Add host open at once; Edit and Reset password load while the menu is open.
+- A new event's link fills in from its name until you type your own, and says at once if another event uses it.
+- In a question pack, the title heads the card with Rename and Delete in a menu; the arrows move a question at once and save the order once; Time to vote has quick choices and a Custom option.
 
 ## [0.5.0] - 2026-10-01
 
