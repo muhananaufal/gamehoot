@@ -222,6 +222,65 @@
 /* U8: motion only at key moments. 100-300 ms, ease-out on the way in and a little faster on
    the way out (NN/g); with reduced motion only the opacity changes (MDN). */
 @layer components {
+    /* U5: icon buttons in table rows. The icons are drawn here once per page instead of as an
+       SVG in every row, so a list of 500 names stays light. */
+    .row-action {
+        display: inline-flex;
+        width: 2.75rem;
+        height: 2.75rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-control);
+        color: var(--color-muted);
+        cursor: pointer;
+    }
+
+    .row-action:hover {
+        background: var(--color-subtle);
+        color: var(--color-ink);
+    }
+
+    [data-icon] {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        background: currentColor;
+        mask: var(--icon) center / 18px no-repeat;
+    }
+
+    [data-icon='copy'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='9' y='9' width='11' height='11' rx='2'/><path d='M5 15V5a1 1 0 011-1h10'/></svg>");
+    }
+
+    [data-icon='refresh'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 11a8 8 0 00-14.9-4M4 3v4h4M4 13a8 8 0 0014.9 4M20 21v-4h-4'/></svg>");
+    }
+
+    [data-icon='unlink'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 17H7a5 5 0 010-10h2M15 7h2a5 5 0 014 8M8 12h3M3 3l18 18'/></svg>");
+    }
+
+    [data-icon='pencil'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4'/></svg>");
+    }
+
+    [data-icon='trash'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14'/></svg>");
+    }
+
+    [data-icon='key'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='8' cy='15' r='4'/><path d='M11 12l9-9M16 7l3 3'/></svg>");
+    }
+
+    [data-icon='block'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M5.6 5.6l12.8 12.8'/></svg>");
+    }
+
+    [data-icon='check'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12l5 5 9-10'/></svg>");
+    }
+
     .toast-enter {
         transition:
             opacity 200ms ease-out,

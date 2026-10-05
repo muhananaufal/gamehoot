@@ -43,7 +43,11 @@ export function confirmStore() {
          * reopens the dialog with what was sent and the server's error.
          */
         askRow(button, previous = {}) {
-            const { ask: kind, id = '', name = '' } = button.dataset;
+            // The row carries data-id and data-name once for all of its buttons.
+            const row = button.closest?.('[data-row]')?.dataset ?? {};
+            const kind = button.dataset.ask;
+            const id = button.dataset.id ?? row.id ?? '';
+            const name = button.dataset.name ?? row.name ?? '';
             const text = this.texts[kind];
 
             if (!text) {
@@ -57,8 +61,14 @@ export function confirmStore() {
                 method: text.method,
                 confirmLabel: text.label,
                 tone: text.tone,
+                // field.form names the row in the request, so a refused rename can reopen it.
                 field: text.field
-                    ? { ...text.field, value: previous.value ?? name, error: previous.error ?? '' }
+                    ? {
+                          ...text.field,
+                          ...(text.field.form ? { form: text.field.form.replace('__P__', id) } : {}),
+                          value: previous.value ?? name,
+                          error: previous.error ?? '',
+                      }
                     : null,
             });
         },

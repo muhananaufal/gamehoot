@@ -146,10 +146,37 @@ export function compareRows(a, b, key, dir) {
 }
 
 /**
+ * U5: row icon buttons carry only data-ask (or data-copy); the page sends one label template per
+ * kind ({label, title} with __N__ for the row's data-name), so 500 rows stay light. Buttons that
+ * already have a label are left alone.
+ */
+export function labelButtons(root, labels) {
+    for (const button of root.querySelectorAll('[data-ask], [data-copy]')) {
+        const text = labels[button.dataset.ask ?? 'copy'];
+
+        if (!text || button.hasAttribute('aria-label')) {
+            continue;
+        }
+
+        const name = button.closest('[data-row]')?.dataset.name ?? '';
+        button.setAttribute('aria-label', text.label.replace('__N__', name));
+        button.title = text.title;
+    }
+}
+
+/**
  * The Alpine component around a <table>. Rows are the <tr data-row> of its <tbody>. `key` names
  * the list in localStorage, e.g. "names:<event id>".
  */
-export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', storage = globalThis.localStorage }) {
+export function tableView({
+    key,
+    sort,
+    dir = 'asc',
+    copied = '',
+    copyBase = '',
+    labels = {},
+    storage = globalThis.localStorage,
+}) {
     const defaults = { sort, dir };
 
     return {
@@ -195,11 +222,16 @@ export function tableView({ key, sort, dir = 'asc', copied = '', copyBase = '', 
             if (copy) {
                 navigator.clipboard
                     .writeText(copyBase + copy.dataset.copy)
-                    .then(() => this.$store.toasts.push(copied.replace('__N__', copy.dataset.name ?? '')));
+                    .then(() =>
+                        this.$store.toasts.push(
+                            copied.replace('__N__', copy.closest('[data-row]')?.dataset.name ?? ''),
+                        ),
+                    );
             }
         },
 
         init() {
+            labelButtons(this.$root, labels);
             this.apply();
             // A new search, filter, order or page size starts again at page 1.
             this.$watch(

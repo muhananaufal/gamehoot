@@ -15,6 +15,9 @@
             {{-- U5: one field to fill in (rename), reopened with the server's error when refused. --}}
             <template x-if="$store.confirm.field">
                 <div class="flex flex-col gap-1.5">
+                    <template x-if="$store.confirm.field.form">
+                        <input type="hidden" name="form" :value="$store.confirm.field.form">
+                    </template>
                     <label for="confirm-field" class="text-sm font-semibold" x-text="$store.confirm.field.label"></label>
                     <input id="confirm-field" :name="$store.confirm.field.name" x-model="$store.confirm.field.value" :maxlength="$store.confirm.field.maxlength"
                         required autocomplete="off" x-init="$nextTick(() => $el.select())"

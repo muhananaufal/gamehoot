@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     compareRows,
     filtersActive,
+    labelButtons,
     loadState,
     matchesRow,
     pageItems,
@@ -198,5 +199,49 @@ describe('U4 who did it (Activity log)', () => {
 
         expect(loadState(storage, 'logs', DEFAULTS).who).toBe('u2');
         expect(filtersActive({ ...loadState(memory(), 'x', DEFAULTS), who: 'u2' })).toBe(true);
+    });
+});
+
+describe('U5 row button labels sent once per page', () => {
+    const fakeButton = (data, rowName) => {
+        const attrs = {};
+
+        return {
+            dataset: data,
+            attrs,
+            title: '',
+            hasAttribute: (name) => name in attrs,
+            setAttribute: (name, value) => (attrs[name] = value),
+            closest: (selector) => (selector === '[data-row]' ? { dataset: { name: rowName } } : null),
+        };
+    };
+
+    it('labels each icon button with the name of its row and a tooltip', () => {
+        const copy = fakeButton({ copy: 'tok' }, 'Budi');
+        const rename = fakeButton({ ask: 'rename' }, 'Rita');
+        const root = { querySelectorAll: () => [copy, rename] };
+
+        labelButtons(root, {
+            copy: { label: 'Copy the personal link of __N__', title: 'Copy link' },
+            rename: { label: 'Rename __N__', title: 'Rename' },
+        });
+
+        expect(copy.attrs['aria-label']).toBe('Copy the personal link of Budi');
+        expect(copy.title).toBe('Copy link');
+        expect(rename.attrs['aria-label']).toBe('Rename Rita');
+    });
+
+    it('leaves buttons alone that have no label template or a label already', () => {
+        const other = fakeButton({ ask: 'unknown' }, 'Budi');
+        const labelled = fakeButton({ ask: 'rename' }, 'Budi');
+        labelled.attrs['aria-label'] = 'Kept';
+
+        labelButtons(
+            { querySelectorAll: () => [other, labelled] },
+            { rename: { label: 'Rename __N__', title: 'Rename' } },
+        );
+
+        expect(other.attrs['aria-label']).toBeUndefined();
+        expect(labelled.attrs['aria-label']).toBe('Kept');
     });
 });

@@ -118,3 +118,15 @@ describe('U5 row buttons that ask first', () => {
         expect(confirm.open).toBe(false);
     });
 });
+
+describe('U5 row buttons that take id and name from their row', () => {
+    it('reads data-id and data-name from the row when the button has none', () => {
+        const confirm = confirmStore();
+        confirm.texts = { delete: { title: 'Delete __N__?', label: 'Delete', method: 'DELETE', url: '/p/__P__' } };
+
+        confirm.askRow({ dataset: { ask: 'delete' }, closest: () => ({ dataset: { id: 'p9', name: 'Budi' } }) });
+
+        expect(confirm.title).toBe('Delete Budi?');
+        expect(confirm.action).toBe('/p/p9');
+    });
+});
