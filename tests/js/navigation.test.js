@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { configureNavigation } from '../../resources/js/navigation.js';
 
 const fakeUp = () => {
@@ -11,7 +11,10 @@ const fakeUp = () => {
         animations: {},
         motion: { config: { enabled: true } },
         layer: { config: { modal: {} } },
+        transitions: {},
+        fragment: { config: { navigateOptions: {} } },
         animation: (name, fn) => (up.animations[name] = fn),
+        transition: (name, fn) => (up.transitions[name] = fn),
         link: { config: { followSelectors: [], noFollowSelectors: [] } },
         form: { config: { submitSelectors: [], noSubmitSelectors: [] } },
         on: (name, handler) => (handlers[name] = handler),
@@ -94,56 +97,63 @@ describe('U18 navigation without reloads', () => {
         expect([formAgain, otherPage, opening]).toEqual([untouched(), untouched(), untouched()]);
     });
 
-    const fakeElement = (matching) => {
-        const calls = [];
+    const fakeElement = (inner = null) => ({ querySelector: () => inner });
 
-        return {
-            calls,
-            matches: (selector) => selector.split(',').some((part) => part.trim() === matching),
-            animate: (frames, options) => {
-                calls.push({ frames, options });
-
-                return { finished: Promise.resolve() };
-            },
-        };
-    };
-
-    it('lets new page content and the pack panel arrive with a short rise (U8)', () => {
+    it('lets the old page fade out quickly while the new one rises in with a spring (U8)', async () => {
         const up = fakeUp();
-        configureNavigation(up);
-        const content = fakeElement('#host-content');
-        const panel = fakeElement('#pack-panel');
-        const sidebar = fakeElement('#host-nav');
+        const animate = vi.fn(() => Promise.resolve());
+        configureNavigation(up, { animate });
+        const main = {};
+        const oldPage = fakeElement();
+        const newPage = fakeElement(main);
 
-        for (const target of [content, panel, sidebar]) {
-            up.handlers['up:fragment:inserted']({ target });
-        }
+        expect(up.fragment.config.navigateOptions.transition).toBe('page');
+        await up.transitions.page(oldPage, newPage, {});
 
-        expect(content.calls).toHaveLength(1);
-        expect(content.calls[0].options.duration).toBeLessThanOrEqual(300);
-        expect(panel.calls).toHaveLength(1);
-        // The sidebar and the toasts update in place, without moving.
-        expect(sidebar.calls).toHaveLength(0);
+        const [out, fadeIn, rise] = animate.mock.calls;
+        expect(out[0]).toBe(oldPage);
+        expect(out[1]).toMatchObject({ opacity: [1, 0] });
+        expect(out[2].duration).toBeLessThanOrEqual(0.15);
+        expect(fadeIn[0]).toBe(newPage);
+        // Only <main> rises: a transform on the content column would carry its fixed toasts along.
+        expect(rise[0]).toBe(main);
+        expect(rise[2]).toMatchObject({ type: 'spring' });
     });
 
-    it('keeps everything still when the device asks for reduced motion', () => {
+    it('swaps pages without moving when the device asks for reduced motion', async () => {
         const up = fakeUp();
         up.motion.config.enabled = false;
-        configureNavigation(up);
-        const content = fakeElement('#host-content');
+        const animate = vi.fn();
+        configureNavigation(up, { animate });
 
-        up.handlers['up:fragment:inserted']({ target: content });
+        await up.transitions.page(fakeElement(), fakeElement({}), {});
 
-        expect(content.calls).toHaveLength(0);
+        expect(animate).not.toHaveBeenCalled();
     });
 
-    it('opens modals with a small pop instead of a plain fade', async () => {
+    it('pops modals in with a spring and lets them go a little faster', async () => {
         const up = fakeUp();
-        configureNavigation(up);
-        const box = fakeElement('up-modal-box');
+        const animate = vi.fn(() => Promise.resolve());
+        configureNavigation(up, { animate });
+        const box = {};
 
         expect(up.layer.config.modal.openAnimation).toBe('pop-in');
-        await up.animations['pop-in'](box, { duration: 175, easing: 'ease' });
-        expect(box.calls[0].frames[0]).toMatchObject({ opacity: 0 });
+        expect(up.layer.config.modal.closeAnimation).toBe('pop-out');
+        await up.animations['pop-in'](box, {});
+        await up.animations['pop-out'](box, {});
+
+        expect(animate.mock.calls[0][1]).toMatchObject({ opacity: [0, 1], scale: [0.95, 1] });
+        expect(animate.mock.calls[0][2]).toMatchObject({ type: 'spring' });
+        expect(animate.mock.calls[1][2].duration).toBeLessThanOrEqual(0.15);
+    });
+
+    it('marks a page as just opened before it is drawn, so its rows can come in one by one', () => {
+        const up = fakeUp();
+        const entered = vi.fn();
+        configureNavigation(up, { animate: vi.fn(), onPageEnter: entered });
+
+        up.handlers['up:fragment:loaded']({ request: { layer: 'root' }, response: { ok: true }, renderOptions: {} });
+
+        expect(entered).toHaveBeenCalledOnce();
     });
 });

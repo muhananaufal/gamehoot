@@ -281,10 +281,11 @@
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12l5 5 9-10'/></svg>");
     }
 
+    /* U8: toasts arrive with the app's small overshoot. */
     .toast-enter {
         transition:
             opacity 200ms ease-out,
-            transform 200ms ease-out;
+            transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
     }
 
     .toast-leave {
@@ -357,9 +358,35 @@
     }
 }
 
-/* U8: the panel's own dialogs (confirmations, the date picker) open with a short pop. */
+/* U8: the panel's own dialogs (confirmations, the date picker) pop in with a small overshoot,
+   like the app's spring, and leave faster. Leaving is a transition with allow-discrete, so it
+   also plays when Escape or a click outside closes the dialog. */
+dialog {
+    transition:
+        opacity 120ms ease-in,
+        scale 120ms ease-in,
+        overlay 120ms ease-in allow-discrete,
+        display 120ms ease-in allow-discrete;
+}
+
+dialog:not([open]) {
+    opacity: 0;
+    scale: 0.97;
+}
+
+dialog::backdrop {
+    transition:
+        opacity 120ms ease-in,
+        overlay 120ms ease-in allow-discrete,
+        display 120ms ease-in allow-discrete;
+}
+
+dialog:not([open])::backdrop {
+    opacity: 0;
+}
+
 dialog[open] {
-    animation: dialog-in 180ms ease-out;
+    animation: dialog-in 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 dialog[open]::backdrop {
@@ -369,8 +396,14 @@ dialog[open]::backdrop {
 @keyframes dialog-in {
     from {
         opacity: 0;
-        transform: scale(0.96);
+        scale: 0.95;
     }
+}
+
+/* U8: buttons give a little under the finger. */
+:is(button, a[class*='rounded-control']):active:not(:disabled) {
+    scale: 0.97;
+    transition: scale 80ms ease-out;
 }
 
 @keyframes backdrop-in {
@@ -480,6 +513,15 @@ button[aria-busy='true']::after {
     .toast-from,
     .menu-from {
         transform: none;
+    }
+
+    dialog,
+    dialog::backdrop {
+        transition: none;
+    }
+
+    :is(button, a[class*='rounded-control']):active:not(:disabled) {
+        scale: none;
     }
 
     .mascot-idle,

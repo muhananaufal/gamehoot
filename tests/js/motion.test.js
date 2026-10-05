@@ -37,3 +37,24 @@ describe('U8 key-moment motion', () => {
         expect(delay(1)).toBeGreaterThan(delay(2));
     });
 });
+
+describe('U8 leaving and pressing', () => {
+    it('lets dialogs leave faster than they come, also when closed with Escape', () => {
+        const leave = ruleOf('dialog');
+        const ms = Number(leave.match(/opacity\s+(\d+)ms/)?.[1] ?? 0);
+
+        expect(leave).toContain('allow-discrete');
+        expect(ms).toBeGreaterThanOrEqual(80);
+        expect(ms).toBeLessThanOrEqual(150);
+        expect(ruleOf('dialog:not([open])')).toMatch(/opacity:\s*0/);
+    });
+
+    it('gives buttons a small press', () => {
+        expect(ruleOf(":is(button, a[class*='rounded-control']):active:not(:disabled)")).toMatch(/scale:\s*0\.97/);
+    });
+
+    it('stops leaving and pressing with prefers-reduced-motion', () => {
+        expect(reducedBlock).toMatch(/transition:\s*none/);
+        expect(reducedBlock).toContain('scale: none');
+    });
+});

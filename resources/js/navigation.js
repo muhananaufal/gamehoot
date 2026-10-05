@@ -2,10 +2,13 @@
 // inside the panel shell are followed; phone pages and the Public View keep plain page loads.
 // Opt out per element with up-follow="false" / up-submit="false" (e.g. sign out).
 
-/** U8: the parts of a page that animate when they are swapped in. */
-const ENTERING = '#host-content, #pack-panel';
+import { animate as motionAnimate } from 'motion';
+import { markPageEntered, SPRING } from './flip.js';
 
-export function configureNavigation(up) {
+/** U8: leaving is quicker than arriving (NN/g). */
+const EXIT = { duration: 0.12, ease: 'easeIn' };
+
+export function configureNavigation(up, { animate = motionAnimate, onPageEnter = markPageEntered } = {}) {
     // Unpoly puts modals at the end of <body>, outside the shell: their links and forms count too.
     up.link.config.followSelectors.push('[data-host-shell] a[href]', 'up-modal a[href]');
     up.form.config.submitSelectors.push('[data-host-shell] form', 'up-modal form');
@@ -17,6 +20,9 @@ export function configureNavigation(up) {
     // content, so draw it in the main page instead, with its address and one-time message, and
     // close the modal as accepted.
     up.on('up:fragment:loaded', (event) => {
+        // U8: the page about to be drawn just opened: its rows may come in one by one (flip.js).
+        onPageEnter();
+
         const layer = event.request.layer;
 
         // A request that opens a modal still names its layer as a string ("new").
@@ -37,38 +43,25 @@ export function configureNavigation(up) {
         });
     });
 
-    // U8: new page content and the pack panel arrive with a short rise. Only what was swapped
-    // moves: the sidebar and the toasts update in place. Unpoly turns its motion off for
-    // prefers-reduced-motion, and so does this.
-    up.on('up:fragment:inserted', (event) => {
-        if (!up.motion.config.enabled || !event.target.matches(ENTERING)) {
+    // U8: the old page fades out quickly while the new one fades in and its <main> rises with
+    // the app's spring. Only <main> moves: a transform on the whole content column would carry
+    // its fixed toasts along. Unpoly turns motion off for prefers-reduced-motion, so does this.
+    up.transition('page', async (oldElement, newElement) => {
+        if (!up.motion.config.enabled) {
             return;
         }
 
-        // A transform on the whole content column would pin its fixed toasts to it while moving;
-        // the page body alone rises.
-        const element = event.target.querySelector?.('main') ?? event.target;
-
-        element.animate(
-            [
-                { opacity: 0, transform: 'translateY(6px)' },
-                { opacity: 1, transform: 'none' },
-            ],
-            { duration: 180, easing: 'ease-out' },
-        );
+        await Promise.all([
+            animate(oldElement, { opacity: [1, 0] }, EXIT),
+            animate(newElement, { opacity: [0, 1] }, { duration: 0.18, ease: 'easeOut' }),
+            animate(newElement.querySelector('main') ?? newElement, { y: [10, 0] }, SPRING),
+        ]);
     });
+    up.fragment.config.navigateOptions.transition = 'page';
 
-    // U8: modals pop in a little instead of only fading.
-    up.animation(
-        'pop-in',
-        (element, { duration, easing }) =>
-            element.animate(
-                [
-                    { opacity: 0, transform: 'scale(0.96)' },
-                    { opacity: 1, transform: 'none' },
-                ],
-                { duration, easing },
-            ).finished,
-    );
+    // U8: modals pop in with the spring and leave a little faster.
+    up.animation('pop-in', (element) => animate(element, { opacity: [0, 1], scale: [0.95, 1] }, SPRING));
+    up.animation('pop-out', (element) => animate(element, { opacity: [1, 0], scale: [1, 0.97] }, EXIT));
     up.layer.config.modal.openAnimation = 'pop-in';
+    up.layer.config.modal.closeAnimation = 'pop-out';
 }
