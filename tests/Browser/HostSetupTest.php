@@ -45,6 +45,13 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
     $page->assertScript('!! document.querySelector("dialog[open] form")')
         ->assertPathEndsWith('/host')
         ->type('name', 'Gathering 2026');
+
+    // U13, U19: the link follows the name; another event uses it, and the server says so once the
+    // name is done. Clearing the link lets the server pick a free one (F10).
+    expect($page->script('document.querySelector("dialog[open] input[name=slug]").value'))->toBe('gathering-2026');
+    $page->script('document.querySelector("dialog[open] input[name=name]").dispatchEvent(new Event("change", { bubbles: true }))');
+    $page->assertSee('Another event already uses this link.');
+    $page->script('(() => { const slug = document.querySelector("dialog[open] input[name=slug]"); slug.value = ""; slug.dispatchEvent(new Event("input", { bubbles: true })); })()');
     $page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().click()');
 
     $page->assertSee('Event created. Next, add the names of the people who can play.')
