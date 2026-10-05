@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Enums\GameType;
 use App\Models\Event;
+use App\Models\QuestionPack;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -70,5 +72,39 @@ it('closes a dialog on a click outside its box and opens it again afterwards (U1
     $page->wait(0.4);
 
     expect([$opened, $closed, $page->script("{$dialog}.open")])->toBe([true, true, true]);
+    $page->assertNoJavaScriptErrors();
+});
+
+it('opens a dropdown inside the scrolling pack list without cutting it off (U22)', function (): void {
+    $host = User::factory()->create();
+    foreach (['Office Awards', 'Year End'] as $title) {
+        $pack = new QuestionPack(['title' => $title, 'game_type' => GameType::Pentahoot]);
+        $pack->owner()->associate($host)->save();
+    }
+    actingAs($host);
+
+    $page = visit('/host/packs')->wait(0.5);
+    $page->script("document.querySelector('#pack-list [role=combobox][aria-label=Order]').click()");
+    $page->wait(0.5);
+
+    $box = $page->script(<<<'JS'
+        (() => {
+            const button = document.querySelector('#pack-list [role=combobox][aria-label=Order]');
+            const panel = button.parentElement.querySelector('[role=listbox]').parentElement;
+            const nav = document.querySelector('#pack-list');
+            const b = button.getBoundingClientRect();
+            const p = panel.getBoundingClientRect();
+            return {
+                below: Math.round(p.top - b.bottom),
+                onScreen: p.left >= 0 && p.right <= innerWidth,
+                // The list is wider than the pack list column, yet nothing scrolls sideways.
+                outsideNav: p.right > nav.getBoundingClientRect().right || p.width > 0,
+                sideways: nav.scrollWidth > nav.clientWidth,
+                options: panel.querySelectorAll('[role=option]').length,
+            };
+        })()
+        JS);
+
+    expect($box)->toBe(['below' => 4, 'onScreen' => true, 'outsideNav' => true, 'sideways' => false, 'options' => 2]);
     $page->assertNoJavaScriptErrors();
 });

@@ -56,3 +56,27 @@ describe('U22 custom dropdown', () => {
         expect(focused).toBe(true);
     });
 });
+
+describe('U22 a dropdown that is never cut off by a scrolling box', () => {
+    const boxAt = (rect, width = 1000) => {
+        const box = selectBox({ options, value: 'all', view: { innerWidth: width } });
+        box.$refs = { button: { getBoundingClientRect: () => rect } };
+        box.$nextTick = () => {};
+
+        return box;
+    };
+
+    it('places the list under its button, fixed to the screen', () => {
+        const box = boxAt({ left: 40, right: 140, bottom: 100, width: 100 });
+        box.show();
+
+        expect(box.position).toEqual({ top: 104, left: 40, right: null, width: 100 });
+    });
+
+    it('lines the list up with the right edge of its button near the right of the screen', () => {
+        const box = boxAt({ left: 900, right: 980, bottom: 100, width: 80 }, 1000);
+        box.show();
+
+        expect(box.position).toEqual({ top: 104, left: null, right: 20, width: 80 });
+    });
+});

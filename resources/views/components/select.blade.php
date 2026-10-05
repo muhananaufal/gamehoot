@@ -23,8 +23,11 @@
         <span class="truncate" x-text="selectedLabel"></span>
         <x-icon name="chevron-down" class="size-4 shrink-0 text-muted transition-transform" ::class="open && 'rotate-180'" />
     </button>
+    {{-- Fixed to the screen (select-box.js), so a scrolling box never cuts the list off. --}}
     <div x-show="open" x-cloak x-transition:enter="menu-enter" x-transition:enter-start="menu-from" x-transition:enter-end="menu-to"
-        class="absolute top-full left-0 z-30 mt-1 flex max-h-72 min-w-full flex-col gap-1 overflow-hidden rounded-card border border-line bg-surface p-1.5 shadow-xl">
+        :style="`top: ${position.top}px; min-width: ${position.width}px; ` + (position.right === null ? `left: ${position.left}px` : `right: ${position.right}px`)"
+        @scroll.window.passive="open && close()" @resize.window="open && close()"
+        class="fixed z-40 flex max-h-72 flex-col gap-1 overflow-hidden rounded-card border border-line bg-surface p-1.5 shadow-xl">
         <template x-if="searchable">
             <input type="search" x-ref="search" x-model="q" @keydown="onKey($event)" @input="active = 0" aria-label="{{ __('ui.search') }}" placeholder="{{ __('ui.search') }}" autocomplete="off"
                 class="h-10 w-full shrink-0 rounded-control border border-line-strong bg-field px-3 text-sm text-ink">

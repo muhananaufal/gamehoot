@@ -5,6 +5,9 @@
 // hidden input.
 
 const SEARCH_FROM = 8;
+/** The widest a list usually gets; a button nearer the right edge opens its list leftwards. */
+const LIST_WIDTH = 240;
+const GAP = 4;
 
 export function filterOptions(options, q) {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -42,13 +45,18 @@ export function typeAhead(options, letter, from) {
     return from;
 }
 
-export function selectBox({ options, value }) {
+export function selectBox({ options, value, view = globalThis.window }) {
+    // `view` stays out of the component data: Alpine would make the whole window reactive.
+
     return {
         options,
         value,
         open: false,
         q: '',
         active: 0,
+        // Fixed to the screen under the button, so a scrolling box (the pack list) never cuts
+        // the list off; near the right edge it lines up with the button's right edge.
+        position: { top: 0, left: 0, right: null, width: 0 },
 
         get searchable() {
             return this.options.length >= SEARCH_FROM;
@@ -81,13 +89,24 @@ export function selectBox({ options, value }) {
         },
 
         show() {
+            const box = this.$refs.button.getBoundingClientRect();
+            const fromRight = box.left + LIST_WIDTH > view.innerWidth;
+            this.position = {
+                top: box.bottom + GAP,
+                left: fromRight ? null : box.left,
+                right: fromRight ? view.innerWidth - box.right : null,
+                width: box.width,
+            };
             this.q = '';
             this.active = Math.max(
                 0,
                 this.visible.findIndex((option) => option.value === this.value),
             );
             this.open = true;
-            this.$nextTick?.(() => (this.searchable ? this.$refs.search?.focus() : this.$refs.list?.focus()));
+            // preventScroll: a scroll would close the list again (it closes on page scroll).
+            this.$nextTick?.(() =>
+                (this.searchable ? this.$refs.search : this.$refs.list)?.focus({ preventScroll: true }),
+            );
         },
 
         close(focusButton = false) {
