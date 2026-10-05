@@ -6,7 +6,8 @@
     <div class="flex flex-col gap-3 p-5.5">
         <h2 id="confirm-title" class="font-display text-[22px] font-bold" x-text="$store.confirm.title"></h2>
         <p class="text-[15px] text-muted" x-show="$store.confirm.body !== ''" x-text="$store.confirm.body"></p>
-        <form method="POST" :action="$store.confirm.action" class="flex justify-end gap-2.5 pt-1.5">
+        {{-- U18: the dialog is not part of the page Unpoly replaces, so it closes itself once sent. --}}
+        <form method="POST" :action="$store.confirm.action" class="flex justify-end gap-2.5 pt-1.5" @submit="$nextTick(() => $store.confirm.close())">
             @csrf
             <template x-if="$store.confirm.method !== 'POST'">
                 <input type="hidden" name="_method" :value="$store.confirm.method">

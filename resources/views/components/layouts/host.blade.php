@@ -147,7 +147,8 @@
             </main>
             <x-toasts />
         </div>
+        {{-- U5, U18: inside the shell, so their forms and links move without reloading too. --}}
+        <x-confirm-host />
+        <x-row-menu-host />
     </div>
-    <x-confirm-host />
-    <x-row-menu-host />
 </x-layouts.base>
