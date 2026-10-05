@@ -168,3 +168,22 @@ describe('C-7 menu confirmations with hidden values', () => {
         expect(confirm.data).toEqual({ disabled: '0' });
     });
 });
+
+describe('U5 menu actions that ask with a field (rename from the row menu)', () => {
+    it('fills the field and the row form from the menu row', () => {
+        const confirm = confirmStore();
+        confirm.texts = {
+            rename: {
+                title: 'Rename __N__',
+                label: 'Save',
+                method: 'PUT',
+                field: { name: 'name', label: 'Name', form: 'rename-__P__' },
+            },
+        };
+
+        confirm.askFor('rename', 'Budi', '/p/p1', 'p1');
+
+        expect(confirm.action).toBe('/p/p1');
+        expect(confirm.field).toMatchObject({ value: 'Budi', form: 'rename-p1' });
+    });
+});

@@ -24,7 +24,7 @@
                             @endif
                             <x-table.th sort="by">{{ __('events.deleted_by_column') }}</x-table.th>
                             <x-table.th sort="deleted">{{ __('events.deleted') }}</x-table.th>
-                            <x-table.th><span class="sr-only">{{ __('events.restore') }}</span></x-table.th>
+                            <x-table.th class="text-right">{{ __('ui.actions') }}</x-table.th>
                         </tr>
                     </thead>
                     <tbody class="[&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0">

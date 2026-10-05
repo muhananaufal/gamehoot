@@ -245,3 +245,20 @@ describe('U5 row button labels sent once per page', () => {
         expect(labelled.attrs['aria-label']).toBe('Kept');
     });
 });
+
+describe('U5 row menu buttons get their label once per page', () => {
+    it('labels the menu button of a row with its name', () => {
+        const attrs = {};
+        const button = {
+            dataset: { menu: '' },
+            title: '',
+            hasAttribute: (name) => name in attrs,
+            setAttribute: (name, value) => (attrs[name] = value),
+            closest: () => ({ dataset: { name: 'Budi' } }),
+        };
+
+        labelButtons({ querySelectorAll: () => [button] }, { menu: { label: 'Actions for __N__', title: 'Actions' } });
+
+        expect(attrs['aria-label']).toBe('Actions for Budi');
+    });
+});

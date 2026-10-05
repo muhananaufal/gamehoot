@@ -475,3 +475,10 @@ describe('inviting by username (C-6)', function (): void {
             ->assertSee('New owner username or email');
     });
 });
+
+it('titles the action column of Deleted events (U5)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    expect((string) actingAs(ownerOf($event))->get('/host/trash')->getContent())->toMatch('/<th[^>]*>\s*<span[^>]*>Actions<\/span>/');
+});

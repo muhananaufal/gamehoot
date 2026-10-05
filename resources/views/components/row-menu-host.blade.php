@@ -19,7 +19,7 @@
             </template>
             <template x-if="item.type === 'confirm' && ! item.disabled">
                 <button type="button" role="menuitem" x-text="item.label"
-                    @click="$store.confirm.askFor(item.key, $store.rowMenu.name, item.url); $store.rowMenu.close()"
+                    @click="$store.confirm.askFor(item.key, $store.rowMenu.name, item.url, $store.rowMenu.id); $store.rowMenu.close()"
                     class="flex min-h-11 w-full items-center rounded-control px-3 text-left hover:bg-subtle" :class="item.danger && 'text-on-danger'"></button>
             </template>
             <template x-if="item.type === 'confirm' && item.disabled">

@@ -28,6 +28,7 @@ export function rowMenuStore() {
     return {
         spec: [],
         open: false,
+        id: '',
         name: '',
         items: [],
         position: { top: 0, right: 0 },
@@ -41,9 +42,12 @@ export function rowMenuStore() {
             }
 
             const box = button.getBoundingClientRect();
+            // A light row (U5) carries its id and name once, on the row.
+            const data = { ...(button.closest?.('[data-row]')?.dataset ?? {}), ...button.dataset };
             this.button = button;
-            this.name = button.dataset.name ?? '';
-            this.items = menuItems(this.spec, button.dataset);
+            this.id = data.id ?? '';
+            this.name = data.name ?? '';
+            this.items = menuItems(this.spec, data);
             // Fixed to the viewport, right-aligned with the button.
             this.position = { top: box.bottom + GAP, right: view.innerWidth - box.right };
             this.open = true;

@@ -8,6 +8,7 @@ return [
     'previous_page' => 'Previous page',
     'next_page' => 'Next page',
     'pages' => 'Pages',
+    'actions' => 'Actions',
     'page_number' => 'Page __P__',
     'reset_filters' => 'Reset filters',
     'date' => 'Date',

@@ -98,3 +98,20 @@ describe('C-7 row menu items that cannot run now', () => {
         expect(items[0]).toMatchObject({ modal: true, accept: '/admin/users', url: '/u/u1/edit' });
     });
 });
+
+describe('U5 row menus on light rows', () => {
+    it('reads the id, name and actions from the row as well as the button', () => {
+        const store = rowMenuStore();
+        store.spec = [{ key: 'delete', label: 'Delete', type: 'confirm', url: '/p/__P__' }];
+        const button = {
+            dataset: { delete: '1' },
+            closest: () => ({ dataset: { id: 'p1', name: 'Budi' } }),
+            getBoundingClientRect: () => ({ bottom: 10, right: 100 }),
+        };
+
+        store.openFrom(button, { innerWidth: 200 });
+
+        expect(store.name).toBe('Budi');
+        expect(store.items[0].url).toBe('/p/p1');
+    });
+});

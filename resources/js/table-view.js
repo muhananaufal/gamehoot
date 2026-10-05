@@ -153,8 +153,9 @@ export function compareRows(a, b, key, dir) {
  * already have a label are left alone.
  */
 export function labelButtons(root, labels) {
-    for (const button of root.querySelectorAll('[data-ask], [data-copy]')) {
-        const text = labels[button.dataset.ask ?? 'copy'];
+    for (const button of root.querySelectorAll('[data-ask], [data-copy], [data-menu]')) {
+        const kind = button.dataset.ask ?? ('copy' in button.dataset ? 'copy' : 'menu');
+        const text = labels[kind];
 
         if (!text || button.hasAttribute('aria-label')) {
             continue;

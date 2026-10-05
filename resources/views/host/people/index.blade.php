@@ -17,10 +17,14 @@
     // U5, U7: the labels and tooltips of the row icon buttons, also sent once.
     $labels = [
         'copy' => ['label' => __('people.copy_for', ['name' => '__N__']), 'title' => __('people.copy')],
-        'newLink' => ['label' => __('people.new_link_for', ['name' => '__N__']), 'title' => __('people.new_link')],
-        'release' => ['label' => __('people.release_for', ['name' => '__N__']), 'title' => __('people.release')],
-        'rename' => ['label' => __('people.rename_for', ['name' => '__N__']), 'title' => __('people.rename')],
-        'delete' => ['label' => __('people.delete_for', ['name' => '__N__']), 'title' => __('people.delete')],
+        'menu' => ['label' => __('people.actions_for', ['name' => '__N__']), 'title' => __('people.actions')],
+    ];
+    // U5: Copy sits beside the link; the other actions are in the row menu of the Actions column.
+    $menu = [
+        ['key' => 'newLink', 'label' => __('people.new_link'), 'type' => 'confirm', 'url' => route('host.events.people.regenerate-link', [$event, '__P__'])],
+        ['key' => 'release', 'label' => __('people.release'), 'type' => 'confirm', 'url' => route('host.events.people.release-claim', [$event, '__P__'])],
+        ['key' => 'rename', 'label' => __('people.rename'), 'type' => 'confirm', 'url' => route('host.events.people.update', [$event, '__P__'])],
+        ['key' => 'delete', 'label' => __('people.delete'), 'type' => 'confirm', 'danger' => true, 'url' => route('host.events.people.destroy', [$event, '__P__'])],
     ];
     $addFailed = old('form') === 'add-person' && $errors->has('name');
     // A refused rename reopens its dialog with what was typed and the error.
@@ -87,7 +91,7 @@
     @else
         {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
         <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase), labels: @js($labels) })"
-            x-init="$store.confirm.texts = @js($confirmTexts); const retry = document.getElementById('rename-retry'); if (retry) { const r = JSON.parse(retry.textContent); $store.confirm.askRow({ dataset: r.row }, r.previous) }"
+            x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($menu); const retry = document.getElementById('rename-retry'); if (retry) { const r = JSON.parse(retry.textContent); $store.confirm.askRow({ dataset: r.row }, r.previous) }"
             class="flex flex-col gap-4">
             <x-table.toolbar :search="__('people.search')">
                 <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('people.status') }}">
@@ -107,9 +111,7 @@
                             <x-table.th sort="name">{{ __('people.name') }}</x-table.th>
                             <x-table.th sort="joined">{{ __('people.status') }}</x-table.th>
                             <x-table.th sort="link">{{ __('people.link') }}</x-table.th>
-                            @unless ($locked)
-                                <x-table.th><span class="sr-only">{{ __('people.actions') }}</span></x-table.th>
-                            @endunless
+                            <x-table.th class="text-right">{{ __('people.actions') }}</x-table.th>
                         </tr>
                     </thead>
                     {{-- A3, U5: cell styles live here once; each row carries only its data. --}}
@@ -117,7 +119,7 @@
                         @foreach ($people as $person)
                             {{-- U5: the row carries its id and name once; its icon buttons only say what they do. --}}
                             {{-- One line per row (B-3: up to 500 rows). U6: when the name joined, in WIB (T10). B-6: a joined name is released right next to its status. --}}
-<tr data-row data-id="{{ $person->id }}" data-name="{{ $person->name }}" data-search="{{ mb_strtolower($person->name) }} {{ $person->join_token }}" data-filter="{{ $person->claimed_at ? 'joined' : 'waiting' }}" data-sort-name="{{ $person->name }}" data-sort-joined="{{ $person->claimed_at?->getTimestamp() }}" data-sort-link="{{ $person->join_token }}"><td><b>{{ $person->name }}</b></td><td>@if ($person->claimed_at)<span><x-chip tone="success" dot>{{ __('people.status_joined') }}</x-chip><button type="button" class="row-action" data-ask="release"><i data-icon="unlink"></i></button></span><small>{{ __('people.joined_at', ['time' => $person->claimed_at->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</small>@else<x-chip>{{ __('people.status_waiting') }}</x-chip>@endif</td><td><span><code>/j/{{ $person->join_token }}</code><button type="button" class="row-action" data-copy="{{ $person->join_token }}"><i data-icon="copy"></i></button><button type="button" class="row-action" data-ask="newLink"><i data-icon="refresh"></i></button></span></td>@unless ($locked)<td><span><button type="button" class="row-action" data-ask="rename"><i data-icon="pencil"></i></button><button type="button" class="row-action" data-ask="delete"><i data-icon="trash"></i></button></span></td>@endunless</tr>
+<tr data-row data-id="{{ $person->id }}" data-name="{{ $person->name }}" data-search="{{ mb_strtolower($person->name) }} {{ $person->join_token }}" data-filter="{{ $person->claimed_at ? 'joined' : 'waiting' }}" data-sort-name="{{ $person->name }}" data-sort-joined="{{ $person->claimed_at?->getTimestamp() }}" data-sort-link="{{ $person->join_token }}"><td><b>{{ $person->name }}</b></td><td>@if ($person->claimed_at)<x-chip tone="success" dot>{{ __('people.status_joined') }}</x-chip><small>{{ __('people.joined_at', ['time' => $person->claimed_at->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</small>@else<x-chip>{{ __('people.status_waiting') }}</x-chip>@endif</td><td><span><code>/j/{{ $person->join_token }}</code><button type="button" class="row-action" data-copy="{{ $person->join_token }}"><i data-icon="copy"></i></button></span></td><td><button type="button" class="row-action" data-menu data-new-link="1"@if ($person->claimed_at) data-release="1"@endif @unless ($locked) data-rename="1" data-delete="1"@endunless aria-haspopup="menu"><i data-icon="more"></i></button></td></tr>
                         @endforeach
                     </tbody>
                 </table>

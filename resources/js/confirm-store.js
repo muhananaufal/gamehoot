@@ -22,7 +22,12 @@ export function confirmStore() {
         /** Texts per kind of action ({title, body, label, method, tone}, with __N__ for the name), set once by the page. */
         texts: {},
 
-        askFor(kind, name, action) {
+        /**
+         * Asks for one kind of action on a row: `action` is its address and `id` the row id.
+         * For rename, the texts carry the field; `previous` reopens the dialog with what was
+         * sent and the server's error.
+         */
+        askFor(kind, name, action, id = '', previous = {}) {
             const text = this.texts[kind];
 
             if (!text) {
@@ -37,34 +42,6 @@ export function confirmStore() {
                 confirmLabel: text.label,
                 tone: text.tone,
                 data: text.data ?? {},
-            });
-        },
-
-        /**
-         * A row button with data-ask (its kind), data-id and data-name. The texts of that kind
-         * carry the address template (__P__ for the id) and, for rename, the field. `previous`
-         * reopens the dialog with what was sent and the server's error.
-         */
-        askRow(button, previous = {}) {
-            // The row carries data-id and data-name once for all of its buttons.
-            const row = button.closest?.('[data-row]')?.dataset ?? {};
-            const kind = button.dataset.ask;
-            const id = button.dataset.id ?? row.id ?? '';
-            const name = button.dataset.name ?? row.name ?? '';
-            const text = this.texts[kind];
-
-            if (!text) {
-                return;
-            }
-
-            this.ask({
-                title: text.title.replace('__N__', name),
-                body: (text.body ?? '').replace('__N__', name),
-                action: (text.url ?? '').replace('__P__', id),
-                method: text.method,
-                confirmLabel: text.label,
-                tone: text.tone,
-                data: text.data ?? {},
                 // field.form names the row in the request, so a refused rename can reopen it.
                 field: text.field
                     ? {
@@ -75,6 +52,19 @@ export function confirmStore() {
                       }
                     : null,
             });
+        },
+
+        /**
+         * A row button with data-ask (its kind); the row carries data-id and data-name once for
+         * all of its buttons. The texts of that kind carry the address template (__P__ for the id).
+         */
+        askRow(button, previous = {}) {
+            const row = button.closest?.('[data-row]')?.dataset ?? {};
+            const kind = button.dataset.ask;
+            const id = button.dataset.id ?? row.id ?? '';
+            const name = button.dataset.name ?? row.name ?? '';
+
+            this.askFor(kind, name, (this.texts[kind]?.url ?? '').replace('__P__', id), id, previous);
         },
 
         close() {

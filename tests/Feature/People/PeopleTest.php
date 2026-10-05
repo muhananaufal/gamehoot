@@ -332,7 +332,7 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
 
         // The header's Export links and Add name dialogs, plus the one dialog every row shares.
         expect(substr_count($html, '<dialog'))->toBeLessThanOrEqual(3)
-            ->and(substr_count($html, 'data-ask="delete"'))->toBe(30)
+            ->and(substr_count($html, 'data-delete="1"'))->toBe(30)
             ->and($html)->not->toContain('variant="link-destructive"');
     });
 
@@ -353,21 +353,25 @@ it('marks Add name as a create button with the plus icon (U2)', function (): voi
 });
 
 describe('Names page actions (U4, U5, U21)', function (): void {
-    it('shows every row action as an icon button, without a row menu or an address with a query', function (): void {
+    it('keeps Copy beside the link and puts the other actions in the row menu of an Actions column (U5)', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'claimed_at' => now()]);
+        Person::factory()->for($event)->create(['name' => 'Rita Wulandari']);
 
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+        $budi = Str::match('/<tr data-row[^>]*data-name="Budi Santoso"[\s\S]*?<\/tr>/', $html);
+        $rita = Str::match('/<tr data-row[^>]*data-name="Rita Wulandari"[\s\S]*?<\/tr>/', $html);
 
-        expect($html)->not->toContain('data-menu')
+        expect($html)->toContain('>Actions</')
             ->and($html)->not->toContain('?edit=')
-            ->and($html)->toContain('Copy the personal link of __N__')
-            ->toContain('data-ask="newLink"')
-            ->toContain('data-ask="release"')
-            ->toContain('data-ask="rename"')
-            ->toContain('data-ask="delete"')
-            ->toContain('placeholder="Search name or link"')
-            ->toContain('data-sort-link=');
+            ->and($html)->toContain('placeholder="Search name or link"')
+            ->and($html)->toContain('data-sort-link=')
+            // The personal link cell holds the link and Copy only.
+            ->and($budi)->toMatch('/<code>\/j\/[^<]+<\/code><button[^>]*data-copy=/')
+            ->and($budi)->not->toContain('data-ask=')
+            ->and($budi)->toMatch('/data-menu[^>]*data-new-link="1"[^>]*data-release="1"[^>]*data-rename="1"[^>]*data-delete="1"/')
+            // Release only for a name that joined.
+            ->and($rita)->not->toContain('data-release');
     });
 
     it('puts Export links in the page header instead of its own section (U21)', function (): void {
