@@ -90,3 +90,39 @@ it('puts the plus icon on dialog triggers that make something new (U2)', functio
 
     expect($html)->toMatch('/<button[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*New pack\s*<\/button>/');
 });
+
+describe('one table look (U4)', function (): void {
+    it('makes a column header sortable only when it names a sort key', function (): void {
+        $sortable = Blade::render('<x-table.th sort="created">Created</x-table.th>');
+        $plain = Blade::render('<x-table.th>Actions</x-table.th>');
+
+        expect($sortable)->toContain(":aria-sort=\"ariaSort('created')\"")->toContain("@click=\"sortBy('created')\"")
+            ->and($plain)->not->toContain('sortBy');
+    });
+
+    it('puts rows per page first and the search box in the far right corner, after the date', function (): void {
+        $html = Blade::render('<x-table.toolbar search="Search name or link" today="2026-10-05" date-label="Created">FILTERS</x-table.toolbar>');
+
+        expect($html)->toContain('x-model.number="size"')
+            ->toContain('placeholder="Search name or link"')
+            ->and(strpos($html, 'x-model.number="size"'))->toBeLessThan(strpos($html, 'FILTERS'))
+            ->and(strpos($html, 'dateRangePicker'))->toBeLessThan(strpos($html, 'type="search"'))
+            ->and(substr_count($html, '<option'))->toBe(4);
+    });
+
+    it('numbers the pages under the table, marking the current one', function (): void {
+        $html = Blade::render('<x-table-pager />');
+
+        expect($html)->toContain('x-for="(item, index) in pageNumbers"')
+            ->toContain(":aria-current=\"item === page ? 'page' : null\"")
+            ->not->toContain('x-model.number="size"');
+    });
+});
+
+it('lets the page dialog carry one field, with the error the server gave (U5)', function (): void {
+    $html = Blade::render('<x-confirm-host />');
+
+    expect($html)->toContain('x-if="$store.confirm.field"')
+        ->toContain('x-model="$store.confirm.field.value"')
+        ->toContain('x-text="$store.confirm.field.error"');
+});
