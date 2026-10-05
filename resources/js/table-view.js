@@ -3,6 +3,8 @@
 // data-sort-<key>. The view state is kept in localStorage per list, so the URL stays clean and the
 // view survives a refresh and a live update (U12).
 
+import { flipList } from './flip.js';
+
 const DIRECTIONS = ['asc', 'desc'];
 export const PAGE_SIZES = [10, 25, 50, 100];
 const DEFAULT_SIZE = 25;
@@ -233,6 +235,9 @@ export function tableView({
         init() {
             labelButtons(this.$root, labels);
             this.apply();
+            // U8: sorting, filtering and paging slide the rows instead of jumping.
+            const body = this.$root.querySelector('tbody');
+            this.flip = body ? flipList(body, { selector: 'tr[data-row]' }) : null;
             // A new search, filter, order or page size starts again at page 1.
             this.$watch(
                 () => [this.q, this.filter, this.who, this.sort, this.dir, this.from, this.to, this.size].join('|'),
@@ -242,6 +247,10 @@ export function tableView({
                 },
             );
             this.$watch('page', () => this.apply());
+        },
+
+        destroy() {
+            this.flip?.stop();
         },
 
         rows() {

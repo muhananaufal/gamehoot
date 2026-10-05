@@ -13,6 +13,7 @@ import { rowMenuStore } from './row-actions.js';
 import { imagePicker } from './image-picker.js';
 import { toastStore } from './toasts.js';
 import { dateRangePicker } from './date-range.js';
+import { flipList, markPageEntered } from './flip.js';
 import { kataBoxes } from './kata-boxes.js';
 import { liveRegion } from './live-region.js';
 import { nameReview } from './name-review.js';
@@ -24,6 +25,8 @@ import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
 
+// U8: the first page just opened, so its rows may come in one by one.
+markPageEntered();
 watchFormSubmits();
 trackClicks();
 closeDialogsOnBackdrop();
@@ -34,6 +37,12 @@ Alpine.store('toasts', toastStore());
 Alpine.store('confirm', confirmStore());
 Alpine.store('rowMenu', rowMenuStore());
 Alpine.data('tableView', tableView);
+// U8: lists drawn by Alpine (rank lists) slide rows to their new place. x-flip.moves leaves the
+// rows that appear to their own CSS enter animation.
+Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {
+    const flip = flipList(el, { enter: !modifiers.includes('moves') });
+    cleanup(() => flip.stop());
+});
 Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
 Alpine.data('dateRangePicker', dateRangePicker);
