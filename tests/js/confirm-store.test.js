@@ -157,3 +157,14 @@ describe('U4 choices sent in the form, never in the address', () => {
         expect(confirm.data).toEqual({});
     });
 });
+
+describe('C-7 menu confirmations with hidden values', () => {
+    it('sends the hidden values of its kind from the row menu too', () => {
+        const confirm = confirmStore();
+        confirm.texts = { enable: { title: 'Enable __N__?', label: 'Enable', method: 'PUT', data: { disabled: '0' } } };
+
+        confirm.askFor('enable', 'Dina', '/u/u1/status');
+
+        expect(confirm.data).toEqual({ disabled: '0' });
+    });
+});

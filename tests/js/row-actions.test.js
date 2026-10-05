@@ -62,3 +62,39 @@ describe('U5 one row menu per page', () => {
         expect(menu.open).toBe(false);
     });
 });
+
+describe('C-7 row menu items that cannot run now', () => {
+    it('shows an action the row marks "off" as disabled, with the reason the page gave', () => {
+        const items = menuItems(
+            [{ key: 'delete', label: 'Delete', type: 'confirm', danger: true, reason: 'Owns events', url: '/u/__P__' }],
+            {
+                id: 'u1',
+                delete: 'off',
+            },
+        );
+
+        expect(items).toEqual([
+            {
+                key: 'delete',
+                label: 'Delete',
+                type: 'confirm',
+                danger: true,
+                reason: 'Owns events',
+                url: '/u/u1',
+                disabled: true,
+            },
+        ]);
+    });
+
+    it('keeps the modal settings of a link, so it opens over the list', () => {
+        const items = menuItems(
+            [{ key: 'edit', label: 'Edit', type: 'link', modal: true, accept: '/admin/users', url: '/u/__P__/edit' }],
+            {
+                id: 'u1',
+                edit: '1',
+            },
+        );
+
+        expect(items[0]).toMatchObject({ modal: true, accept: '/admin/users', url: '/u/u1/edit' });
+    });
+});

@@ -159,16 +159,16 @@ it('lets a super-admin search and filter host accounts, see when each was added,
     expect($html)->toContain('data-name="Ann &quot;Q&quot; &lt;b&gt;"');
 
     expect($html)->toContain('x-data="tableView({ key: \'accounts\', sort: \'name\' })"')
-        ->and($html)->toContain('placeholder="Search name or email"')
+        ->and($html)->toContain('placeholder="Search name, username or email"')
         ->and($html)->toContain('Rows per page')
-        ->and($html)->toMatch('/<tr data-row [^>]*data-search="dina host dina@example\.test" data-filter="active"/')
+        ->and($html)->toMatch('/<tr data-row [^>]*data-search="dina host user\.\d+ dina@example\.test" data-filter="active"/')
         ->and($html)->toMatch('/data-filter="disabled"/')
         // U6: Added is its own sortable column; the info cards are gone.
         ->and($html)->toContain('aria-sort="ariaSort(\'added\')"')
         ->and($html)->toContain('1 Sep 2026')
         ->and($html)->not->toContain('Added 1 Sep 2026')
         ->and($html)->not->toContain('transfer them to another host if needed')
-        ->and($html)->toContain('data-ask="disable"')
+        ->and($html)->toContain('data-disable="1"')
         ->and($html)->not->toContain('@js(');
 });
 
@@ -182,24 +182,43 @@ it('sends the Disable choice in the form, never in the address, and sorts every 
     expect($html)->not->toContain('disabled=1')
         ->and(str_replace(chr(92).'u0022', '"', $html))->toContain('"data":{"disabled":"1"}');
 
-    foreach (['name', 'email', 'role', 'status', 'added'] as $key) {
+    foreach (['name', 'username', 'email', 'role', 'status', 'added'] as $key) {
         expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
     }
 });
 
-it('marks your own account next to your name and resets passwords in a dialog (U5, U6)', function (): void {
+it('marks your own account next to your name and puts every row action in a menu (U5, U6, C-7)', function (): void {
     $admin = User::factory()->superAdmin()->create(['name' => 'Muha Admin']);
     $host = User::factory()->create(['name' => 'Dina Host']);
+    $owner = User::factory()->create(['name' => 'Owner Host']);
+    Event::factory()->for($owner, 'owner')->create();
 
     $html = (string) actingAs($admin)->get('/admin/users')->assertOk()->getContent();
-    expect($html)->toMatch('/Muha Admin<\/span>\s*<span[^>]*>You<\/span>/')
-        ->and($html)->toContain('Reset password for Dina Host')
-        ->and($html)->toContain("id=\"reset-{$host->id}-password\"");
+    $button = fn (User $account): string => Str::match('/<button[^>]*data-menu[^>]*data-id="'.$account->id.'"[^>]*>/', $html);
 
-    // A rejected password reopens that account's dialog with the error.
-    actingAs($admin)->from('/admin/users')->followingRedirects()
-        ->put("/admin/users/{$host->id}/password", ['password' => 'short', 'password_confirmation' => 'short', 'resetting' => $host->id])
-        ->assertSee('x-init=" $refs.dialog.showModal() "', false);
+    expect($html)->toMatch('/Muha Admin<\/span>\s*<span[^>]*>You<\/span>/')
+        ->and($html)->toContain('>Actions</')
+        // Your own account: edit and reset your password, never disable or delete it.
+        ->and($button($admin))->toContain('data-edit="1"')->toContain('data-password="1"')
+        ->and($button($admin))->not->toContain('data-disable')
+        ->and($button($admin))->not->toContain('data-delete')
+        ->and($button($host))->toContain('data-delete="1"')->toContain('data-disable="1"')
+        // An account that owns events shows Delete switched off.
+        ->and($button($owner))->toContain('data-delete="off"')
+        ->and($html)->not->toContain("id=\"reset-{$host->id}-password\"");
+});
+
+it('resets a password in a modal with a title and full-width fields, also your own (C-7, U13)', function (): void {
+    $admin = superAdmin();
+
+    $modal = Str::after((string) actingAs($admin)->get("/admin/users/{$admin->id}/password/edit")->assertOk()->getContent(), 'up-main="modal"');
+
+    expect($modal)->toContain('<h2')->toContain('Reset password for Dina (HR)')
+        ->and($modal)->not->toContain('max-w-lg');
+
+    actingAs($admin)->put("/admin/users/{$admin->id}/password", ['password' => 'new-password-42', 'password_confirmation' => 'new-password-42'])
+        ->assertRedirect('/admin/users');
+    expect(Hash::check('new-password-42', $admin->refresh()->password))->toBeTrue();
 });
 
 describe('editing and deleting accounts (C-7)', function (): void {

@@ -36,6 +36,7 @@ export function confirmStore() {
                 method: text.method,
                 confirmLabel: text.label,
                 tone: text.tone,
+                data: text.data ?? {},
             });
         },
 

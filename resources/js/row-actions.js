@@ -16,6 +16,8 @@ export function menuItems(spec, dataset) {
             ...action,
             danger: action.danger === true,
             url: action.url ? action.url.replace('__P__', dataset.id ?? '') : dataset[action.key],
+            // C-7: "off" shows the action switched off, with the reason from the page.
+            ...(dataset[action.key] === 'off' ? { disabled: true } : {}),
         }));
 }
 
