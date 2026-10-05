@@ -22,7 +22,7 @@
         {{-- U2: the page's one main action sits in the top bar. --}}
         <x-slot:actions>
             <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
-            <x-confirm-dialog :title="__('people.add')" :trigger="__('people.add')" trigger-variant="primary" :open="$addFailed">
+            <x-confirm-dialog :title="__('people.add')" :trigger="__('people.add')" trigger-icon="plus" trigger-variant="primary" :open="$addFailed">
                 <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate>
                     @csrf
                     <input type="hidden" name="form" value="add-person">

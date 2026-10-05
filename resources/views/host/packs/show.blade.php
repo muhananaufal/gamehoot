@@ -18,7 +18,7 @@
 <x-layouts.host :title="$pack ? $pack->title : __('packs.title')" :breadcrumbs="$breadcrumbs">
     {{-- U2: New pack opens a short form; inside a pack, Add question is the main action. --}}
     <x-slot:actions>
-        <x-confirm-dialog :title="__('packs.new_pack')" :trigger="__('packs.new_pack')" :trigger-variant="$pack ? 'secondary' : 'primary'" :open="$createFailed">
+        <x-confirm-dialog :title="__('packs.new_pack')" :trigger="__('packs.new_pack')" trigger-icon="plus" :trigger-variant="$pack ? 'secondary' : 'primary'" :open="$createFailed">
             <form method="POST" action="{{ route('host.packs.store') }}" class="flex flex-col gap-3" novalidate>
                 @csrf
                 <input type="hidden" name="form" value="create-pack">

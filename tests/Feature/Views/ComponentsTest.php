@@ -76,7 +76,7 @@ it('lets every password field be shown and hidden (U17)', function (): void {
 });
 
 it('gives every button variant the ink colour of its busy spinner (U16)', function (string $variant, string $ink): void {
-    expect(Blade::render("<x-button variant=\"{$variant}\">Save</x-button>"))->toContain("[--busy-ink:var(--color-{$ink})]");
+    expect(Blade::render("<x-button variant=\"{$variant}\">Save</x-button>"))->toContain('[--busy-ink:var(--color-'.$ink.')]');
 })->with([
     ['primary', 'on-accent'],
     ['secondary', 'ink'],
@@ -84,3 +84,9 @@ it('gives every button variant the ink colour of its busy spinner (U16)', functi
     ['link', 'link'],
     ['link-destructive', 'on-danger'],
 ]);
+
+it('puts the plus icon on dialog triggers that make something new (U2)', function (): void {
+    $html = Blade::render('<x-confirm-dialog title="New pack" trigger="New pack" trigger-icon="plus"><p>Form</p></x-confirm-dialog>');
+
+    expect($html)->toMatch('/<button[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*New pack\s*<\/button>/');
+});

@@ -341,3 +341,10 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
         expect(strlen((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent()))->toBeLessThan(700_000);
     });
 });
+
+it('marks Add name as a create button with the plus icon (U2)', function (): void {
+    $event = eventWithOwner();
+
+    expect((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent())
+        ->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*Add name\s*<\/button>/');
+});

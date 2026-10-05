@@ -270,3 +270,10 @@ describe('the pack editor on one page (U14)', function (): void {
             ->and($html)->not->toContain('value="DELETE"');
     });
 });
+
+it('marks New pack as a create button with the plus icon (U2)', function (): void {
+    $host = User::factory()->create();
+    packOf($host);
+
+    expect((string) actingAs($host)->get('/host/packs')->getContent())->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*New pack\s*<\/button>/');
+});
