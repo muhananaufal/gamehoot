@@ -93,13 +93,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Every dialog closes on a click outside it.
 - Form fields are checked as you leave them, so mistakes such as a link already in use show before you save.
 - Pages, modals, dialogs, table rows and ranking changes move with a soft spring; nothing moves when the device asks for reduced motion.
-- Question packs can be searched by game type too.
 - Hosts sign in with their username or their email. Every account has a lower case username; existing accounts got one made from their name. The super-admin command and Add host ask for it, and Host accounts shows and searches it.
 - Co-hosts can be added, and events transferred, by username as well as by email.
 - Super-admins can edit an account's name, username and email, reset their own password, and delete an account. A deleted account can no longer sign in and leaves the list, while events and the Activity log keep its name; an account that still owns events cannot be deleted until they are transferred.
 - Host accounts actions (Edit, Reset password, Disable or Enable, Delete) sit in a "⋯" menu; Edit and Reset password open over the list.
 - On Names, Copy stays beside the personal link and the other actions move to a "⋯" menu in an Actions column. Tables title their action column.
 - The Add host modal has a title and fields as wide as the box.
+- The question pack list stays quick with many packs: switching packs no longer reloads the list, groups per game type can be folded, and the list can be filtered by game type and ordered by name or by recent change, remembered per browser.
 
 ## [0.5.0] - 2026-10-01
 
