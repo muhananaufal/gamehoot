@@ -142,3 +142,22 @@ it('checks a field on the server when it changes, except passwords and when swit
         ->and(Blade::render('<x-field name="password" type="password" label="Password" />'))->not->toContain('up-validate')
         ->and(Blade::render('<x-field name="email" label="Email" :live="false" />'))->not->toContain('up-validate');
 });
+
+describe('third manual round: table details (U4, U13)', function (): void {
+    it('rounds the top corners of the header and shows which way a column sorts', function (): void {
+        $html = Blade::render('<x-table.th sort="name">Name</x-table.th>');
+
+        expect($html)->toContain('first:rounded-tl-card')->toContain('last:rounded-tr-card')
+            ->toContain("x-show=\"sort === 'name' && dir === 'asc'\"")
+            ->toContain("x-show=\"sort === 'name' && dir === 'desc'\"")
+            ->toContain("x-show=\"sort !== 'name'\"");
+    });
+
+    it('centres the action column', function (): void {
+        expect(Blade::render('<x-table.th actions>Actions</x-table.th>'))->toContain('text-center');
+    });
+
+    it('keeps dialogs left aligned wherever their button sits', function (): void {
+        expect(Blade::render('<x-confirm-dialog title="T" trigger="Go">Body</x-confirm-dialog>'))->toMatch('/<dialog[^>]*text-left/');
+    });
+});

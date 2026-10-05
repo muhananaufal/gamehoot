@@ -305,7 +305,7 @@ describe('deleting and restoring (D-3)', function (): void {
         $html = (string) actingAs($owner)->get('/host/trash')->getContent();
 
         expect($html)->toContain("tableView({ key: 'trash', sort: 'deleted', dir: 'desc' })")
-            ->toContain('placeholder="Search name or link"')
+            ->toContain('placeholder="Search event or link"')
             ->toContain('aria-label="Restore Gathering 2026"');
 
         foreach (['name', 'deleted'] as $key) {
@@ -481,4 +481,14 @@ it('titles the action column of Deleted events (U5)', function (): void {
     actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
 
     expect((string) actingAs(ownerOf($event))->get('/host/trash')->getContent())->toMatch('/<th[^>]*>\s*<span[^>]*>Actions<\/span>/');
+});
+
+it('says what Deleted events search, and lets its help use the full width (U4)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    $html = (string) actingAs(ownerOf($event))->get('/host/trash')->getContent();
+
+    expect($html)->toContain('placeholder="Search event or link"')
+        ->and($html)->not->toContain('max-w-3xl text-sm text-muted');
 });

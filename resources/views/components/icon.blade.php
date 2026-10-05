@@ -27,6 +27,8 @@
         'sidebar' => '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path>',
         'refresh' => '<path d="M20 11a8 8 0 00-14.9-4M4 3v4h4M4 13a8 8 0 0014.9 4M20 21v-4h-4"></path>',
         'unlink' => '<path d="M9 17H7a5 5 0 010-10h2M15 7h2a5 5 0 014 8M8 12h3M3 3l18 18"></path>',
+        'arrow-up' => '<path d="M12 19V5M6 11l6-6 6 6"></path>',
+        'arrow-down' => '<path d="M12 5v14M6 13l6 6 6-6"></path>',
         'external' => '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"></path>',
     ];
 @endphp

@@ -111,11 +111,11 @@
                             <x-table.th sort="name">{{ __('people.name') }}</x-table.th>
                             <x-table.th sort="joined">{{ __('people.status') }}</x-table.th>
                             <x-table.th sort="link">{{ __('people.link') }}</x-table.th>
-                            <x-table.th class="text-right">{{ __('people.actions') }}</x-table.th>
+                            <x-table.th actions>{{ __('people.actions') }}</x-table.th>
                         </tr>
                     </thead>
                     {{-- A3, U5: cell styles live here once; each row carries only its data. --}}
-                    <tbody class="[&_b]:font-bold [&_small]:block [&_small]:pt-1 [&_small]:text-xs [&_small]:text-muted [&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&_td:last-child]:text-right [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_code]:font-mono [&_code]:text-sm [&_code]:text-muted [&_td>span]:inline-flex [&_td>span]:items-center [&_td>span]:gap-1">
+                    <tbody class="[&_b]:font-bold [&_small]:block [&_small]:pt-1 [&_small]:text-xs [&_small]:text-muted [&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&_td:last-child]:text-center [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_code]:font-mono [&_code]:text-sm [&_code]:text-muted [&_td>span]:inline-flex [&_td>span]:items-center [&_td>span]:gap-1">
                         @foreach ($people as $person)
                             {{-- U5: the row carries its id and name once; its icon buttons only say what they do. --}}
                             {{-- One line per row (B-3: up to 500 rows). U6: when the name joined, in WIB (T10). B-6: a joined name is released right next to its status. --}}

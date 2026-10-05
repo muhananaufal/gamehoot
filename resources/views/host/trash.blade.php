@@ -5,7 +5,7 @@
     $tz = config('app.display_timezone');
 @endphp
 <x-layouts.host :title="__('events.trash')" :breadcrumbs="$breadcrumbs">
-    <p class="max-w-3xl text-sm text-muted">{{ __('events.trash_help') }}</p>
+    <p class="text-sm text-muted">{{ __('events.trash_help') }}</p>
 
     @if ($events->isEmpty())
         <x-empty-state :title="__('events.trash_empty')" :body="__('events.trash_empty_hint')" />
@@ -24,7 +24,7 @@
                             @endif
                             <x-table.th sort="by">{{ __('events.deleted_by_column') }}</x-table.th>
                             <x-table.th sort="deleted">{{ __('events.deleted') }}</x-table.th>
-                            <x-table.th class="text-right">{{ __('ui.actions') }}</x-table.th>
+                            <x-table.th actions>{{ __('ui.actions') }}</x-table.th>
                         </tr>
                     </thead>
                     <tbody class="[&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0">
@@ -42,7 +42,7 @@
                                 <td>{{ $event->deletedBy?->name ?? '—' }}</td>
                                 <td class="text-sm text-muted tabular-nums">{{ $event->deleted_at?->timezone($tz)->format('j M Y') }}</td>
                                 {{-- U5: restoring is confirmed; the link it comes back under is chosen in the dialog. --}}
-                                <td class="text-right">
+                                <td class="text-center">
                                     <x-confirm-dialog :title="__('events.restore_title', ['name' => $event->name])" :trigger="__('events.restore_named', ['name' => $event->name])" trigger-icon="refresh" icon-only
                                         :open="old('restoring') === $event->id && $errors->any()">
                                         <p class="text-left text-[15px] text-muted">{{ __('events.restore_confirm') }}</p>

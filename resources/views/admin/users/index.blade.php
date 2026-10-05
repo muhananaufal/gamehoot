@@ -48,7 +48,7 @@
                         <x-table.th sort="role">{{ __('accounts.role') }}</x-table.th>
                         <x-table.th sort="status">{{ __('accounts.status') }}</x-table.th>
                         <x-table.th sort="added">{{ __('accounts.added_column') }}</x-table.th>
-                        <x-table.th class="text-right">{{ __('accounts.actions') }}</x-table.th>
+                        <x-table.th actions>{{ __('accounts.actions') }}</x-table.th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,7 +87,7 @@
                             {{-- U6: when the account was made, in WIB (T10). --}}
                             <td class="px-4 py-3.5 text-sm text-muted tabular-nums">{{ $account->created_at?->timezone($tz)->format('j M Y') }}</td>
                             {{-- U5: more than two actions, so they sit in the row menu. --}}
-                            <td class="px-4 py-2 text-right">
+                            <td class="px-4 py-2 text-center">
                                 <button type="button" class="row-action" data-menu data-id="{{ $account->id }}" data-name="{{ $account->name }}" @foreach ($flags as $attribute => $value) {{ $attribute }}="{{ $value }}" @endforeach
                                     aria-haspopup="menu" aria-label="{{ __('accounts.actions_for', ['name' => $account->name]) }}" title="{{ __('accounts.actions') }}"><x-icon name="more" /></button>
                             </td>
