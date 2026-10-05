@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 @source '../../storage/framework/views/*.php';
+/* Tests are never shown: their strings must not become classes (a test string once made an invalid one). */
+@source not '../../tests';
 
 /*
  * F21: views use semantic tokens only. The default palette is removed, so classes like
