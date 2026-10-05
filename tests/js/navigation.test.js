@@ -15,6 +15,8 @@ const fakeUp = () => {
         fragment: { config: { navigateOptions: {} } },
         animation: (name, fn) => (up.animations[name] = fn),
         transition: (name, fn) => (up.transitions[name] = fn),
+        macros: {},
+        macro: (selector, fn) => (up.macros[selector] = fn),
         link: { config: { followSelectors: [], noFollowSelectors: [] } },
         form: { config: { submitSelectors: [], noSubmitSelectors: [] } },
         on: (name, handler) => (handlers[name] = handler),
@@ -155,5 +157,20 @@ describe('U18 navigation without reloads', () => {
         up.handlers['up:fragment:loaded']({ request: { layer: 'root' }, response: { ok: true }, renderOptions: {} });
 
         expect(entered).toHaveBeenCalledOnce();
+    });
+
+    it('turns a light pack link into one that swaps the pack only and stays marked on its pages (U14)', () => {
+        const up = fakeUp();
+        configureNavigation(up, { animate: vi.fn() });
+        const attrs = {};
+        const link = { getAttribute: () => '/host/packs/p1', setAttribute: (name, value) => (attrs[name] = value) };
+
+        up.macros['a[data-pack]'](link);
+
+        expect(attrs).toEqual({
+            'up-target': '#pack-panel, #content-head, #breadcrumbs',
+            'up-history': 'true',
+            'up-alias': '/host/packs/p1/*',
+        });
     });
 });

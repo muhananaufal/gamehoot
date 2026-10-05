@@ -241,7 +241,7 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
 });
 
 describe('the pack editor on one page (U14)', function (): void {
-    it('swaps only the pack panel and list when moving around, with a searchable list', function (): void {
+    it('swaps only the pack panel and the pack count when working on questions, with a searchable list', function (): void {
         $host = User::factory()->create();
         $pack = packOf($host);
         actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'A', 'duration_seconds' => 20]);
@@ -250,10 +250,12 @@ describe('the pack editor on one page (U14)', function (): void {
 
         expect($html)->toContain('id="pack-list"')
             ->and($html)->toContain('id="pack-panel"')
-            ->and($html)->toContain('placeholder="Search pack title or game type"')
-            // Another pack changes the title and breadcrumb, so its link moves the whole content.
-            ->and($html)->toMatch('/<a href="[^"]*\/host\/packs\/'.$pack->id.'"\s+aria-current="page"/')
-            ->and($html)->toMatch('/<form method="POST" action="[^"]*\/questions\/reorder"[^>]*up-target="#pack-panel, #pack-list"/');
+            ->and($html)->toContain('placeholder="Search pack title"')
+            // Another pack swaps the panel, the title with its actions and the breadcrumb; the list stays.
+            ->and($html)->toMatch('/<a href="[^"]*\/host\/packs\/'.$pack->id.'"[^>]*aria-current="page"/')
+            // navigation.js gives pack links their Unpoly settings (light items, U14).
+            ->and($html)->toMatch('/<a href="\/host\/packs\/'.$pack->id.'" data-pack/')
+            ->and($html)->toMatch('/<form method="POST" action="[^"]*\/questions\/reorder"[^>]*up-target="#pack-panel, #pack-count-'.$pack->id.'"/');
     });
 
     it('edits and deletes a question from icon buttons on its row, and the form has no delete of its own', function (): void {
@@ -265,10 +267,50 @@ describe('the pack editor on one page (U14)', function (): void {
         $html = (string) actingAs($host)->get("/host/packs/{$pack->id}/questions/{$question->id}/edit")->assertOk()->getContent();
 
         // The address follows, so Back, refresh and links to one question work (U14).
-        expect($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit" up-target="#pack-panel, #pack-list" up-history="true"/')
+        expect($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit" up-target="#pack-panel, #pack-count-'.$pack->id.'" up-history="true"/')
             ->and($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit"[^>]*aria-label="Edit question 1"/')
             ->and($html)->toContain("\$store.confirm.askFor('deleteQuestion', 'question 1',")
             ->and($html)->not->toContain('value="DELETE"');
+    });
+});
+
+describe('a pack list for many packs (U14)', function (): void {
+    it('stays light with 1,000 packs (668 KB before, 274 KB after)', function (): void {
+        $host = User::factory()->create();
+        $types = GameType::cases();
+        foreach (range(0, 999) as $i) {
+            packOf($host, $types[$i % count($types)], "Office Awards Pack Number {$i}");
+        }
+        $first = $host->questionPacks()->firstOrFail();
+
+        expect(strlen((string) actingAs($host)->get("/host/packs/{$first->id}")->getContent()))->toBeLessThan(350_000);
+    });
+
+    it('groups packs per game type with folds, a type filter and an order, all run by one component', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        packOf($host, GameType::TebakKata, 'Word Night');
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->getContent();
+
+        expect($html)->toContain('x-data="packList"')
+            ->and($html)->toContain('data-group="pentahoot"')
+            ->and($html)->toContain('data-group="tebak_kata"')
+            ->and($html)->toContain('@click="toggle(\'pentahoot\')"')
+            ->and($html)->toContain('x-model="type"')
+            ->and($html)->toContain('x-model="sort"')
+            // Items carry data only: no Alpine binding per pack.
+            ->and($html)->toMatch('/<a href="\/host\/packs\/'.$pack->id.'" data-pack data-type="pentahoot" data-changed="\d+"/')
+            ->and($html)->not->toContain('x-show="@js(');
+    });
+
+    it('gives the content head and the breadcrumb ids, so a pack switch can swap them', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->getContent();
+
+        expect($html)->toContain('id="content-head"')->toContain('id="breadcrumbs"');
     });
 });
 

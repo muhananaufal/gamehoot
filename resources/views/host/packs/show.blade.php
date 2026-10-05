@@ -8,8 +8,9 @@
     $formOpen = $creating || $editing;
     $orderIds = $questions?->pluck('id')->all() ?? [];
     $createFailed = old('form') === 'create-pack' && $errors->any();
-    // U14: moving around the editor swaps only the pack panel and the list, without reloading.
-    $swap = '#pack-panel, #pack-list';
+    // U14: working on questions swaps only the pack panel and this pack's question count in the
+    // list; the list itself is never sent again (measured: 1,000 packs made the page 668 KB).
+    $swap = '#pack-panel' . ($pack ? ', #pack-count-' . $pack->id : '');
     $confirmTexts = [
         'delete' => ['title' => __('packs.delete_pack') . '?', 'body' => __('packs.delete_pack_confirm'), 'label' => __('packs.delete_pack'), 'method' => 'DELETE', 'tone' => 'destructive'],
         'deleteQuestion' => ['title' => __('packs.delete_question_title', ['name' => '__N__']), 'body' => __('packs.delete_question_confirm'), 'label' => __('packs.delete_question'), 'method' => 'DELETE', 'tone' => 'destructive'],
@@ -50,33 +51,45 @@
         <x-empty-state :title="__('packs.empty_title')" :body="__('packs.empty')" />
     @else
         <div class="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-            {{-- Pack list, grouped by game type. U14: searchable, with its own scroll, kept in view. --}}
-            <nav id="pack-list" x-data="{ q: '' }" aria-label="{{ __('packs.title') }}"
-                class="flex flex-col gap-4 self-start rounded-card bg-surface p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+            {{-- U14: the pack list, grouped by game type, with its own scroll, kept in view. Items carry
+                 data only; packList (resources/js/pack-list.js) searches, filters, orders and folds
+                 them, and navigation.js gives them their Unpoly settings: another pack swaps the
+                 panel, the title with its actions and the breadcrumb; Unpoly marks the open pack
+                 (aria-current), also on its question pages (up-alias). --}}
+            <nav id="pack-list" x-data="packList" aria-label="{{ __('packs.title') }}"
+                class="flex flex-col gap-3 self-start rounded-card bg-surface p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto [&_[data-items]]:flex [&_[data-items]]:flex-col [&_[data-items]]:gap-0.5 [&_[data-pack]]:flex [&_[data-pack]]:min-h-11 [&_[data-pack]]:items-center [&_[data-pack]]:justify-between [&_[data-pack]]:gap-2 [&_[data-pack]]:rounded-control [&_[data-pack]]:px-3 [&_[data-pack]]:text-[15px] [&_[data-pack]:hover]:bg-subtle [&_[data-pack][aria-current]]:bg-subtle [&_[data-pack][aria-current]]:font-bold [&_[data-pack]>span:first-child]:truncate [&_[data-pack]>span:last-child]:text-sm [&_[data-pack]>span:last-child]:text-muted [&_[data-pack]>span:last-child]:tabular-nums">
                 <label class="relative flex items-center">
                     <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
-                    <input type="search" x-model="q" aria-label="{{ __('packs.search') }}" placeholder="{{ __('packs.search') }}" autocomplete="off"
+                    <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('packs.search') }}" placeholder="{{ __('packs.search') }}" autocomplete="off"
                         class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
                 </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <select x-model="type" aria-label="{{ __('packs.filter_type') }}" class="h-11 min-w-0 cursor-pointer rounded-control border border-line-strong bg-field px-2 text-sm font-semibold text-ink">
+                        <option value="all">{{ __('packs.all_types') }}</option>
+                        @foreach ($types as $groupType)
+                            <option value="{{ $groupType->value }}">{{ __('games.types.' . $groupType->value) }}</option>
+                        @endforeach
+                    </select>
+                    <select x-model="sort" aria-label="{{ __('packs.sort') }}" class="h-11 min-w-0 cursor-pointer rounded-control border border-line-strong bg-field px-2 text-sm font-semibold text-ink">
+                        <option value="name">{{ __('packs.sort_name') }}</option>
+                        <option value="changed">{{ __('packs.sort_changed') }}</option>
+                    </select>
+                </div>
                 @foreach ($types as $groupType)
                     @continue(! $packs->has($groupType->value))
                     @php $group = $packs->get($groupType->value); @endphp
-                    <div class="flex flex-col gap-1">
-                        <h2 class="px-2 text-[11px] font-bold tracking-[0.08em] text-muted uppercase">{{ __('games.types.' . $groupType->value) }}</h2>
-                        @foreach ($group as $item)
-                            {{-- Another pack changes the page title and breadcrumb too, so the whole content moves. --}}
-                            <a href="{{ route('host.packs.show', $item) }}" @if ($pack?->is($item)) aria-current="page" @endif
-                                x-show="@js(mb_strtolower($item->title . ' ' . __('games.types.' . $groupType->value))).includes(q.trim().toLowerCase())"
-                                @class([
-                                    'flex min-h-11 items-center justify-between gap-2 rounded-control px-3 text-[15px]',
-                                    'bg-subtle font-bold' => $pack?->is($item),
-                                    'hover:bg-subtle' => ! $pack?->is($item),
-                                ])>
-                                <span class="truncate">{{ $item->title }}</span>
-                                <span class="text-sm text-muted tabular-nums">{{ $item->questions_count }}</span>
-                            </a>
-                        @endforeach
-                    </div>
+                    <section data-group="{{ $groupType->value }}" class="flex flex-col gap-1">
+                        <button type="button" @click="toggle('{{ $groupType->value }}')" :aria-expanded="isOpen('{{ $groupType->value }}').toString()"
+                            class="flex min-h-9 items-center justify-between rounded-control px-2 text-[11px] font-bold tracking-[0.08em] text-muted uppercase hover:bg-subtle hover:text-ink">
+                            <span>{{ __('games.types.' . $groupType->value) }} · {{ $group->count() }}</span>
+                            <x-icon name="chevron-right" class="size-4 transition-transform" ::class="isOpen('{{ $groupType->value }}') && 'rotate-90'" />
+                        </button>
+                        <div data-items>
+@foreach ($group as $item)
+<a href="{{ route('host.packs.show', $item, false) }}" data-pack data-type="{{ $groupType->value }}" data-changed="{{ $item->updated_at?->getTimestamp() }}"@if ($pack?->is($item)) aria-current="page"@endif><span>{{ $item->title }}</span><span id="pack-count-{{ $item->id }}">{{ $item->questions_count }}</span></a>
+@endforeach
+                        </div>
+                    </section>
                 @endforeach
             </nav>
 

@@ -43,6 +43,15 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
         });
     });
 
+    // U14: pack links stay light in the page (1,000 packs); their Unpoly settings are added here.
+    // A pack swaps its panel, the title with its actions and the breadcrumb, and stays marked as
+    // open on its question pages.
+    up.macro('a[data-pack]', (link) => {
+        link.setAttribute('up-target', '#pack-panel, #content-head, #breadcrumbs');
+        link.setAttribute('up-history', 'true');
+        link.setAttribute('up-alias', `${link.getAttribute('href')}/*`);
+    });
+
     // U8: the old page fades out quickly while the new one fades in and its <main> rises with
     // the app's spring. Only <main> moves: a transform on the whole content column would carry
     // its fixed toasts along. Unpoly turns motion off for prefers-reduced-motion, so does this.
