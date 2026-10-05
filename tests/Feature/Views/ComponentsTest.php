@@ -126,3 +126,11 @@ it('lets the page dialog carry one field, with the error the server gave (U5)', 
         ->toContain('x-model="$store.confirm.field.value"')
         ->toContain('x-text="$store.confirm.field.error"');
 });
+
+it('shows a read-only field as switched off, so the host sees it cannot change now (U20)', function (): void {
+    view()->share('errors', new ViewErrorBag);
+
+    expect(Blade::render('<x-field name="slug" label="Link" readonly />'))
+        ->toContain('read-only:cursor-not-allowed')
+        ->toContain('has-[input:read-only]:bg-subtle');
+});

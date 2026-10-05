@@ -42,6 +42,8 @@ return [
     'lock' => 'Lock claims',
 
     'cohosts' => 'Co-hosts',
+    'hosts' => 'Hosts',
+    'added_at' => 'Added :date',
     'cohosts_help' => 'Co-hosts can run games and edit questions. They can\'t delete the event, manage co-hosts or transfer it.',
     'cohost_email' => 'Host email',
     'add_cohost' => 'Add co-host',
@@ -56,6 +58,7 @@ return [
     'reopen_help' => 'The event is closed. Reopening brings players back to the game screen.',
     'transfer' => 'Transfer ownership',
     'transfer_help' => 'Give this event to another host. You become a co-host.',
+    'transfer_confirm' => 'Give “:name” to another host? You become a co-host and can no longer delete it, manage co-hosts or give it away.',
     'new_owner_email' => 'New owner\'s email',
     'delete' => 'Delete event',
     'delete_help' => 'Moves the event to Deleted events. The owner or a super-admin can restore it.',

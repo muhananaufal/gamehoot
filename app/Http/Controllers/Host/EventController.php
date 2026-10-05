@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Host;
 use App\Actions\Events\CreateEvent;
 use App\Actions\Events\DeleteEvent;
 use App\Actions\Events\UpdateEventSettings;
+use App\Enums\GameStatus;
 use App\Enums\ScreenTheme;
 use App\Http\Requests\Host\DeleteEventRequest;
 use App\Http\Requests\Host\StoreEventRequest;
@@ -42,8 +43,12 @@ final class EventController
         return view('host.events.settings', [
             'event' => $event,
             'themes' => ScreenTheme::cases(),
-            'cohosts' => $event->cohosts()->orderBy('name')->get(),
+            // U20: the owner heads the hosts, then the co-hosts from the first added.
+            'owner' => $event->owner()->firstOrFail(),
+            'cohosts' => $event->cohosts()->orderBy('event_hosts.created_at')->get(),
             'isOwner' => $event->isOwnedBy($user),
+            // T6: an event closes only once its game is no longer running.
+            'gameRunning' => $event->activeGame()->where('status', '!=', GameStatus::Finished)->exists(),
         ]);
     }
 

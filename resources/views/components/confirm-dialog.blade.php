@@ -6,6 +6,8 @@
     'triggerIcon' => null,
     // U5: a row icon button (CSS icon, see .row-action); the trigger text becomes its label.
     'iconOnly' => false,
+    // U20: shown but off when the action does not apply right now; the page says why.
+    'triggerDisabled' => false,
     // Show the dialog on page load, e.g. to display a validation error from its form.
     'open' => false,
 ])
@@ -14,7 +16,7 @@
     @if ($iconOnly)
         <button type="button" class="row-action" aria-label="{{ $trigger }}" title="{{ $trigger }}" @click="$refs.dialog.showModal()"><i data-icon="{{ $triggerIcon }}"></i></button>
     @else
-        <x-button :variant="$triggerVariant" @click="$refs.dialog.showModal()">
+        <x-button :variant="$triggerVariant" :disabled="$triggerDisabled" @click="$refs.dialog.showModal()">
             @if ($triggerIcon)
                 <x-icon :name="$triggerIcon" />
             @endif

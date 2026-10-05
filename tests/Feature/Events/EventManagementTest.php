@@ -402,3 +402,45 @@ it('is closed to guests', function (): void {
 
     get("/host/{$event->id}/settings")->assertRedirect('/login');
 });
+
+describe('the Settings page (U20)', function (): void {
+    it('shows the event status next to General and keeps the Status section for the locks', function (): void {
+        $event = ownedEvent();
+        $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
+
+        expect($html)->toMatch('/General<\/h2>\s*<span[^>]*>\s*Draft/');
+    });
+
+    it('lists the owner first with a badge, then the co-hosts from the first added, each with when', function (): void {
+        $owner = User::factory()->create(['name' => 'Owner Ana']);
+        $event = ownedEvent($owner);
+        $first = User::factory()->create(['name' => 'Zed First']);
+        $second = User::factory()->create(['name' => 'Abe Second']);
+        $event->cohosts()->attach($first, ['created_at' => '2026-10-01 03:00:00', 'updated_at' => '2026-10-01 03:00:00']);
+        $event->cohosts()->attach($second, ['created_at' => '2026-10-03 03:00:00', 'updated_at' => '2026-10-03 03:00:00']);
+
+        actingAs($owner)->get("/host/{$event->id}/settings")
+            ->assertSee('Hosts')
+            ->assertSeeInOrder(['Owner Ana', 'Owner', 'Zed First', 'Added 1 Oct 2026', 'Abe Second', 'Added 3 Oct 2026']);
+    });
+
+    it('makes Close event and Transfer ownership red, and asks before transferring', function (): void {
+        $event = ownedEvent(attributes: ['status' => EventStatus::Open]);
+        $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
+
+        expect($html)->toMatch('/bg-destructive[^"]*"[^>]*>\s*Close event/')
+            ->toMatch('/bg-destructive[^"]*"[^>]*>\s*Transfer ownership/')
+            ->toContain('Transfer ownership?');
+    });
+
+    it('turns Close event off with the reason while a game runs', function (): void {
+        $event = ownedEvent();
+        $game = Game::factory()->for($event)->create();
+        $event->forceFill(['status' => EventStatus::Open, 'active_game_id' => $game->id])->save();
+
+        $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
+
+        expect($html)->toMatch('/<button[^>]*disabled[^>]*>\s*Close event/')
+            ->toContain('End the running game before closing the event.');
+    });
+});
