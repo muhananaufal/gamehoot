@@ -38,3 +38,33 @@ it('centres the logo and every icon in the narrowed sidebar (U1)', function (): 
     expect($offset)->toBeLessThanOrEqual(1.5);
     $page->assertNoJavaScriptErrors();
 });
+
+it('closes a dialog on a click outside its box and opens it again afterwards (U13)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+    User::factory()->create(['name' => 'Dina Host']);
+    actingAs($admin);
+
+    $page = visit('/admin/users');
+
+    // The press and the click land on the <dialog> itself, i.e. its backdrop.
+    $states = $page->script(<<<'JS'
+        (async () => {
+            const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const dialog = document.querySelector('dialog[aria-labelledby="confirm-title"]');
+            const ask = () => document.querySelector('[data-ask="disable"]').click();
+            ask();
+            await wait(300);
+            const opened = dialog.open;
+            dialog.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+            dialog.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await wait(300);
+            const closed = !dialog.open;
+            ask();
+            await wait(300);
+            return [opened, closed, dialog.open];
+        })()
+        JS);
+
+    expect($states)->toBe([true, true, true]);
+    $page->assertNoJavaScriptErrors();
+});

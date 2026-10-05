@@ -5,6 +5,7 @@ import { configureNavigation } from './navigation.js';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { trackClicks } from './action-busy.js';
+import { closeDialogsOnBackdrop } from './dialogs.js';
 import { watchFormSubmits } from './form-busy.js';
 import { confirmStore } from './confirm-store.js';
 import { hostShell } from './host-shell.js';
@@ -25,6 +26,7 @@ import { themeToggle } from './theme.js';
 
 watchFormSubmits();
 trackClicks();
+closeDialogsOnBackdrop();
 configureNavigation(window.up);
 
 // U3: one toast area per page, used by session messages and by page actions (Copy link).
