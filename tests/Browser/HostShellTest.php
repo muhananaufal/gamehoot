@@ -44,27 +44,31 @@ it('closes a dialog on a click outside its box and opens it again afterwards (U1
     User::factory()->create(['name' => 'Dina Host']);
     actingAs($admin);
 
-    $page = visit('/admin/users');
+    $page = visit('/admin/users')->wait(0.5);
+
+    // Every script returns at once: the browser plugin retries slow ones (see MotionTest).
+    // Disable sits in the row menu of the other account (C-7).
+    $ask = <<<'JS'
+        (() => {
+            const button = [...document.querySelectorAll('[data-menu]')].find((b) => b.dataset.name === 'Dina Host');
+            Alpine.store('rowMenu').openFrom(button);
+            Alpine.store('confirm').askFor('disable', 'Dina Host', '/admin/users/x/status', 'x');
+        })()
+        JS;
+    $dialog = 'document.querySelector(\'dialog[aria-labelledby="confirm-title"]\')';
+
+    $page->script($ask);
+    $page->wait(0.4);
+    $opened = $page->script("{$dialog}.open");
 
     // The press and the click land on the <dialog> itself, i.e. its backdrop.
-    $states = $page->script(<<<'JS'
-        (async () => {
-            const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-            const dialog = document.querySelector('dialog[aria-labelledby="confirm-title"]');
-            const ask = () => document.querySelector('[data-ask="disable"]').click();
-            ask();
-            await wait(300);
-            const opened = dialog.open;
-            dialog.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-            dialog.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-            await wait(300);
-            const closed = !dialog.open;
-            ask();
-            await wait(300);
-            return [opened, closed, dialog.open];
-        })()
-        JS);
+    $page->script("(() => { const d = {$dialog}; d.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); d.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()");
+    $page->wait(0.4);
+    $closed = ! $page->script("{$dialog}.open");
 
-    expect($states)->toBe([true, true, true]);
+    $page->script($ask);
+    $page->wait(0.4);
+
+    expect([$opened, $closed, $page->script("{$dialog}.open")])->toBe([true, true, true]);
     $page->assertNoJavaScriptErrors();
 });
