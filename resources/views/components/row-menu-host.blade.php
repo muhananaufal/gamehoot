@@ -13,6 +13,7 @@
         <div class="contents">
             <template x-if="item.type === 'link'">
                 <a role="menuitem" :href="item.url" x-text="item.label" @click="$store.rowMenu.close()"
+                    x-init="item.modal && $nextTick(() => window.up?.link.preload($el).catch(() => {}))"
                     :up-layer="item.modal ? 'new modal' : null" :up-history="item.modal ? 'false' : null"
                     :up-accept-location="item.accept ?? null" :up-size="item.modal ? 'medium' : null"
                     class="flex min-h-11 items-center rounded-control px-3 hover:bg-subtle"></a>

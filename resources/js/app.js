@@ -6,6 +6,7 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { trackClicks } from './action-busy.js';
 import { closeDialogsOnBackdrop } from './dialogs.js';
+import { checkFormsBeforeSubmit } from './form-check.js';
 import { watchFormSubmits } from './form-busy.js';
 import { confirmStore } from './confirm-store.js';
 import { hostShell } from './host-shell.js';
@@ -13,6 +14,7 @@ import { rowMenuStore } from './row-actions.js';
 import { imagePicker } from './image-picker.js';
 import { toastStore } from './toasts.js';
 import { dateRangePicker } from './date-range.js';
+import { eventLink } from './event-link.js';
 import { flipList, markPageEntered } from './flip.js';
 import { kataBoxes } from './kata-boxes.js';
 import { liveRegion } from './live-region.js';
@@ -32,6 +34,8 @@ markPageEntered();
 watchFormSubmits();
 trackClicks();
 closeDialogsOnBackdrop();
+// U19: simple rules are checked before a form is sent; the layout carries the messages.
+checkFormsBeforeSubmit(document, JSON.parse(document.querySelector('meta[name="form-messages"]')?.content ?? '{}'));
 configureNavigation(window.up);
 
 // U3: one toast area per page, used by session messages and by page actions (Copy link).
@@ -48,6 +52,7 @@ Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {
 Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
 Alpine.data('dateRangePicker', dateRangePicker);
+Alpine.data('eventLink', eventLink);
 
 Alpine.data('hostShell', () => hostShell());
 Alpine.data('themeToggle', themeToggle);

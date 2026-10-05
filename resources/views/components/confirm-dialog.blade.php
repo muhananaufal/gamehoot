@@ -10,6 +10,8 @@
     'triggerDisabled' => false,
     // Show the dialog on page load, e.g. to display a validation error from its form.
     'open' => false,
+    // U13: "md" for create forms with several fields.
+    'size' => 'sm',
 ])
 {{-- Native <dialog>: focus is trapped and Escape closes it without extra code. --}}
 <div x-data x-init="@if ($open) $refs.dialog.showModal() @endif" @class(['inline-flex' => $iconOnly])>
@@ -23,7 +25,11 @@
             {{ $trigger }}
         </x-button>
     @endif
-    <dialog x-ref="dialog" class="m-auto text-left w-[min(400px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-ink shadow-2xl backdrop:bg-nav/70">
+    <dialog x-ref="dialog" @class([
+        'm-auto rounded-panel bg-surface p-0 text-left text-ink shadow-2xl backdrop:bg-nav/70',
+        'w-[min(400px,calc(100vw-2rem))]' => $size === 'sm',
+        'w-[min(560px,calc(100vw-2rem))]' => $size === 'md',
+    ])>
         <div class="flex flex-col gap-3 p-5.5">
             <h2 class="font-display text-[22px] font-bold">{{ $title }}</h2>
             {{ $slot }}

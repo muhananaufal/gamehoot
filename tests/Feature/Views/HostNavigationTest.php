@@ -48,25 +48,36 @@ it('puts the page title and its actions at the top of the content, not in the to
         ->and(Str::after($html, '<main'))->toContain('New event');
 });
 
-it('opens New event and Add host as modals that close on their result page (U13)', function (): void {
+it('opens New event and Add host as dialogs already on the page, at once (U13)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+    $dashboard = (string) actingAs($admin)->get('/host')->getContent();
+    $accounts = (string) actingAs($admin)->get('/admin/users')->getContent();
+
+    // The form is in the page: no request and no loading when the button is pressed.
+    expect($dashboard)->toMatch('/<dialog[^>]*>[\s\S]*?<form method="POST" action="[^"]*\/host\/events"[\s\S]*?name="name"/')
+        ->and($dashboard)->not->toContain('up-layer="new modal"')
+        ->and($accounts)->toMatch('/<dialog[^>]*>[\s\S]*?<form method="POST" action="[^"]*\/admin\/users"[\s\S]*?name="username"/');
+});
+
+it('reopens the New event dialog with the error after a refused form (U13)', function (): void {
     $admin = User::factory()->superAdmin()->create();
 
-    expect((string) actingAs($admin)->get('/host')->getContent())
-        ->toMatch('/<a href="[^"]*\/host\/events\/create"[^>]*up-layer="new modal"[^>]*up-accept-location="\/host\/\*\/people"/')
-        ->and((string) actingAs($admin)->get('/admin/users')->getContent())
-        ->toMatch('/<a href="[^"]*\/admin\/users\/create"[^>]*up-layer="new modal"[^>]*up-accept-location="\/admin\/users"/');
+    actingAs($admin)->from('/host')->followingRedirects()
+        ->post('/host/events', ['form' => 'create-event', 'name' => '', 'slug' => '', 'screen_theme' => 'dark'])
+        ->assertSee('x-init=" $refs.dialog.showModal() "', false);
+});
 
-    // The modal leaves the address alone, so a refresh stays on the list behind it.
-    expect((string) actingAs($admin)->get('/host')->getContent())->toMatch('/up-layer="new modal"[^>]*up-history="false"/')
-        ->and((string) actingAs($admin)->get('/admin/users')->getContent())->toMatch('/up-layer="new modal"[^>]*up-history="false"/');
+it('loads Edit and Reset password ahead when the row menu opens, so their modals open at once (U13)', function (): void {
+    expect((string) file_get_contents(resource_path('views/components/row-menu-host.blade.php')))->toContain('link.preload($el)');
+});
+
+it('keeps the full form pages for old links, showing the form in a modal frame (U13)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
 
     // Cancel closes the modal; up-dismiss must stay empty (its value is read as JSON).
     $createPage = (string) actingAs($admin)->get('/host/events/create')->getContent();
     expect($createPage)->toContain('up-dismiss=""')
-        ->and($createPage)->not->toContain('up-dismiss="up-dismiss"');
-
-    // The form pages mark what a modal shows: the form, not the page around it.
-    expect((string) actingAs($admin)->get('/host/events/create')->getContent())->toMatch('/up-main="modal"[^>]*>[\s\S]*<form method="POST"/')
+        ->and($createPage)->not->toContain('up-dismiss="up-dismiss"')
         ->and((string) actingAs($admin)->get('/admin/users/create')->getContent())->toMatch('/up-main="modal"[^>]*>[\s\S]*<form method="POST"/');
 });
 

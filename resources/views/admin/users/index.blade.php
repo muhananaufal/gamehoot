@@ -20,7 +20,19 @@
 <x-layouts.host :title="__('accounts.host_accounts')"
     :breadcrumbs="[[__('host.nav.admin'), null], [__('accounts.host_accounts'), null]]">
     <x-slot:actions>
-        <x-button :href="route('admin.users.create')" up-layer="new modal" up-history="false" up-accept-location="/admin/users" up-size="medium"><x-icon name="plus" />{{ __('accounts.add_host') }}</x-button>
+        {{-- U13: the form is in the page, so the dialog opens at once; a refused form reopens it. --}}
+        <x-confirm-dialog :title="__('accounts.add_host')" :trigger="__('accounts.add_host')" trigger-icon="plus" trigger-variant="primary" size="md"
+            :open="old('form') === 'create-host' && $errors->any()">
+            <form method="POST" action="{{ route('admin.users.store') }}" class="flex flex-col gap-4" novalidate>
+                @csrf
+                <input type="hidden" name="form" value="create-host">
+                <x-forms.new-host-fields :submitted="old('form') === 'create-host'" />
+                <div class="flex justify-end gap-2.5 pt-1.5">
+                    <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                    <x-button type="submit">{{ __('accounts.create_account') }}</x-button>
+                </div>
+            </form>
+        </x-confirm-dialog>
     </x-slot:actions>
 
     @error('account')

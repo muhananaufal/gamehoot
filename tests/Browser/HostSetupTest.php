@@ -37,19 +37,19 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
 
     actingAs($host);
 
-    // U13: New event opens a modal; once created, the main page shows the new event's Names page
-    // and the modal closes. Clicks that open or send a modal go through a script, so the browser
+    // U13: New event opens a dialog already in the page; once created, the main page shows the
+    // new event's Names page. Clicks that open or send a dialog go through a script, so the browser
     // plugin cannot retry them (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
     $page = visit('/host')->assertSee('No events yet.');
-    $page->script('[...document.querySelectorAll("main a")].find((a) => a.innerText.includes("New event")).click()');
-    $page->assertScript('!! document.querySelector("up-modal form")')
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
+    $page->assertScript('!! document.querySelector("dialog[open] form")')
         ->assertPathEndsWith('/host')
         ->type('name', 'Gathering 2026');
-    $page->script('[...document.querySelector("up-modal").querySelectorAll("button[type=submit]")].pop().click()');
+    $page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().click()');
 
     $page->assertSee('Event created. Next, add the names of the people who can play.')
         ->assertPathEndsWith('/people')
-        ->assertScript('! document.querySelector("up-modal")')
+        ->assertScript('! document.querySelector("dialog[open]")')
         // U2: Add name opens a dialog in the content header; Enter sends it instead of cancelling.
         ->click('Add name')
         ->type('add-person-name', 'Budi Santoso')

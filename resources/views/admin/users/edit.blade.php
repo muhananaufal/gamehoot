@@ -7,7 +7,8 @@
             @csrf
             @method('PUT')
             <x-field name="name" :label="__('accounts.name')" :value="$account->name" autocomplete="off" required maxlength="100" />
-            <x-field name="username" :label="__('accounts.username')" :value="$account->username" :hint="__('accounts.username_hint')" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="30" />
+            <x-field name="username" :label="__('accounts.username')" :value="$account->username" :hint="__('accounts.username_hint')" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="30"
+                pattern="[a-z0-9._\-]{3,30}" :data-pattern-message="__('accounts.username_rule')" />
             <x-field name="email" type="email" :label="__('accounts.email')" :value="$account->email" autocomplete="off" required />
             <div class="flex justify-end gap-2.5 pt-2">
                 <x-button variant="secondary" :href="route('admin.users.index')" up-dismiss="">{{ __('ui.cancel') }}</x-button>

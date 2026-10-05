@@ -16,7 +16,19 @@
 @endphp
 <x-layouts.host :title="__('host.dashboard.title')" :breadcrumbs="[[__('host.dashboard.title'), null]]">
     <x-slot:actions>
-        <x-button :href="route('host.events.create')" up-layer="new modal" up-history="false" up-accept-location="/host/*/people" up-size="medium"><x-icon name="plus" />{{ __('events.new_event') }}</x-button>
+        {{-- U13: the form is in the page, so the dialog opens at once; a refused form reopens it. --}}
+        <x-confirm-dialog :title="__('events.new_event')" :trigger="__('events.new_event')" trigger-icon="plus" trigger-variant="primary" size="md"
+            :open="old('form') === 'create-event' && $errors->any()">
+            <form method="POST" action="{{ route('host.events.store') }}" class="flex flex-col gap-4" novalidate>
+                @csrf
+                <input type="hidden" name="form" value="create-event">
+                <x-forms.new-event-fields :submitted="old('form') === 'create-event'" />
+                <div class="flex justify-end gap-2.5 pt-1.5">
+                    <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                    <x-button type="submit">{{ __('events.create') }}</x-button>
+                </div>
+            </form>
+        </x-confirm-dialog>
     </x-slot:actions>
 
     @if ($events->isEmpty())

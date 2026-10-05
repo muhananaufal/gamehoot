@@ -45,12 +45,15 @@ it('slides table rows to their new place when the list is sorted, then settles (
     $page->assertNoJavaScriptErrors();
 });
 
-it('pops a create modal in, fully visible once it settles (U8)', function (): void {
-    $host = User::factory()->create();
-    Event::factory()->for($host, 'owner')->create(['name' => 'Gathering']);
-    actingAs($host);
+it('pops a modal in, fully visible once it settles (U8)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+    User::factory()->create(['name' => 'Dina Host']);
+    actingAs($admin);
 
-    $page = visit('/host')->wait(1);
+    // Edit of an account is a modal (C-7, U13): open it through the row menu.
+    $page = visit('/admin/users')->wait(1);
+    $page->script("Alpine.store('rowMenu').openFrom([...document.querySelectorAll('[data-menu]')].find((b) => b.dataset.name === 'Dina Host'))");
+    $page->wait(0.4);
     $page->script(<<<'JS'
         (() => {
             window.__opacities = [];
@@ -59,7 +62,7 @@ it('pops a create modal in, fully visible once it settles (U8)', function (): vo
                 if (box) window.__opacities.push(Number(getComputedStyle(box).opacity));
             }, 15);
             setTimeout(() => clearInterval(timer), 1500);
-            document.querySelector('a[up-layer="new modal"]').click();
+            [...document.querySelectorAll('[role=menu] a')].find((a) => a.innerText.trim() === 'Edit').click();
         })()
         JS);
     $page->wait(2);
