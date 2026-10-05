@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Icons in the narrowed sidebar are centred.
 - Pressing Enter in a dialog field (such as Add name or New pack) sends the form instead of closing the dialog.
 - Name lists saved as CSV by Excel on Windows keep their accented names instead of silently dropping them.
 - Exported CSV files (results and personal links) open in Excel with accents and emoji intact.
@@ -69,6 +70,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Games page shows when each game was added or started.
 - Joining on a phone, ranking rows and the final podium now have short animations; they stay off when the device asks for reduced motion.
 - Empty Names, Games, Results and Deleted events pages explain the next step.
+- The host panel moves between pages without reloading: the sidebar keeps its place and scroll, a thin bar shows a slow page, and live pages switch to the right event as you go.
+- New event and Add host open as a modal over the list; errors stay in the modal, and once created the new page opens with its message. A refresh while the modal is open stays on the list.
+- Page titles and their buttons sit at the top of the page instead of the top bar, and every button that makes something new shows a plus icon.
+- Question packs are edited on one page: opening, adding, editing, saving and reordering questions no longer reload the page. Each question has edit and delete icon buttons, delete asks first, and the pack list can be searched and stays in view.
+- Lists remember their search, filter, sort and page size in the browser instead of the address, show 10, 25, 50 or 100 rows per page, and offer Reset filters while something narrows them.
+- The event list sorts by creation date by default, shows when each event last changed under its name, and can be filtered by a date range from a calendar.
+- Host accounts show when each account was added in a sortable column, mark your own account next to your name, and reset passwords in a dialog.
+- Restoring a deleted event asks first, with the link to restore under chosen in the dialog.
+- Buttons show a spinner while they save, including the buttons on Live control.
+- Page changes, modals and dialogs have short animations, off when the device asks for reduced motion.
+- The theme switch shows a sun or a moon for where it goes, the sign in page has the theme switch, and every password field can be shown and hidden.
 
 ## [0.5.0] - 2026-10-01
 
