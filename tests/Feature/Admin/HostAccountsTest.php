@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\LoggedAction;
 use App\Models\ActionLog;
+use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -38,6 +39,9 @@ describe('C-1, C-4 access', function (): void {
         ['POST', '/admin/users'],
         ['GET', '/admin/users/{user}/password/edit'],
         ['PUT', '/admin/users/{user}/password'],
+        ['GET', '/admin/users/{user}/edit'],
+        ['PUT', '/admin/users/{user}'],
+        ['DELETE', '/admin/users/{user}'],
         ['PUT', '/admin/users/{user}/status'],
     ]);
 
@@ -196,4 +200,75 @@ it('marks your own account next to your name and resets passwords in a dialog (U
     actingAs($admin)->from('/admin/users')->followingRedirects()
         ->put("/admin/users/{$host->id}/password", ['password' => 'short', 'password_confirmation' => 'short', 'resetting' => $host->id])
         ->assertSee('x-init=" $refs.dialog.showModal() "', false);
+});
+
+describe('editing and deleting accounts (C-7)', function (): void {
+    it('edits the name, username and email of an account and logs it', function (): void {
+        $host = User::factory()->create(['username' => 'old.name']);
+
+        actingAs(superAdmin())->put("/admin/users/{$host->id}", ['name' => 'Arif R', 'username' => 'Arif.R', 'email' => 'ARIF@company.test'])
+            ->assertRedirect('/admin/users');
+
+        $host->refresh();
+        expect([$host->name, $host->username, $host->email])->toBe(['Arif R', 'arif.r', 'arif@company.test'])
+            ->and(loggedActions(LoggedAction::AccountUpdated))->toBe(1);
+    });
+
+    it('keeps its own username and email valid when saved unchanged, and refuses those of others', function (): void {
+        $host = User::factory()->create(['username' => 'arif', 'email' => 'arif@company.test']);
+        User::factory()->create(['username' => 'sari', 'email' => 'sari@company.test']);
+
+        actingAs(superAdmin())->put("/admin/users/{$host->id}", ['name' => 'Arif', 'username' => 'arif', 'email' => 'arif@company.test'])->assertSessionHasNoErrors();
+        actingAs(superAdmin())->put("/admin/users/{$host->id}", ['name' => 'Arif', 'username' => 'sari', 'email' => 'sari@company.test'])->assertSessionHasErrors(['username', 'email']);
+    });
+
+    it('shows the edit form as a modal with a title', function (): void {
+        $host = User::factory()->create(['name' => 'Arif Rahman']);
+
+        $modal = Str::after((string) actingAs(superAdmin())->get("/admin/users/{$host->id}/edit")->assertOk()->getContent(), 'up-main="modal"');
+
+        expect($modal)->toContain('<h2')->toContain('Edit Arif Rahman')->toContain('name="username"');
+    });
+
+    it('deletes an account softly: gone from the list and sign in, kept for history, co-hosting ended', function (): void {
+        $admin = superAdmin();
+        $host = User::factory()->create(['name' => 'Gone Host']);
+        $event = Event::factory()->create();
+        $event->cohosts()->attach($host);
+
+        actingAs($admin)->delete("/admin/users/{$host->id}")->assertRedirect('/admin/users')->assertSessionHas('status');
+
+        expect(User::query()->find($host->id))->toBeNull()
+            ->and(User::withTrashed()->find($host->id))->not->toBeNull()
+            ->and($event->cohosts()->count())->toBe(0)
+            ->and(loggedActions(LoggedAction::AccountDeleted))->toBe(1);
+        // The toast still names it once; the table no longer has its row.
+        actingAs($admin)->get('/admin/users')->assertDontSee('data-name="Gone Host"', false);
+    });
+
+    it('keeps the name of a deleted account on what it did (E13)', function (): void {
+        $host = User::factory()->create(['name' => 'Gone Host']);
+        $event = Event::factory()->for($host, 'owner')->create();
+        $log = ActionLog::query()->create(['event_id' => $event->id, 'user_id' => $host->id, 'action' => LoggedAction::JoinLocked]);
+        $event->forceFill(['owner_id' => User::factory()->create()->id])->save();
+        $host->delete();
+
+        expect($log->refresh()->user?->name)->toBe('Gone Host');
+    });
+
+    it('refuses to delete an account that still owns events, also deleted ones', function (): void {
+        $host = User::factory()->create();
+        Event::factory()->for($host, 'owner')->create()->delete();
+
+        actingAs(superAdmin())->delete("/admin/users/{$host->id}")
+            ->assertSessionHasErrors(['account' => 'This host still owns events. Transfer them to another host first.']);
+
+        expect(User::query()->find($host->id))->not->toBeNull();
+    });
+
+    it('never deletes your own account', function (): void {
+        $admin = superAdmin();
+
+        actingAs($admin)->delete("/admin/users/{$admin->id}")->assertForbidden();
+    });
 });

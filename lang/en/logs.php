@@ -19,6 +19,8 @@ return [
         'account_password_reset' => 'Reset a password',
         'account_disabled' => 'Disabled an account',
         'account_enabled' => 'Enabled an account',
+        'account_updated' => 'Edited an account',
+        'account_deleted' => 'Deleted an account',
         'event_opened' => 'Opened the event',
         'event_deleted' => 'Deleted the event',
         'event_restored' => 'Restored the event',

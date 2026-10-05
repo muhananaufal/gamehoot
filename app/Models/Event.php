@@ -37,7 +37,8 @@ final class Event extends Model
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'owner_id')->withTrashed();
     }
 
     /**
@@ -55,7 +56,8 @@ final class Event extends Model
      */
     public function deletedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'deleted_by');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'deleted_by')->withTrashed();
     }
 
     /**

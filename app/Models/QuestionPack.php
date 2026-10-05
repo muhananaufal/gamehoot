@@ -25,7 +25,8 @@ final class QuestionPack extends Model
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'owner_id')->withTrashed();
     }
 
     /**
