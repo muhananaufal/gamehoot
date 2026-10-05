@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Http\Concerns\LiveValidation;
 use App\Models\Event;
 use App\Models\User;
 use Closure;
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
  */
 final class CohostRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<mixed>>
      */

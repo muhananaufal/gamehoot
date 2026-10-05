@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Http\Concerns\LiveValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -12,6 +13,8 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class ImportPeopleRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<string>>
      */

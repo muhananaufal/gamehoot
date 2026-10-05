@@ -10,14 +10,18 @@
     // False when several forms on one page share a field name and another one was submitted:
     // its old input and errors then do not belong here.
     'submitted' => true,
+    // U19: checked on the server when it changes (up-validate). Off for passwords, which are
+    // never sent back, and for pages outside the host panel (sign in).
+    'live' => true,
 ])
 @php
     $id ??= 'field-' . str_replace(['.', '[', ']'], '-', $name);
     $error = $submitted ? $errors->first($name) : null;
     $describedBy = trim(($hint ? "{$id}-hint " : '') . ($error ? "{$id}-error" : ''));
     $border = $error ? 'border-on-danger' : 'border-line-strong';
+    $live = $live && $type !== 'password';
 @endphp
-<div class="flex flex-col gap-1.5">
+<div class="flex flex-col gap-1.5" up-form-group>
     <label for="{{ $id }}" class="text-sm font-semibold">{{ $label }}</label>
     {{-- U17: a password can be shown and hidden again; the input type follows the button. --}}
     {{-- U20: a field that cannot change now (e.g. the link of an open event) looks switched off. --}}
@@ -29,6 +33,7 @@
             @if ($type !== 'password') value="{{ $submitted ? old($name, $value) : $value }}" @endif
             @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if ($error) aria-invalid="true" @endif
+            @if ($live) up-validate up-validate-headers="{{ json_encode(['X-Pentahoot-Return' => url()->current()]) }}" @endif
             @if ($type === 'password') :type="shown ? 'text' : 'password'" @endif
             {{ $attributes->merge(['class' => 'min-w-0 grow bg-transparent px-3 text-[15px] text-ink read-only:cursor-not-allowed read-only:text-muted']) }}>
         @if ($type === 'password')

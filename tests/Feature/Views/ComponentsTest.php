@@ -105,8 +105,8 @@ describe('one table look (U4)', function (): void {
 
         expect($html)->toContain('x-model.number="size"')
             ->toContain('placeholder="Search name or link"')
-            ->and(strpos($html, 'x-model.number="size"'))->toBeLessThan(strpos($html, 'FILTERS'))
-            ->and(strpos($html, 'dateRangePicker'))->toBeLessThan(strpos($html, 'type="search"'))
+            ->and((int) strpos($html, 'x-model.number="size"'))->toBeLessThan((int) strpos($html, 'FILTERS'))
+            ->and((int) strpos($html, 'dateRangePicker'))->toBeLessThan((int) strpos($html, 'type="search"'))
             ->and(substr_count($html, '<option'))->toBe(4);
     });
 
@@ -115,7 +115,7 @@ describe('one table look (U4)', function (): void {
 
         expect($html)->toContain('x-for="(item, index) in pageNumbers"')
             ->toContain(":aria-current=\"item === page ? 'page' : null\"")
-            ->not->toContain('x-model.number="size"');
+            ->and($html)->not->toContain('x-model.number="size"');
     });
 });
 
@@ -133,4 +133,12 @@ it('shows a read-only field as switched off, so the host sees it cannot change n
     expect(Blade::render('<x-field name="slug" label="Link" readonly />'))
         ->toContain('read-only:cursor-not-allowed')
         ->toContain('has-[input:read-only]:bg-subtle');
+});
+
+it('checks a field on the server when it changes, except passwords and when switched off (U19)', function (): void {
+    view()->share('errors', new ViewErrorBag);
+
+    expect(Blade::render('<x-field name="name" label="Name" />'))->toContain('up-form-group')->toContain('up-validate ')->toContain('X-Pentahoot-Return')
+        ->and(Blade::render('<x-field name="password" type="password" label="Password" />'))->not->toContain('up-validate')
+        ->and(Blade::render('<x-field name="email" label="Email" :live="false" />'))->not->toContain('up-validate');
 });

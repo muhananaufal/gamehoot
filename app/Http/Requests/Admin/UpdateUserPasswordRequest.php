@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Concerns\LiveValidation;
 use App\Models\User;
 use App\Validation\AccountRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateUserPasswordRequest extends FormRequest
 {
+    use LiveValidation;
+
     public function authorize(): bool
     {
         $account = $this->route('user');

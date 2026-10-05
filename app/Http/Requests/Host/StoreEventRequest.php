@@ -6,6 +6,7 @@ namespace App\Http\Requests\Host;
 
 use App\Enums\EventStatus;
 use App\Enums\ScreenTheme;
+use App\Http\Concerns\LiveValidation;
 use App\Models\Event;
 use App\Rules\EventSlug;
 use App\Support\EventLink;
@@ -19,6 +20,8 @@ use Illuminate\Validation\Rule;
  */
 final class StoreEventRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<mixed>>
      */
