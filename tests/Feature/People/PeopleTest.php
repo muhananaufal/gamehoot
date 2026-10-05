@@ -360,8 +360,8 @@ describe('Names page actions (U4, U5, U21)', function (): void {
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
 
         expect($html)->not->toContain('data-menu')
-            ->not->toContain('?edit=')
-            ->toContain('Copy the personal link of __N__')
+            ->and($html)->not->toContain('?edit=')
+            ->and($html)->toContain('Copy the personal link of __N__')
             ->toContain('data-ask="newLink"')
             ->toContain('data-ask="release"')
             ->toContain('data-ask="rename"')
@@ -376,7 +376,7 @@ describe('Names page actions (U4, U5, U21)', function (): void {
 
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
         // The content header comes before the list; the old section came after it.
-        expect(strpos($html, 'Export links (CSV)'))->toBeLessThan(strpos($html, 'id="names-live"'))
+        expect((int) strpos($html, 'Export links (CSV)'))->toBeLessThan((int) strpos($html, 'id="names-live"'))
             ->and($html)->not->toContain('id="links-heading"');
     });
 
