@@ -110,3 +110,23 @@ it('opens the host pages without JavaScript errors', function (): void {
         '/admin/trash',
     ])->assertNoJavaScriptErrors();
 });
+
+it('fills the link from the event name and stops an empty name before sending (U13, U19)', function (): void {
+    $host = User::factory()->create();
+    actingAs($host);
+
+    $page = visit('/host')->wait(0.5);
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
+    $page->wait(0.3);
+    $page->type('name', 'Year End Party');
+
+    expect($page->script('document.querySelector("dialog[open] input[name=slug]").value'))->toBe('year-end-party');
+
+    // An empty name: the form is not sent and says why under the field.
+    $page->script('(() => { const d = document.querySelector("dialog[open]"); d.querySelector("input[name=name]").value = ""; window.__sent = false; window.addEventListener("up:request:load", () => (window.__sent = true)); [...d.querySelectorAll("button[type=submit]")].pop().click(); })()');
+    $page->wait(0.4);
+
+    expect($page->script('window.__sent'))->toBeFalse()
+        ->and($page->script('document.querySelector("dialog[open] [data-check-error]")?.textContent'))->toBe('The event name field is required.');
+    $page->assertNoJavaScriptErrors();
+});
