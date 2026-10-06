@@ -52,7 +52,20 @@ describe('security headers (O7)', function (): void {
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Referrer-Policy', 'same-origin')
             ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    })->with(['/login', '/year-end-party', '/year-end-party/screen']);
+    })->with(['/login', '/year-end-party']);
+
+    it('lets only this site frame the Public View, for the preview in Live control (D-10)', function (): void {
+        Pentahoot::event();
+
+        $screen = get('/year-end-party/screen')->assertOk()
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $policy = (string) $screen->headers->get('Content-Security-Policy');
+        expect($policy)->toContain("frame-ancestors 'self'");
+        expect($policy)->not->toContain("frame-ancestors 'none'");
+        expect((string) get('/year-end-party')->headers->get('Content-Security-Policy'))->toContain("frame-ancestors 'none'");
+    });
 
     it('asks browsers to stay on HTTPS only when the request came over HTTPS', function (): void {
         expect(get('/login')->headers->has('Strict-Transport-Security'))->toBeFalse();
