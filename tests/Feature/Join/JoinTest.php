@@ -61,6 +61,16 @@ describe('general join page (B-1, F12)', function (): void {
             ->and(strlen($html))->toBeLessThan(120_000);
     });
 
+    it('gives the name buttons the radius and border of the search box (U23)', function (): void {
+        $event = openEvent();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+
+        $html = (string) get('/gathering-2026')->assertOk()->getContent();
+
+        expect($html)->toContain('[&_button]:rounded-control [&_button]:border [&_button]:border-line-strong')
+            ->and($html)->toContain('h-12 rounded-control border border-line-strong');
+    });
+
     it('says the event cannot be found for unknown and deleted events', function (): void {
         get('/no-such-event')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
 
