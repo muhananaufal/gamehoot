@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every host page shows its title, also Settings, Games, Activity log and Deleted events.
+- Delete game uses the red style of other destructive actions.
+- The name buttons on the phone join page match the search box.
 - Every form checks its simple rules before sending, including passwords, time to vote and the rename dialog, so nothing that would be refused is sent; sign in still leaves the checks to the server.
 - Delete event stays disabled until the event name is typed exactly.
 - The link field in Restore event shows the site address in front, like New event.
@@ -41,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Games whose pack changed since they were added are marked, and Reload from pack shows only for them and asks first, since it replaces edits made to the copied questions.
+- Phones follow the host's changes to the name list at once: a released or deleted name goes back to picking a name, a renamed one shows the new name.
+- The Games page adds games from the same pack list as Question packs, with search, type filter and folding groups.
+- Deleted events can be filtered by the date they were deleted and by who deleted them.
+- A recent event in the sidebar expands its pages in place, so Settings and the other pages are one click away.
 - `php artisan db:seed --class=DemoSeeder` builds a demo event with 50 names and one game of each type; `LoadTestSeeder` builds an open event with 500 names for load tests. Neither runs in production.
 - The specification gains a day-to-day guide with every command from branch to release, a debugging chapter with a note format (`docs/debugging/`), and execution lessons in the project blueprint.
 - Friendly error pages (page not found, no access, expired page, too many tries, server error, maintenance) with a way to reload or go back.
