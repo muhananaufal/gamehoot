@@ -449,7 +449,13 @@
                 <li><b>All games played</b>: event terbuka, ada game, dan semuanya sudah selesai.</li>
                 <li><b>Finished</b>: event ditutup.</li>
               </ul>
-              <p>Susunan Live control: baris pertama tiga kartu (fase, jumlah yang join, koneksi; kartu koneksi mengikuti fase: Draft "Phones can join once the event is open", Finished "Event closed", selain itu status WebSocket), baris kedua link join dan Public View, lalu satu bagian kontrol yang isinya mengikuti fase:</p>
+              <p><i>Diubah 6 Oktober 2026 (masukan pemilik):</i> Live control memakai <b>tiga kolom</b>. Kepala halaman berisi pill fase dan status koneksi (Draft "Phones can join once the event is open", Finished "Event closed", selain itu status WebSocket).</p>
+              <ul>
+                <li><b>Kiri, Steps</b>: timeline vertikal (satu komponen, F20) dari Prepare, Open event, setiap game berurutan, sampai Close event, dengan keadaan selesai, berjalan, atau belum dari fase. Game yang selesai dilipat menjadi satu baris; game yang berjalan menampilkan soal-soalnya (soal mana pun yang belum selesai bisa dibuka, D-5). Game yang belum dimainkan bisa diklik untuk dimulai di luar urutan, dengan konfirmasi, hanya saat tidak ada game berjalan.</li>
+                <li><b>Tengah, Control</b>: hanya aksi untuk langkah saat ini (daftar di bawah).</li>
+                <li><b>Kanan, Monitor</b>: preview Public View yang live (iframe halaman <code>/screen</code> yang diperkecil), peringkat game yang berjalan, jumlah yang join, link join dan Public View. Supaya preview bisa tampil, halaman <code>/screen</code> saja boleh dibingkai oleh situs sendiri (<code>frame-ancestors 'self'</code>, <code>X-Frame-Options: SAMEORIGIN</code>); halaman lain tetap menolak dibingkai. Halaman itu tidak punya aksi, jadi risiko clickjacking kecil.</li>
+              </ul>
+              <p>Di layar lebih sempit dari xl, kolom Monitor turun ke bawah; di HP urutannya Control, Steps, Monitor. QR join tetap hanya di layar lobi Public View (E18), sebelum game pertama; tidak ada QR tambahan saat game berjalan. Isi Control per fase:</p>
               <ul>
                 <li><b>Draft</b>: checklist persiapan (jumlah nama, jumlah game) dan tombol Open event.</li>
                 <li><b>Open</b>: game berikutnya dengan tombol Start game (game pertama mengunci daftar nama dengan konfirmasi, B-3), kunci klaim nama baru, dan Close event. Tanpa game: ajakan ke halaman Games.</li>
