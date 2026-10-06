@@ -1,23 +1,18 @@
-{{-- F20: Live control for a Tebak game (Kata or Gambar). Show any queued question (D-5), skip once
-     (E6, E7), pick a winner after a confirmation (D-6) or surrender (E13), show the leaderboard
-     (E11) and the final results (E12). The question itself, with hints (Kata, E5) or Reveal
-     (Gambar, E9), comes from live/tebak/{type}. --}}
-<div x-data="tebakHost({
+{{-- F20, D-10: Live control for a Tebak game (Kata or Gambar), in parts that Live control places
+     in its columns ('data', 'questions', 'control', 'board', as for Pentahoot). Show any queued
+     question (D-5), skip once (E6, E7), pick a winner after a confirmation (D-6) or surrender
+     (E13), show the leaderboard (E11) and the final results (E12). The question itself, with
+     hints (Kata, E5) or Reveal (Gambar, E9), comes from live/tebak/{type}. --}}
+@switch($part)
+    @case('data')
+tebakHost({
         type: @js($game->type->value),
         actionUrl: @js(url("/host/{$event->id}/questions/__QUESTION__/__ACTION__")),
         people: @js($people),
         labels: @js([...__('tebak'), 'network_error' => __('pentahoot.network_error')]),
-    })"
-    class="flex flex-col gap-5">
-    <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
-
-    <section x-cloak x-show="finished" class="flex flex-col items-start gap-3 rounded-card bg-surface p-6">
-        <p class="font-semibold">{{ $game->title }}</p>
-        <p class="text-sm text-muted">{{ __('pentahoot.game_over_host') }}</p>
-        <x-button :href="route('host.events.games.index', $event)" variant="secondary">{{ __('pentahoot.open_games') }}</x-button>
-    </section>
-
-    <div x-show="!finished" class="grid gap-5 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)_minmax(0,320px)]">
+    })
+        @break
+    @case('questions')
         {{-- D-5, E6: the queue in pack order; skipped questions keep their place with a dashed mark. --}}
         <section class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="tebak-questions-heading">
             <h2 id="tebak-questions-heading" class="font-display text-xl font-semibold">{{ __('tebak.questions') }} ({{ $questions->count() }})</h2>
@@ -30,7 +25,9 @@
                 'clickable' => 'canShow(' . $index . ') && !busy',
             ])->all()" />
         </section>
-
+        @break
+    @case('control')
+        <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
         {{-- The question on screen, with the answer only hosts see. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
             <p x-show="!question && !allResolved" class="text-muted">{{ __('tebak.no_question') }}</p>
@@ -93,7 +90,16 @@
                 <x-button type="button" data-test="show-leaderboard" x-show="canLeaderboard" x-bind:disabled="busy" @click="act('leaderboard')">{{ __('tebak.show_leaderboard') }}</x-button>
             </div>
         </section>
-
+        {{-- E12, D-8: show the final results; unplayed questions do not count and ending early is logged. --}}
+        <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
+            <div class="flex flex-col">
+                <span class="font-semibold">{{ $game->title }}</span>
+                <span class="text-sm text-muted">{{ __('tebak.final_help') }}</span>
+            </div>
+            @include('host.events.live.finish', ['label' => __('tebak.show_final')])
+        </section>
+        @break
+    @case('board')
         {{-- E10, E11: the board as it stands, for hosts. --}}
         <section class="flex flex-col gap-3 rounded-card bg-surface p-6" aria-labelledby="live-board-heading">
             <h2 id="live-board-heading" class="font-display text-xl font-semibold">{{ __('tebak.live_board') }}</h2>
@@ -107,14 +113,5 @@
                 </template>
             </ol>
         </section>
-    </div>
-
-    {{-- E12, D-8: show the final results; unplayed questions do not count and ending early is logged. --}}
-    <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
-        <div class="flex flex-col">
-            <span class="font-semibold">{{ $game->title }}</span>
-            <span class="text-sm text-muted">{{ __('tebak.final_help') }}</span>
-        </div>
-        @include('host.events.live.finish', ['label' => __('tebak.show_final')])
-    </section>
-</div>
+        @break
+@endswitch

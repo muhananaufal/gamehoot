@@ -1,17 +1,14 @@
-{{-- F20, D-5, D-8: Live control for a Pentahoot game. A finished game stays on screen (G7). --}}
-<div x-data="pentahootHost({
+{{-- F20, D-5, D-8, D-10: Live control for a Pentahoot game, in parts that Live control places in
+     its columns: 'data' is the Alpine component around them, 'questions' goes under the steps,
+     'control' in the middle, 'board' (the running count) in the monitor. --}}
+@switch($part)
+    @case('data')
+pentahootHost({
         actionUrl: @js(url("/host/{$event->id}/questions/__QUESTION__/__ACTION__")),
         labels: @js(__('pentahoot')),
-    })"
-    class="flex flex-col gap-5">
-    <section x-cloak x-show="finished" class="flex flex-col items-start gap-3 rounded-card bg-surface p-6">
-        <p class="font-semibold">{{ $game->title }}</p>
-        <p class="text-sm text-muted">{{ __('pentahoot.game_over_host') }}</p>
-        <x-button :href="route('host.events.games.index', $event)" variant="secondary">{{ __('pentahoot.open_games') }}</x-button>
-    </section>
-
-    <div x-show="!finished" class="grid gap-5 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)_minmax(0,320px)]">
-
+    })
+        @break
+    @case('questions')
         {{-- D-5: any question that is not done can be opened. --}}
         <section class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="questions-heading">
             <h2 id="questions-heading" class="font-display text-xl font-semibold">{{ __('pentahoot.questions') }} ({{ $questions->count() }})</h2>
@@ -24,7 +21,8 @@
                 'clickable' => 'canOpen(' . $question->position . ') && !busy',
             ])->all()" />
         </section>
-
+        @break
+    @case('control')
         {{-- The question on screen: countdown, answers, and the actions its state allows. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
             <p x-show="(!question || phase === 'done') && !allDone" class="text-muted">{{ __('pentahoot.no_question') }}</p>
@@ -73,7 +71,13 @@
                 </x-confirm-dialog>
             </div>
         </section>
-
+        {{-- D-8, E13: finishing early leaves unfinished questions out and is logged. --}}
+        <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
+            <span class="font-semibold">{{ $game->title }}</span>
+            @include('host.events.live.finish', ['label' => __('games.finish')])
+        </section>
+        @break
+    @case('board')
         {{-- F2, F14: the running count per name, for hosts only. --}}
         <section class="flex flex-col gap-3 rounded-card bg-surface p-6" aria-labelledby="tally-heading">
             <div class="flex items-baseline justify-between gap-3">
@@ -90,11 +94,5 @@
                 </template>
             </ol>
         </section>
-    </div>
-
-    {{-- D-8, E13: finishing early leaves unfinished questions out and is logged. --}}
-    <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
-        <span class="font-semibold">{{ $game->title }}</span>
-        @include('host.events.live.finish', ['label' => __('games.finish')])
-    </section>
-</div>
+        @break
+@endswitch
