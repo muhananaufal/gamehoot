@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Exceptions\ActionRefused;
 use App\Exceptions\ClaimRefused;
-use App\Exceptions\EventHasActiveGame;
 use App\Exceptions\NameListLocked;
 use App\Http\ApiError;
 use App\Http\Middleware\AddLogContext;
@@ -39,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         // K5: a refused action is normal play (late vote, double click), not an error to log.
-        $exceptions->dontReport([ActionRefused::class, ClaimRefused::class, NameListLocked::class, EventHasActiveGame::class]);
+        $exceptions->dontReport([ActionRefused::class, ClaimRefused::class, NameListLocked::class]);
 
         // K4: {code, message} for framework errors too.
         $exceptions->render(

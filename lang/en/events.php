@@ -54,6 +54,7 @@ return [
     'close' => 'Close event',
     'close_help' => 'Players see “This event has ended”. You can reopen it later.',
     'close_confirm' => 'Close :name? Players will see “This event has ended” and can\'t vote anymore. Results stay available.',
+    'close_ends_game' => '“:title” is still running. It ends first, with the questions done so far counted, then the event closes.',
     'reopen' => 'Reopen event',
     'reopen_help' => 'The event is closed. Reopening brings players back to the game screen.',
     'transfer' => 'Transfer ownership',
@@ -105,5 +106,4 @@ return [
     'cohost_unknown' => 'No active host has this username or email.',
     'cohost_is_owner' => 'This host owns the event.',
     'cohost_exists' => 'This host is already a co-host.',
-    'close_game_running' => 'End the running game before closing the event.',
 ];

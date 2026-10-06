@@ -112,12 +112,12 @@
                     <div class="flex flex-col gap-2">
                         <p class="text-sm font-semibold">{{ __('events.close') }}</p>
                         <p class="text-sm text-muted">{{ __('events.close_help') }}</p>
-                        {{-- U20: closing is destructive (red) and off, with the reason, while a game runs (T6). --}}
-                        @if ($gameRunning)
-                            <p class="text-sm font-semibold text-on-warning">{{ __('events.close_game_running') }}</p>
-                        @endif
-                        <x-confirm-dialog :title="__('events.close') . '?'" :trigger="__('events.close')" trigger-variant="destructive" :trigger-disabled="$gameRunning">
+                        {{-- U20: closing is destructive (red). T6, D-10: a running game ends first; the dialog says which. --}}
+                        <x-confirm-dialog :title="__('events.close') . '?'" :trigger="__('events.close')" trigger-variant="destructive">
                             <p class="text-[15px] text-muted">{{ __('events.close_confirm', ['name' => $event->name]) }}</p>
+                            @if ($runningGame)
+                                <p class="text-[15px] font-semibold text-on-warning">{{ __('events.close_ends_game', ['title' => $runningGame->title]) }}</p>
+                            @endif
                             <form method="POST" action="{{ route('host.events.close', $event) }}" class="flex justify-end gap-2.5 pt-1.5">
                                 @csrf
                                 <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>

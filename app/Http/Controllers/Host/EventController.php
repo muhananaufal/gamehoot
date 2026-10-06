@@ -47,8 +47,8 @@ final class EventController
             'owner' => $event->owner()->firstOrFail(),
             'cohosts' => $event->cohosts()->orderBy('event_hosts.created_at')->get(),
             'isOwner' => $event->isOwnedBy($user),
-            // T6: an event closes only once its game is no longer running.
-            'gameRunning' => $event->activeGame()->where('status', '!=', GameStatus::Finished)->exists(),
+            // T6, D-10: closing ends this game first; the dialog names it.
+            'runningGame' => $event->activeGame()->where('status', '!=', GameStatus::Finished)->first(),
         ]);
     }
 
