@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every form checks its simple rules before sending, including passwords, time to vote and the rename dialog, so nothing that would be refused is sent; sign in still leaves the checks to the server.
+- Delete event stays disabled until the event name is typed exactly.
+- The link field in Restore event shows the site address in front, like New event.
 - Icons in the narrowed sidebar are centred.
 - After the last question, Live control points to Finish game instead of asking to pick a question that does not exist.
 - Live control no longer reloads the whole page when another game starts or ends.
