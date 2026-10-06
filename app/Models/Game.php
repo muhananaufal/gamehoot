@@ -50,6 +50,17 @@ final class Game extends Model
     }
 
     /**
+     * D-9: the pack moved on since its questions were copied. A game copied before the marker
+     * existed counts as version 0; a deleted pack cannot be reloaded, so it never counts.
+     */
+    public function packChanged(): bool
+    {
+        $pack = $this->sourcePack;
+
+        return $pack instanceof QuestionPack && ! $pack->trashed() && $pack->content_version !== ($this->pack_version ?? 0);
+    }
+
+    /**
      * @return HasMany<Question, $this>
      */
     public function questions(): HasMany
@@ -98,6 +109,7 @@ final class Game extends Model
             'status' => GameStatus::class,
             'position' => 'integer',
             'leaderboard_at' => 'immutable_datetime',
+            'pack_version' => 'integer',
         ];
     }
 }

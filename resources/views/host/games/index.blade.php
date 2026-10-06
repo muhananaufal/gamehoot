@@ -29,6 +29,10 @@
                 <article class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-4">
                     <div class="flex min-w-0 grow flex-col gap-0.5">
                         <h3 class="truncate font-bold">{{ $game->position }}. {{ $game->title }}</h3>
+                        @if ($status === 'waiting' && $game->packChanged())
+                            {{-- D-9: the pack moved on since the copy; Reload takes the new version. --}}
+                            <x-chip tone="warning" class="w-fit">{{ __('games.pack_changed') }}</x-chip>
+                        @endif
                         <p class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · <a href="{{ route('host.events.games.questions.index', [$event, $game]) }}" class="text-link underline-offset-4 hover:underline">{{ trans_choice('games.questions', $game->questions_count) }}</a></p>
                         {{-- U6: when it was added, or when it started (from the activity log), in WIB (T10). --}}
                         <p class="text-[13px] text-muted">
@@ -60,13 +64,19 @@
                                     <x-button type="submit" :disabled="$game->questions_count === 0 || $gameRunning">{{ __('games.start') }}</x-button>
                                 </form>
                             @endif
-                            @if ($game->source_pack_id)
-                                <form method="POST" action="{{ route('host.events.games.reload', [$event, $game]) }}">
-                                    @csrf
-                                    <x-button type="submit" variant="secondary" :title="__('games.reload_help')">{{ __('games.reload') }}</x-button>
-                                </form>
+                            @if ($game->packChanged())
+                                {{-- D-9, D-2: reloading replaces the copies and their edits, so it is confirmed. --}}
+                                <x-confirm-dialog :title="__('games.reload') . '?'" :trigger="__('games.reload')">
+                                    <p class="text-[15px] text-muted">{{ __('games.reload_confirm', ['title' => $game->title]) }}</p>
+                                    <form method="POST" action="{{ route('host.events.games.reload', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
+                                        @csrf
+                                        <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                                        <x-button type="submit">{{ __('games.reload') }}</x-button>
+                                    </form>
+                                </x-confirm-dialog>
                             @endif
-                            <x-confirm-dialog :title="__('games.delete') . '?'" :trigger="__('games.delete')" trigger-variant="secondary">
+                            {{-- U23: deleting is destructive, so its trigger is red too. --}}
+                            <x-confirm-dialog :title="__('games.delete') . '?'" :trigger="__('games.delete')" trigger-variant="destructive">
                                 <p class="text-[15px] text-muted">{{ __('games.delete_confirm', ['title' => $game->title]) }}</p>
                                 <form method="POST" action="{{ route('host.events.games.destroy', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
                                     @csrf

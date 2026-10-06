@@ -26,6 +26,8 @@ final readonly class SavePackQuestion
         $engine = $this->engines->for($pack->game_type);
 
         return DB::transaction(function () use ($pack, $question, $validated, $engine, $actor): PackQuestion {
+            $pack->contentChanged();
+
             if ($question === null) {
                 QuestionPack::query()->lockForUpdate()->findOrFail($pack->id);
                 $last = $pack->questions()->max('position');

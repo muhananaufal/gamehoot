@@ -53,6 +53,8 @@ return [
     'save_question' => 'Save question',
     'reload' => 'Reload from pack',
     'reload_help' => 'Replaces the questions with the latest version of the pack.',
+    'reload_confirm' => 'The questions of “:title” are replaced with the pack as it is now. Edits made to this game’s questions are lost.',
+    'pack_changed' => 'Pack changed since added',
     'delete' => 'Delete',
     'delete_confirm' => 'Delete “:title”? Its copied questions are removed too.',
     'start' => 'Start game',

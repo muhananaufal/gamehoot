@@ -27,7 +27,7 @@ final class GameController
     {
         return view('host.games.index', [
             'event' => $event,
-            'games' => $event->games()->orderBy('position')->withCount('questions')->get(),
+            'games' => $event->games()->orderBy('position')->with('sourcePack:id,content_version,deleted_at')->withCount('questions')->get(),
             'startedAt' => GameTimes::startedFor($event),
             'packs' => QuestionPack::query()
                 ->whereBelongsTo($user, 'owner')
