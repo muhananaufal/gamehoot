@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\People\EditNameList;
 use App\Actions\People\ReleaseClaim;
 use App\Models\Event;
 use App\Models\Person;
@@ -48,4 +49,22 @@ it('shows the locked screen on a phone when claims are locked (B-7)', function (
         ->assertSee('Joining is closed for now')
         ->assertSee('CLAIMS_LOCKED')
         ->assertNoJavaScriptErrors();
+});
+
+it('follows a rename and a release made by the host without a reload (B-6)', function (): void {
+    $owner = User::factory()->create();
+    $event = Event::factory()->for($owner, 'owner')->open()->create(['name' => 'Year-End Party', 'slug' => 'year-end-party']);
+    $rita = Person::factory()->for($event)->create(['name' => 'Rita Wulandari']);
+
+    $page = visit('/year-end-party')->on()->iPhone15()
+        ->click('Rita Wulandari')
+        ->assertSee('You’re in, Rita Wulandari!');
+
+    // Without a socket server in tests the phone polls (T2), which brings its own state too.
+    app(EditNameList::class)->rename($event, $rita, 'Rita W.');
+    $page->wait(8)->assertSee('You’re in, Rita W.!')->assertPathIs('/year-end-party/play');
+
+    app(ReleaseClaim::class)->handle($event, $rita->refresh(), $owner);
+    $page->wait(8)->assertSee('Pick your name to join the game')->assertPathIs('/year-end-party');
+    $page->assertNoJavaScriptErrors();
 });

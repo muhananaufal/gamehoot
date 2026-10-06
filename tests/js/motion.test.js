@@ -13,7 +13,7 @@ function ruleOf(selector) {
     return start === -1 ? '' : css.slice(start, css.indexOf('}', start));
 }
 
-const KEY_MOMENTS = ['.pop-in', '.row-enter', '.podium-step', '.podium-name'];
+const KEY_MOMENTS = ['.pop-in', '.row-enter', '.podium-step', '.podium-name', 'dialog[open]'];
 
 describe('U8 key-moment motion', () => {
     it.each(KEY_MOMENTS)('%s animates in 100-300 ms', (selector) => {
@@ -35,5 +35,41 @@ describe('U8 key-moment motion', () => {
         expect(delay(3)).toBeGreaterThanOrEqual(0);
         expect(delay(2)).toBeGreaterThan(delay(3));
         expect(delay(1)).toBeGreaterThan(delay(2));
+    });
+});
+
+describe('U8 leaving and pressing', () => {
+    it('lets dialogs leave faster than they come, also when closed with Escape', () => {
+        const leave = ruleOf('dialog');
+        const ms = Number(leave.match(/opacity\s+(\d+)ms/)?.[1] ?? 0);
+
+        expect(leave).toContain('allow-discrete');
+        expect(ms).toBeGreaterThanOrEqual(80);
+        expect(ms).toBeLessThanOrEqual(150);
+        expect(ruleOf('dialog:not([open])')).toMatch(/opacity:\s*0/);
+    });
+
+    it('gives buttons a small press', () => {
+        expect(ruleOf(":is(button, a[class*='rounded-control']):active:not(:disabled)")).toMatch(/scale:\s*0\.97/);
+    });
+
+    it('stops leaving and pressing with prefers-reduced-motion', () => {
+        expect(reducedBlock).toMatch(/transition:\s*none/);
+        expect(reducedBlock).toContain('scale: none');
+    });
+});
+
+describe('U13 modals sit in the middle of the screen', () => {
+    it('centres Unpoly modals vertically like the native dialogs, still scrolling when taller than the screen', () => {
+        expect(ruleOf('up-modal up-modal-box')).toMatch(/margin-block:\s*auto/);
+    });
+});
+
+describe('U13 one backdrop for every dialog and modal', () => {
+    it('draws the native dialogs and the Unpoly modals behind the same backdrop', () => {
+        // up-modal > up-modal-backdrop outweighs unpoly.css, which loads later.
+        expect(ruleOf('dialog::backdrop,\nup-modal > up-modal-backdrop')).toMatch(
+            /background:\s*color-mix\(in oklab, var\(--color-nav\) 70%, transparent\)/,
+        );
     });
 });

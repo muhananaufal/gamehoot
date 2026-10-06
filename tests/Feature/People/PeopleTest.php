@@ -51,7 +51,8 @@ describe('name list (B-3, B-4)', function (): void {
 
         actingAs(hostOf($event))->get("/host/{$event->id}/people")
             ->assertOk()
-            ->assertSeeInOrder(['Budi Santoso', 'Playing on a phone', '/j/k7Qx9mP2k7Qx9mP2', 'Yusuf Hidayat', 'Not joined']);
+            ->assertSeeInOrder(['Budi Santoso', 'Playing', '/j/k7Qx9mP2k7Qx9mP2', 'Yusuf Hidayat', 'Not joined'])
+            ->assertDontSee('Playing on a phone');
     });
 
     it('is closed to hosts of other events', function (): void {
@@ -308,11 +309,12 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
 
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->assertOk()->getContent();
 
-        expect(Str::before($html, '<main'))->toContain('Add name')
+        expect(Str::between($html, '<header', '</header>'))->not->toContain('Add name')
+            ->and(Str::after($html, '<main'))->toContain('Add name')
             ->and($html)->toContain('x-data="tableView(')
-            ->and($html)->toMatch('/<tr data-row data-search="budi santoso[^"]*" data-filter="joined"/')
-            ->and($html)->toMatch('/<tr data-row data-search="rita wulandari[^"]*" data-filter="waiting"/')
-            ->and($html)->toContain('aria-label="Search names"');
+            ->and($html)->toMatch('/<tr data-row [^>]*data-search="budi santoso[^"]*" data-filter="joined"/')
+            ->and($html)->toMatch('/<tr data-row [^>]*data-search="rita wulandari[^"]*" data-filter="waiting"/')
+            ->and($html)->toContain('aria-label="Search name or link"');
     });
 
     it('says when each name joined', function (): void {
@@ -328,8 +330,9 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
 
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
 
-        expect(substr_count($html, '<dialog'))->toBeLessThanOrEqual(2)
-            ->and($html)->toContain('$store.confirm.askFor(')
+        // The header's Export links and Add name dialogs, plus the one dialog every row shares.
+        expect(substr_count($html, '<dialog'))->toBeLessThanOrEqual(3)
+            ->and(substr_count($html, 'data-delete="1"'))->toBe(30)
             ->and($html)->not->toContain('variant="link-destructive"');
     });
 
@@ -337,6 +340,61 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->count(480)->sequence(fn ($s) => ['name' => "Participant Number {$s->index}"])->create();
 
-        expect(strlen((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent()))->toBeLessThan(700_000);
+        $size = strlen((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent());
+        expect($size)->toBeLessThan(700_000);
+    });
+});
+
+it('marks Add name as a create button with the plus icon (U2)', function (): void {
+    $event = eventWithOwner();
+
+    expect((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent())
+        ->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*Add name\s*<\/button>/');
+});
+
+describe('Names page actions (U4, U5, U21)', function (): void {
+    it('keeps Copy beside the link and puts the other actions in the row menu of an Actions column (U5)', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'claimed_at' => now()]);
+        Person::factory()->for($event)->create(['name' => 'Rita Wulandari']);
+
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+        $budi = Str::match('/<tr data-row[^>]*data-name="Budi Santoso"[\s\S]*?<\/tr>/', $html);
+        $rita = Str::match('/<tr data-row[^>]*data-name="Rita Wulandari"[\s\S]*?<\/tr>/', $html);
+
+        expect($html)->toContain('>Actions</')
+            ->and($html)->not->toContain('?edit=')
+            ->and($html)->toContain('placeholder="Search name or link"')
+            ->and($html)->toContain('data-sort-link=')
+            // The personal link cell holds the link and Copy only.
+            ->and($budi)->toMatch('/<code>\/j\/[^<]+<\/code><button[^>]*data-copy=/')
+            ->and($budi)->not->toContain('data-ask=')
+            ->and($budi)->toMatch('/data-menu[^>]*data-new-link="1"[^>]*data-release="1"[^>]*data-rename="1"[^>]*data-delete="1"/')
+            // Release only for a name that joined.
+            ->and($rita)->not->toContain('data-release');
+    });
+
+    it('puts Export links in the page header instead of its own section (U21)', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->create();
+
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+        // The content header comes before the list; the old section came after it.
+        expect((int) strpos($html, 'Export links (CSV)'))->toBeLessThan((int) strpos($html, 'id="names-live"'))
+            ->and($html)->not->toContain('id="links-heading"');
+    });
+
+    it('reopens the rename dialog with what was typed and the error after a refused rename', function (): void {
+        $event = eventWithOwner();
+        $budi = Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
+        Person::factory()->for($event)->create(['name' => 'Rita', 'name_normalized' => 'rita']);
+
+        actingAs(hostOf($event))->from("/host/{$event->id}/people")
+            ->put("/host/{$event->id}/people/{$budi->id}", ['name' => 'rita', 'form' => "rename-{$budi->id}"])
+            ->assertRedirect("/host/{$event->id}/people");
+
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+
+        expect($html)->toContain('askRow(')->toContain('"value":"rita"')->toContain('"error":');
     });
 });

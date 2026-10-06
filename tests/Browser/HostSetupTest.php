@@ -17,11 +17,14 @@ uses(RefreshDatabase::class);
 it('signs a host in through the form (C-5)', function (): void {
     User::factory()->create(['email' => 'arif@company.test', 'password' => 'browser-test-42']);
 
-    visit('/login')
-        ->type('email', 'arif@company.test')
-        ->type('password', 'browser-test-42')
-        ->press('Sign in')
-        ->assertSee('No events yet.')
+    $page = visit('/login')
+        ->type('login', 'arif@company.test')
+        ->type('password', 'browser-test-42');
+    // The submit navigates; a retried press() would look for the button on the next page
+    // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page->script('document.querySelector("form button[type=submit]").click()');
+
+    $page->assertSee('No events yet.')
         ->assertNoJavaScriptErrors();
 })->skip(
     fn (): bool => Playwright::defaultBrowserType() === BrowserType::SAFARI,
@@ -34,14 +37,27 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
 
     actingAs($host);
 
-    visit('/host')
-        ->assertSee('No events yet.')
-        ->click('New event')
-        ->type('name', 'Gathering 2026')
-        ->press('Create event')
-        ->assertSee('Event created. Next, add the names of the people who can play.')
+    // U13: New event opens a dialog already in the page; once created, the main page shows the
+    // new event's Names page. Clicks that open or send a dialog go through a script, so the browser
+    // plugin cannot retry them (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page = visit('/host')->assertSee('No events yet.');
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
+    $page->assertScript('!! document.querySelector("dialog[open] form")')
+        ->assertPathEndsWith('/host')
+        ->type('name', 'Gathering 2026');
+
+    // U13, U19: the link follows the name; another event uses it, and the server says so once the
+    // name is done. Clearing the link lets the server pick a free one (F10).
+    expect($page->script('document.querySelector("dialog[open] input[name=slug]").value'))->toBe('gathering-2026');
+    $page->script('document.querySelector("dialog[open] input[name=name]").dispatchEvent(new Event("change", { bubbles: true }))');
+    $page->assertSee('Another event already uses this link.');
+    $page->script('(() => { const slug = document.querySelector("dialog[open] input[name=slug]"); slug.value = ""; slug.dispatchEvent(new Event("input", { bubbles: true })); })()');
+    $page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().click()');
+
+    $page->assertSee('Event created. Next, add the names of the people who can play.')
         ->assertPathEndsWith('/people')
-        // U2: Add name opens a dialog in the top bar; Enter sends it instead of cancelling.
+        ->assertScript('! document.querySelector("dialog[open]")')
+        // U2: Add name opens a dialog in the content header; Enter sends it instead of cancelling.
         ->click('Add name')
         ->type('add-person-name', 'Budi Santoso')
         ->keys('add-person-name', 'Enter')
@@ -100,4 +116,24 @@ it('opens the host pages without JavaScript errors', function (): void {
         '/admin/users',
         '/admin/trash',
     ])->assertNoJavaScriptErrors();
+});
+
+it('fills the link from the event name and stops an empty name before sending (U13, U19)', function (): void {
+    $host = User::factory()->create();
+    actingAs($host);
+
+    $page = visit('/host')->wait(0.5);
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
+    $page->wait(0.3);
+    $page->type('name', 'Year End Party');
+
+    expect($page->script('document.querySelector("dialog[open] input[name=slug]").value'))->toBe('year-end-party');
+
+    // An empty name: the form is not sent and says why under the field.
+    $page->script('(() => { const d = document.querySelector("dialog[open]"); d.querySelector("input[name=name]").value = ""; window.__sent = false; window.addEventListener("up:request:load", () => (window.__sent = true)); [...d.querySelectorAll("button[type=submit]")].pop().click(); })()');
+    $page->wait(0.4);
+
+    expect($page->script('window.__sent'))->toBeFalse()
+        ->and($page->script('document.querySelector("dialog[open] [data-check-error]")?.textContent'))->toBe('The event name field is required.');
+    $page->assertNoJavaScriptErrors();
 });

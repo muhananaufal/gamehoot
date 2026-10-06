@@ -15,6 +15,8 @@ final class ActivityLogController
 {
     public function __invoke(Event $event): View
     {
-        return view('host.logs.index', ['event' => $event, 'entries' => EventActivity::for($event)]);
+        $entries = EventActivity::for($event);
+
+        return view('host.logs.index', ['event' => $event, 'entries' => $entries, 'actors' => EventActivity::actors($event, $entries)]);
     }
 }

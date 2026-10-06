@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -281,6 +282,38 @@ describe('deleting and restoring (D-3)', function (): void {
         expect($event->fresh()?->slug)->toBe('gathering-2026-b');
     });
 
+    it('asks before restoring and keeps the dialog open when the link is taken (U5)', function (): void {
+        $event = ownedEvent(attributes: ['name' => 'Gathering 2026', 'slug' => 'gathering-2026']);
+        $owner = ownerOf($event);
+        actingAs($owner)->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+        $page = (string) actingAs($owner)->get('/host/trash')->getContent();
+        expect($page)->toContain('Restore Gathering 2026?')
+            ->and($page)->not->toMatch('/x-init="\s*\$refs\.dialog\.showModal\(\)/');
+
+        ownedEvent(attributes: ['slug' => 'gathering-2026']);
+        actingAs($owner)->from('/host/trash')->followingRedirects()
+            ->post("/host/trash/{$event->id}/restore", ['slug' => 'gathering-2026', 'restoring' => $event->id])
+            ->assertSee('Another event uses this link now. Pick a new one.')
+            ->assertSee('x-init=" $refs.dialog.showModal() "', false);
+    });
+
+    it('lists deleted events in the shared table, sortable, with Restore as an icon button (U4, U5)', function (): void {
+        $event = ownedEvent(attributes: ['name' => 'Gathering 2026', 'slug' => 'gathering-2026']);
+        $owner = ownerOf($event);
+        actingAs($owner)->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+        $html = (string) actingAs($owner)->get('/host/trash')->getContent();
+
+        expect($html)->toContain("tableView({ key: 'trash', sort: 'deleted', dir: 'desc' })")
+            ->toContain('placeholder="Search event or link"')
+            ->toContain('aria-label="Restore Gathering 2026"');
+
+        foreach (['name', 'deleted'] as $key) {
+            expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
+        }
+    });
+
     it('lets a super-admin see and restore any deleted event, but not a co-host (C-2, C-4)', function (): void {
         $event = ownedEvent(attributes: ['name' => 'Sales Kickoff', 'slug' => 'sales-kickoff']);
         $cohost = cohostOf($event);
@@ -369,4 +402,119 @@ it('is closed to guests', function (): void {
     $event = ownedEvent();
 
     get("/host/{$event->id}/settings")->assertRedirect('/login');
+});
+
+describe('the Settings page (U20)', function (): void {
+    it('shows the event status next to General and keeps the Status section for the locks', function (): void {
+        $event = ownedEvent();
+        $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
+
+        expect($html)->toMatch('/General<\/h2>\s*<span[^>]*>\s*Draft/');
+    });
+
+    it('lists the owner first with a badge, then the co-hosts from the first added, each with when', function (): void {
+        $owner = User::factory()->create(['name' => 'Owner Ana']);
+        $event = ownedEvent($owner);
+        $first = User::factory()->create(['name' => 'Zed First']);
+        $second = User::factory()->create(['name' => 'Abe Second']);
+        $event->cohosts()->attach($first, ['created_at' => '2026-10-01 03:00:00', 'updated_at' => '2026-10-01 03:00:00']);
+        $event->cohosts()->attach($second, ['created_at' => '2026-10-03 03:00:00', 'updated_at' => '2026-10-03 03:00:00']);
+
+        actingAs($owner)->get("/host/{$event->id}/settings")
+            ->assertSee('Hosts')
+            ->assertSeeInOrder(['Owner Ana', 'Owner', 'Zed First', 'Added 1 Oct 2026', 'Abe Second', 'Added 3 Oct 2026']);
+    });
+
+    it('makes Close event and Transfer ownership red, and asks before transferring', function (): void {
+        $event = ownedEvent(attributes: ['status' => EventStatus::Open]);
+        $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
+
+        expect($html)->toMatch('/bg-destructive[^"]*"[^>]*>\s*Close event/')
+            ->toMatch('/bg-destructive[^"]*"[^>]*>\s*Transfer ownership/')
+            ->toContain('Transfer ownership?');
+    });
+
+    it('turns Close event off with the reason while a game runs', function (): void {
+        $event = ownedEvent();
+        $game = Game::factory()->for($event)->create();
+        $event->forceFill(['status' => EventStatus::Open, 'active_game_id' => $game->id])->save();
+
+        $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
+
+        expect($html)->toMatch('/<button[^>]*disabled[^>]*>\s*Close event/')
+            ->toContain('End the running game before closing the event.');
+    });
+});
+
+describe('inviting by username (C-6)', function (): void {
+    it('adds a co-host and transfers ownership by username, in any case', function (): void {
+        $event = ownedEvent();
+        $owner = ownerOf($event);
+        $arif = User::factory()->create(['username' => 'arifrahman']);
+        $sari = User::factory()->create(['username' => 'sariw']);
+
+        actingAs($owner)->post("/host/{$event->id}/cohosts", ['email' => ' ArifRahman '])->assertSessionHasNoErrors();
+        actingAs($owner)->post("/host/{$event->id}/transfer", ['new_owner_email' => 'sariw'])->assertSessionHasNoErrors();
+
+        expect($event->refresh()->owner_id)->toBe($sari->id)
+            ->and($event->cohosts()->whereKey($arif->id)->exists())->toBeTrue();
+    });
+
+    it('does not find a deleted account', function (): void {
+        $event = ownedEvent();
+        User::factory()->create(['username' => 'gone'])->delete();
+
+        actingAs(ownerOf($event))->post("/host/{$event->id}/cohosts", ['email' => 'gone'])
+            ->assertSessionHasErrors(['email' => 'No active host has this username or email.']);
+    });
+
+    it('asks for a username or email on the Settings page', function (): void {
+        $event = ownedEvent();
+
+        actingAs(ownerOf($event))->get("/host/{$event->id}/settings")
+            ->assertSee('Co-host username or email')
+            ->assertSee('New owner username or email');
+    });
+});
+
+it('titles the action column of Deleted events (U5)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    expect((string) actingAs(ownerOf($event))->get('/host/trash')->getContent())->toMatch('/<th[^>]*>\s*<span[^>]*>Actions<\/span>/');
+});
+
+it('says what Deleted events search, and lets its help use the full width (U4)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    $html = (string) actingAs(ownerOf($event))->get('/host/trash')->getContent();
+
+    expect($html)->toContain('placeholder="Search event or link"')
+        ->and($html)->not->toContain('max-w-3xl text-sm text-muted');
+});
+
+it('shows the site address in front of the link to restore under, like New event (U19)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    $html = (string) actingAs(ownerOf($event))->get('/host/trash')->getContent();
+
+    expect($html)->toContain(parse_url(Config::string('app.url'), PHP_URL_HOST).'/</span>')
+        ->and($html)->toMatch('/name="slug"[^>]*required[^>]*pattern=/');
+});
+
+it('filters deleted events by the date they were deleted and by who deleted them (U23)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    $owner = ownerOf($event);
+    actingAs($owner)->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    $html = (string) actingAs($owner)->get('/host/trash')->getContent();
+    $today = now()->timezone(Config::string('app.display_timezone'))->format('Y-m-d');
+
+    expect($html)->toContain('aria-label="Deleted by"')
+        ->and($html)->toContain('Deleted by anyone')
+        ->and($html)->toContain('Filter by date deleted')
+        ->and($html)->toContain("data-who=\"{$owner->id}\" data-date=\"{$today}\"")
+        ->and(strpos($html, 'aria-label="Deleted by"'))->toBeLessThan((int) strpos($html, 'Reset filters'));
 });

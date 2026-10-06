@@ -7,9 +7,9 @@
     $answerImage = $detail?->answerImage;
     $points = (string) old('points', $question?->points ?? 1);
 @endphp
-<x-field name="title" :label="__('packs.gambar.title')" :value="old('title', $detail?->title)" maxlength="200" autocomplete="off" />
+<x-field name="title" :label="__('packs.gambar.title')" :value="old('title', $detail?->title)" required maxlength="200" autocomplete="off" />
 <x-field name="answer_text" :label="__('packs.gambar.answer')" :value="old('answer_text', $detail?->answer_text)" :hint="__('packs.gambar.answer_hint')"
-    maxlength="100" autocomplete="off" />
+    required maxlength="100" autocomplete="off" />
 
 @include('host.packs.forms.image', [
     'field' => 'question_image',

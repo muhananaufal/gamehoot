@@ -28,6 +28,8 @@ final class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            // C-6: unique, within the username rules.
+            'username' => 'user.'.fake()->unique()->numerify('########'),
             'email' => fake()->unique()->safeEmail(),
             'password' => self::$password ??= Hash::make('password'),
             'is_super_admin' => false,

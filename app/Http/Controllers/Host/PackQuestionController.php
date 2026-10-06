@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Host;
 
+use App\Actions\Packs\DeletePackQuestion;
 use App\Actions\Packs\SavePackQuestion;
 use App\Http\Requests\Host\PackQuestionRequest;
 use App\Http\Views\PackPage;
@@ -45,10 +46,9 @@ final class PackQuestionController
         return redirect()->route('host.packs.show', $pack)->with('status', __('packs.question_saved'));
     }
 
-    public function destroy(QuestionPack $pack, PackQuestion $question): RedirectResponse
+    public function destroy(QuestionPack $pack, PackQuestion $question, DeletePackQuestion $delete): RedirectResponse
     {
-        // D-9: copies already made for games keep their content; only their source link is cleared.
-        $question->delete();
+        $delete->handle($pack, $question);
 
         return redirect()->route('host.packs.show', $pack)->with('status', __('packs.question_deleted'));
     }

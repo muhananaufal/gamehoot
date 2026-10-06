@@ -29,6 +29,7 @@ describe('O10 pentahoot:create-super-admin', function (): void {
     it('creates a super-admin from answers typed at the prompt', function (): void {
         createSuperAdminCommand()
             ->expectsQuestion('Name', 'Dina')
+            ->expectsQuestion('Username (lower case, no spaces)', 'dina')
             ->expectsQuestion('Email', 'dina@company.test')
             ->expectsQuestion('Password (at least 12 characters, letters and digits)', 'correct-horse-42')
             ->expectsQuestion('Repeat the password', 'correct-horse-42')
@@ -37,6 +38,7 @@ describe('O10 pentahoot:create-super-admin', function (): void {
 
         $user = User::query()->where('email', 'dina@company.test')->firstOrFail();
         expect($user->is_super_admin)->toBeTrue()
+            ->and($user->username)->toBe('dina')
             ->and(Hash::check('correct-horse-42', $user->password))->toBeTrue()
             ->and(ActionLog::query()->where('action', LoggedAction::AccountCreated)->count())->toBe(1);
     });
@@ -44,6 +46,7 @@ describe('O10 pentahoot:create-super-admin', function (): void {
     it('rejects a weak password and creates nothing', function (): void {
         createSuperAdminCommand()
             ->expectsQuestion('Name', 'Dina')
+            ->expectsQuestion('Username (lower case, no spaces)', 'dina')
             ->expectsQuestion('Email', 'dina@company.test')
             ->expectsQuestion('Password (at least 12 characters, letters and digits)', 'short1')
             ->expectsQuestion('Repeat the password', 'short1')
@@ -56,6 +59,7 @@ describe('O10 pentahoot:create-super-admin', function (): void {
     it('rejects passwords that do not match', function (): void {
         createSuperAdminCommand()
             ->expectsQuestion('Name', 'Dina')
+            ->expectsQuestion('Username (lower case, no spaces)', 'dina')
             ->expectsQuestion('Email', 'dina@company.test')
             ->expectsQuestion('Password (at least 12 characters, letters and digits)', 'correct-horse-42')
             ->expectsQuestion('Repeat the password', 'correct-horse-43')
@@ -70,6 +74,7 @@ describe('O10 pentahoot:create-super-admin', function (): void {
 
         createSuperAdminCommand()
             ->expectsQuestion('Name', 'Dina')
+            ->expectsQuestion('Username (lower case, no spaces)', 'dina')
             ->expectsQuestion('Email', 'DINA@company.test')
             ->expectsQuestion('Password (at least 12 characters, letters and digits)', 'correct-horse-42')
             ->expectsQuestion('Repeat the password', 'correct-horse-42')
@@ -78,4 +83,17 @@ describe('O10 pentahoot:create-super-admin', function (): void {
 
         expect(User::query()->count())->toBe(1);
     });
+});
+
+it('rejects a username with spaces (C-6)', function (): void {
+    createSuperAdminCommand()
+        ->expectsQuestion('Name', 'Dina')
+        ->expectsQuestion('Username (lower case, no spaces)', 'dina hr')
+        ->expectsQuestion('Email', 'dina@company.test')
+        ->expectsQuestion('Password (at least 12 characters, letters and digits)', 'correct-horse-42')
+        ->expectsQuestion('Repeat the password', 'correct-horse-42')
+        ->expectsOutputToContain('The username may only hold lower case letters, digits, dots, underscores and hyphens (3-30).')
+        ->assertFailed();
+
+    expect(User::query()->count())->toBe(0);
 });

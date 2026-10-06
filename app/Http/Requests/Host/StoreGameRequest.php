@@ -6,6 +6,7 @@ namespace App\Http\Requests\Host;
 
 use App\Enums\GameType;
 use App\Games\GameEngines;
+use App\Http\Concerns\LiveValidation;
 use App\Models\QuestionPack;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -18,6 +19,8 @@ use Illuminate\Validation\Rules\Exists;
  */
 final class StoreGameRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<string|ValidationRule|Exists>>
      */

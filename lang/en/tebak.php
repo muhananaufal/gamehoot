@@ -43,6 +43,7 @@ return [
     'show_final' => 'Show final results',
     'final_help' => 'Freezes the final board and shows the podium. Questions not played do not count.',
     'no_question' => 'Pick a question to show.',
+    'all_done' => 'All questions are done. Show the final results to end the game.',
     'live_board' => 'Leaderboard now',
     'live_board_empty' => 'No winner yet.',
 

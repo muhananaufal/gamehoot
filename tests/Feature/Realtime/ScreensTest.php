@@ -94,6 +94,19 @@ describe('player screen', function (): void {
 
         expect($initial)->toBeArray()->toHaveKey('me.name', 'Budi Santoso');
     });
+
+    it('tells the phone where to pick a name again once its name is released or deleted, and shows the name from the store (B-6)', function (): void {
+        $event = screensEvent();
+        $person = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $token = ClaimCookie::newToken();
+        $person->forceFill(['claim_token_hash' => ClaimCookie::hash($token), 'claimed_at' => now()])->save();
+
+        $response = withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk();
+
+        expect(realtimeConfigOf($response))->toHaveKey('joinUrl', url('/gathering-2026'))
+            ->and((string) $response->getContent())->toContain('x-text="$store.realtime.me?.name ??');
+        expect(realtimeConfigOf(get('/gathering-2026/screen')))->toHaveKey('joinUrl', null);
+    });
 });
 
 describe('Live control (F2, C-2)', function (): void {
@@ -200,4 +213,17 @@ describe('Tebak Gambar screens (stage 5)', function (): void {
 
         get('/year-end-party/screen')->assertOk()->assertDontSee('Paris')->assertDontSee($answerImage);
     });
+});
+
+describe('Live control after the last question (D-8)', function (): void {
+    it('tells the host every question is done and offers to finish the game right there', function (string $kind): void {
+        $event = Pentahoot::event();
+        $kind === 'pentahoot' ? Pentahoot::running($event) : TebakKata::running($event);
+
+        $html = (string) actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")->assertOk()->getContent();
+        $flag = $kind === 'pentahoot' ? 'allDone' : 'allResolved';
+
+        // The notice shows only once nothing is left, and holds its own Finish game form.
+        expect($html)->toMatch('/x-show="'.$flag.'"[^>]*>[\s\S]*?All questions are done[\s\S]*?\/games\/[0-9a-f-]+\/finish/');
+    })->with(['pentahoot', 'tebak']);
 });

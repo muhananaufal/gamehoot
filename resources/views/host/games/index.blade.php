@@ -13,13 +13,26 @@
     @enderror
 
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
-    <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
-        {{-- U12: game status follows starts and finishes made from Live control or by a co-host. --}}
-        <section id="games-live" x-data="liveRegion" class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="games-heading">
-            <div class="flex flex-col gap-1">
-                <h2 id="games-heading" class="font-display text-xl font-semibold">{{ __('games.title') }}</h2>
-                <p class="text-sm text-muted">{{ __('games.subtitle') }}</p>
+    {{-- U23: the pack list of Question packs on the left, where a click adds a pack; the games on the right. --}}
+    <div class="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
+        @if ($packs->isEmpty())
+            <section class="flex flex-col gap-3 self-start rounded-card bg-surface p-4" aria-label="{{ __('games.add_from_pack') }}">
+                <p class="text-sm text-muted">{{ __('games.no_packs') }}</p>
+                <x-button :href="route('host.packs.index')" variant="secondary">{{ __('host.nav.question_packs') }}</x-button>
+            </section>
+        @else
+            <div class="flex flex-col gap-2 self-start">
+                <p class="px-1 text-sm text-muted">{{ __('games.add_hint') }}</p>
+                <x-pack-list :packs="$packs" :types="$types" :add-to="route('host.events.games.store', $event)" />
+                @error('pack_id')
+                    <p class="px-1 text-sm font-semibold text-on-danger">{{ $message }}</p>
+                @enderror
             </div>
+        @endif
+
+        {{-- U12: game status follows starts and finishes made from Live control or by a co-host. --}}
+        <section id="games-live" x-data="liveRegion" class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-label="{{ __('games.title') }}">
+            <p class="text-sm text-muted">{{ __('games.subtitle') }}</p>
 
             @forelse ($games as $game)
                 @php
@@ -29,6 +42,10 @@
                 <article class="flex flex-wrap items-center gap-3 border-t border-line-soft pt-4">
                     <div class="flex min-w-0 grow flex-col gap-0.5">
                         <h3 class="truncate font-bold">{{ $game->position }}. {{ $game->title }}</h3>
+                        @if ($status === 'waiting' && $game->packChanged())
+                            {{-- D-9: the pack moved on since the copy; Reload takes the new version. --}}
+                            <x-chip tone="warning" class="w-fit">{{ __('games.pack_changed') }}</x-chip>
+                        @endif
                         <p class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · <a href="{{ route('host.events.games.questions.index', [$event, $game]) }}" class="text-link underline-offset-4 hover:underline">{{ trans_choice('games.questions', $game->questions_count) }}</a></p>
                         {{-- U6: when it was added, or when it started (from the activity log), in WIB (T10). --}}
                         <p class="text-[13px] text-muted">
@@ -60,13 +77,19 @@
                                     <x-button type="submit" :disabled="$game->questions_count === 0 || $gameRunning">{{ __('games.start') }}</x-button>
                                 </form>
                             @endif
-                            @if ($game->source_pack_id)
-                                <form method="POST" action="{{ route('host.events.games.reload', [$event, $game]) }}">
-                                    @csrf
-                                    <x-button type="submit" variant="secondary" :title="__('games.reload_help')">{{ __('games.reload') }}</x-button>
-                                </form>
+                            @if ($game->packChanged())
+                                {{-- D-9, D-2: reloading replaces the copies and their edits, so it is confirmed. --}}
+                                <x-confirm-dialog :title="__('games.reload') . '?'" :trigger="__('games.reload')">
+                                    <p class="text-[15px] text-muted">{{ __('games.reload_confirm', ['title' => $game->title]) }}</p>
+                                    <form method="POST" action="{{ route('host.events.games.reload', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
+                                        @csrf
+                                        <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                                        <x-button type="submit">{{ __('games.reload') }}</x-button>
+                                    </form>
+                                </x-confirm-dialog>
                             @endif
-                            <x-confirm-dialog :title="__('games.delete') . '?'" :trigger="__('games.delete')" trigger-variant="secondary">
+                            {{-- U23: deleting is destructive, so its trigger is red too. --}}
+                            <x-confirm-dialog :title="__('games.delete') . '?'" :trigger="__('games.delete')" trigger-variant="destructive">
                                 <p class="text-[15px] text-muted">{{ __('games.delete_confirm', ['title' => $game->title]) }}</p>
                                 <form method="POST" action="{{ route('host.events.games.destroy', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
                                     @csrf
@@ -85,32 +108,5 @@
             @endforelse
         </section>
 
-        <section class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="add-heading">
-            <h2 id="add-heading" class="font-display text-xl font-semibold">{{ __('games.add_from_pack') }}</h2>
-            @if ($packs->isEmpty())
-                <p class="text-sm text-muted">{{ __('games.no_packs') }}</p>
-                <x-button :href="route('host.packs.index')" variant="secondary">{{ __('host.nav.question_packs') }}</x-button>
-            @else
-                <form method="POST" action="{{ route('host.events.games.store', $event) }}" class="flex flex-col gap-4" novalidate>
-                    @csrf
-                    <fieldset class="flex flex-col gap-2">
-                        <legend class="mb-1 text-sm font-bold">{{ __('games.choose_pack') }}</legend>
-                        @foreach ($packs as $pack)
-                            <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-control border border-line px-3 py-2 has-checked:border-accent">
-                                <input type="radio" name="pack_id" value="{{ $pack->id }}" @checked(old('pack_id') === $pack->id) required>
-                                <span class="flex min-w-0 grow flex-col">
-                                    <span class="truncate font-semibold">{{ $pack->title }}</span>
-                                    <span class="text-sm text-muted">{{ __('games.types.' . $pack->game_type->value) }} · {{ trans_choice('games.questions', $pack->questions_count) }}</span>
-                                </span>
-                            </label>
-                        @endforeach
-                        @error('pack_id')
-                            <p class="text-sm font-semibold text-on-danger">{{ $message }}</p>
-                        @enderror
-                    </fieldset>
-                    <x-button type="submit">{{ __('games.add') }}</x-button>
-                </form>
-            @endif
-        </section>
     </div>
 </x-layouts.host>

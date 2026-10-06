@@ -52,6 +52,7 @@ return [
         'done' => 'Done',
     ],
     'no_question' => 'Pick a question to open.',
+    'all_done' => 'All questions are done. Finish the game to show the final results.',
     'open' => 'Open',
     'start' => 'Start',
     'stop' => 'Stop',

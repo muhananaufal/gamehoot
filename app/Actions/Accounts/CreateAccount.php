@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounts;
 
+use App\Accounts\Username;
 use App\Enums\LoggedAction;
 use App\Models\User;
 use App\Support\AuditLog;
@@ -17,11 +18,12 @@ final readonly class CreateAccount
 {
     public function __construct(private AuditLog $auditLog) {}
 
-    public function handle(string $name, string $email, string $password, bool $superAdmin, ?User $actor): User
+    public function handle(string $name, string $username, string $email, string $password, bool $superAdmin, ?User $actor): User
     {
-        return DB::transaction(function () use ($name, $email, $password, $superAdmin, $actor): User {
+        return DB::transaction(function () use ($name, $username, $email, $password, $superAdmin, $actor): User {
             $user = new User([
                 'name' => trim($name),
+                'username' => Username::normalize($username),
                 'email' => Str::lower(trim($email)),
                 'password' => $password,
             ]);

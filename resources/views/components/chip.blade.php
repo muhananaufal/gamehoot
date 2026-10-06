@@ -5,6 +5,7 @@
 @php
     $tones = [
         'neutral' => 'bg-subtle text-on-subtle',
+        'accent' => 'bg-accent text-on-accent',
         'success' => 'bg-success text-on-success',
         'warning' => 'bg-warning text-on-warning',
         'danger' => 'bg-danger text-on-danger',

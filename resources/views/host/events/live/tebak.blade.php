@@ -33,7 +33,12 @@
 
         {{-- The question on screen, with the answer only hosts see. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
-            <p x-show="!question" class="text-muted">{{ __('tebak.no_question') }}</p>
+            <p x-show="!question && !allResolved" class="text-muted">{{ __('tebak.no_question') }}</p>
+            {{-- D-8: after the last question the only step left is the final results. --}}
+            <div x-cloak x-show="allResolved" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
+                <p class="font-semibold">{{ __('tebak.all_done') }}</p>
+                @include('host.events.live.finish', ['label' => __('tebak.show_final')])
+            </div>
             <template x-if="question">
                 <div class="flex flex-col gap-4">
                     <div class="flex items-center justify-between gap-3">
@@ -110,13 +115,6 @@
             <span class="font-semibold">{{ $game->title }}</span>
             <span class="text-sm text-muted">{{ __('tebak.final_help') }}</span>
         </div>
-        <x-confirm-dialog :title="__('tebak.show_final') . '?'" :trigger="__('tebak.show_final')">
-            <p class="text-[15px] text-muted">{{ __('games.finish_confirm', ['title' => $game->title]) }}</p>
-            <form method="POST" action="{{ route('host.events.games.finish', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
-                @csrf
-                <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                <x-button type="submit">{{ __('tebak.show_final') }}</x-button>
-            </form>
-        </x-confirm-dialog>
+        @include('host.events.live.finish', ['label' => __('tebak.show_final')])
     </section>
 </div>

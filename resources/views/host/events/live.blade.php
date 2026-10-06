@@ -11,9 +11,10 @@
 
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
 
-    {{-- The question list is drawn once per game: reload when another game starts or ends. --}}
+    {{-- The question list is drawn once per game: when another game starts or ends, Unpoly
+         reloads the page content (U18), without reloading the whole page. --}}
     <div x-data
-        x-effect="($store.realtime.snapshot?.game?.id ?? null) !== @js($game?->id) && $store.realtime.snapshot && window.location.reload()"
+        x-effect="($store.realtime.snapshot?.game?.id ?? null) !== @js($game?->id) && $store.realtime.snapshot && window.up.reload()"
         class="flex flex-col gap-5">
         <x-connection-status />
 

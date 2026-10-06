@@ -67,6 +67,23 @@ describe('games in an event (D-9)', function (): void {
             ->assertDontSee('arrive in later releases');
     });
 
+    it('puts the pack list of Question packs on the left, where a click on a pack adds it (U23)', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(gamesOwner($event), ['Q?'], 'Office Awards');
+        $kata = new QuestionPack(['title' => 'Celebrities', 'game_type' => GameType::TebakKata]);
+        $kata->owner()->associate(gamesOwner($event))->save();
+
+        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertOk()->getContent();
+
+        expect($html)->toContain('<nav id="pack-list" x-data="packList"')
+            ->and(strpos($html, 'id="pack-list"'))->toBeLessThan((int) strpos($html, 'id="games-live"'))
+            ->and($html)->toContain('data-group="pentahoot"')
+            ->and($html)->toContain('data-group="tebak_kata"')
+            ->and($html)->toMatch('#<button type="submit" name="pack_id" value="'.$pack->id.'" data-pack data-type="pentahoot"#')
+            ->and($html)->toContain('action="'.route('host.events.games.store', $event).'"')
+            ->and($html)->not->toContain('type="radio" name="pack_id"');
+    });
+
     it('tells a host without packs where to write one, whatever the game type', function (): void {
         $event = Pentahoot::event();
 
@@ -251,4 +268,62 @@ it('says when each started game started, from the activity log (U6)', function (
     actingAs($owner)->get("/host/{$event->id}/games")
         ->assertSeeInOrder(['Office Awards', 'Started 2 Oct, 11:30', 'Second Round'])
         ->assertSee('Added', false);
+});
+
+describe('the pack change marker (D-9)', function (): void {
+    function versionOf(QuestionPack $pack): int
+    {
+        return QuestionPack::query()->findOrFail($pack->id)->content_version;
+    }
+
+    it('moves the pack version on every change that reload would copy, and only then', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(gamesOwner($event), ['First?', 'Second?']);
+        [$first, $second] = $pack->questions()->get()->all();
+        actingAs(gamesOwner($event));
+        $base = "/host/packs/{$pack->id}";
+        $question = ['prompt' => 'Third?', 'duration_seconds' => 20];
+
+        get($base)->assertOk();
+        expect(versionOf($pack))->toBe(0);
+
+        post("{$base}/questions", $question);
+        expect(versionOf($pack))->toBe(1);
+        Pest\Laravel\put("{$base}/questions/{$first->id}", ['prompt' => 'First, edited?', 'duration_seconds' => 20]);
+        expect(versionOf($pack))->toBe(2);
+        post("{$base}/questions/reorder", ['order' => [$second->id, $first->id, ...$pack->questions()->whereKeyNot([$first->id, $second->id])->pluck('id')->all()]]);
+        expect(versionOf($pack))->toBe(3);
+        delete("{$base}/questions/{$second->id}");
+        expect(versionOf($pack))->toBe(4);
+        Pest\Laravel\put($base, ['title' => 'Renamed pack']);
+        expect(versionOf($pack))->toBe(5);
+    });
+
+    it('records the copied version, marks a changed pack, and offers reload only then', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(gamesOwner($event), ['First?'], 'Office Awards');
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        $game = Game::query()->sole();
+
+        expect($game->pack_version)->toBe(0);
+        get("/host/{$event->id}/games")->assertDontSee('Pack changed since added')
+            ->assertDontSee("/games/{$game->id}/reload", false);
+
+        post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
+        get("/host/{$event->id}/games")->assertSee('Pack changed since added')
+            ->assertSee("/games/{$game->id}/reload", false);
+
+        post("/host/{$event->id}/games/{$game->id}/reload");
+        expect($game->refresh()->pack_version)->toBe(1);
+        get("/host/{$event->id}/games")->assertDontSee('Pack changed since added');
+    });
+
+    it('treats a game copied before the marker existed as version 0', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(gamesOwner($event), ['First?']);
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        Game::query()->update(['pack_version' => null]);
+
+        get("/host/{$event->id}/games")->assertDontSee('Pack changed since added');
+    });
 });

@@ -1,5 +1,6 @@
 // F20: the Alpine components of the three Pentahoot screens. They only read the shared
 // realtime store; the rules live in pentahoot.js and on the server.
+import { withBusyButton } from './action-busy.js';
 import {
     canVote,
     capRows,
@@ -75,6 +76,8 @@ export function pentahootPhone({
     return {
         ...base(labels),
         people: null,
+        // B-6: the name list the people were loaded for; a newer one loads them again.
+        peopleRoster: null,
         query: '',
         chosen: null,
         sending: false,
@@ -174,7 +177,9 @@ export function pentahootPhone({
         },
 
         async loadPeople() {
-            if (this.people !== null) {
+            const roster = this.store.snapshot?.event?.roster ?? null;
+
+            if (this.people !== null && this.peopleRoster === roster) {
                 return;
             }
 
@@ -186,6 +191,7 @@ export function pentahootPhone({
 
                 if (response.ok) {
                     this.people = (await response.json()).people;
+                    this.peopleRoster = roster;
                 }
             } catch {
                 this.error = this.labels.network_error;
@@ -413,6 +419,12 @@ export function pentahootHost({ actionUrl, labels }) {
         get allAnswered() {
             return this.phase === 'live' && this.total > 0 && this.answered >= this.total;
         },
+        /** D-8: nothing is left to open, so the next step is finishing the game. */
+        get allDone() {
+            const statuses = this.game?.statuses ?? [];
+
+            return !this.question && statuses.length > 0 && statuses.every((status) => status === 'done');
+        },
         get busyQuestion() {
             return this.phase === 'live' || this.phase === 'closed' || this.phase === 'revealed';
         },
@@ -461,22 +473,25 @@ export function pentahootHost({ actionUrl, labels }) {
             this.busy = true;
             this.error = '';
 
-            try {
-                const { status, body } = await postJson(
-                    actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
-                );
+            // U16: the button that started the action shows the spinner until it ends.
+            await withBusyButton(async () => {
+                try {
+                    const { status, body } = await postJson(
+                        actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
+                    );
 
-                if (status !== 204) {
-                    this.error = body.message ?? this.labels.network_error;
+                    if (status !== 204) {
+                        this.error = body.message ?? this.labels.network_error;
+                    }
+
+                    // F1: this page loads the new state itself instead of waiting for the broadcast.
+                    this.store.refresh?.();
+                } catch {
+                    this.error = this.labels.network_error;
+                } finally {
+                    this.busy = false;
                 }
-
-                // F1: this page loads the new state itself instead of waiting for the broadcast.
-                this.store.refresh?.();
-            } catch {
-                this.error = this.labels.network_error;
-            } finally {
-                this.busy = false;
-            }
+            });
         },
     };
 }

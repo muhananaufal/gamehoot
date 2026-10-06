@@ -45,3 +45,8 @@ arch('game engines do not publish realtime state')
 arch('controllers do not query the database directly')
     ->expect('App\Http\Controllers')
     ->not->toUse('Illuminate\Support\Facades\DB');
+
+arch('host and admin form requests can be checked live without saving (U19)')
+    ->expect(['App\Http\Requests\Host', 'App\Http\Requests\Admin'])
+    ->toUseTrait('App\Http\Concerns\LiveValidation')
+    ->ignoring('App\Http\Requests\Host\ConfirmImportRequest');

@@ -36,7 +36,8 @@
     @if ($errors->any() && ! $current)
         <p class="text-sm font-semibold text-muted">{{ __('packs.gambar.pick_again') }}</p>
     @endif
-    <input type="file" name="{{ $field }}" x-ref="large" class="hidden" tabindex="-1" aria-hidden="true">
+    {{-- U19: a new question needs both images; the message names the picker. --}}
+    <input type="file" name="{{ $field }}" x-ref="large" class="hidden" tabindex="-1" aria-hidden="true" data-label="{{ $label }}" @if (! $current) required @endif>
     <input type="file" name="{{ $field }}_small" x-ref="small" class="hidden" tabindex="-1" aria-hidden="true">
     <p x-show="busy" class="text-sm text-muted" role="status">{{ __('packs.gambar.preparing') }}</p>
     <p x-show="error" x-text="error" role="alert" class="text-sm font-semibold text-on-danger"></p>

@@ -85,6 +85,7 @@ final readonly class EditNameList
 
             $result = $change($locked);
             $locked->bumpStateVersion();
+            $locked->bumpRosterVersion();
             $locked->save();
             $this->publisher->publish($locked);
 

@@ -6,11 +6,14 @@ namespace App\Http\Requests\Host;
 
 use App\Enums\GameType;
 use App\Games\GameEngines;
+use App\Http\Concerns\LiveValidation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class StorePackRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<mixed>>
      */

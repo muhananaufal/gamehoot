@@ -22,6 +22,11 @@ final readonly class QuestionCopier
      */
     public function copyPack(QuestionPack $pack, Game $game): void
     {
+        // D-9: the version copied, read before the questions under a shared lock, so a change
+        // committed later always shows as "Pack changed since added".
+        $version = QuestionPack::query()->sharedLock()->whereKey($pack->id)->value('content_version');
+        $game->forceFill(['pack_version' => is_numeric($version) ? (int) $version : 0])->save();
+
         foreach ($pack->questions()->get() as $index => $source) {
             $this->copy($source, $game, $index + 1);
         }

@@ -14,7 +14,6 @@ use Closure;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -24,7 +23,7 @@ final class PersonController
 {
     public function __construct(private readonly EditNameList $names) {}
 
-    public function index(Request $request, Event $event): View
+    public function index(Event $event): View
     {
         // U4: every name is sent; search, filter and sort happen in the browser.
         $people = $event->people()->orderBy('name')->get();
@@ -37,7 +36,6 @@ final class PersonController
                 'joined' => $people->whereNotNull('claimed_at')->count(),
                 'waiting' => $people->whereNull('claimed_at')->count(),
             ],
-            'editing' => $request->string('edit')->toString(),
         ]);
     }
 

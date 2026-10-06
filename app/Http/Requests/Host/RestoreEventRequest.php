@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Http\Concerns\LiveValidation;
 use App\Rules\EventSlug;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
  */
 final class RestoreEventRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<mixed>>
      */

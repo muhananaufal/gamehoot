@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 return [
     'title' => 'Results',
-    'subtitle' => 'Results are frozen when they are decided: at Reveal in Pentahoot, when the winner is picked in Word Guess and Picture Guess, and for the final board when a game ends. Later changes do not alter them.',
     'export' => 'Export CSV',
     'last_change' => 'Last change: :time WIB',
     'reopened_note' => 'If you exported the CSV before this time, export it again.',

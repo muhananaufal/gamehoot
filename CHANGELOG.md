@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every host page shows its title, also Settings, Games, Activity log and Deleted events.
+- Delete game uses the red style of other destructive actions.
+- The name buttons on the phone join page match the search box.
+- Every form checks its simple rules before sending, including passwords, time to vote and the rename dialog, so nothing that would be refused is sent; sign in still leaves the checks to the server.
+- Delete event stays disabled until the event name is typed exactly.
+- The link field in Restore event shows the site address in front, like New event.
+- Icons in the narrowed sidebar are centred.
+- After the last question, Live control points to Finish game instead of asking to pick a question that does not exist.
+- Live control no longer reloads the whole page when another game starts or ends.
 - Pressing Enter in a dialog field (such as Add name or New pack) sends the form instead of closing the dialog.
 - Name lists saved as CSV by Excel on Windows keep their accented names instead of silently dropping them.
 - Exported CSV files (results and personal links) open in Excel with accents and emoji intact.
@@ -35,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Games whose pack changed since they were added are marked, and Reload from pack shows only for them and asks first, since it replaces edits made to the copied questions.
+- Phones follow the host's changes to the name list at once: a released or deleted name goes back to picking a name, a renamed one shows the new name.
+- The Games page adds games from the same pack list as Question packs, with search, type filter and folding groups.
+- Deleted events can be filtered by the date they were deleted and by who deleted them.
+- A recent event in the sidebar expands its pages in place, so Settings and the other pages are one click away.
 - `php artisan db:seed --class=DemoSeeder` builds a demo event with 50 names and one game of each type; `LoadTestSeeder` builds an open event with 500 names for load tests. Neither runs in production.
 - The specification gains a day-to-day guide with every command from branch to release, a debugging chapter with a note format (`docs/debugging/`), and execution lessons in the project blueprint.
 - Friendly error pages (page not found, no access, expired page, too many tries, server error, maintenance) with a way to reload or go back.
@@ -69,6 +83,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Games page shows when each game was added or started.
 - Joining on a phone, ranking rows and the final podium now have short animations; they stay off when the device asks for reduced motion.
 - Empty Names, Games, Results and Deleted events pages explain the next step.
+- The host panel moves between pages without reloading: the sidebar keeps its place and scroll, a thin bar shows a slow page, and live pages switch to the right event as you go.
+- New event and Add host open as a modal over the list; errors stay in the modal, and once created the new page opens with its message. A refresh while the modal is open stays on the list.
+- Page titles and their buttons sit at the top of the page instead of the top bar, and every button that makes something new shows a plus icon.
+- Question packs are edited on one page: opening, adding, editing, saving and reordering questions no longer reload the page. Each question has edit and delete icon buttons, delete asks first, and the pack list can be searched and stays in view.
+- Lists remember their search, filter, sort and page size in the browser instead of the address, show 10, 25, 50 or 100 rows per page, and offer Reset filters while something narrows them.
+- The event list sorts by creation date by default, shows when each event last changed under its name, and can be filtered by a date range from a calendar.
+- Host accounts show when each account was added in a sortable column, mark your own account next to your name, and reset passwords in a dialog.
+- Restoring a deleted event asks first, with the link to restore under chosen in the dialog.
+- Buttons show a spinner while they save, including the buttons on Live control.
+- Page changes, modals and dialogs have short animations, off when the device asks for reduced motion.
+- The theme switch shows a sun or a moon for where it goes, the sign in page has the theme switch, and every password field can be shown and hidden.
+- Every table looks the same: rows per page and filters above it, the date range and the search box on the right, numbered pages below, and every column sorts. Search boxes say what they search.
+- Row actions are icon buttons in the row when there are one or two, instead of a menu. On Names, copy link, new link, release, rename and delete are icons, and renaming opens a dialog.
+- Export links (CSV) sits at the top of the Names page and warns before the download. Joined names read "Playing".
+- The event list shows your role (Owner or Co-host) as a pill next to each event name.
+- The Activity log can be filtered by who did it and by date. Results and the Activity log no longer open with an explanation paragraph.
+- Settings shows the event status next to General, makes Close event and Transfer ownership red, asks before a transfer, and lists the owner first and then each co-host with the date they were added. A field that cannot change right now looks switched off, and Close event is off with its reason while a game runs.
+- Deleted events are listed in a table with Restore as an icon button.
+- Every dialog closes on a click outside it.
+- Form fields are checked as you leave them, so mistakes such as a link already in use show before you save.
+- Pages, modals, dialogs, table rows and ranking changes move with a soft spring; nothing moves when the device asks for reduced motion.
+- Hosts sign in with their username or their email. Every account has a lower case username; existing accounts got one made from their name. The super-admin command and Add host ask for it, and Host accounts shows and searches it.
+- Co-hosts can be added, and events transferred, by username as well as by email.
+- Super-admins can edit an account's name, username and email, reset their own password, and delete an account. A deleted account can no longer sign in and leaves the list, while events and the Activity log keep its name; an account that still owns events cannot be deleted until they are transferred.
+- Host accounts actions (Edit, Reset password, Disable or Enable, Delete) sit in a "⋯" menu; Edit and Reset password open over the list.
+- On Names, Copy stays beside the personal link and the other actions move to a "⋯" menu in an Actions column. Tables title their action column.
+- The Add host modal has a title and fields as wide as the box.
+- The question pack list stays quick with many packs: switching packs no longer reloads the list, groups per game type can be folded, and the list can be filtered by game type and ordered by name or by recent change, remembered per browser.
+- Sorted columns show their direction (the active arrow solid, the other faint), table heads have rounded corners, and action columns are centred.
+- Every dropdown in the host panel is a themed list that works with the keyboard, shows a count per choice for status filters, gets a search box with many choices, and is never cut off inside a scrolling list. Status filters on Events, Names and Host accounts are dropdowns; Host accounts can also filter by role and by the date an account was added.
+- Forms point out empty required fields, too long text, a wrong email or username before sending, without waiting for the server.
+- New event and Add host open at once; Edit and Reset password load while the menu is open.
+- A new event's link fills in from its name until you type your own, and says at once if another event uses it.
+- In a question pack, the title heads the card with Rename and Delete in a menu; the arrows move a question at once and save the order once; Time to vote has quick choices and a Custom option.
 
 ## [0.5.0] - 2026-10-01
 

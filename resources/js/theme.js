@@ -14,14 +14,21 @@ export function nextTheme(current) {
     return current === 'dark' ? 'light' : 'dark';
 }
 
-export function themeToggle() {
+/**
+ * U17: the switch keeps the current theme, so its icon shows where a press goes
+ * (sun while dark, moon while light).
+ */
+export function themeToggle({ root = document.documentElement, storage = globalThis.localStorage } = {}) {
     return {
+        dark: root.dataset.theme === 'dark',
+
         toggle() {
-            const theme = nextTheme(document.documentElement.dataset.theme);
-            document.documentElement.dataset.theme = theme;
+            const theme = nextTheme(root.dataset.theme);
+            root.dataset.theme = theme;
+            this.dark = theme === 'dark';
 
             try {
-                localStorage.setItem(THEME_STORAGE_KEY, theme);
+                storage.setItem(THEME_STORAGE_KEY, theme);
             } catch {
                 // Storage can be blocked (private mode); the choice then lasts for this page only.
             }

@@ -1,7 +1,7 @@
 {{-- U3: confirmations as toasts (resources/js/toasts.js), bottom right on wide screens and top
      center on phones. The saved message of the last request becomes the first toast. Errors and
      validation are never shown here. --}}
-<div x-data @if (session('status')) x-init="$store.toasts.push(@js(session('status')))" @endif
+<div id="toasts" up-hungry x-data @if (session('status')) x-init="$store.toasts.push(@js(session('status')))" @endif
     aria-live="polite" aria-atomic="false"
     class="pointer-events-none fixed inset-x-4 top-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:top-auto sm:right-6 sm:bottom-6 sm:items-end">
     <template x-for="toast in $store.toasts.items" :key="toast.id">

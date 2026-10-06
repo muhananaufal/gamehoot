@@ -25,7 +25,7 @@ Aturan:
 - **Laravel 13 + PHP 8.4, dijalankan di Docker** di lokal, CI, staging, dan production: container `app` (php-fpm), `web` (nginx), `reverb` (A8). Pola compose mengikuti staging `vivace-board`. Base image **Debian bookworm**, bukan Alpine: Playwright (W11) hanya mendukung Debian/Ubuntu (P2).
 - **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). Sampai versi server diketahui (O-B), hanya pakai fitur MySQL 8.0 ke atas; CI menguji MySQL 8.0 dan 8.4.
 - **Laravel Reverb** satu server, **tanpa Redis**, **tanpa queue worker** (F5, F7).
-- **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**.
+- **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**. Panel host memakai **Unpoly** untuk navigasi tanpa reload dan modal dari halaman server (U18); halaman peserta dan Public View tidak.
 - **Pest v5** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
 - Server production: **VM lewat SSH** dengan disk permanen (A7), menjalankan Docker.
 - **Bahasa antarmuka: Inggris** (A10). Isi yang ditulis host bebas bahasa.
@@ -43,7 +43,7 @@ Aturan:
 - **Waktu dari server.** `ends_at` + `server_now`, tanpa job terjadwal (F4). Suara diterima sampai `ends_at` + 1 detik (E3).
 - **Semua file lewat disk `media`** dan tabel `media_files` (F16, G11). Gambar jawaban privat, hanya lewat temporary signed URL saat Reveal (E9).
 - **Channel realtime memakai UUID event**, bukan slug (F18).
-- **Frontend (F20):** halaman host memakai satu layout (sidebar kiri + top bar breadcrumb dan aksi), tanpa menu di top bar; satu Alpine store bersama menerima snapshot, mengecek `state_version`, dan mengatur reconnect; view hanya membaca store. Elemen berulang (baris peringkat, podium, kotak huruf, countdown, pencarian nama, timeline progres) berupa komponen Blade. Timeline progres selalu vertikal dengan satu komponen. Semua teks UI (Bahasa Inggris) ada di berkas bahasa, tidak ditulis langsung di view.
+- **Frontend (F20):** halaman host memakai satu layout (sidebar kiri + top bar berisi breadcrumb saja; aksi halaman di kepala konten, U2); satu Alpine store bersama menerima snapshot, mengecek `state_version`, dan mengatur reconnect; view hanya membaca store. Elemen berulang (baris peringkat, podium, kotak huruf, countdown, pencarian nama, timeline progres) berupa komponen Blade. Timeline progres selalu vertikal dengan satu komponen. Semua teks UI (Bahasa Inggris) ada di berkas bahasa, tidak ditulis langsung di view.
 - **Tema (F21):** warna hanya lewat token semantik Tailwind (`bg-surface`, `text-ink`, `bg-rank-1`, ...). Tema gelap mengganti nilai token di `[data-theme=dark]`. **Dilarang** hex arbitrer (`bg-[#...]`) dan palet bawaan (`bg-gray-900`) di view; dicek di CI.
 - **Podium (E17)** hanya untuk hasil final; selama permainan tetap daftar peringkat.
 
@@ -54,7 +54,7 @@ Aturan:
 - Satu penanda untuk satu fakta: `events.active_game_id`, `games.current_question_id` (G7).
 - Hasil **dibekukan** ke `question_results` saat Reveal dan `game_results` saat game selesai. Halaman Hasil dan export hanya membaca tabel beku (G10).
 - Jaminan di level database: unique `(question_id, voter_person_id)`, unique `(event_id, name_normalized)`, FK `restrict` untuk data yang dipakai hasil (G2, G13).
-- Hanya `events` dan `question_packs` yang memakai soft delete (G4, D-9).
+- Hanya `events`, `question_packs`, dan `users` yang memakai soft delete (G4, D-9, C-7).
 
 ## 5. Alur git (W1–W7)
 

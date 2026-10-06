@@ -202,7 +202,8 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
         $host = User::factory()->create();
 
         $html = (string) actingAs($host)->get('/host/packs')->assertOk()->getContent();
-        expect(Str::before($html, '<main'))->toContain('New pack')
+        expect(Str::between($html, '<header', '</header>'))->not->toContain('New pack')
+            ->and(Str::after($html, '<main'))->toContain('New pack')
             ->and(Str::after($html, '<main'))->toContain('mascot-idle')
             ->and(Str::after($html, '<main'))->toContain('No packs yet.');
 
@@ -210,15 +211,16 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
         actingAs($host)->get('/host/packs')->assertSee('Pick a pack on the left, or create a new one.');
     });
 
-    it('puts Add question in the top bar, Delete pack in a menu, and says when the pack changed', function (): void {
+    it('puts Add question in the top bar, Delete pack in the pack menu, and says when the pack changed (U5, U14)', function (): void {
         $host = User::factory()->create();
         travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
         $pack = packOf($host);
 
         $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->assertOk()->getContent();
 
-        expect(Str::before($html, '<main'))->toContain('Add question')
-            ->and($html)->toContain('data-delete="1"')
+        expect(Str::between($html, '<header', '</header>'))->not->toContain('Add question')
+            ->and(Str::after($html, '<main'))->toContain('Add question')
+            ->and($html)->toContain('aria-label="Actions for Office Awards"')
             ->and($html)->not->toContain('variant="link-destructive"')
             ->and($html)->toContain('Changed 2 Oct, 11:30');
     });
@@ -234,5 +236,146 @@ describe('the Question packs page (U2, U6, U9, U10)', function (): void {
             ->assertSee('x-data="sortableList"', false)
             ->assertSee('draggable="true"', false)
             ->assertSee('Move question 1 down');
+    });
+});
+
+describe('the pack editor on one page (U14)', function (): void {
+    it('swaps only the pack panel and the pack count when working on questions, with a searchable list', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'A', 'duration_seconds' => 20]);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->assertOk()->getContent();
+
+        expect($html)->toContain('id="pack-list"')
+            ->and($html)->toContain('id="pack-panel"')
+            ->and($html)->toContain('placeholder="Search pack title"')
+            // Another pack swaps the panel, the title with its actions and the breadcrumb; the list stays.
+            ->and($html)->toMatch('/<a href="[^"]*\/host\/packs\/'.$pack->id.'"[^>]*aria-current="page"/')
+            // navigation.js gives pack links their Unpoly settings (light items, U14).
+            ->and($html)->toMatch('/<a href="\/host\/packs\/'.$pack->id.'" data-pack/')
+            ->and($html)->toMatch('/<form method="POST" action="[^"]*\/questions\/reorder"[^>]*up-target="#pack-panel, #pack-count-'.$pack->id.'"/');
+    });
+
+    it('edits and deletes a question from icon buttons on its row, and the form has no delete of its own', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'A', 'duration_seconds' => 20]);
+        $question = $pack->questions()->firstOrFail();
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}/questions/{$question->id}/edit")->assertOk()->getContent();
+
+        // The address follows, so Back, refresh and links to one question work (U14).
+        expect($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit" up-target="#pack-panel, #pack-count-'.$pack->id.'" up-history="true"/')
+            ->and($html)->toMatch('/<a href="[^"]*\/questions\/'.$question->id.'\/edit"[^>]*aria-label="Edit question 1"/')
+            ->and($html)->toContain("\$store.confirm.askFor('deleteQuestion', 'question 1',")
+            ->and($html)->not->toContain('value="DELETE"');
+    });
+});
+
+describe('a pack list for many packs (U14)', function (): void {
+    it('stays light with 1,000 packs (668 KB before, 274 KB after)', function (): void {
+        $host = User::factory()->create();
+        $types = GameType::cases();
+        foreach (range(0, 999) as $i) {
+            packOf($host, $types[$i % count($types)], "Office Awards Pack Number {$i}");
+        }
+        $first = $host->questionPacks()->firstOrFail();
+
+        expect(strlen((string) actingAs($host)->get("/host/packs/{$first->id}")->getContent()))->toBeLessThan(350_000);
+    });
+
+    it('groups packs per game type with folds, a type filter and an order, all run by one component', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        packOf($host, GameType::TebakKata, 'Word Night');
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->getContent();
+
+        expect($html)->toContain('x-data="packList"')
+            ->and($html)->toContain('data-group="pentahoot"')
+            ->and($html)->toContain('data-group="tebak_kata"')
+            ->and($html)->toContain('@click="toggle(\'pentahoot\')"')
+            ->and($html)->toContain('x-model="type"')
+            ->and($html)->toContain('x-model="sort"')
+            // Items carry data only: no Alpine binding per pack.
+            ->and($html)->toMatch('/<a href="\/host\/packs\/'.$pack->id.'" data-pack data-type="pentahoot" data-changed="\d+"/')
+            ->and($html)->not->toContain('x-show="@js(');
+    });
+
+    it('gives the content head and the breadcrumb ids, so a pack switch can swap them', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->getContent();
+
+        expect($html)->toContain('id="content-head"')->toContain('id="breadcrumbs"');
+    });
+});
+
+it('marks New pack as a create button with the plus icon (U2)', function (): void {
+    $host = User::factory()->create();
+    packOf($host);
+
+    expect((string) actingAs($host)->get('/host/packs')->getContent())->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*New pack\s*<\/button>/');
+});
+
+describe('the pack card (U14, third round)', function (): void {
+    it('heads the card with the pack title and puts Rename and Delete in a vertical menu', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->getContent();
+        $card = Str::after($html, 'id="pack-panel"');
+
+        expect($card)->toMatch('/<h2[^>]*>\s*Office Awards\s*<\/h2>/')
+            ->and($card)->toMatch('/data-menu[^>]*data-rename="1"[^>]*data-delete="1"/')
+            ->and($card)->toContain('data-icon="more-vertical"')
+            ->and($card)->not->toContain('value="rename-pack"')
+            ->and($card)->not->toContain('id="rename-pack"');
+    });
+
+    it('reopens the rename dialog with the error after a refused name', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+
+        actingAs($host)->from("/host/packs/{$pack->id}")->followingRedirects()
+            ->put("/host/packs/{$pack->id}", ['title' => '', 'form' => 'rename-pack'])
+            ->assertSee('id="rename-retry"', false);
+    });
+
+    it('moves questions with arrow buttons that save the order once, not a form per click', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        foreach (['A', 'B', 'C'] as $prompt) {
+            actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => $prompt, 'duration_seconds' => 20]);
+        }
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}")->getContent();
+
+        expect($html)->toContain('@click="nudge($el, 1)"')
+            ->and($html)->toContain('@click="nudge($el, -1)"')
+            ->and(substr_count($html, '/questions/reorder"'))->toBe(1);
+    });
+
+    it('offers quick times and a Custom choice that shows the seconds field only when chosen', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+
+        $html = (string) actingAs($host)->get("/host/packs/{$pack->id}/questions/create")->getContent();
+
+        expect($html)->toContain('x-data="{ duration: 20, custom: false }"')
+            ->and($html)->toContain('@click="custom = true"')
+            ->and($html)->toMatch('/<div x-show="custom"[^>]*>[\s\S]*?name="duration_seconds"/');
+    });
+
+    it('opens Custom when the saved time is not a quick one', function (): void {
+        $host = User::factory()->create();
+        $pack = packOf($host);
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", ['prompt' => 'A', 'duration_seconds' => 45]);
+        $question = $pack->questions()->firstOrFail();
+
+        expect((string) actingAs($host)->get("/host/packs/{$pack->id}/questions/{$question->id}/edit")->getContent())
+            ->toContain('x-data="{ duration: 45, custom: true }"');
     });
 });

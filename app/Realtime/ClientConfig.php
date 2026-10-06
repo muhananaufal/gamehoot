@@ -22,7 +22,8 @@ final readonly class ClientConfig
      * render already knows whether this phone voted.
      *
      * @param  array{name: string, vote: array{question_id: string, attempt: int, target: string}|null}|null  $me
-     * @return array{socket: array{key: string, host: string, port: int, scheme: string}|null, stateUrl: string, channels: list<array{name: string, private: bool}>, initial: array<string, mixed>}
+     *                                                                                                             B-6: a phone page also gets the join page, to pick a name again once its own is gone.
+     * @return array{socket: array{key: string, host: string, port: int, scheme: string}|null, stateUrl: string, channels: list<array{name: string, private: bool}>, initial: array<string, mixed>, joinUrl: string|null}
      */
     public function for(Event $event, Audience $audience, ?array $me = null): array
     {
@@ -37,6 +38,7 @@ final readonly class ClientConfig
             'stateUrl' => $audience === Audience::Host ? route('host.events.state', $event) : route('join.state', $event),
             'channels' => $channels,
             'initial' => $me === null ? $this->snapshots->for($event, $audience) : [...$this->snapshots->for($event, $audience), 'me' => $me],
+            'joinUrl' => $me === null ? null : route('join.index', $event),
         ];
     }
 

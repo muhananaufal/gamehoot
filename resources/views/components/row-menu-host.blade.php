@@ -1,5 +1,7 @@
 {{-- U5: the single "⋯" menu of a host page (resources/js/row-actions.js), placed next to the row
-     button that opened it. Links go straight to their page; other actions ask for confirmation. --}}
+     button that opened it. Links go straight to their page (a modal over the list when the
+     page says so, U13); other actions ask for confirmation. C-7: an action the row marks "off"
+     shows switched off, with its reason. --}}
 <div x-data x-show="$store.rowMenu.open" x-cloak role="menu" :aria-label="$store.rowMenu.name"
     @click.outside="$store.rowMenu.button?.contains($event.target) || $store.rowMenu.close()"
     @keydown.escape.window="if ($store.rowMenu.open) { $store.rowMenu.button?.focus(); $store.rowMenu.close() }"
@@ -10,12 +12,23 @@
     <template x-for="item in $store.rowMenu.items" :key="item.key">
         <div class="contents">
             <template x-if="item.type === 'link'">
-                <a role="menuitem" :href="item.url" x-text="item.label" class="flex min-h-11 items-center rounded-control px-3 hover:bg-subtle"></a>
+                <a role="menuitem" :href="item.url" x-text="item.label" @click="$store.rowMenu.close()"
+                    x-init="item.modal && $nextTick(() => window.up?.link.preload($el).catch(() => {}))"
+                    :up-layer="item.modal ? 'new modal' : null" :up-history="item.modal ? 'false' : null"
+                    :up-accept-location="item.accept ?? null" :up-size="item.modal ? 'medium' : null"
+                    class="flex min-h-11 items-center rounded-control px-3 hover:bg-subtle"></a>
             </template>
-            <template x-if="item.type === 'confirm'">
+            <template x-if="item.type === 'confirm' && ! item.disabled">
                 <button type="button" role="menuitem" x-text="item.label"
-                    @click="$store.confirm.askFor(item.key, $store.rowMenu.name, item.url); $store.rowMenu.close()"
+                    @click="$store.confirm.askFor(item.key, $store.rowMenu.name, item.url, $store.rowMenu.id); $store.rowMenu.close()"
                     class="flex min-h-11 w-full items-center rounded-control px-3 text-left hover:bg-subtle" :class="item.danger && 'text-on-danger'"></button>
+            </template>
+            <template x-if="item.type === 'confirm' && item.disabled">
+                <button type="button" role="menuitem" disabled aria-disabled="true" :title="item.reason"
+                    class="flex min-h-11 w-full cursor-not-allowed flex-col items-start justify-center rounded-control px-3 py-1.5 text-left opacity-60">
+                    <span x-text="item.label"></span>
+                    <span class="max-w-60 text-xs font-normal text-muted" x-text="item.reason"></span>
+                </button>
             </template>
         </div>
     </template>

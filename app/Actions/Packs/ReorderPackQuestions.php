@@ -17,6 +17,7 @@ final class ReorderPackQuestions
     {
         DB::transaction(function () use ($pack, $order): void {
             QuestionPack::query()->lockForUpdate()->findOrFail($pack->id);
+            $pack->contentChanged();
 
             foreach ($order as $index => $id) {
                 PackQuestion::query()->where('pack_id', $pack->id)->whereKey($id)->update(['position' => $index + 1]);

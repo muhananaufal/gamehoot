@@ -84,18 +84,22 @@ it('runs a Tebak Gambar question from Live control: show, Reveal and winner (D-5
         ->assertSee('Question 1 of 2')
         ->assertSee('Paris');
 
-    $page->click('Reveal answer')
-        ->click('@confirm-reveal')
-        ->assertSee('Answer on screen')
+    // Confirm buttons close their dialog and send the action; a retried click() would look for
+    // them in a closed dialog (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
+    $page->click('Reveal answer');
+    $page->script('document.querySelector("[data-test=confirm-reveal]").click()');
+
+    $page->assertSee('Answer on screen')
         // A dialog left open would make the whole page inert.
         ->assertScript('[...document.querySelectorAll("dialog")].every((dialog) => !dialog.open)')
         // E7: no Skip once the answer is revealed.
         ->assertScript('[...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Skip")?.disabled === true')
         ->type('winner-search', 'rit')
         ->click('Rita Wulandari')
-        ->click('Pick winner')
-        ->click('@confirm-winner')
-        ->assertSee('Winner:')
+        ->click('Pick winner');
+    $page->script('document.querySelector("[data-test=confirm-winner]").click()');
+
+    $page->assertSee('Winner:')
         ->assertNoJavaScriptErrors();
 });
 

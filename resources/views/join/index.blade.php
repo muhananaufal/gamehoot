@@ -25,7 +25,7 @@
                  names stays small when hundreds of phones open it at once. --}}
             <form method="POST" action="{{ route('join.claim', $event) }}" aria-label="{{ __('join.pick_title') }}">
                 @csrf
-                <ul class="flex flex-col gap-2 [&_button]:flex [&_button]:min-h-14 [&_button]:w-full [&_button]:items-center [&_button]:rounded-card [&_button]:border-2 [&_button]:border-line [&_button]:bg-surface [&_button]:px-4 [&_button]:text-left [&_button]:text-lg [&_button]:font-semibold [&_button:hover]:border-accent">
+                <ul class="flex flex-col gap-2 [&_button]:flex [&_button]:min-h-14 [&_button]:w-full [&_button]:items-center [&_button]:rounded-control [&_button]:border [&_button]:border-line-strong [&_button]:bg-surface [&_button]:px-4 [&_button]:text-left [&_button]:text-lg [&_button]:font-semibold [&_button:hover]:border-accent">
                     @foreach ($names as $person)
                         <li x-show="shows({{ $loop->index }})"><button type="submit" name="person" value="{{ $person->id }}">{{ $person->name }}</button></li>
                     @endforeach

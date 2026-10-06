@@ -30,6 +30,7 @@ final class Event extends Model
         'show_on_devices' => false,
         'screen_theme' => 'dark',
         'state_version' => 0,
+        'roster_version' => 0,
     ];
 
     /**
@@ -37,7 +38,8 @@ final class Event extends Model
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'owner_id')->withTrashed();
     }
 
     /**
@@ -55,7 +57,8 @@ final class Event extends Model
      */
     public function deletedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'deleted_by');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'deleted_by')->withTrashed();
     }
 
     /**
@@ -104,6 +107,15 @@ final class Event extends Model
     }
 
     /**
+     * B-6: the host changed the name list, so phones with a name fetch their own state again.
+     * Saved with the event, inside the change's transaction.
+     */
+    public function bumpRosterVersion(): void
+    {
+        $this->roster_version++;
+    }
+
+    /**
      * D-3: the link a deleted event had, before it was freed.
      */
     public function originalSlug(): string
@@ -125,6 +137,7 @@ final class Event extends Model
             'names_locked_at' => 'datetime',
             'join_locked_at' => 'datetime',
             'state_version' => 'integer',
+            'roster_version' => 'integer',
         ];
     }
 }

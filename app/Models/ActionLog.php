@@ -28,7 +28,8 @@ final class ActionLog extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**

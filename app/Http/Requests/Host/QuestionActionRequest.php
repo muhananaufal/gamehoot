@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Host;
 
 use App\Games\GameEngines;
+use App\Http\Concerns\LiveValidation;
 use App\Models\Game;
 use App\Models\Question;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,6 +16,8 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class QuestionActionRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, mixed>
      */

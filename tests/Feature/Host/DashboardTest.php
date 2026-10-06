@@ -45,14 +45,19 @@ it('filters, searches and sorts events in the browser, with the counts per statu
     Event::factory()->for($host, 'owner')->open()->create(['name' => 'Open One']);
 
     $html = (string) actingAs($host)->get('/host')
-        ->assertSee('All · 2')
-        ->assertSee('Open · 1')
+        ->assertSee('All statuses')
         ->getContent();
+    // U22: the status dropdown carries a count per status (the page escapes its quotes).
+    $options = str_replace(chr(92).'u0022', '"', $html);
 
-    expect($html)->toContain('x-data="tableView(')
+    expect($options)->toContain('"label":"All statuses","count":2')
+        ->toContain('"label":"Open","count":1')
+        ->and($html)->toContain('x-data="tableView({ key: \'events\', sort: \'created\', dir: \'desc\' })"')
+        ->and($html)->toContain('Rows per page')
+        ->and($html)->toMatch('/data-sort-created="\d+" data-date="\d{4}-\d{2}-\d{2}"/')
         ->and($html)->toMatch('/<tr data-row data-search="open one[^"]*" data-filter="open"/')
         ->and($html)->toMatch('/<tr data-row data-search="draft one[^"]*" data-filter="draft"/')
-        ->and($html)->toContain('aria-label="Search events"');
+        ->and($html)->toContain('placeholder="Search name, link or owner"');
 });
 
 it('says when each event was made and last changed, and who owns a co-hosted one (U6)', function (): void {
@@ -64,10 +69,11 @@ it('says when each event was made and last changed, and who owns a co-hosted one
     travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
     $cohosted->touch();
 
+    // Created is a sortable column; when it last changed sits under the event link (U6).
     actingAs($host)->get('/host')
-        ->assertSee('Created 1 Oct 2026')
-        ->assertSee('2 Oct, 11:30')
-        ->assertSee('Co-host · owner Dina (HR)');
+        ->assertSeeInOrder(['Gathering', 'Co-host', 'Changed 2 Oct, 11:30', 'Owned by Dina (HR)', '1 Oct 2026'])
+        ->assertSee('aria-sort="ariaSort(\'created\')"', false)
+        ->assertDontSee('Created 1 Oct 2026');
 });
 
 it('ends an open session once a super-admin resets the password (C-5)', function (): void {
@@ -78,4 +84,37 @@ it('ends an open session once a super-admin resets the password (C-5)', function
 
     get('/host')->assertRedirect('/login');
     assertGuest();
+});
+
+it('filters events by a created date range from a themed calendar (U15)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create(['created_at' => '2026-10-01 18:30:00']);
+    // 18:30 UTC on 1 Oct is 2 Oct in WIB (T10).
+    travelTo(CarbonImmutable::parse('2026-10-02 20:00:00'));
+
+    $html = (string) actingAs($host)->get('/host')->assertOk()->getContent();
+
+    // 20:00 UTC on 2 Oct is already 3 Oct in WIB, so "today" in the picker is 3 Oct.
+    expect($html)->toContain("x-data=\"dateRangePicker({ today: '2026-10-03' })\"")
+        ->and($html)->toContain('data-date="2026-10-02"')
+        ->and($html)->toContain('role="grid"')
+        ->and($html)->toContain('aria-label="Filter by created date"');
+});
+
+it('marks the role of the host on each event with a pill next to its name (U21)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create(['name' => 'Mine']);
+
+    actingAs($host)->get('/host')->assertSeeInOrder(['Mine', 'Owner', '/'])->assertDontSee('Owned by');
+});
+
+it('sorts the events by every column (U4)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create();
+
+    $html = (string) actingAs($host)->get('/host')->getContent();
+
+    foreach (['name', 'status', 'names', 'games', 'created'] as $key) {
+        expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
+    }
 });

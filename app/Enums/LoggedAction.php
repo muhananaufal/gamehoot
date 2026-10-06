@@ -13,6 +13,8 @@ enum LoggedAction: string
     case PasswordReset = 'account.password_reset';
     case AccountDisabled = 'account.disabled';
     case AccountEnabled = 'account.enabled';
+    case AccountUpdated = 'account.updated';
+    case AccountDeleted = 'account.deleted';
 
     case EventOpened = 'event.opened';
     case EventDeleted = 'event.deleted';

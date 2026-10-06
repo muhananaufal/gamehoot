@@ -7,7 +7,7 @@
 @endphp
 <div class="flex flex-col gap-1.5">
     <label for="field-prompt" class="text-sm font-semibold">{{ __('packs.kata.prompt') }}</label>
-    <textarea id="field-prompt" name="prompt" rows="2" maxlength="500" @if ($promptError) aria-describedby="prompt-error" @endif
+    <textarea id="field-prompt" name="prompt" rows="2" required maxlength="500" @if ($promptError) aria-describedby="prompt-error" @endif
         @class(['rounded-control border bg-field px-3 py-2.5 text-[15px] text-ink', 'border-on-danger' => $promptError, 'border-line-strong' => ! $promptError])>{{ old('prompt', $question?->kata?->prompt) }}</textarea>
     @if ($promptError)
         <p id="prompt-error" class="text-sm font-semibold text-on-danger">{{ $promptError }}</p>
@@ -15,7 +15,7 @@
 </div>
 
 <div x-data="kataBoxes({ answer: @js($answer), open: @js($open) })" class="flex flex-col gap-4">
-    <x-field name="answer_text" :label="__('packs.kata.answer')" :value="$answer" :hint="__('packs.kata.answer_hint')" maxlength="40"
+    <x-field name="answer_text" :label="__('packs.kata.answer')" :value="$answer" :hint="__('packs.kata.answer_hint')" required maxlength="40"
         autocomplete="off" x-model="answer" @input="pruneOpen()" />
 
     <fieldset class="flex flex-col gap-2">
