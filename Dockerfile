@@ -68,8 +68,13 @@ RUN npm run build
 # The PHP image for php-fpm (service app) and Reverb (service reverb). Runs as www-data.
 FROM base AS production
 
-# cgi-fcgi asks php-fpm for /ping in the health check.
-RUN apt-get update \
+# P3: Debian security fixes reach this image before a new PHP image is published (CVE-2026-13221
+# in Perl, 6 October 2026). CI passes a new APT_REFRESH on every run, so the upgrade layer is
+# never served stale from the cache. cgi-fcgi asks php-fpm for /ping in the health check.
+ARG APT_REFRESH=local
+RUN echo "apt refresh: ${APT_REFRESH}" \
+    && apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
     && apt-get install -y --no-install-recommends libfcgi-bin \
     && rm -rf /var/lib/apt/lists/*
 
