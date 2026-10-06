@@ -128,7 +128,7 @@ it('centres modals on the screen and puts dialogs and modals behind the same bac
     $page->script("[...document.querySelectorAll('[role=menu] a')].find((a) => a.innerText.trim() === 'Edit').click()");
     $page->wait(1.5);
 
-    $modal = $page->script(<<<'JS'
+    $modal = (array) $page->script(<<<'JS'
         (() => {
             const box = document.querySelector('up-modal-box').getBoundingClientRect();
             return {
