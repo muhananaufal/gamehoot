@@ -60,6 +60,18 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
             return;
         }
 
+        // A part of a page (the pack panel, a count), or the same page after a change on it (a
+        // deleted name back on Names: same breadcrumb), is updated in place with a short fade, so
+        // it never feels like the page reloaded. Only a new page fades out and rises in.
+        const crumbs = (element) => element.querySelector('#breadcrumbs')?.textContent?.trim();
+        const samePage = crumbs(oldElement) !== undefined && crumbs(oldElement) === crumbs(newElement);
+
+        if (newElement.id !== 'host-content' || samePage) {
+            await animate(newElement, { opacity: [0.4, 1] }, { duration: 0.12, ease: 'easeOut' });
+
+            return;
+        }
+
         await Promise.all([
             animate(oldElement, { opacity: [1, 0] }, EXIT),
             animate(newElement, { opacity: [0, 1] }, { duration: 0.18, ease: 'easeOut' }),

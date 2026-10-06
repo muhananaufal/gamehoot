@@ -99,7 +99,7 @@ describe('U18 navigation without reloads', () => {
         expect([formAgain, otherPage, opening]).toEqual([untouched(), untouched(), untouched()]);
     });
 
-    const fakeElement = (inner = null) => ({ querySelector: () => inner });
+    const fakeElement = (inner = null, id = 'host-content') => ({ id, querySelector: () => inner });
 
     it('lets the old page fade out quickly while the new one rises in with a spring (U8)', async () => {
         const up = fakeUp();
@@ -120,6 +120,37 @@ describe('U18 navigation without reloads', () => {
         // Only <main> rises: a transform on the content column would carry its fixed toasts along.
         expect(rise[0]).toBe(main);
         expect(rise[2]).toMatchObject({ type: 'spring' });
+    });
+
+    it('updates a part of a page in place: a short fade, no exit and no movement (pack panel)', async () => {
+        const up = fakeUp();
+        const animate = vi.fn(() => Promise.resolve());
+        configureNavigation(up, { animate });
+        const panel = fakeElement({}, 'pack-panel');
+
+        await up.transitions.page(fakeElement(null, 'pack-panel'), panel, {});
+
+        expect(animate).toHaveBeenCalledOnce();
+        expect(animate.mock.calls[0][0]).toBe(panel);
+        expect(animate.mock.calls[0][1]).toEqual({ opacity: [0.4, 1] });
+        expect(animate.mock.calls[0][2].duration).toBeLessThanOrEqual(0.15);
+    });
+
+    it('updates the same page in place after a change on it (a deleted name back on Names)', async () => {
+        const up = fakeUp();
+        const animate = vi.fn(() => Promise.resolve());
+        configureNavigation(up, { animate });
+        const page = (crumbs) => ({
+            id: 'host-content',
+            querySelector: (selector) => (selector === '#breadcrumbs' ? { textContent: crumbs } : {}),
+        });
+        const after = page('Events / Gathering / Names');
+
+        await up.transitions.page(page('Events / Gathering / Names'), after, {});
+
+        expect(animate).toHaveBeenCalledOnce();
+        expect(animate.mock.calls[0][0]).toBe(after);
+        expect(animate.mock.calls[0][1]).toEqual({ opacity: [0.4, 1] });
     });
 
     it('swaps pages without moving when the device asks for reduced motion', async () => {
