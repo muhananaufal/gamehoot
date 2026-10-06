@@ -142,3 +142,20 @@ it('centres modals on the screen and puts dialogs and modals behind the same bac
         ->and($modal['backdrop'])->toBe($dialogBackdrop);
     $page->assertNoJavaScriptErrors();
 });
+
+it('expands a recent event in place and stays on the page (U23)', function (): void {
+    $host = User::factory()->create();
+    Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    actingAs($host);
+
+    $page = visit('/host/packs')->wait(0.5);
+    $settings = '[...document.querySelectorAll("#host-nav a")].find((a) => a.innerText.trim() === "Settings")';
+
+    expect($page->script("{$settings}?.offsetParent === null"))->toBeTrue();
+    $page->script('document.querySelector("#host-nav button[title=\'Gathering 2026\']").click()');
+    $page->wait(0.3);
+
+    expect($page->script("{$settings}?.offsetParent !== null"))->toBeTrue()
+        ->and($page->script('location.pathname'))->toBe('/host/packs');
+    $page->assertNoJavaScriptErrors();
+});

@@ -40,6 +40,21 @@ describe('U1 host sidebar', function (): void {
             ->assertSee('aria-current="page"', false);
     });
 
+    it('expands a recent event in place instead of opening it, so its pages are one click away (U23)', function (): void {
+        $host = User::factory()->create();
+        $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+
+        $html = (string) actingAs($host)->get('/host/packs')->assertOk()->getContent();
+
+        expect($html)->toMatch('/<button type="button"[^>]*aria-expanded="false"[^>]*title="Gathering 2026"/')
+            ->and($html)->not->toContain('href="'.route('host.events.live', $event).'" title="Gathering 2026"')
+            ->and($html)->toContain('href="'.route('host.events.edit', $event).'"');
+
+        // The event being worked on starts expanded.
+        $current = (string) actingAs($host)->get("/host/{$event->id}/people")->getContent();
+        expect($current)->toMatch('/<button type="button"[^>]*aria-expanded="true"[^>]*title="Gathering 2026"/');
+    });
+
     it('scrolls on its own, apart from the page, and keeps theme and sign out in view', function (): void {
         $host = User::factory()->create();
 

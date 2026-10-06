@@ -53,10 +53,14 @@
                     <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.recent') }}</span>
                     @foreach ($recent as $item)
                         @php $current = $event?->is($item) ?? false; @endphp
-                        <a href="{{ route('host.events.live', $item) }}" title="{{ $item->name }}"
-                            @if ($current && request()->routeIs('host.events.live')) aria-current="page" @endif
+                        {{-- U23: the name expands its pages in place instead of opening Live control, so
+                             any page of a recent event is one click away. The event being worked on
+                             starts expanded. --}}
+                        <div x-data="{ open: @js($current) }" class="contents">
+                        <button type="button" @click="open = ! open" :aria-expanded="open" aria-expanded="{{ $current ? 'true' : 'false' }}" title="{{ $item->name }}"
+                            aria-controls="recent-{{ $item->id }}"
                             @class([
-                                'flex h-11 shrink-0 items-center gap-3 rounded-control px-3 lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0',
+                                'flex h-11 w-full shrink-0 items-center gap-3 rounded-control px-3 text-left lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0',
                                 'font-bold text-nav-ink' => $current,
                                 'font-medium text-nav-muted hover:bg-nav-active hover:text-nav-ink' => ! $current,
                             ])>
@@ -66,14 +70,14 @@
                             </span>
                             <span class="grow truncate lg:group-data-[collapsed=true]:sr-only">{{ $item->name }}</span>
                             <span class="sr-only">{{ __('host.event_status.' . $item->status->value) }}</span>
-                        </a>
-                        @if ($current)
-                            <div class="flex flex-col gap-0.5 pl-3 lg:group-data-[collapsed=true]:pl-0">
-                                @foreach ($eventPages as [$route, $icon, $label, $pattern])
-                                    <x-host-nav-link :href="route($route, $item)" :icon="$icon" :active="request()->routeIs($pattern)">{{ $label }}</x-host-nav-link>
-                                @endforeach
-                            </div>
-                        @endif
+                            <x-icon name="chevron-down" class="size-4 shrink-0 text-nav-icon transition-transform lg:group-data-[collapsed=true]:hidden" x-bind:class="open && 'rotate-180'" />
+                        </button>
+                        <div id="recent-{{ $item->id }}" x-show="open" @unless ($current) x-cloak @endunless class="flex flex-col gap-0.5 pl-3 lg:group-data-[collapsed=true]:pl-0">
+                            @foreach ($eventPages as [$route, $icon, $label, $pattern])
+                                <x-host-nav-link :href="route($route, $item)" :icon="$icon" :active="$current && request()->routeIs($pattern)">{{ $label }}</x-host-nav-link>
+                            @endforeach
+                        </div>
+                        </div>
                     @endforeach
                 @endif
 
