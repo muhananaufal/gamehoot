@@ -464,6 +464,13 @@
                 <li><b>Finished</b>: link ke Results dan Reopen event (D-7).</li>
               </ul>
               <p><b>Close event saat game berjalan</b> tidak lagi ditolak: dialog konfirmasi menyebut game yang akan diakhiri; game itu diakhiri seperti D-8 (hasil dibekukan, G10), lalu event ditutup, dalam satu transaksi dengan kunci event dan game (F6). Dipilih pemilik 6 Oktober 2026 supaya host tidak perlu mencari Finish game lebih dulu.</p>
+              <p><i>Ditambah 6 Oktober 2026 (masukan pemilik saat mencoba):</i></p>
+              <ul>
+                <li><b>Urutan soal dari tengah.</b> Sebelum soal pertama dimainkan, tengah menawarkan Open question 1 (Tebak: Show question 1). Setelah Reveal, <b>Next question</b> menutup soal itu dan langsung membuka soal siap berikutnya menurut urutan, lewat satu aksi server <code>advance</code> (satu transaksi, satu kenaikan <code>state_version</code>), sehingga Live control dan Public View tidak sempat menampilkan keadaan tanpa soal. <b>Pick a question</b> hanya menutup soal; host memilih dari daftar. Tebak: setelah soal punya pemenang atau menyerah, Next question menampilkan soal antre berikutnya (lalu yang di-skip).</li>
+                <li><b>Close game dan Finish game dipisah.</b> Setelah soal terakhir di-Reveal, tengah langsung menawarkan <b>Finish game</b> tanpa dialog dan tanpa Close question dulu: Finish game menutup soal yang sudah di-Reveal sebagai bagian dari mengakhiri game, sehingga tidak dicatat sebagai berakhir lebih awal (D-8). Selama masih ada soal yang belum selesai, tombol di kartu game bernama <b>Close game</b>, dengan dialog bahwa soal yang tersisa tidak dihitung (D-8).</li>
+                <li><b>Kartu game.</b> Judul game, "Up next" (game berikutnya), Close event, dan Close game berada dalam satu kartu di bawah kontrol soal; di fase Open, Close event berada di kartu game berikutnya, di samping Start game.</li>
+                <li><b>Warna status.</b> Di semua tempat (Live control, daftar event, Settings, Games): sedang berjalan hijau, selesai kuning, selain itu abu-abu. Kepala Live control hanya berisi pill fase; status koneksi tampil lewat banner saat terputus (T2).</li>
+              </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">D-6</td><td>Pick Winner meminta konfirmasi ("Winner: Budi Santoso — yakin?") sebelum dikunci, karena winner tidak bisa dibatalkan.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
           </tbody>
