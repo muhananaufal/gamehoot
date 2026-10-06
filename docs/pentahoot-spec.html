@@ -440,6 +440,25 @@
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
             <tr><td class="id">D-8</td><td>Host boleh mengakhiri game sebelum semua soal selesai, dengan konfirmasi. Soal yang tersisa tidak dihitung, dan hasil akhir dihitung dari soal yang sudah selesai.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
+            <tr><td class="id">D-10</td><td>
+              <p><b>Fase event dan Live control dari awal sampai akhir.</b> Status yang disimpan tetap tiga (<code>draft</code>, <code>open</code>, <code>finished</code>). Live control menampilkan <b>fase turunan</b> yang dihitung dari status, <code>events.active_game_id</code>, dan daftar game, tanpa kolom baru (G7):</p>
+              <ul>
+                <li><b>Draft</b>: event belum dibuka.</li>
+                <li><b>Open</b>: event terbuka, tidak ada game yang berjalan, dan masih ada game yang belum dimainkan (atau belum ada game sama sekali).</li>
+                <li><b>Playing</b>: ada game yang berjalan.</li>
+                <li><b>All games played</b>: event terbuka, ada game, dan semuanya sudah selesai.</li>
+                <li><b>Finished</b>: event ditutup.</li>
+              </ul>
+              <p>Susunan Live control: baris pertama tiga kartu (fase, jumlah yang join, koneksi; kartu koneksi mengikuti fase: Draft "Phones can join once the event is open", Finished "Event closed", selain itu status WebSocket), baris kedua link join dan Public View, lalu satu bagian kontrol yang isinya mengikuti fase:</p>
+              <ul>
+                <li><b>Draft</b>: checklist persiapan (jumlah nama, jumlah game) dan tombol Open event.</li>
+                <li><b>Open</b>: game berikutnya dengan tombol Start game (game pertama mengunci daftar nama dengan konfirmasi, B-3), kunci klaim nama baru, dan Close event. Tanpa game: ajakan ke halaman Games.</li>
+                <li><b>Playing</b>: kontrol game yang berjalan (soal, Reveal, Finish game). Game yang sudah selesai tidak ditampilkan.</li>
+                <li><b>All games played</b>: hasil game terakhir tetap bisa ditampilkan di layar (G7, E12); ajakan utama Close event, ajakan kedua Add a game (ke halaman Games).</li>
+                <li><b>Finished</b>: link ke Results dan Reopen event (D-7).</li>
+              </ul>
+              <p><b>Close event saat game berjalan</b> tidak lagi ditolak: dialog konfirmasi menyebut game yang akan diakhiri; game itu diakhiri seperti D-8 (hasil dibekukan, G10), lalu event ditutup, dalam satu transaksi dengan kunci event dan game (F6). Dipilih pemilik 6 Oktober 2026 supaya host tidak perlu mencari Finish game lebih dulu.</p>
+            </td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
             <tr><td class="id">D-6</td><td>Pick Winner meminta konfirmasi ("Winner: Budi Santoso — yakin?") sebelum dikunci, karena winner tidak bisa dibatalkan.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
           </tbody>
         </table>
@@ -771,7 +790,7 @@ flowchart LR
             <tr><td class="id">T3</td><td>HP dikunci atau browser ditaruh di latar belakang</td><td>Saat halaman aktif lagi (<code>visibilitychange</code>), klien langsung mengambil <code>/state</code>.</td></tr>
             <tr><td class="id">T4</td><td>CSV hasil export Excel</td><td>Pemisah <code>,</code> atau <code>;</code> dideteksi otomatis, dan BOM UTF-8 dibuang. File yang bukan UTF-8 yang sah (hasil "Save as CSV" Excel Windows, Windows-1252) dikonversi ke UTF-8, sehingga nama beraksen tidak terbuang diam-diam. Sebaliknya, semua CSV yang diekspor (hasil dan link personal) diawali BOM UTF-8 agar Excel membukanya dengan benar.</td></tr>
             <tr><td class="id">T5</td><td>File CSV link personal berisi token</td><td>Layar export menampilkan peringatan "Jangan disebar di grup", karena pemegang file bisa masuk sebagai orang lain.</td></tr>
-            <tr><td class="id">T6</td><td>Menutup event saat masih ada game berjalan</td><td>Ditolak. Game diakhiri dulu (D-8). Game yang sudah selesai dan hanya menampilkan hasilnya di layar (G7) tidak menghalangi.</td></tr>
+            <tr><td class="id">T6</td><td>Menutup event saat masih ada game berjalan</td><td><i>Diubah 6 Oktober 2026 (D-10):</i> Diizinkan dengan konfirmasi. Game yang berjalan diakhiri lebih dulu seperti D-8 (hasil dibekukan), lalu event ditutup dalam transaksi yang sama. Sebelumnya: ditolak sampai game diakhiri.</td></tr>
             <tr><td class="id">T7</td><td>Event tanpa game, atau game tanpa soal</td><td>Tombol Mulai nonaktif.</td></tr>
             <tr><td class="id">T8</td><td>Menghapus game yang soalnya sudah pernah dimainkan</td><td>Ditolak supaya hasil tidak hilang. Game dan soal yang belum dimainkan boleh dihapus.</td></tr>
             <tr><td class="id">T9</td><td>Batas input</td><td>Durasi Pentahoot 5–300 detik, jawaban Tebak Kata maksimal 40 karakter, poin soal Tebak 0, 1, atau 2 (E16, mengikuti mockup), maksimal 500 nama per event. Semua angka ini pilihan desain.</td></tr>
