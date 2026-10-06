@@ -10,7 +10,7 @@ return [
     'when' => 'When (WIB)',
     'who' => 'Who',
     'what' => 'What',
-    'search' => 'Search action, who or what',
+    'search' => 'Search action or item',
     'everyone' => 'Everyone',
     'date_filter' => 'Filter by date',
     'no_match' => 'No entry matches.',

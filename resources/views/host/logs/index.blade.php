@@ -13,12 +13,11 @@
             {{-- U4: search, filter by who and by date, sort and pages in the browser; the view state stays in localStorage. --}}
             <div x-data="tableView({ key: 'logs:{{ $event->id }}', sort: 'at', dir: 'desc' })" class="flex flex-col gap-4">
                 <x-table.toolbar :search="__('logs.search')" :today="now()->timezone($tz)->format('Y-m-d')" :date-label="__('logs.date_filter')">
-                    <x-slot:right>
-                        <x-select :options="[
+                    {{-- U23: Who sits beside Rows per page. --}}
+                    <x-select :options="[
                             ['value' => 'all', 'label' => __('logs.everyone')],
                             ...array_map(fn (array $actor): array => ['value' => $actor['id'], 'label' => $actor['name']], $actors),
                         ]" :label="__('logs.who')" x-model="who" />
-                    </x-slot:right>
                 </x-table.toolbar>
 
                 <div class="rounded-card bg-surface max-lg:overflow-x-auto">

@@ -73,6 +73,8 @@ return [
     'owner' => 'Owner',
     'deleted' => 'Deleted',
     'deleted_by_column' => 'Deleted by',
+    'deleted_by_anyone' => 'Deleted by anyone',
+    'deleted_date_filter' => 'Filter by date deleted',
     'restore' => 'Restore',
     'restore_named' => 'Restore :name',
     'trash_search' => 'Search event or link',

@@ -503,3 +503,18 @@ it('shows the site address in front of the link to restore under, like New event
     expect($html)->toContain(parse_url(Config::string('app.url'), PHP_URL_HOST).'/</span>')
         ->and($html)->toMatch('/name="slug"[^>]*required[^>]*pattern=/');
 });
+
+it('filters deleted events by the date they were deleted and by who deleted them (U23)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    $owner = ownerOf($event);
+    actingAs($owner)->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    $html = (string) actingAs($owner)->get('/host/trash')->getContent();
+    $today = now()->timezone(Config::string('app.display_timezone'))->format('Y-m-d');
+
+    expect($html)->toContain('aria-label="Deleted by"')
+        ->and($html)->toContain('Deleted by anyone')
+        ->and($html)->toContain('Filter by date deleted')
+        ->and($html)->toContain("data-who=\"{$owner->id}\" data-date=\"{$today}\"")
+        ->and(strpos($html, 'aria-label="Deleted by"'))->toBeLessThan((int) strpos($html, 'Reset filters'));
+});

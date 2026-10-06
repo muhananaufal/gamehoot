@@ -3,6 +3,8 @@
         ? [[__('host.nav.admin'), null], [__('events.trash'), null]]
         : [[__('host.dashboard.title'), route('host.dashboard')], [__('events.trash'), null]];
     $tz = config('app.display_timezone');
+    // U23: who deleted the listed events, for the Deleted by filter.
+    $deleters = $events->map(fn ($event) => $event->deletedBy)->filter()->unique('id')->sortBy('name')->values();
 @endphp
 <x-layouts.host :title="__('events.trash')" :breadcrumbs="$breadcrumbs">
     <p class="text-sm text-muted">{{ __('events.trash_help') }}</p>
@@ -12,7 +14,13 @@
     @else
         {{-- U4: the shared table look; search, sort and pages in the browser. --}}
         <div x-data="tableView({ key: 'trash', sort: 'deleted', dir: 'desc' })" class="flex flex-col gap-4">
-            <x-table.toolbar :search="__($showOwner ? 'events.trash_search_owner' : 'events.trash_search')" />
+            {{-- U23: the date the event was deleted beside the search; Deleted by beside Rows per page. --}}
+            <x-table.toolbar :search="__($showOwner ? 'events.trash_search_owner' : 'events.trash_search')" :today="now()->timezone($tz)->format('Y-m-d')" :date-label="__('events.deleted_date_filter')">
+                <x-select :options="[
+                    ['value' => 'all', 'label' => __('events.deleted_by_anyone')],
+                    ...$deleters->map(fn ($user): array => ['value' => $user->id, 'label' => $user->name])->all(),
+                ]" :label="__('events.deleted_by_column')" x-model="who" />
+            </x-table.toolbar>
 
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left text-[15px]">
@@ -31,7 +39,8 @@
                         @foreach ($events as $event)
                             @php $original = $event->originalSlug(); @endphp
                             <tr data-row data-search="{{ mb_strtolower($event->name . ' ' . $original . ' ' . $event->owner?->name) }}"
-                                data-sort-name="{{ $event->name }}" data-sort-owner="{{ $event->owner?->name }}" data-sort-by="{{ $event->deletedBy?->name }}" data-sort-deleted="{{ $event->deleted_at?->getTimestamp() }}">
+                                data-sort-name="{{ $event->name }}" data-sort-owner="{{ $event->owner?->name }}" data-sort-by="{{ $event->deletedBy?->name }}" data-sort-deleted="{{ $event->deleted_at?->getTimestamp() }}"
+                                data-who="{{ $event->deleted_by }}" data-date="{{ $event->deleted_at?->timezone($tz)->format('Y-m-d') }}">
                                 <td>
                                     <b class="block">{{ $event->name }}</b>
                                     <span class="text-[13px] text-muted">{{ __('events.was_link', ['slug' => $original]) }}</span>

@@ -140,7 +140,7 @@ it('lets the host search the log and sort it by time in the browser (U4)', funct
 
     expect($html)->toContain("x-data=\"tableView({ key: 'logs:{$event->id}', sort: 'at', dir: 'desc' })\"")
         ->and($html)->toContain('Rows per page')
-        ->and($html)->toContain('placeholder="Search action, who or what"')
+        ->and($html)->toContain('placeholder="Search action or item"')
         ->and($html)->toMatch('/<tr data-row data-search="[^"]*locked new name claims[^"]*" data-sort-at="\d+"/');
 });
 
@@ -165,4 +165,14 @@ it('filters the log by who did it and by date, and sorts every column (U4)', fun
     foreach (['at', 'who', 'what'] as $key) {
         expect($html)->toContain("sortBy('{$key}')")->toContain("data-sort-{$key}=");
     }
+});
+
+it('puts the Who filter beside Rows per page, before the date and the search (U23)', function (): void {
+    $event = Event::factory()->open()->create();
+    $host = hostOfEvent($event);
+    app(SetJoinLock::class)->handle($event, true, $host);
+
+    $html = (string) actingAs($host)->get("/host/{$event->id}/logs")->assertOk()->getContent();
+
+    expect(strpos($html, 'aria-label="Who"'))->toBeLessThan((int) strpos($html, 'Reset filters'));
 });
