@@ -182,3 +182,18 @@ it('adds a game from the pack list of the Games page, searched like Question pac
         ->assertNoJavaScriptErrors();
     expect($event->games()->pluck('title')->all())->toBe(['Team Trivia']);
 });
+
+it('fills the width with the pack list of the Games page on a phone, like Question packs (U23)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    $pack = new QuestionPack(['title' => 'Office Awards', 'game_type' => GameType::Pentahoot]);
+    $pack->owner()->associate($host)->save();
+    actingAs($host);
+
+    // A wide phone or a small tablet, where the list alone is narrower than the column.
+    $width = 'Math.round(document.querySelector("#pack-list").getBoundingClientRect().width)';
+    $games = visit("/host/{$event->id}/games")->resize(700, 900)->wait(0.5)->script($width);
+    $packs = visit('/host/packs')->resize(700, 900)->wait(0.5)->script($width);
+
+    expect($games)->toBe($packs);
+});

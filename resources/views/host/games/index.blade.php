@@ -21,7 +21,8 @@
                 <x-button :href="route('host.packs.index')" variant="secondary">{{ __('host.nav.question_packs') }}</x-button>
             </section>
         @else
-            <div class="flex flex-col gap-2 self-start">
+            {{-- A grid, not a flex column: the list keeps its self-start without shrinking to its content. --}}
+            <div class="grid gap-2 self-start">
                 <p class="px-1 text-sm text-muted">{{ __('games.add_hint') }}</p>
                 <x-pack-list :packs="$packs" :types="$types" :add-to="route('host.events.games.store', $event)" />
                 @error('pack_id')
