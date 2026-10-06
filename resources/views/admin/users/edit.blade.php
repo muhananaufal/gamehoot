@@ -1,4 +1,4 @@
-<x-layouts.host :title="__('accounts.edit_title', ['name' => $account->name])"
+<x-layouts.host :heading="false" :title="__('accounts.edit_title', ['name' => $account->name])"
     :breadcrumbs="[[__('host.nav.admin'), null], [__('accounts.host_accounts'), route('admin.users.index')], [__('accounts.edit_title', ['name' => $account->name]), null]]">
     {{-- C-7, U13: what the Edit modal shows: a title, fields as wide as the box, buttons at the bottom right. --}}
     <div up-main="modal" class="flex flex-col gap-5 p-6">

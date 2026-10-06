@@ -15,11 +15,8 @@
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
         {{-- U12: game status follows starts and finishes made from Live control or by a co-host. --}}
-        <section id="games-live" x-data="liveRegion" class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="games-heading">
-            <div class="flex flex-col gap-1">
-                <h2 id="games-heading" class="font-display text-xl font-semibold">{{ __('games.title') }}</h2>
-                <p class="text-sm text-muted">{{ __('games.subtitle') }}</p>
-            </div>
+        <section id="games-live" x-data="liveRegion" class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-label="{{ __('games.title') }}">
+            <p class="text-sm text-muted">{{ __('games.subtitle') }}</p>
 
             @forelse ($games as $game)
                 @php

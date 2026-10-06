@@ -1,4 +1,4 @@
-<x-layouts.host :title="__('accounts.reset_password_for', ['name' => $account->name])"
+<x-layouts.host :heading="false" :title="__('accounts.reset_password_for', ['name' => $account->name])"
     :breadcrumbs="[[__('host.nav.admin'), null], [__('accounts.host_accounts'), route('admin.users.index')], [__('accounts.reset_password'), null]]">
     {{-- C-7, U13: what the Reset password modal shows: a title, fields as wide as the box, buttons at the bottom right. --}}
     <div up-main="modal" class="flex flex-col gap-5 p-6">

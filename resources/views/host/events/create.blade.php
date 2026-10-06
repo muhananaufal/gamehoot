@@ -1,4 +1,4 @@
-<x-layouts.host :title="__('events.new_event')"
+<x-layouts.host :heading="false" :title="__('events.new_event')"
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [__('events.new_event'), null]]">
     <div class="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
         <section class="flex flex-col gap-4 rounded-card bg-surface p-5">

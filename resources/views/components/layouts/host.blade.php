@@ -4,6 +4,8 @@
     'breadcrumbs' => [],
     // F20, U1: the event being worked on opens its pages under its name in the sidebar.
     'event' => null,
+    // U2: false for the pages that are a dialog's content and carry their own title (h2).
+    'heading' => true,
 ])
 @php
     /** @var \App\Models\User $user */
@@ -141,13 +143,15 @@
 
             <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
                 {{-- U2: the page title and its actions head the content; the top bar only shows where you are. --}}
-                @isset($actions)
+                @if ($heading)
                     {{-- U14: an id, so a page can swap its title and actions alone. --}}
                     <div id="content-head" class="flex flex-wrap items-center justify-between gap-3">
                         <h1 class="font-display text-[26px] font-bold">{{ last($breadcrumbs)[0] }}</h1>
-                        <div class="flex flex-wrap items-center gap-2.5">{{ $actions }}</div>
+                        @isset($actions)
+                            <div class="flex flex-wrap items-center gap-2.5">{{ $actions }}</div>
+                        @endisset
                     </div>
-                @endisset
+                @endif
                 {{ $slot }}
             </main>
             <x-toasts />
