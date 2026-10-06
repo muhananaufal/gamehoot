@@ -108,3 +108,37 @@ it('opens a dropdown inside the scrolling pack list without cutting it off (U22)
     expect($box)->toBe(['below' => 4, 'onScreen' => true, 'outsideNav' => true, 'sideways' => false, 'options' => 2]);
     $page->assertNoJavaScriptErrors();
 });
+
+it('centres modals on the screen and puts dialogs and modals behind the same backdrop (U13)', function (): void {
+    $admin = User::factory()->superAdmin()->create();
+    User::factory()->create(['name' => 'Dina Host']);
+    actingAs($admin);
+
+    $page = visit('/admin/users')->wait(0.5);
+    // A native dialog: the shared confirmation.
+    $page->script("Alpine.store('confirm').askFor('disable', 'Dina Host', '/admin/users/x/status', 'x')");
+    $page->wait(0.4);
+    $dialogBackdrop = $page->script("getComputedStyle(document.querySelector('dialog[open]'), '::backdrop').backgroundColor");
+    $page->script("Alpine.store('confirm').close()");
+    $page->wait(0.4);
+
+    // An Unpoly modal: Edit of an account, opened through the row menu.
+    $page->script("Alpine.store('rowMenu').openFrom([...document.querySelectorAll('[data-menu]')].find((b) => b.dataset.name === 'Dina Host'))");
+    $page->wait(0.4);
+    $page->script("[...document.querySelectorAll('[role=menu] a')].find((a) => a.innerText.trim() === 'Edit').click()");
+    $page->wait(1.5);
+
+    $modal = $page->script(<<<'JS'
+        (() => {
+            const box = document.querySelector('up-modal-box').getBoundingClientRect();
+            return {
+                offCentre: Math.abs(box.top - (innerHeight - box.bottom)),
+                backdrop: getComputedStyle(document.querySelector('up-modal-backdrop')).backgroundColor,
+            };
+        })()
+        JS);
+
+    expect($modal['offCentre'])->toBeLessThanOrEqual(2)
+        ->and($modal['backdrop'])->toBe($dialogBackdrop);
+    $page->assertNoJavaScriptErrors();
+});

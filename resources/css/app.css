@@ -421,11 +421,15 @@ dialog[open]::backdrop {
 }
 
 /* U13, U18: Unpoly modals (create forms) look like the panel's own dialogs, in both themes. */
-up-modal-backdrop {
-    background: color-mix(in srgb, var(--color-nav) 70%, transparent);
+/* U13: one backdrop behind every native dialog and every Unpoly modal, in both themes. */
+dialog::backdrop,
+up-modal > up-modal-backdrop {
+    background: color-mix(in oklab, var(--color-nav) 70%, transparent);
 }
 
 up-modal up-modal-box {
+    /* U13: centred on the screen like the native dialogs; a taller modal still scrolls from its top. */
+    margin-block: auto;
     background-color: var(--color-surface);
     color: var(--color-ink);
     border-radius: var(--radius-panel);

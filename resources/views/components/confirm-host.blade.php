@@ -2,7 +2,7 @@
      $store.confirm.ask({...}); the native <dialog> traps focus and closes on Escape. --}}
 <dialog x-data x-effect="$store.confirm.open ? ($el.open || $el.showModal()) : ($el.open && $el.close())"
     @close="$store.confirm.close()" aria-labelledby="confirm-title"
-    class="m-auto w-[min(420px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-ink shadow-2xl backdrop:bg-nav/70">
+    class="m-auto w-[min(420px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-ink shadow-2xl">
     <div class="flex flex-col gap-3 p-5.5">
         <h2 id="confirm-title" class="font-display text-[22px] font-bold" x-text="$store.confirm.title"></h2>
         <p class="text-[15px] text-muted" x-show="$store.confirm.body !== ''" x-text="$store.confirm.body"></p>

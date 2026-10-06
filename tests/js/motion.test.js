@@ -58,3 +58,18 @@ describe('U8 leaving and pressing', () => {
         expect(reducedBlock).toContain('scale: none');
     });
 });
+
+describe('U13 modals sit in the middle of the screen', () => {
+    it('centres Unpoly modals vertically like the native dialogs, still scrolling when taller than the screen', () => {
+        expect(ruleOf('up-modal up-modal-box')).toMatch(/margin-block:\s*auto/);
+    });
+});
+
+describe('U13 one backdrop for every dialog and modal', () => {
+    it('draws the native dialogs and the Unpoly modals behind the same backdrop', () => {
+        // up-modal > up-modal-backdrop outweighs unpoly.css, which loads later.
+        expect(ruleOf('dialog::backdrop,\nup-modal > up-modal-backdrop')).toMatch(
+            /background:\s*color-mix\(in oklab, var\(--color-nav\) 70%, transparent\)/,
+        );
+    });
+});

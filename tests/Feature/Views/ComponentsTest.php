@@ -184,3 +184,13 @@ describe('custom dropdown (U22)', function (): void {
         expect($selects)->toBe([]);
     });
 });
+
+it('leaves the backdrop of every dialog to the one rule in app.css (U13)', function (): void {
+    $styled = collect(File::allFiles(resource_path('views')))
+        ->filter(fn (SplFileInfo $file): bool => str_contains($file->getContents(), 'backdrop:bg-'))
+        ->map(fn (SplFileInfo $file): string => $file->getRelativePathname())
+        ->values()
+        ->all();
+
+    expect($styled)->toBe([]);
+});

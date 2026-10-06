@@ -26,7 +26,7 @@
         </x-button>
     @endif
     <dialog x-ref="dialog" @class([
-        'm-auto rounded-panel bg-surface p-0 text-left text-ink shadow-2xl backdrop:bg-nav/70',
+        'm-auto rounded-panel bg-surface p-0 text-left text-ink shadow-2xl',
         'w-[min(400px,calc(100vw-2rem))]' => $size === 'sm',
         'w-[min(560px,calc(100vw-2rem))]' => $size === 'md',
     ])>

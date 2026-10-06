@@ -14,7 +14,7 @@
     </button>
 
     <dialog x-ref="picker" aria-labelledby="date-range-title"
-        class="m-auto w-[min(660px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-ink shadow-2xl backdrop:bg-nav/70">
+        class="m-auto w-[min(660px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-ink shadow-2xl">
         <div class="flex flex-col gap-4 p-5.5">
             <div class="flex items-center justify-between gap-3">
                 <h2 id="date-range-title" class="font-display text-[22px] font-bold">{{ $label }}</h2>
