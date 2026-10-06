@@ -53,45 +53,8 @@
         <x-empty-state :title="__('packs.empty_title')" :body="__('packs.empty')" />
     @else
         <div class="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-            {{-- U14: the pack list, grouped by game type, with its own scroll, kept in view. Items carry
-                 data only; packList (resources/js/pack-list.js) searches, filters, orders and folds
-                 them, and navigation.js gives them their Unpoly settings: another pack swaps the
-                 panel, the title with its actions and the breadcrumb; Unpoly marks the open pack
-                 (aria-current), also on its question pages (up-alias). --}}
-            <nav id="pack-list" x-data="packList" aria-label="{{ __('packs.title') }}"
-                class="flex flex-col gap-3 self-start rounded-card bg-surface p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto [&_[data-items]]:flex [&_[data-items]]:flex-col [&_[data-items]]:gap-0.5 [&_[data-pack]]:flex [&_[data-pack]]:min-h-11 [&_[data-pack]]:items-center [&_[data-pack]]:justify-between [&_[data-pack]]:gap-2 [&_[data-pack]]:rounded-control [&_[data-pack]]:px-3 [&_[data-pack]]:text-[15px] [&_[data-pack]:hover]:bg-subtle [&_[data-pack][aria-current]]:bg-subtle [&_[data-pack][aria-current]]:font-bold [&_[data-pack]>span:first-child]:truncate [&_[data-pack]>span:last-child]:text-sm [&_[data-pack]>span:last-child]:text-muted [&_[data-pack]>span:last-child]:tabular-nums">
-                <label class="relative flex items-center">
-                    <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
-                    <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('packs.search') }}" placeholder="{{ __('packs.search') }}" autocomplete="off"
-                        class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
-                </label>
-                <div class="grid grid-cols-2 gap-2">
-                    <x-select :options="[
-                        ['value' => 'all', 'label' => __('packs.all_types')],
-                        ...array_map(fn (GameType $type): array => ['value' => $type->value, 'label' => __('games.types.' . $type->value)], $types),
-                    ]" :label="__('packs.filter_type')" x-model="type" class="min-w-0" />
-                    <x-select :options="[
-                        ['value' => 'name', 'label' => __('packs.sort_name')],
-                        ['value' => 'changed', 'label' => __('packs.sort_changed')],
-                    ]" :label="__('packs.sort')" x-model="sort" class="min-w-0" />
-                </div>
-                @foreach ($types as $groupType)
-                    @continue(! $packs->has($groupType->value))
-                    @php $group = $packs->get($groupType->value); @endphp
-                    <section data-group="{{ $groupType->value }}" class="flex flex-col gap-1">
-                        <button type="button" @click="toggle('{{ $groupType->value }}')" :aria-expanded="isOpen('{{ $groupType->value }}').toString()"
-                            class="flex min-h-9 items-center justify-between rounded-control px-2 text-[11px] font-bold tracking-[0.08em] text-muted uppercase hover:bg-subtle hover:text-ink">
-                            <span>{{ __('games.types.' . $groupType->value) }} · {{ $group->count() }}</span>
-                            <x-icon name="chevron-right" class="size-4 transition-transform" ::class="isOpen('{{ $groupType->value }}') && 'rotate-90'" />
-                        </button>
-                        <div data-items>
-@foreach ($group as $item)
-<a href="{{ route('host.packs.show', $item, false) }}" data-pack data-type="{{ $groupType->value }}" data-changed="{{ $item->updated_at?->getTimestamp() }}"@if ($pack?->is($item)) aria-current="page"@endif><span>{{ $item->title }}</span><span id="pack-count-{{ $item->id }}">{{ $item->questions_count }}</span></a>
-@endforeach
-                        </div>
-                    </section>
-                @endforeach
-            </nav>
+            {{-- U14: the pack list; another pack swaps the panel (resources/js/navigation.js). --}}
+            <x-pack-list :packs="$packs" :types="$types" :current="$pack" />
 
             {{-- U14: the part that changes while working on a pack: the pack and, beside it, the question form. --}}
             <div id="pack-panel" @class(['grid min-w-0 gap-5 self-start', 'xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)]' => $pack && $formOpen])>

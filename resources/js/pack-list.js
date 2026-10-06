@@ -48,7 +48,8 @@ export function savePackState(storage, { collapsed, type, sort }) {
 
 /**
  * The Alpine component on <nav id="pack-list">. Groups are [data-group="<type>"] holding a
- * [data-items] list of <a data-pack data-type data-changed> items.
+ * [data-items] list of [data-pack data-type data-changed] items: links that open a pack, or
+ * buttons that add it as a game (U23).
  */
 export function packList({ storage = globalThis.localStorage } = {}) {
     return {
@@ -76,7 +77,7 @@ export function packList({ storage = globalThis.localStorage } = {}) {
 
             for (const group of this.$root.querySelectorAll('[data-group]')) {
                 const list = group.querySelector('[data-items]');
-                const items = [...list.querySelectorAll('a[data-pack]')].map((el) => ({
+                const items = [...list.querySelectorAll('[data-pack]')].map((el) => ({
                     el,
                     // The first span holds the title; the second the question count.
                     title: (el.querySelector('span')?.textContent ?? '').trim(),

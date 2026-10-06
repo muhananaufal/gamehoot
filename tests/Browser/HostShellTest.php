@@ -159,3 +159,26 @@ it('expands a recent event in place and stays on the page (U23)', function (): v
         ->and($page->script('location.pathname'))->toBe('/host/packs');
     $page->assertNoJavaScriptErrors();
 });
+
+it('adds a game from the pack list of the Games page, searched like Question packs (U23)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    foreach (['Office Awards', 'Team Trivia'] as $title) {
+        $pack = new QuestionPack(['title' => $title, 'game_type' => GameType::Pentahoot]);
+        $pack->owner()->associate($host)->save();
+    }
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/games")->wait(0.5);
+    $page->script('(() => { const q = document.querySelector("#pack-list input[type=search]"); q.value = "trivia"; q.dispatchEvent(new Event("input", { bubbles: true })); })()');
+    $page->wait(0.5);
+
+    expect($page->script('[...document.querySelectorAll("#pack-list [data-pack]")].filter((b) => ! b.hidden).map((b) => b.innerText.split("\n")[0].trim())'))->toBe(['Team Trivia']);
+
+    $page->script('[...document.querySelectorAll("#pack-list [data-pack]")].find((b) => ! b.hidden).click()');
+    // The toast may be gone already on a slow browser; the list shows the new game.
+    $page->assertSee('1. Team Trivia')
+        ->assertPathEndsWith("/host/{$event->id}/games")
+        ->assertNoJavaScriptErrors();
+    expect($event->games()->pluck('title')->all())->toBe(['Team Trivia']);
+});

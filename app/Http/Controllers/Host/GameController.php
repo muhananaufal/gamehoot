@@ -29,12 +29,15 @@ final class GameController
             'event' => $event,
             'games' => $event->games()->orderBy('position')->with('sourcePack:id,content_version,deleted_at')->withCount('questions')->get(),
             'startedAt' => GameTimes::startedFor($event),
+            // U23: the pack list of Question packs, grouped by type, for the playable types.
             'packs' => QuestionPack::query()
                 ->whereBelongsTo($user, 'owner')
                 ->whereIn('game_type', array_map(fn (GameType $type): string => $type->value, $engines->playableTypes()))
                 ->withCount('questions')
                 ->orderBy('title')
-                ->get(),
+                ->get()
+                ->groupBy(fn (QuestionPack $pack): string => $pack->game_type->value),
+            'types' => $engines->playableTypes(),
         ]);
     }
 

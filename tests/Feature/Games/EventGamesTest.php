@@ -67,6 +67,23 @@ describe('games in an event (D-9)', function (): void {
             ->assertDontSee('arrive in later releases');
     });
 
+    it('puts the pack list of Question packs on the left, where a click on a pack adds it (U23)', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(gamesOwner($event), ['Q?'], 'Office Awards');
+        $kata = new QuestionPack(['title' => 'Celebrities', 'game_type' => GameType::TebakKata]);
+        $kata->owner()->associate(gamesOwner($event))->save();
+
+        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertOk()->getContent();
+
+        expect($html)->toContain('<nav id="pack-list" x-data="packList"')
+            ->and(strpos($html, 'id="pack-list"'))->toBeLessThan((int) strpos($html, 'id="games-live"'))
+            ->and($html)->toContain('data-group="pentahoot"')
+            ->and($html)->toContain('data-group="tebak_kata"')
+            ->and($html)->toMatch('#<button type="submit" name="pack_id" value="'.$pack->id.'" data-pack data-type="pentahoot"#')
+            ->and($html)->toContain('action="'.route('host.events.games.store', $event).'"')
+            ->and($html)->not->toContain('type="radio" name="pack_id"');
+    });
+
     it('tells a host without packs where to write one, whatever the game type', function (): void {
         $event = Pentahoot::event();
 
