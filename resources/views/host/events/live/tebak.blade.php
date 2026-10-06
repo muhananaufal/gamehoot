@@ -10,6 +10,7 @@ tebakHost({
         actionUrl: @js(url("/host/{$event->id}/questions/__QUESTION__/__ACTION__")),
         people: @js($people),
         labels: @js([...__('tebak'), 'network_error' => __('pentahoot.network_error')]),
+        questionIds: @js($questions->pluck('id')->values()),
     })
         @break
     @case('questions')
@@ -31,6 +32,12 @@ tebakHost({
         {{-- The question on screen, with the answer only hosts see. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
             <p x-show="!question && !allResolved" class="text-muted">{{ __('tebak.no_question') }}</p>
+            {{-- D-10: the first question starts from the middle; after that, Next question or the list. --}}
+            <div x-show="!question && firstToOpen" class="flex">
+                <x-button type="button" data-test="open-next" x-bind:disabled="busy" @click="act('show', firstToOpen.id)">
+                    <span x-text="label('show_next', { N: firstToOpen?.number ?? '' })"></span>
+                </x-button>
+            </div>
             {{-- D-8: after the last question the only step left is the final results. --}}
             <div x-cloak x-show="allResolved" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
                 <p class="font-semibold">{{ __('tebak.all_done') }}</p>
@@ -87,7 +94,9 @@ tebakHost({
             </div>
 
             <div x-show="question?.status === 'won' || question?.status === 'surrendered'" class="flex flex-wrap gap-2.5 border-t border-line-soft pt-4">
-                <x-button type="button" data-test="show-leaderboard" x-show="canLeaderboard" x-bind:disabled="busy" @click="act('leaderboard')">{{ __('tebak.show_leaderboard') }}</x-button>
+                {{-- D-10: going on in order needs no trip to the list. --}}
+                <x-button type="button" data-test="next-question" x-show="nextToOpen" x-bind:disabled="busy" @click="act('show', nextToOpen.id)">{{ __('tebak.next_question') }}</x-button>
+                <x-button type="button" variant="secondary" data-test="show-leaderboard" x-show="canLeaderboard" x-bind:disabled="busy" @click="act('leaderboard')">{{ __('tebak.show_leaderboard') }}</x-button>
             </div>
         </section>
         {{-- E12, D-8: show the final results; unplayed questions do not count and ending early is logged. --}}

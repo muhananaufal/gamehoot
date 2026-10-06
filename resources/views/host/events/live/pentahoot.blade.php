@@ -6,6 +6,7 @@
 pentahootHost({
         actionUrl: @js(url("/host/{$event->id}/questions/__QUESTION__/__ACTION__")),
         labels: @js(__('pentahoot')),
+        questionIds: @js($questions->pluck('id')->values()),
     })
         @break
     @case('questions')
@@ -26,6 +27,12 @@ pentahootHost({
         {{-- The question on screen: countdown, answers, and the actions its state allows. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
             <p x-show="(!question || phase === 'done') && !allDone" class="text-muted">{{ __('pentahoot.no_question') }}</p>
+            {{-- D-10: the first question starts from the middle; after Pick a question the list decides. --}}
+            <div x-show="(!question || phase === 'done') && firstToOpen" class="flex">
+                <x-button type="button" data-test="open-next" x-bind:disabled="busy" @click="act('start', firstToOpen.id)">
+                    <span x-text="label('open_next', { N: firstToOpen?.number ?? '' })"></span>
+                </x-button>
+            </div>
             {{-- D-8: after the last question the only step left is finishing the game. --}}
             <div x-cloak x-show="allDone" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
                 <p class="font-semibold">{{ __('pentahoot.all_done') }}</p>
@@ -50,7 +57,10 @@ pentahootHost({
                         <x-button type="button" x-show="phase === 'ready'" x-bind:disabled="busy" @click="act('start')">{{ __('pentahoot.start') }}</x-button>
                         <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('stop')" @click="act('stop')">{{ __('pentahoot.stop') }}</x-button>
                         <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('reveal')" @click="act('reveal')">{{ __('pentahoot.reveal') }}</x-button>
-                        <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('next')" @click="act('next')">{{ __('pentahoot.next') }}</x-button>
+                        {{-- D-10: Next question goes on in order; Pick a question closes this one and leaves the choice to the list. --}}
+                        <x-button type="button" x-show="phase !== 'ready' && nextToOpen" x-bind:disabled="busy || !can('next')" @click="advance()">{{ __('pentahoot.next') }}</x-button>
+                        <x-button type="button" variant="secondary" x-show="phase !== 'ready' && nextToOpen" x-bind:disabled="busy || !can('next')" @click="act('next')">{{ __('pentahoot.pick') }}</x-button>
+                        <x-button type="button" x-show="phase !== 'ready' && !nextToOpen" x-bind:disabled="busy || !can('next')" @click="act('next')">{{ __('pentahoot.close_question') }}</x-button>
                     </div>
                 </div>
             </template>

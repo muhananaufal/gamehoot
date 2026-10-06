@@ -366,7 +366,7 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
  * Live control: open any question that is not done (D-5), run it, see the live count only
  * hosts see (F2), and read STALE_ACTION when the state moved on (C-3).
  */
-export function pentahootHost({ actionUrl, labels }) {
+export function pentahootHost({ actionUrl, labels, questionIds = [] }) {
     return {
         ...base(labels),
         busy: false,
@@ -463,6 +463,32 @@ export function pentahootHost({ actionUrl, labels }) {
 
         canOpen(number) {
             return !this.busyQuestion && this.statusOf(number) === 'ready';
+        },
+
+        /** D-10: Open question 1 starts a game; once a question was played, Next question or the list goes on. */
+        get firstToOpen() {
+            return questionIds.every((_, i) => this.statusOf(i + 1) === 'ready') ? this.nextToOpen : null;
+        },
+
+        /** D-10: the first question still to play, for Next question. */
+        get nextToOpen() {
+            const index = questionIds.findIndex((_, i) => this.statusOf(i + 1) === 'ready');
+
+            return index === -1 ? null : { number: index + 1, id: questionIds[index] };
+        },
+
+        /**
+         * D-10: Next question goes on in order: it closes the revealed question, then opens the
+         * next ready one. Nothing opens when closing was refused.
+         */
+        async advance() {
+            const target = this.nextToOpen;
+
+            await this.act('next');
+
+            if (target && this.error === '') {
+                await this.act('start', target.id);
+            }
         },
 
         async act(action, questionId = this.question?.id) {

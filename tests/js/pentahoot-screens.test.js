@@ -178,3 +178,120 @@ describe('B-6 the vote list follows the name list', () => {
         expect(fetchPeople).toHaveBeenCalledTimes(2);
     });
 });
+
+describe('Live control opens the next question from the middle, in order', () => {
+    const withGame = (make, game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const host = make();
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('offers the first Pentahoot question that is still ready', () => {
+        const host = () => pentahootHost({ actionUrl: '/act', labels: {}, questionIds: ['q1', 'q2', 'q3'] });
+
+        expect(withGame(host, { question: null, statuses: ['done', 'ready', 'ready'] }).nextToOpen).toEqual({
+            number: 2,
+            id: 'q2',
+        });
+        expect(withGame(host, { question: null, statuses: ['done', 'done', 'done'] }).nextToOpen).toBe(null);
+    });
+
+    it('offers the first queued Tebak question, then a skipped one', () => {
+        const host = () =>
+            tebakHost({
+                type: 'tebak_kata',
+                actionUrl: '/act',
+                people: [],
+                labels: {},
+                questionIds: ['q1', 'q2', 'q3'],
+            });
+
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'Q', 'q'] }).nextToOpen).toEqual({
+            number: 3,
+            id: 'q3',
+        });
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'Q', 'x'] }).nextToOpen).toEqual({
+            number: 2,
+            id: 'q2',
+        });
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'w', 'x'] }).nextToOpen).toBe(null);
+    });
+});
+
+describe('Next question goes on in order; Pick a question leaves the choice to the host', () => {
+    const revealed = () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({
+            ...live,
+            game: {
+                ...live.game,
+                question: { id: 'q1', number: 1, status: 'revealed', attempt: 1 },
+                statuses: ['revealed', 'ready', 'ready'],
+            },
+        });
+        store.refresh = vi.fn(async () => {});
+        const host = pentahootHost({
+            actionUrl: '/act/__QUESTION__/__ACTION__',
+            labels: { network_error: 'Network' },
+            questionIds: ['q1', 'q2', 'q3'],
+        });
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('closes the question, then opens the next one in order', async () => {
+        const post = vi.fn(async () => answer(204, {}));
+        vi.stubGlobal('fetch', post);
+
+        await revealed().advance();
+
+        expect(post.mock.calls.map(([url]) => url)).toEqual(['/act/q1/next', '/act/q2/start']);
+    });
+
+    it('opens nothing when closing the question was refused', async () => {
+        const post = vi.fn(async () => answer(409, { code: 'STALE_ACTION', message: 'Stale' }));
+        vi.stubGlobal('fetch', post);
+        const host = revealed();
+
+        await host.advance();
+
+        expect(post).toHaveBeenCalledOnce();
+        expect(host.error).toBe('Stale');
+    });
+});
+
+describe('Open question N only starts a game; after Pick a question the list decides', () => {
+    const withGame = (make, game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const host = make();
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('offers the first Pentahoot question only before any question was played', () => {
+        const host = () => pentahootHost({ actionUrl: '/act', labels: {}, questionIds: ['q1', 'q2'] });
+
+        expect(withGame(host, { question: null, statuses: ['ready', 'ready'] }).firstToOpen).toEqual({
+            number: 1,
+            id: 'q1',
+        });
+        expect(withGame(host, { question: null, statuses: ['done', 'ready'] }).firstToOpen).toBe(null);
+    });
+
+    it('offers the first Tebak question only before any question was shown', () => {
+        const host = () =>
+            tebakHost({ type: 'tebak_kata', actionUrl: '/act', people: [], labels: {}, questionIds: ['q1', 'q2'] });
+
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['q', 'q'] }).firstToOpen).toEqual({
+            number: 1,
+            id: 'q1',
+        });
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'q'] }).firstToOpen).toBe(null);
+    });
+});

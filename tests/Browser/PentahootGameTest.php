@@ -76,9 +76,32 @@ it('runs a question from Live control: open, stop, reveal and move on (D-5, F2)'
     $page->click('Stop')->assertSee('Question 2 of 2 · Time up');
     travelTo(now()->addSeconds(2));
 
+    // D-10: Pick a question closes this one and leaves the choice; the next in order is one click away.
+    $page->click('Reveal')
+        ->assertSee('No votes')
+        ->click('Pick a question')
+        ->assertSee('Pick a question to open.')
+        ->assertDontSee('Open question 1')
+        ->assertNoJavaScriptErrors();
+});
+
+it('goes through the questions in order from the middle of Live control (D-10)', function (): void {
+    $event = Pentahoot::event();
+    Pentahoot::running($event, ['Most punctual?', 'Best presenter?']);
+
+    actingAs($event->owner()->firstOrFail());
+
+    $page = visit("/host/{$event->id}")
+        ->click('Open question 1')
+        ->assertSee('Question 1 of 2 · Live');
+
+    $page->click('Stop')->assertSee('Question 1 of 2 · Time up');
+    travelTo(now()->addSeconds(2));
+
+    // Next question closes question 1 and opens question 2 at once.
     $page->click('Reveal')
         ->assertSee('No votes')
         ->click('Next question')
-        ->assertSee('Pick a question to open.')
+        ->assertSee('Question 2 of 2 · Live')
         ->assertNoJavaScriptErrors();
 });
