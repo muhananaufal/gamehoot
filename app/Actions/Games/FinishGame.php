@@ -39,6 +39,9 @@ final readonly class FinishGame
                 throw ActionRefused::stale();
             }
 
+            // D-10: a question already revealed has its result frozen (G10); finishing closes it.
+            $lockedGame->questions()->where('status', QuestionStatus::Revealed)->update(['status' => QuestionStatus::Done]);
+
             $early = $lockedGame->questions()
                 ->whereNotIn('status', [QuestionStatus::Done, QuestionStatus::Won, QuestionStatus::Surrendered])
                 ->exists();

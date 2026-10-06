@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class PentahootActions
 {
-    public const array ACTIONS = ['start', 'stop', 'reveal', 'next', 'reset'];
+    public const array ACTIONS = ['start', 'stop', 'reveal', 'next', 'advance', 'reset'];
 
     public function __construct(private AuditLog $auditLog) {}
 
@@ -51,6 +51,7 @@ final readonly class PentahootActions
             'stop' => $this->stop($game, $locked, $detail, $now),
             'reveal' => $this->reveal($event, $game, $locked, $detail, $now, $actor),
             'next' => $this->next($game, $locked),
+            'advance' => $this->advance($game, $locked, $now),
             'reset' => $this->reset($event, $game, $locked, $detail, $actor),
             default => throw ActionRefused::stale(),
         };
@@ -126,6 +127,27 @@ final readonly class PentahootActions
 
         $question->forceFill(['status' => QuestionStatus::Done])->save();
         $game->forceFill(['current_question_id' => null])->save();
+    }
+
+    /**
+     * D-10: Next question in one step: the revealed question is done and the next ready one, in
+     * play order, opens at once. One transaction and one version, so no screen shows the moment
+     * without a question in between.
+     */
+    private function advance(Game $game, Question $question, CarbonImmutable $now): void
+    {
+        $this->expectCurrent($game, $question, QuestionStatus::Revealed);
+
+        // Lock order: game and this question are locked; the next one follows, by position.
+        $next = Question::query()->where('game_id', $game->id)->where('status', QuestionStatus::Ready)
+            ->orderBy('position')->lockForUpdate()->first();
+
+        if ($next === null) {
+            throw ActionRefused::stale();
+        }
+
+        $this->next($game, $question);
+        $this->start($game, $next, QuestionPentahoot::query()->lockForUpdate()->findOrFail($next->id), $now);
     }
 
     /**

@@ -169,6 +169,40 @@ describe('reveal and next (E1, E2, E3, E4, G10)', function (): void {
     });
 });
 
+describe('next question in order (D-10)', function (): void {
+    it('closes the revealed question and opens the next ready one in one step', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['First?', 'Second?', 'Third?']);
+        [$first, $second] = [Pentahoot::question($game), Pentahoot::question($game, 2)];
+        hostAction($event, $first, 'start');
+        hostAction($event, $first, 'stop');
+        travelTo(now()->addSeconds(2));
+        hostAction($event, $first, 'reveal');
+        $version = $event->refresh()->state_version;
+
+        hostAction($event, $first, 'advance')->assertNoContent();
+
+        expect($first->refresh()->status)->toBe(QuestionStatus::Done)
+            ->and($second->refresh()->status)->toBe(QuestionStatus::Live)
+            ->and($game->refresh()->current_question_id)->toBe($second->id)
+            ->and($event->refresh()->state_version)->toBe($version + 1);
+    });
+
+    it('goes on only from a revealed question, and only while a question is left', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['Only?']);
+        $only = Pentahoot::question($game);
+        hostAction($event, $only, 'advance')->assertConflict();
+        hostAction($event, $only, 'start');
+        hostAction($event, $only, 'stop');
+        travelTo(now()->addSeconds(2));
+        hostAction($event, $only, 'reveal');
+
+        hostAction($event, $only, 'advance')->assertConflict();
+        expect($only->refresh()->status)->toBe(QuestionStatus::Revealed);
+    });
+});
+
 describe('reset (T1, E13)', function (): void {
     it('deletes the votes and the frozen results, starts a new attempt and logs it', function (): void {
         $event = Pentahoot::event();
