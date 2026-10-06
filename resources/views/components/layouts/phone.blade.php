@@ -12,7 +12,7 @@
             <x-logo :size="32" class="text-[22px]" />
         @endif
         @if ($person)
-            <span class="truncate text-sm text-nav-muted">{{ $person->name }}</span>
+            <span class="truncate text-sm text-nav-muted" x-data x-text="$store.realtime.me?.name ?? @js($person->name)">{{ $person->name }}</span>
         @endif
     </header>
     <main class="mx-auto flex w-full max-w-md grow flex-col px-5 py-6">

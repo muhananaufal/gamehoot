@@ -111,6 +111,7 @@ export async function fetchSnapshot(url) {
  *   channels: Array<{ name: string, private: boolean }>,
  *   fetchState: () => Promise<object|null>,
  *   onAnswered?: () => void,
+ *   onNameLost?: () => void,
  *   random?: () => number,
  *   doc?: { visibilityState: string, addEventListener: Function },
  * }} options
@@ -121,6 +122,7 @@ export function connectRealtime({
     channels,
     fetchState,
     onAnswered = () => {},
+    onNameLost = () => {},
     random = Math.random,
     doc = document,
 }) {
@@ -150,7 +152,13 @@ export function connectRealtime({
                 return;
             }
 
+            const hadName = store.me !== null;
             store.accept(next, { sentAt, receivedAt: Date.now() });
+
+            // B-6: the host released or deleted this phone's name; it picks a name again.
+            if (hadName && store.me === null) {
+                onNameLost();
+            }
         } catch {
             // T2: the next poll or reconnect tries again.
         }
@@ -191,7 +199,13 @@ export function connectRealtime({
                 return;
             }
 
-            store.accept(next);
+            const roster = store.snapshot?.event?.roster;
+
+            // B-6: the host changed the name list; a phone with a name fetches its own state
+            // (its name, or none any more), spread by jitter like a reconnect (F17).
+            if (store.accept(next) && store.me !== null && roster !== undefined && next.event?.roster !== roster) {
+                setTimeout(refresh, random() * RECONNECT_JITTER_MS);
+            }
         });
 
         if (!channel.private) {

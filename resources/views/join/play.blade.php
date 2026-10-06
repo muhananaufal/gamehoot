@@ -14,7 +14,7 @@
         {{-- U8: joining succeeded, so the welcome pops in and the mascot floats while waiting. --}}
         <div x-show="view === 'waiting'" class="pop-in flex grow flex-col items-center justify-center gap-5 text-center">
             <x-logo :size="96" :wordmark="false" outline="stroke-canvas" class="mascot-idle" />
-            <h1 class="font-display text-[32px] leading-tight font-bold">{{ __('join.welcome', ['name' => $person->name]) }}</h1>
+            <h1 class="font-display text-[32px] leading-tight font-bold" x-text="@js(__('join.welcome', ['name' => '__NAME__'])).replace('__NAME__', $store.realtime.me?.name ?? @js($person->name))">{{ __('join.welcome', ['name' => $person->name]) }}</h1>
             <p class="max-w-xs text-lg text-muted">{{ __('join.waiting') }}</p>
         </div>
 

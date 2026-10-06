@@ -76,6 +76,8 @@ export function pentahootPhone({
     return {
         ...base(labels),
         people: null,
+        // B-6: the name list the people were loaded for; a newer one loads them again.
+        peopleRoster: null,
         query: '',
         chosen: null,
         sending: false,
@@ -175,7 +177,9 @@ export function pentahootPhone({
         },
 
         async loadPeople() {
-            if (this.people !== null) {
+            const roster = this.store.snapshot?.event?.roster ?? null;
+
+            if (this.people !== null && this.peopleRoster === roster) {
                 return;
             }
 
@@ -187,6 +191,7 @@ export function pentahootPhone({
 
                 if (response.ok) {
                     this.people = (await response.json()).people;
+                    this.peopleRoster = roster;
                 }
             } catch {
                 this.error = this.labels.network_error;

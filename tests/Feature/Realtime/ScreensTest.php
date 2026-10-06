@@ -94,6 +94,19 @@ describe('player screen', function (): void {
 
         expect($initial)->toBeArray()->toHaveKey('me.name', 'Budi Santoso');
     });
+
+    it('tells the phone where to pick a name again once its name is released or deleted, and shows the name from the store (B-6)', function (): void {
+        $event = screensEvent();
+        $person = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $token = ClaimCookie::newToken();
+        $person->forceFill(['claim_token_hash' => ClaimCookie::hash($token), 'claimed_at' => now()])->save();
+
+        $response = withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk();
+
+        expect(realtimeConfigOf($response))->toHaveKey('joinUrl', url('/gathering-2026'))
+            ->and((string) $response->getContent())->toContain('x-text="$store.realtime.me?.name ??');
+        expect(realtimeConfigOf(get('/gathering-2026/screen')))->toHaveKey('joinUrl', null);
+    });
 });
 
 describe('Live control (F2, C-2)', function (): void {

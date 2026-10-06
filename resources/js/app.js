@@ -140,6 +140,12 @@ function followEvent(element) {
         channels: config.channels,
         fetchState: () => fetchSnapshot(config.stateUrl),
         onAnswered,
+        // B-6: the host released or deleted this phone's name; pick a name again.
+        onNameLost: () => {
+            if (config.joinUrl) {
+                window.location.assign(config.joinUrl);
+            }
+        },
     });
     store.refresh = connection.refresh;
 

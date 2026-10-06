@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\People\ClaimName;
+use App\Actions\People\EditNameList;
+use App\Actions\People\ReleaseClaim;
 use App\Enums\Audience;
 use App\Enums\QuestionStatus;
 use App\Models\Event;
@@ -46,6 +49,7 @@ it('gives every screen the event, the lobby count and the version (F1, F15, F23)
             'claims_locked' => false,
             'screen_theme' => 'dark',
             'show_on_devices' => false,
+            'roster' => 0,
         ],
         'lobby' => ['joined' => 2],
         'game' => null,
@@ -131,3 +135,23 @@ it('keeps the largest Tebak Kata snapshot under the Reverb message limit (F14)',
 
     expect(strlen($message))->toBeLessThan(EventSnapshot::MAX_MESSAGE_BYTES);
 })->with(['public', 'host']);
+
+it('moves the roster when the host changes the name list, not when a phone claims a name (B-6)', function (): void {
+    $event = snapshotEvent();
+    $host = $event->owner()->firstOrFail();
+    $names = app(EditNameList::class);
+    $roster = fn (): int => app(EventSnapshot::class)->for($event->refresh(), Audience::Public)['event']['roster'];
+
+    $added = $names->add($event, 'Budi Santoso');
+    expect($roster())->toBe(1);
+    $names->import($event, ['Citra Dewi']);
+    expect($roster())->toBe(2);
+    $names->rename($event, $added, 'Budi S.');
+    expect($roster())->toBe(3);
+    app(ClaimName::class)->handle($event, $added);
+    expect($roster())->toBe(3);
+    app(ReleaseClaim::class)->handle($event, $added->refresh(), $host);
+    expect($roster())->toBe(4);
+    $names->delete($event, $added, $host);
+    expect($roster())->toBe(5);
+});

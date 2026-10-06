@@ -16,7 +16,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
  * asking at once cost one computation. server_now (F4) and the game counters that change
  * without a version bump (F24) are added fresh on every call.
  *
- * @phpstan-type EventPart array{name: string, status: string, link: string, claims_locked: bool, screen_theme: string, show_on_devices: bool}
+ * @phpstan-type EventPart array{name: string, status: string, link: string, claims_locked: bool, screen_theme: string, show_on_devices: bool, roster: int}
  * @phpstan-type Body array{version: int, event: EventPart, lobby: array{joined: int}, game: array<string, mixed>|null, host?: array{names: int}}
  * @phpstan-type Snapshot array{server_now: int, version: int, event: EventPart, lobby: array{joined: int}, game: array<string, mixed>|null, host?: array{names: int}}
  */
@@ -70,6 +70,8 @@ final readonly class EventSnapshot
                 'screen_theme' => $event->screen_theme->value,
                 // E14: phones mirror the Tebak screens only when the host turned this on.
                 'show_on_devices' => $event->show_on_devices,
+                // B-6: moves when the host changes the name list (not on claims).
+                'roster' => $event->roster_version,
             ],
             // F23: the Public View lobby counts claimed names.
             'lobby' => ['joined' => $event->people()->whereNotNull('claimed_at')->count()],

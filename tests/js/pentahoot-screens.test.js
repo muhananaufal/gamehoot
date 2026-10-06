@@ -156,3 +156,25 @@ describe('D-8 Live control after the last question', () => {
         expect(hostWith({ question: null, statuses: [] }).allDone).toBe(false);
     });
 });
+
+describe('B-6 the vote list follows the name list', () => {
+    it('loads the names again once the host changed the list, and not before', async () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, event: { ...live.event, roster: 1 } });
+        const fetchPeople = vi.fn(async () => ({
+            ok: true,
+            ...answer(200, { people: [{ id: 'p1', name: 'Ana Putri' }] }),
+        }));
+        vi.stubGlobal('fetch', fetchPeople);
+        const phone = pentahootPhone({ peopleUrl: '/people', voteUrl: '/vote/__QUESTION__', labels: {} });
+        phone.$store = { realtime: store };
+
+        await phone.loadPeople();
+        await phone.loadPeople();
+        expect(fetchPeople).toHaveBeenCalledOnce();
+
+        store.accept({ ...live, version: live.version + 1, event: { ...live.event, roster: 2 } });
+        await phone.loadPeople();
+        expect(fetchPeople).toHaveBeenCalledTimes(2);
+    });
+});

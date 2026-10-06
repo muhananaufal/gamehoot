@@ -407,3 +407,69 @@ describe("E4 the phone's own state", () => {
         expect(store.me).toBe(null);
     });
 });
+
+describe('B-6 the phone follows changes to the name list', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const withRoster = (version, roster) => ({ ...snapshot(version, Date.now()), event: { status: 'open', roster } });
+    const start = (store, fetchState, onNameLost = vi.fn()) => {
+        const echo = fakeEcho();
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.abc.public', private: false }],
+            fetchState,
+            onNameLost,
+            random: () => 0.5,
+            doc: fakeDocument(),
+        });
+
+        return { send: (next) => echo.listeners['event.abc.public.state'](next), onNameLost };
+    };
+
+    it('fetches its own state again, after a jitter, when the name list changed', async () => {
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => ({ ...withRoster(1, 0), me: { name: 'Rita', vote: null } }));
+        const { send } = start(store, fetchState);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(fetchState).toHaveBeenCalledTimes(1);
+
+        fetchState.mockImplementation(async () => ({ ...withRoster(3, 1), me: { name: 'Rita Sari', vote: null } }));
+        send(withRoster(2, 0));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+        expect(fetchState).toHaveBeenCalledTimes(1);
+
+        send(withRoster(3, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS * 0.5);
+        expect(fetchState).toHaveBeenCalledTimes(2);
+        expect(store.me.name).toBe('Rita Sari');
+    });
+
+    it('leaves a page without a claimed name (the host pages) alone', async () => {
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => withRoster(1, 0));
+        const { send } = start(store, fetchState);
+        await vi.advanceTimersByTimeAsync(0);
+
+        send(withRoster(2, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+
+        expect(fetchState).toHaveBeenCalledTimes(1);
+    });
+
+    it('says so once when its name was released or deleted', async () => {
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => ({ ...withRoster(1, 0), me: { name: 'Rita', vote: null } }));
+        const { send, onNameLost } = start(store, fetchState);
+        await vi.advanceTimersByTimeAsync(0);
+
+        fetchState.mockImplementation(async () => ({ ...withRoster(2, 1), me: null }));
+        send(withRoster(2, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+        send(withRoster(3, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+
+        expect(onNameLost).toHaveBeenCalledOnce();
+    });
+});
