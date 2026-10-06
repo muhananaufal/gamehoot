@@ -32,7 +32,7 @@
             <form method="POST" action="{{ route('host.packs.store') }}" class="flex flex-col gap-3" novalidate>
                 @csrf
                 <input type="hidden" name="form" value="create-pack">
-                <x-field name="title" :label="__('packs.pack_title')" id="new-pack-title" :submitted="old('form') === 'create-pack'" maxlength="100" autofocus />
+                <x-field name="title" :label="__('packs.pack_title')" id="new-pack-title" :submitted="old('form') === 'create-pack'" required maxlength="100" autofocus />
                 <div class="flex flex-col gap-1.5">
                     <span class="text-sm font-semibold">{{ __('packs.game_type') }}</span>
                     <x-select name="game_type" :options="array_map(fn (GameType $type): array => ['value' => $type->value, 'label' => __('games.types.' . $type->value)], $types)"

@@ -1,5 +1,7 @@
-// U19: before a host form is sent, simple rules are checked in the browser: required fields,
-// maximum length, the shape of an email and a pattern (usernames). A form with a problem is not
+// U19: before any form is sent (sign in excepted, data-no-check), the rules that need no database
+// are checked in the browser: required fields, minimum and maximum length, a whole number inside
+// its range, the shape of an email, a pattern (usernames, links, passwords) and a confirmation
+// that must match its field. A form with a problem is not
 // sent (no request, no spinner); each message shows under its field in the style of the
 // server's errors, and the first field with a problem gets the focus. The messages are the
 // application's (A10), sent once by the layout; rules that need the database stay with the
@@ -7,8 +9,11 @@
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** The message for one field, or null when it passes. `label` names the field. */
-export function fieldProblem(field, label, messages) {
+/**
+ * The message for one field, or null when it passes. `label` names the field; `valueOf` reads
+ * another field of the form by name (a confirmation must match its field).
+ */
+export function fieldProblem(field, label, messages, valueOf = () => '') {
     if (field.type === 'hidden' || field.disabled || field.readOnly) {
         return null;
     }
@@ -28,6 +33,25 @@ export function fieldProblem(field, label, messages) {
 
     if (field.maxLength > 0 && value.length > field.maxLength) {
         return fill(messages.max, { max: field.maxLength });
+    }
+
+    if (field.minLength > 0 && value.length < field.minLength) {
+        return fill(messages.min, { min: field.minLength });
+    }
+
+    // A whole number inside its range (time to vote, points).
+    if (field.type === 'number') {
+        const number = Number(value);
+        const min = field.min === '' || field.min === undefined ? -Infinity : Number(field.min);
+        const max = field.max === '' || field.max === undefined ? Infinity : Number(field.max);
+
+        if (!Number.isInteger(number) || number < min || number > max) {
+            return field.dataset?.rangeMessage ?? fill(messages.between, { min: field.min, max: field.max });
+        }
+    }
+
+    if (field.dataset?.same && value !== valueOf(field.dataset.same)) {
+        return fill(messages.same, { other: field.dataset.same.replace(/_/g, ' ') });
     }
 
     if (field.type === 'email' && !EMAIL.test(value.trim())) {
@@ -70,13 +94,16 @@ function clearProblem(field) {
 }
 
 function labelOf(field) {
+    // data-label names a field without a label of its own (the hidden image inputs).
     return (
-        (field.id && document.querySelector(`label[for="${CSS.escape(field.id)}"]`)?.textContent?.trim()) || field.name
+        field.dataset.label ||
+        (field.id && document.querySelector(`label[for="${CSS.escape(field.id)}"]`)?.textContent?.trim()) ||
+        field.name
     );
 }
 
 /**
- * Watches every host form that leaves validation to the app (novalidate). The listener runs in
+ * Watches every form (the browser's own checks are off, see app.js). The listener runs in
  * the capture phase, before Unpoly sends the form.
  */
 export function checkFormsBeforeSubmit(doc = document, messages = {}) {
@@ -85,14 +112,16 @@ export function checkFormsBeforeSubmit(doc = document, messages = {}) {
         (event) => {
             const form = event.target;
 
-            if (!(form instanceof HTMLFormElement) || !form.noValidate) {
+            // Every form, except the ones that leave all checks to the server (sign in).
+            if (typeof form?.querySelectorAll !== 'function' || form.hasAttribute('data-no-check')) {
                 return;
             }
 
             let first = null;
+            const valueOf = (name) => form.elements.namedItem(name)?.value ?? '';
 
             for (const field of form.querySelectorAll('input, textarea')) {
-                const message = fieldProblem(field, labelOf(field), messages);
+                const message = fieldProblem(field, labelOf(field), messages, valueOf);
 
                 if (message) {
                     showProblem(field, message);
@@ -119,7 +148,9 @@ export function checkFormsBeforeSubmit(doc = document, messages = {}) {
         const field = event.target;
 
         if (field instanceof HTMLElement && field.closest('[up-form-group]')?.querySelector('[data-check-error]')) {
-            if (!fieldProblem(field, labelOf(field), messages)) {
+            const valueOf = (name) => field.form?.elements.namedItem(name)?.value ?? '';
+
+            if (!fieldProblem(field, labelOf(field), messages, valueOf)) {
                 clearProblem(field);
             }
         }

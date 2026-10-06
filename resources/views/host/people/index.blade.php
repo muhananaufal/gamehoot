@@ -53,7 +53,7 @@
                 <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate>
                     @csrf
                     <input type="hidden" name="form" value="add-person">
-                    <x-field name="name" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" maxlength="100" autocomplete="off" autofocus />
+                    <x-field name="name" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" required maxlength="100" autocomplete="off" autofocus />
                     <div class="flex justify-end gap-2.5 pt-1.5">
                         <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                         <x-button type="submit">{{ __('people.add') }}</x-button>

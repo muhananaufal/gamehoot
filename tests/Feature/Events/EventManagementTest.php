@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -491,4 +492,14 @@ it('says what Deleted events search, and lets its help use the full width (U4)',
 
     expect($html)->toContain('placeholder="Search event or link"')
         ->and($html)->not->toContain('max-w-3xl text-sm text-muted');
+});
+
+it('shows the site address in front of the link to restore under, like New event (U19)', function (): void {
+    $event = ownedEvent(attributes: ['name' => 'Gathering 2026']);
+    actingAs(ownerOf($event))->delete("/host/{$event->id}", ['confirm_name' => 'Gathering 2026']);
+
+    $html = (string) actingAs(ownerOf($event))->get('/host/trash')->getContent();
+
+    expect($html)->toContain(parse_url(Config::string('app.url'), PHP_URL_HOST).'/</span>')
+        ->and($html)->toMatch('/name="slug"[^>]*required[^>]*pattern=/');
 });

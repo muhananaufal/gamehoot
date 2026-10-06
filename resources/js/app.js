@@ -36,6 +36,10 @@ trackClicks();
 closeDialogsOnBackdrop();
 // U19: simple rules are checked before a form is sent; the layout carries the messages.
 checkFormsBeforeSubmit(document, JSON.parse(document.querySelector('meta[name="form-messages"]')?.content ?? '{}'));
+// U19: the browser's own bubbles never show; every form speaks in the app's words.
+window.up.compiler('form', (form) => {
+    form.noValidate = true;
+});
 configureNavigation(window.up);
 
 // U3: one toast area per page, used by session messages and by page actions (Copy link).

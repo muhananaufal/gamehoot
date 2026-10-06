@@ -24,7 +24,7 @@
                 {{-- F10: printed QR codes and open phones use the link of an open event. --}}
                 <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_locked_hint')" required readonly maxlength="60" autocapitalize="none" spellcheck="false" />
             @else
-                <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint')" required maxlength="60" autocapitalize="none" spellcheck="false" />
+                <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint')" required pattern="[a-z0-9]+(-[a-z0-9]+)*" minlength="3" :data-pattern-message="__('events.slug_format')" maxlength="60" autocapitalize="none" spellcheck="false" />
             @endif
             <h2 class="pt-2 font-display text-xl font-semibold">{{ __('events.screens') }}</h2>
             <x-theme-choice :value="$event->screen_theme->value" :themes="$themes" :hint="__('events.screen_theme_hint')" />
@@ -89,7 +89,7 @@
                 @if ($isOwner)
                     <form method="POST" action="{{ route('host.events.cohosts.store', $event) }}" class="flex flex-col gap-3 border-t border-line-soft pt-4" novalidate>
                         @csrf
-                        <x-field name="email" :label="__('events.cohost_email')" autocomplete="off" autocapitalize="none" spellcheck="false" />
+                        <x-field name="email" :label="__('events.cohost_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
                         <x-button type="submit" variant="secondary" class="self-start">{{ __('events.add_cohost') }}</x-button>
                     </form>
                 @endif
@@ -151,13 +151,14 @@
                         <p class="text-sm text-muted">{{ __('events.delete_help') }}</p>
                         <x-confirm-dialog :title="__('events.delete') . '?'" :trigger="__('events.delete')" trigger-variant="destructive" :open="$errors->has('confirm_name')">
                             <p class="text-[15px] text-muted">{{ __('events.delete_help') }}</p>
-                            <form method="POST" action="{{ route('host.events.destroy', $event) }}" class="flex flex-col gap-3" novalidate>
+                            <form x-data="{ typed: '' }" method="POST" action="{{ route('host.events.destroy', $event) }}" class="flex flex-col gap-3" novalidate>
                                 @csrf
                                 @method('DELETE')
-                                <x-field name="confirm_name" :label="__('events.delete_confirm_label') . ': ' . $event->name" autocomplete="off" />
+                                {{-- U19: Delete turns on only once the name is typed exactly. --}}
+                                <x-field name="confirm_name" :label="__('events.delete_confirm_label') . ': ' . $event->name" autocomplete="off" required x-model="typed" />
                                 <div class="flex justify-end gap-2.5 pt-1.5">
                                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                                    <x-button type="submit" variant="destructive">{{ __('events.delete') }}</x-button>
+                                    <x-button type="submit" variant="destructive" x-bind:disabled="typed !== {{ \Illuminate\Support\Js::from($event->name) }}">{{ __('events.delete') }}</x-button>
                                 </div>
                             </form>
                         </x-confirm-dialog>

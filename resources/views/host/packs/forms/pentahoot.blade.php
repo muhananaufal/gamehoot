@@ -4,7 +4,7 @@
 @endphp
 <div class="flex flex-col gap-1.5">
     <label for="field-prompt" class="text-sm font-semibold">{{ __('packs.pentahoot.prompt') }}</label>
-    <textarea id="field-prompt" name="prompt" rows="3" maxlength="500" aria-describedby="prompt-hint{{ $promptError ? ' prompt-error' : '' }}"
+    <textarea id="field-prompt" name="prompt" rows="3" required maxlength="500" aria-describedby="prompt-hint{{ $promptError ? ' prompt-error' : '' }}"
         @class(['rounded-control border bg-field px-3 py-2.5 text-[15px] text-ink', 'border-on-danger' => $promptError, 'border-line-strong' => ! $promptError])>{{ old('prompt', $question?->pentahoot?->prompt) }}</textarea>
     <p id="prompt-hint" class="text-sm text-muted">{{ __('packs.pentahoot.prompt_hint') }}</p>
     @if ($promptError)
@@ -29,6 +29,6 @@
     </div>
     <div x-show="custom" x-cloak>
         <x-field name="duration_seconds" type="number" :label="__('packs.pentahoot.duration_seconds')" :value="$duration"
-            :hint="__('packs.pentahoot.duration_hint')" min="5" max="300" x-model.number="duration" />
+            :hint="__('packs.pentahoot.duration_hint')" required min="5" max="300" :data-range-message="__('packs.pentahoot.duration_hint')" x-model.number="duration" />
     </div>
 </fieldset>

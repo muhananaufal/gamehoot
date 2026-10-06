@@ -9,8 +9,8 @@
         <form method="POST" action="{{ route('admin.users.password.update', $account) }}" class="flex flex-col gap-4" novalidate>
             @csrf
             @method('PUT')
-            <x-field name="password" type="password" :label="__('accounts.new_password')" :hint="__('accounts.password_hint')" autocomplete="new-password" required />
-            <x-field name="password_confirmation" type="password" :label="__('accounts.password_confirmation')" autocomplete="new-password" required />
+            <x-field name="password" type="password" :label="__('accounts.new_password')" :hint="__('accounts.password_hint')" autocomplete="new-password" required minlength="12" pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" :data-pattern-message="__('accounts.password_hint')" />
+            <x-field name="password_confirmation" type="password" :label="__('accounts.password_confirmation')" autocomplete="new-password" required data-same="password" />
             <div class="flex justify-end gap-2.5 pt-2">
                 <x-button variant="secondary" :href="route('admin.users.index')" up-dismiss="">{{ __('ui.cancel') }}</x-button>
                 <x-button type="submit">{{ __('accounts.save_password') }}</x-button>

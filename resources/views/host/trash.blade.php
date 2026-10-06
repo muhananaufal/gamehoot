@@ -49,7 +49,8 @@
                                         <form method="POST" action="{{ route($restoreRoute, $event) }}" class="flex flex-col gap-3 text-left" novalidate>
                                             @csrf
                                             <input type="hidden" name="restoring" value="{{ $event->id }}">
-                                            <x-field name="slug" :label="__('events.restore_link')" :value="$original" :id="'restore-' . $event->id" :submitted="old('restoring') === $event->id" maxlength="60" />
+                                            <x-field name="slug" :label="__('events.restore_link')" :value="$original" :id="'restore-' . $event->id" :submitted="old('restoring') === $event->id"
+                                                :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" required maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" minlength="3" :data-pattern-message="__('events.slug_format')" autocapitalize="none" spellcheck="false" />
                                             <div class="flex justify-end gap-2.5 pt-1.5">
                                                 <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                                 <x-button type="submit">{{ __('events.restore') }}</x-button>

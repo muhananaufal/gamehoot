@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fieldProblem } from '../../resources/js/form-check.js';
+import { checkFormsBeforeSubmit, fieldProblem } from '../../resources/js/form-check.js';
 
 const messages = {
     required: 'The :attribute field is required.',
@@ -52,5 +52,84 @@ describe('U19 checks before a form is sent', () => {
         expect(fieldProblem(field({ required: true, type: 'hidden' }), 'X', messages)).toBeNull();
         expect(fieldProblem(field({ required: true, disabled: true }), 'X', messages)).toBeNull();
         expect(fieldProblem(field({ required: true, readOnly: true }), 'X', messages)).toBeNull();
+    });
+});
+
+describe('U19 more rules checked before sending', () => {
+    const more = {
+        ...messages,
+        min: 'The :attribute field must be at least :min characters.',
+        between: 'The :attribute field must be between :min and :max.',
+        same: 'The :attribute field must match :other.',
+    };
+
+    it('keeps a number inside its range, with the message the field carries (time to vote)', () => {
+        const seconds = field({
+            type: 'number',
+            min: '5',
+            max: '300',
+            dataset: { rangeMessage: 'Any value from 5 to 300 seconds.' },
+        });
+
+        expect(fieldProblem({ ...seconds, value: '3' }, 'Seconds', more)).toBe('Any value from 5 to 300 seconds.');
+        expect(fieldProblem({ ...seconds, value: '301' }, 'Seconds', more)).toBe('Any value from 5 to 300 seconds.');
+        expect(fieldProblem({ ...seconds, value: '4.5' }, 'Seconds', more)).toBe('Any value from 5 to 300 seconds.');
+        expect(fieldProblem({ ...seconds, value: '45' }, 'Seconds', more)).toBeNull();
+    });
+
+    it('falls back to the server message for a range without its own', () => {
+        expect(fieldProblem(field({ type: 'number', min: '0', max: '2', value: '9' }), 'Points', more)).toBe(
+            'The points field must be between 0 and 2.',
+        );
+    });
+
+    it('asks for a minimum length (passwords)', () => {
+        expect(fieldProblem(field({ minLength: 12, value: 'short' }), 'Password', more)).toBe(
+            'The password field must be at least 12 characters.',
+        );
+    });
+
+    it('asks a confirmation to match its field', () => {
+        const confirmation = field({ value: 'abc', dataset: { same: 'password' } });
+
+        expect(fieldProblem(confirmation, 'Repeat the password', more, () => 'different')).toBe(
+            'The repeat the password field must match password.',
+        );
+        expect(fieldProblem(confirmation, 'Repeat the password', more, () => 'abc')).toBeNull();
+    });
+});
+
+describe('U19 every host form is checked, sign in excepted', () => {
+    const listen = () => {
+        const handlers = {};
+        const doc = { addEventListener: (type, handler) => (handlers[type] = handler) };
+        checkFormsBeforeSubmit(doc, messages);
+
+        return handlers;
+    };
+    const formWith = (attrs = {}) => {
+        const form = Object.create(globalThis.HTMLFormElement?.prototype ?? {});
+
+        return Object.assign(form, {
+            noValidate: false,
+            hasAttribute: (name) => name in attrs,
+            querySelectorAll: () => [],
+            elements: { namedItem: () => null },
+        });
+    };
+
+    it('looks at forms without novalidate too, and leaves a form marked data-no-check alone', () => {
+        const handlers = listen();
+        const looked = [];
+        const event = (form) => ({ target: form, preventDefault() {}, stopImmediatePropagation() {} });
+        const plain = formWith();
+        plain.querySelectorAll = () => (looked.push('plain'), []);
+        const signIn = formWith({ 'data-no-check': '' });
+        signIn.querySelectorAll = () => (looked.push('sign in'), []);
+
+        handlers.submit(event(plain));
+        handlers.submit(event(signIn));
+
+        expect(looked).toEqual(['plain']);
     });
 });

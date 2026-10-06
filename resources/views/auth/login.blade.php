@@ -1,7 +1,8 @@
 <x-layouts.auth :title="__('accounts.sign_in_title')">
     <h1 class="font-display text-[26px] font-bold">{{ __('accounts.sign_in_title') }}</h1>
 
-    <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4" novalidate>
+    {{-- U19: sign in leaves every check to the server. --}}
+    <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4" novalidate data-no-check>
         @csrf
         <x-field name="login" :label="__('accounts.login')" :placeholder="__('accounts.login')" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus :live="false" />
         <x-field name="password" type="password" :label="__('accounts.password')" autocomplete="current-password" required />
