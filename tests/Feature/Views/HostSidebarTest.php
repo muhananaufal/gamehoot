@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\travelTo;
@@ -53,6 +55,20 @@ describe('U1 host sidebar', function (): void {
         // The event being worked on starts expanded.
         $current = (string) actingAs($host)->get("/host/{$event->id}/people")->getContent();
         expect($current)->toMatch('/<button type="button"[^>]*aria-expanded="true"[^>]*title="Gathering 2026"/');
+    });
+
+    it('colours a recent event like everywhere else: open green, finished yellow, draft grey (D-10)', function (): void {
+        $host = User::factory()->create();
+        foreach ([['Open party', EventStatus::Open], ['Closed party', EventStatus::Finished], ['Draft party', EventStatus::Draft]] as [$name, $status]) {
+            Event::factory()->for($host, 'owner')->create(['name' => $name, 'status' => $status]);
+        }
+
+        $html = (string) actingAs($host)->get('/host/packs')->getContent();
+        $dot = fn (string $name): string => (string) Str::of($html)->after('title="'.$name.'"')->match('/size-2 rounded-full ([a-z-]+)/');
+
+        expect($dot('Open party'))->toBe('bg-success-dot')
+            ->and($dot('Closed party'))->toBe('bg-warning-dot')
+            ->and($dot('Draft party'))->toBe('bg-nav-icon');
     });
 
     it('scrolls on its own, apart from the page, and keeps theme and sign out in view', function (): void {

@@ -28,7 +28,7 @@ return [
     'network_error' => 'Could not send. Check your connection and try again.',
 
     // Public View (E2, E4, E15, E17)
-    'answer_on_phone' => 'Pick your answer on your phone',
+    'answer_on_phone' => 'Pick your answer now',
     'answered_of' => '__N__ / __TOTAL__ answered',
     'votes_total' => ['one' => '__N__ vote', 'other' => '__N__ votes'],
     'no_votes' => 'No votes',
@@ -60,7 +60,6 @@ return [
     'reveal' => 'Reveal',
     'next' => 'Next question',
     'pick' => 'Pick a question',
-    'close_question' => 'Close question',
     'reset' => 'Reset votes',
     'reset_title' => 'Reset this question?',
     'reset_help' => 'Deletes every vote of this question and logs it. Players vote again when you start it.',

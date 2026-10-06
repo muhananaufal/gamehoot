@@ -36,7 +36,7 @@ pentahootHost({
             {{-- D-8: after the last question the only step left is finishing the game. --}}
             <div x-cloak x-show="allDone" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
                 <p class="font-semibold">{{ __('pentahoot.all_done') }}</p>
-                @include('host.events.live.finish', ['label' => __('games.finish')])
+                @include('host.events.live.finish', ['label' => __('games.finish'), 'direct' => true])
             </div>
             <template x-if="question && phase !== 'done'">
                 <div class="flex flex-col gap-5">
@@ -58,9 +58,10 @@ pentahootHost({
                         <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('stop')" @click="act('stop')">{{ __('pentahoot.stop') }}</x-button>
                         <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('reveal')" @click="act('reveal')">{{ __('pentahoot.reveal') }}</x-button>
                         {{-- D-10: Next question goes on in order; Pick a question closes this one and leaves the choice to the list. --}}
-                        <x-button type="button" x-show="phase !== 'ready' && nextToOpen" x-bind:disabled="busy || !can('next')" @click="advance()">{{ __('pentahoot.next') }}</x-button>
+                        <x-button type="button" x-show="phase !== 'ready' && nextToOpen" x-bind:disabled="busy || !can('next')" @click="act('advance')">{{ __('pentahoot.next') }}</x-button>
                         <x-button type="button" variant="secondary" x-show="phase !== 'ready' && nextToOpen" x-bind:disabled="busy || !can('next')" @click="act('next')">{{ __('pentahoot.pick') }}</x-button>
-                        <x-button type="button" x-show="phase !== 'ready' && !nextToOpen" x-bind:disabled="busy || !can('next')" @click="act('next')">{{ __('pentahoot.close_question') }}</x-button>
+                        {{-- D-10: after the last question, Finish game is the one step left; it closes the question too. --}}
+                        <div x-show="phase === 'revealed' && !nextToOpen">@include('host.events.live.finish', ['label' => __('games.finish'), 'direct' => true])</div>
                     </div>
                 </div>
             </template>
@@ -81,11 +82,7 @@ pentahootHost({
                 </x-confirm-dialog>
             </div>
         </section>
-        {{-- D-8, E13: finishing early leaves unfinished questions out and is logged. --}}
-        <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
-            <span class="font-semibold">{{ $game->title }}</span>
-            @include('host.events.live.finish', ['label' => __('games.finish')])
-        </section>
+        @include('host.events.live.game-card')
         @break
     @case('board')
         {{-- F2, F14: the running count per name, for hosts only. --}}

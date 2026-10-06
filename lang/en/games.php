@@ -62,7 +62,8 @@ return [
     'start' => 'Start game',
     'start_locks_names' => 'Starting the first game locks the name list: names can no longer be added, renamed or deleted. People who have not joined yet can still pick their name.',
     'finish' => 'Finish game',
-    'finish_confirm' => 'Finish “:title”? Questions that are not done yet will not count.',
+    'close_game' => 'Close game',
+    'close_game_confirm' => 'Close “:title” now? Questions that are not done yet will not count.',
     'status' => [
         'waiting' => 'Not started',
         'running' => 'Running',

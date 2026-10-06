@@ -477,20 +477,6 @@ export function pentahootHost({ actionUrl, labels, questionIds = [] }) {
             return index === -1 ? null : { number: index + 1, id: questionIds[index] };
         },
 
-        /**
-         * D-10: Next question goes on in order: it closes the revealed question, then opens the
-         * next ready one. Nothing opens when closing was refused.
-         */
-        async advance() {
-            const target = this.nextToOpen;
-
-            await this.act('next');
-
-            if (target && this.error === '') {
-                await this.act('start', target.id);
-            }
-        },
-
         async act(action, questionId = this.question?.id) {
             if (this.busy || !questionId) {
                 return;

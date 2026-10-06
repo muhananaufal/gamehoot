@@ -41,7 +41,7 @@ tebakHost({
             {{-- D-8: after the last question the only step left is the final results. --}}
             <div x-cloak x-show="allResolved" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
                 <p class="font-semibold">{{ __('tebak.all_done') }}</p>
-                @include('host.events.live.finish', ['label' => __('tebak.show_final')])
+                @include('host.events.live.finish', ['label' => __('tebak.show_final'), 'direct' => true])
             </div>
             <template x-if="question">
                 <div class="flex flex-col gap-4">
@@ -99,14 +99,8 @@ tebakHost({
                 <x-button type="button" variant="secondary" data-test="show-leaderboard" x-show="canLeaderboard" x-bind:disabled="busy" @click="act('leaderboard')">{{ __('tebak.show_leaderboard') }}</x-button>
             </div>
         </section>
-        {{-- E12, D-8: show the final results; unplayed questions do not count and ending early is logged. --}}
-        <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
-            <div class="flex flex-col">
-                <span class="font-semibold">{{ $game->title }}</span>
-                <span class="text-sm text-muted">{{ __('tebak.final_help') }}</span>
-            </div>
-            @include('host.events.live.finish', ['label' => __('tebak.show_final')])
-        </section>
+        {{-- E12, D-8: Close game shows the final results early; unplayed questions do not count. --}}
+        @include('host.events.live.game-card', ['help' => __('tebak.final_help')])
         @break
     @case('board')
         {{-- E10, E11: the board as it stands, for hosts. --}}

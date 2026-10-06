@@ -47,7 +47,7 @@ describe('Live control in three columns (D-10)', function (): void {
             ->and($html)->toContain('3 names')
             ->and($html)->toContain('1 game')
             ->and($html)->toContain('action="'.route('host.events.open', $event).'"')
-            ->and($html)->toContain('Phones can join once the event is open');
+            ->and($html)->toContain('Players can join once the event is open');
     });
 
     it('offers the next game in order while the event is open', function (): void {
@@ -123,5 +123,27 @@ describe('Live control in three columns (D-10)', function (): void {
             ->and($html)->toContain('Event closed')
             ->and($html)->toContain('href="'.route('host.events.results', $event).'"')
             ->and($html)->toContain('action="'.route('host.events.reopen', $event).'"');
+    });
+
+    it('keeps the running game, what comes next and the ways to end in one card (D-10)', function (): void {
+        $event = Pentahoot::event();
+        Pentahoot::running($event);
+        Pentahoot::game($event, title: 'Team Trivia');
+
+        $html = liveHtml($event);
+
+        expect($html)->toMatch('#Up next: 2. Team Trivia.*Close event.*Close game#s')
+            ->and($html)->toContain('Close “Office Awards” now? Questions that are not done yet will not count.')
+            ->and($html)->not->toContain('→');
+    });
+
+    it('shows a closed event in yellow and links to its results without an arrow (D-10)', function (): void {
+        $event = Pentahoot::event(attributes: ['status' => EventStatus::Finished]);
+
+        $html = liveHtml($event);
+
+        expect($html)->toMatch('#bg-warning[^"]*"[^>]*data-phase="finished"|data-phase="finished"[^>]*class="[^"]*bg-warning#')
+            ->and($html)->toContain('See results')
+            ->and($html)->not->toContain('→');
     });
 });

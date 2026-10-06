@@ -270,6 +270,39 @@ it('says when each started game started, from the activity log (U6)', function (
         ->assertSee('Added', false);
 });
 
+describe('finishing after the last question (D-8, D-10)', function (): void {
+    it('closes a revealed last question as part of Finish game, without calling it early', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['Only?']);
+        $only = $game->questions()->sole();
+        $owner = gamesOwner($event);
+        actingAs($owner);
+        foreach (['start', 'stop'] as $action) {
+            post("/host/{$event->id}/questions/{$only->id}/{$action}");
+        }
+        travelTo(now()->addSeconds(2));
+        post("/host/{$event->id}/questions/{$only->id}/reveal");
+
+        post("/host/{$event->id}/games/{$game->id}/finish")->assertSessionHasNoErrors();
+
+        expect($only->refresh()->status)->toBe(QuestionStatus::Done)
+            ->and($game->refresh()->status)->toBe(GameStatus::Finished)
+            ->and(ActionLog::query()->where('action', LoggedAction::GameFinishedEarly)->exists())->toBeFalse();
+    });
+});
+
+describe('finished is yellow (D-10)', function (): void {
+    it('marks questions locked by a finished game in yellow', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::game($event, ['Only?']);
+        $game->forceFill(['status' => GameStatus::Finished])->save();
+
+        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games/{$game->id}/questions")->assertOk()->getContent();
+
+        expect($html)->toMatch('/bg-warning[^"]*"[^>]*>\s*Game finished/');
+    });
+});
+
 describe('the pack change marker (D-9)', function (): void {
     function versionOf(QuestionPack $pack): int
     {
@@ -310,6 +343,8 @@ describe('the pack change marker (D-9)', function (): void {
             ->assertDontSee("/games/{$game->id}/reload", false);
 
         post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
+        // D-10: yellow means finished only, so the marker is purple.
+        expect((string) get("/host/{$event->id}/games")->getContent())->toMatch('/bg-accent[^"]*"[^>]*>\s*Pack changed since added/');
         get("/host/{$event->id}/games")->assertSee('Pack changed since added')
             ->assertSee("/games/{$game->id}/reload", false);
 

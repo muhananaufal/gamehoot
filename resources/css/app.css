@@ -43,6 +43,8 @@
     --color-success: #e3f9f1;
     --color-on-success: #0e6b4f;
     --color-success-dot: #0e8f6a;
+    /* D-10: finished is yellow everywhere (status dots beside the green of running). */
+    --color-warning-dot: #c98a00;
     --color-warning: #f3e8d2;
     --color-on-warning: #7a4b0a;
     --color-danger: #fbe7df;
@@ -99,6 +101,7 @@
         --color-success: #123b30;
         --color-on-success: #7fe3bd;
         --color-success-dot: #2ed3a0;
+        --color-warning-dot: #f0c66e;
         --color-warning: #3b2e14;
         --color-on-warning: #f0c66e;
         --color-danger: #3d1f17;

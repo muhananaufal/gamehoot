@@ -243,24 +243,13 @@ describe('Next question goes on in order; Pick a question leaves the choice to t
         return host;
     };
 
-    it('closes the question, then opens the next one in order', async () => {
+    it('goes on in one server action, so no screen shows the moment in between', async () => {
         const post = vi.fn(async () => answer(204, {}));
         vi.stubGlobal('fetch', post);
 
-        await revealed().advance();
+        await revealed().act('advance');
 
-        expect(post.mock.calls.map(([url]) => url)).toEqual(['/act/q1/next', '/act/q2/start']);
-    });
-
-    it('opens nothing when closing the question was refused', async () => {
-        const post = vi.fn(async () => answer(409, { code: 'STALE_ACTION', message: 'Stale' }));
-        vi.stubGlobal('fetch', post);
-        const host = revealed();
-
-        await host.advance();
-
-        expect(post).toHaveBeenCalledOnce();
-        expect(host.error).toBe('Stale');
+        expect(post.mock.calls.map(([url]) => url)).toEqual(['/act/q1/advance']);
     });
 });
 

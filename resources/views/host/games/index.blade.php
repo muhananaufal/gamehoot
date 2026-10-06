@@ -45,7 +45,8 @@
                         <h3 class="truncate font-bold">{{ $game->position }}. {{ $game->title }}</h3>
                         @if ($status === 'waiting' && $game->packChanged())
                             {{-- D-9: the pack moved on since the copy; Reload takes the new version. --}}
-                            <x-chip tone="warning" class="w-fit">{{ __('games.pack_changed') }}</x-chip>
+                            {{-- D-10: purple, since yellow means finished. --}}
+                            <x-chip tone="accent" class="w-fit">{{ __('games.pack_changed') }}</x-chip>
                         @endif
                         <p class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · <a href="{{ route('host.events.games.questions.index', [$event, $game]) }}" class="text-link underline-offset-4 hover:underline">{{ trans_choice('games.questions', $game->questions_count) }}</a></p>
                         {{-- U6: when it was added, or when it started (from the activity log), in WIB (T10). --}}

@@ -1,11 +1,10 @@
 @php
     use App\Enums\EventPhase;
 
-    // The header keeps it short; the banner below explains a lost connection (T2).
-    $connectionLabels = __('live.connection');
     $phaseTone = match ($phase) {
+        // D-10: running green, finished yellow, everything else grey, as everywhere.
         EventPhase::Playing => 'success',
-        EventPhase::AllPlayed => 'warning',
+        EventPhase::Finished => 'warning',
         default => 'neutral',
     };
     $played = $games->where('status', \App\Enums\GameStatus::Finished)->count();
@@ -16,17 +15,6 @@
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [$event->name, null], [__('realtime.live.title'), null]]">
     <x-slot:actions>
         <x-chip :tone="$phaseTone" :dot="$phase === EventPhase::Playing" data-phase="{{ $phase->value }}">{{ __('live.phase.' . $phase->value) }}</x-chip>
-        {{-- D-10: the connection follows the phase; only an open event has phones to reach. --}}
-        <span class="inline-flex items-center gap-2 text-sm font-semibold text-muted">
-            @if ($phase === EventPhase::Draft)
-                {{ __('live.connection_draft') }}
-            @elseif ($phase === EventPhase::Finished)
-                {{ __('live.connection_finished') }}
-            @else
-                <span class="size-2.5 rounded-full" aria-hidden="true" :class="$store.realtime.connection === 'connected' ? 'bg-success-dot' : 'bg-line-strong'"></span>
-                <span x-data x-text="@js($connectionLabels)[$store.realtime.connection]"></span>
-            @endif
-        </span>
         <x-button :href="route('join.screen', $event)" variant="secondary" target="_blank" rel="noopener">{{ __('realtime.live.open_screen') }}</x-button>
     </x-slot:actions>
 
@@ -68,11 +56,11 @@
                         <ul class="flex flex-col gap-2">
                             <li class="flex items-center justify-between gap-3">
                                 <span>{{ trans_choice('live.names', $names, ['count' => $names]) }}</span>
-                                <a href="{{ route('host.events.people.index', $event) }}" class="text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('live.open_names') }} →</a>
+                                <a href="{{ route('host.events.people.index', $event) }}" class="text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('live.open_names') }}</a>
                             </li>
                             <li class="flex items-center justify-between gap-3">
                                 <span>{{ ucfirst(trans_choice('live.games', $games->count(), ['count' => $games->count()])) }}</span>
-                                <a href="{{ route('host.events.games.index', $event) }}" class="text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('live.open_games') }} →</a>
+                                <a href="{{ route('host.events.games.index', $event) }}" class="text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('live.open_games') }}</a>
                             </li>
                         </ul>
                         <p class="text-sm text-muted">{{ __('live.get_ready_help') }}</p>
@@ -91,7 +79,8 @@
                                 <p class="font-display text-2xl font-semibold">{{ $next->position }}. {{ $next->title }}</p>
                                 <p class="text-sm text-muted">{{ __('games.types.' . $next->type->value) }} · {{ trans_choice('games.questions', $next->questions_count ?? 0) }}</p>
                             </div>
-                            <div class="flex justify-end">
+                            <div class="flex flex-wrap items-center justify-between gap-2.5">
+                                @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => null])
                                 @include('host.events.partials.start-game', ['event' => $event, 'game' => $next])
                             </div>
                             {{-- D-10: a later game, started from its step, out of order. --}}
@@ -113,22 +102,16 @@
                                 <h2 class="font-display text-xl font-semibold">{{ __('live.no_games') }}</h2>
                                 <p class="text-sm text-muted">{{ __('live.no_games_help') }}</p>
                             </div>
-                            <div class="flex justify-end">
+                            <div class="flex flex-wrap items-center justify-between gap-2.5">
+                                @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => null])
                                 <x-button :href="route('host.events.games.index', $event)">{{ __('live.add_game') }}</x-button>
                             </div>
                         @endif
-                    </div>
-                    <div class="flex flex-wrap items-center justify-end gap-2.5">
-                        @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => null])
                     </div>
                     @break
 
                 @case(EventPhase::Playing)
                     @include('host.events.live.' . $running->type->value, ['part' => 'control', 'event' => $event, 'game' => $running, 'questions' => $questions, 'people' => $people])
-                    <div class="flex flex-wrap items-center justify-between gap-2.5">
-                        <span class="text-sm text-muted">@if ($next) {{ __('live.up_next', ['title' => $next->position . '. ' . $next->title]) }} @endif</span>
-                        @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => $running])
-                    </div>
                     @break
 
                 @case(EventPhase::AllPlayed)
@@ -151,7 +134,7 @@
                             <p class="text-sm text-muted">{{ __('live.event_closed_help') }}</p>
                         </div>
                         <div class="flex flex-wrap items-center justify-between gap-2.5">
-                            <x-button :href="route('host.events.results', $event)" variant="secondary">{{ __('live.results') }} →</x-button>
+                            <x-button :href="route('host.events.results', $event)" variant="secondary">{{ __('live.results') }}</x-button>
                             @can('reopen', $event)
                                 <form method="POST" action="{{ route('host.events.reopen', $event) }}">
                                     @csrf

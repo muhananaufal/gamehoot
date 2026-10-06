@@ -156,7 +156,7 @@ describe('settings', function (): void {
         $event = ownedEvent(attributes: ['slug' => 'gathering', 'status' => EventStatus::Open]);
 
         actingAs(ownerOf($event))->put("/host/{$event->id}/settings", ['name' => 'Gathering', 'slug' => 'gathering-2026', 'screen_theme' => 'dark'])
-            ->assertSessionHasErrors(['slug' => 'The link cannot change while the event is open: printed QR codes and open phones use it. Close the event first.']);
+            ->assertSessionHasErrors(['slug' => 'The link cannot change while the event is open: printed QR codes and players who already joined use it. Close the event first.']);
 
         expect($event->refresh()->slug)->toBe('gathering');
         actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->assertSee('Close the event to change its link');

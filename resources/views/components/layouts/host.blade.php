@@ -67,7 +67,7 @@
                                 'font-medium text-nav-muted hover:bg-nav-active hover:text-nav-ink' => ! $current,
                             ])>
                             <span @class(['flex size-[18px] shrink-0 items-center justify-center'])>
-                                <span @class(['size-2 rounded-full', 'bg-success-dot' => $item->status === \App\Enums\EventStatus::Open, 'bg-nav-icon' => $item->status !== \App\Enums\EventStatus::Open])
+                                <span @class(['size-2 rounded-full', 'bg-success-dot' => $item->status === \App\Enums\EventStatus::Open, 'bg-warning-dot' => $item->status === \App\Enums\EventStatus::Finished, 'bg-nav-icon' => $item->status === \App\Enums\EventStatus::Draft])
                                     aria-hidden="true"></span>
                             </span>
                             <span class="grow truncate lg:group-data-[collapsed=true]:sr-only">{{ $item->name }}</span>

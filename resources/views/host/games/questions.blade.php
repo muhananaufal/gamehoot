@@ -20,7 +20,8 @@
                             @include('host.packs.summary.' . $game->type->value, ['question' => $question])
                         </div>
                         @if ($locked[$question->id] !== null)
-                            <x-chip>{{ __('games.locked_' . $locked[$question->id]) }}</x-chip>
+                            {{-- D-10: yellow means finished. --}}
+                            <x-chip :tone="$locked[$question->id] === 'finished' ? 'warning' : 'neutral'">{{ __('games.locked_' . $locked[$question->id]) }}</x-chip>
                         @else
                             <x-button variant="link" :href="route('host.events.games.questions.edit', [$event, $game, $question])">{{ __('ui.edit') }}</x-button>
                         @endif
