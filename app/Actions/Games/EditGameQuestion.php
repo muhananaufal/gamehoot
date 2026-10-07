@@ -43,6 +43,8 @@ final readonly class EditGameQuestion
 
             $locked->fill($engine->questionAttributes($validated))->save();
             $engine->saveCopyDetail($locked, $engine->detailAttributes($validated));
+            // D-9: the Games page marks the game as edited, and Reload warns that the edits go.
+            $lockedGame->forceFill(['edited_at' => now()])->save();
         });
     }
 }

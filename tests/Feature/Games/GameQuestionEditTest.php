@@ -98,4 +98,19 @@ describe('editing copied questions (D-2)', function (): void {
         actingAs(User::factory()->create())->get(copyUrl($event, $game, Pentahoot::question($game)).'/edit')->assertForbidden();
         actingAs($event->owner()->firstOrFail())->get(copyUrl($event, $game, Pentahoot::question($other)).'/edit')->assertNotFound();
     });
+
+    it('marks the game as edited in this event, and a reload clears the mark (D-9)', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack($event->owner()->firstOrFail(), ['Pack prompt?']);
+        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        $game = Game::query()->sole();
+        $copy = $game->questions()->sole();
+        expect($game->edited_at)->toBeNull();
+
+        put(copyUrl($event, $game, $copy), ['prompt' => 'Copy prompt?', 'duration_seconds' => 45]);
+        expect($game->refresh()->edited_at)->not->toBeNull();
+
+        Pest\Laravel\post("/host/{$event->id}/games/{$game->id}/reload");
+        expect($game->refresh()->edited_at)->toBeNull();
+    });
 });

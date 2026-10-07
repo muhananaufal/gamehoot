@@ -110,6 +110,7 @@ final class Game extends Model
             'position' => 'integer',
             'leaderboard_at' => 'immutable_datetime',
             'pack_version' => 'integer',
+            'edited_at' => 'immutable_datetime',
         ];
     }
 }

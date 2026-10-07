@@ -20,3 +20,10 @@ it('adds the counters as additive columns', function (): void {
         ->and($column('events', 'roster_version'))->toMatchArray(['nullable' => false, 'default' => '0'])
         ->and($column('games', 'pack_version'))->toMatchArray(['nullable' => true, 'default' => null]);
 });
+
+// D-9: when the copied questions of a game were last edited in the event; empty until then (W14).
+it('adds games.edited_at as an empty-by-default column', function (): void {
+    $found = collect(Schema::getColumns('games'))->firstWhere('name', 'edited_at');
+
+    expect($found)->toBeArray()->toMatchArray(['nullable' => true, 'default' => null]);
+});
