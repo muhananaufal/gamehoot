@@ -12,6 +12,9 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // Unpoly puts modals at the end of <body>, outside the shell: their links and forms count too.
     up.link.config.followSelectors.push('[data-host-shell] a[href]', 'up-modal a[href]');
     up.form.config.submitSelectors.push('[data-host-shell] form', 'up-modal form');
+    // A <form method="dialog"> only closes its dialog; sent through Unpoly it became a DIALOG
+    // request to the page address (405 Method Not Allowed).
+    up.form.config.noSubmitSelectors.push('form[method=dialog]');
     // CSV exports are downloads, not pages.
     up.link.config.noFollowSelectors.push('a[href$=".csv"]');
 

@@ -17,7 +17,8 @@
     'hideTrigger' => false,
 ])
 {{-- Native <dialog>: focus is trapped and Escape closes it without extra code. --}}
-<div x-data x-init="@if ($open) $refs.dialog.showModal() @endif" @class(['inline-flex' => $iconOnly])>
+{{-- Without its own trigger the wrapper draws no box, so it never adds a gap to a row or column. --}}
+<div x-data x-init="@if ($open) $refs.dialog.showModal() @endif" @class(['inline-flex' => $iconOnly, 'contents' => $hideTrigger])>
     @if ($hideTrigger)
     @elseif ($iconOnly)
         <button type="button" class="row-action" aria-label="{{ $trigger }}" title="{{ $trigger }}" @click="$refs.dialog.showModal()"><i data-icon="{{ $triggerIcon }}"></i></button>

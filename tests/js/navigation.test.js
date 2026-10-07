@@ -36,6 +36,13 @@ describe('U18 navigation without reloads', () => {
         expect(up.form.config.submitSelectors).toEqual(['[data-host-shell] form', 'up-modal form']);
     });
 
+    it('leaves dialog forms to the browser, so Cancel closes the dialog instead of sending a DIALOG request', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+
+        expect(up.form.config.noSubmitSelectors).toContain('form[method=dialog]');
+    });
+
     it('lets file downloads load as plain requests', () => {
         const up = fakeUp();
         configureNavigation(up);

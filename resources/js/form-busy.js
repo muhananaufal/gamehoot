@@ -5,7 +5,8 @@
  * @returns {boolean} whether the form was marked (dialog buttons only close their dialog)
  */
 export function markBusy(form, submitter) {
-    if (submitter?.getAttribute('formmethod') === 'dialog') {
+    // A dialog form only closes its dialog; nothing comes back to unlock it, so it is never marked.
+    if (submitter?.getAttribute('formmethod') === 'dialog' || form.getAttribute?.('method') === 'dialog') {
         return false;
     }
 

@@ -53,6 +53,15 @@ describe('host forms while they are sent', () => {
         expect(cancel.disabled).toBe(false);
     });
 
+    it('leaves a <form method="dialog"> alone too, so its Cancel never keeps spinning', () => {
+        const cancel = button();
+        const dialogForm = { ...form([cancel]), getAttribute: (name) => (name === 'method' ? 'dialog' : null) };
+
+        expect(markBusy(dialogForm, cancel)).toBe(false);
+        expect(cancel.disabled).toBe(false);
+        expect(cancel.attributes['aria-busy']).toBeUndefined();
+    });
+
     it('unlocks again when the page comes back from the browser cache', () => {
         const save = button();
         const sent = form([save]);
