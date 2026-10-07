@@ -88,7 +88,7 @@ return [
     'restore_title' => 'Restore :name?',
     'restore_confirm' => 'The event comes back with its names, games and results, in the status it had when it was deleted.',
 
-    'created' => 'Event created. Next, add the names of the people who can play.',
+    'created' => 'Event created. Open it when you are ready, and players can join.',
     'saved' => 'Settings saved.',
     'deleted_done' => ':name moved to Deleted events.',
     'restored' => 'Event restored.',

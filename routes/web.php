@@ -24,6 +24,7 @@ use App\Http\Controllers\Host\GameReloadController;
 use App\Http\Controllers\Host\GameStartController;
 use App\Http\Controllers\Host\JoinLockController;
 use App\Http\Controllers\Host\LiveController;
+use App\Http\Controllers\Host\NameFileController;
 use App\Http\Controllers\Host\OpenEventController;
 use App\Http\Controllers\Host\PackQuestionController;
 use App\Http\Controllers\Host\PackQuestionOrderController;
@@ -77,6 +78,8 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
     Route::prefix('host')->name('host.')->group(function (): void {
         Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
+        // U26: the New event names step reads a CSV file without saving it.
+        Route::post('/events/names/parse', NameFileController::class)->name('events.names.parse');
 
         // D-9: question packs, owner only.
         Route::get('/packs', [QuestionPackController::class, 'index'])->name('packs.index');

@@ -17,11 +17,12 @@ final class DuplicateNames
      * @param  list<string>  $names
      * @return array<int, NameClash> keyed by list index
      */
-    public static function in(array $names, Event $event): array
+    public static function in(array $names, ?Event $event): array
     {
         $existing = [];
 
-        foreach ($event->people()->get(['name', 'name_normalized']) as $person) {
+        // U26: a new event has no names yet.
+        foreach ($event?->people()->get(['name', 'name_normalized']) ?? [] as $person) {
             /** @var Person $person */
             $existing[$person->name_normalized] = $person->name;
         }

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
-use App\Enums\GameType;
 use App\Games\GameEngines;
 use App\Http\Concerns\LiveValidation;
 use App\Models\QuestionPack;
 use App\Models\User;
+use App\Rules\HostPack;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 use RuntimeException;
 
@@ -42,10 +41,7 @@ final class StoreGameRequest extends FormRequest
             'pack_ids.*' => [
                 'distinct',
                 'uuid',
-                Rule::exists('question_packs', 'id')
-                    ->where('owner_id', $user instanceof User ? $user->id : null)
-                    ->whereIn('game_type', array_map(fn (GameType $type): string => $type->value, $engines->playableTypes()))
-                    ->whereNull('deleted_at'),
+                HostPack::of($user instanceof User ? $user : null, $engines),
             ],
         ];
     }

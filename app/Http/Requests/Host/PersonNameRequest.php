@@ -18,7 +18,7 @@ final class PersonNameRequest extends FormRequest
 {
     use LiveValidation;
 
-    public const int MAX_NAMES = 500;
+    public const int MAX_NAMES = PersonName::MAX_PER_EVENT;
 
     /**
      * @return array<string, list<mixed>>

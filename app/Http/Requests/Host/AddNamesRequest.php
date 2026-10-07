@@ -6,8 +6,7 @@ namespace App\Http\Requests\Host;
 
 use App\Http\Concerns\LiveValidation;
 use App\Models\Event;
-use App\People\DuplicateNames;
-use App\People\PersonName;
+use App\People\NameLines;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -40,23 +39,14 @@ final class AddNamesRequest extends FormRequest
                 return;
             }
 
-            $names = $this->names();
-
-            if ($names === []) {
+            if ($this->lines()->names() === []) {
                 $validator->errors()->add('names', __('validation.required', ['attribute' => __('people.names')]));
 
                 return;
             }
 
-            // A message names the line the host sees, empty lines counted, like the page does.
-            $lineOf = array_keys($this->lines());
-
-            foreach (DuplicateNames::in($names, $event) as $index => $clash) {
-                $validator->errors()->add('names', __('people.on_line', ['line' => $lineOf[$index], 'problem' => $clash->lineMessage($lineOf)]));
-            }
-
-            if ($event->people()->count() + count($names) > PersonNameRequest::MAX_NAMES) {
-                $validator->errors()->add('names', __('people.too_many', ['max' => PersonNameRequest::MAX_NAMES]));
+            foreach ($this->lines()->problems($event) as $problem) {
+                $validator->errors()->add('names', $problem);
             }
         }];
     }
@@ -68,26 +58,11 @@ final class AddNamesRequest extends FormRequest
      */
     public function names(): array
     {
-        return array_values($this->lines());
+        return $this->lines()->names();
     }
 
-    /**
-     * The names keyed by their line in the text area (from 1), empty lines left out.
-     *
-     * @return array<int, string>
-     */
-    private function lines(): array
+    private function lines(): NameLines
     {
-        $lines = [];
-
-        foreach (preg_split('/\r\n|\n|\r/', $this->string('names')->toString()) ?: [] as $index => $typed) {
-            $name = PersonName::display($typed);
-
-            if ($name !== '') {
-                $lines[$index + 1] = $name;
-            }
-        }
-
-        return $lines;
+        return NameLines::parse($this->string('names')->toString());
     }
 }

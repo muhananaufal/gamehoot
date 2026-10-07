@@ -15,6 +15,9 @@ final class PersonName
     /** The longest name people.name stores. */
     public const int MAX_LENGTH = 100;
 
+    /** B-3, T9: the most names an event can have. */
+    public const int MAX_PER_EVENT = 500;
+
     public static function display(string $name): string
     {
         $composed = Normalizer::normalize($name, Normalizer::FORM_C);

@@ -56,8 +56,8 @@ describe('creating an event', function (): void {
         ]);
 
         $event = Event::query()->firstOrFail();
-        // Setup step 2 comes next: adding names.
-        $response->assertRedirect("/host/{$event->id}/people");
+        // U26: the host goes on in Live control, where the event is opened.
+        $response->assertRedirect("/host/{$event->id}");
         expect($event->owner_id)->toBe($host->id)
             ->and($event->slug)->toBe('gathering-2026')
             ->and($event->status)->toBe(EventStatus::Draft)
