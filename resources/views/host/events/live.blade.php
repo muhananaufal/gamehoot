@@ -157,6 +157,7 @@
                 </div>
                 <p class="text-xs text-muted">{{ __('live.preview_note') }}</p>
             </div>
+            @include('host.events.live.replay', ['event' => $event, 'replay' => $replay])
             @if ($running)
                 @include('host.events.live.' . $running->type->value, ['part' => 'board', 'event' => $event, 'game' => $running, 'questions' => $questions, 'people' => $people])
             @endif

@@ -108,6 +108,43 @@
 
         <x-live-status :event="$event" class="[&_h1]:text-[clamp(28px,4vw,64px)] [&_p]:text-[clamp(18px,2vw,32px)]" />
 
+        {{-- D-11: a past moment the host replays covers the screen, also once the event has
+             ended, until Back to live or the next game action. --}}
+        <div x-data="replayScreen" x-cloak x-show="view" data-test="replay"
+            class="fixed inset-0 z-20 flex flex-col gap-[4vh] bg-canvas px-[5vw] py-[5vh]">
+            <template x-if="view">
+                <div class="flex grow flex-col gap-[4vh]">
+                    <header class="flex items-center justify-between gap-6">
+                        <span class="rounded-full bg-accent px-[1.2vw] py-[0.6vh] text-[clamp(14px,1.4vw,22px)] font-bold tracking-[0.08em] text-on-accent uppercase">{{ __('replay.badge') }}</span>
+                        <span class="truncate text-[clamp(16px,1.7vw,26px)] text-muted"
+                            x-text="view.game + (view.number ? ' · ' + @js(__('replay.question')).replace('__N__', view.number) : '')"></span>
+                    </header>
+                    <p class="font-display text-[clamp(32px,4.5vw,80px)] leading-tight font-bold text-balance [overflow-wrap:anywhere]"
+                        x-text="view.kind === 'final' ? @js(__('replay.final_results'))
+                            : view.kind === 'leaderboard' ? @js(__('replay.leaderboard_after')).replace('__N__', view.number)
+                            : view.type === 'pentahoot' ? view.title : view.prompt"></p>
+                    <template x-if="view.shape === 'podium' && view.type === 'pentahoot'">
+                        <x-podium stand="view.stand" :score="__('pentahoot.votes_count')" class="grow justify-end text-[clamp(18px,2vw,34px)]" />
+                    </template>
+                    <template x-if="view.shape === 'podium' && view.type !== 'pentahoot'">
+                        <x-podium stand="view.stand" :score="__('tebak.points')" class="grow justify-end text-[clamp(18px,2vw,34px)]" />
+                    </template>
+                    <template x-if="view.shape === 'list'">
+                        <x-rank-list rows="view.rows" class="text-[clamp(18px,2vw,34px)]" />
+                    </template>
+                    <template x-if="view.shape === 'winner'">
+                        <div class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
+                            <p class="font-display text-[clamp(40px,6vw,110px)] font-bold tracking-[0.06em] [overflow-wrap:anywhere]" x-text="view.title"></p>
+                            <p class="text-[clamp(20px,2.4vw,40px)]">
+                                <span class="text-muted" x-text="view.winner ? @js(__('replay.won_by')) : @js(__('replay.no_winner'))"></span>
+                                <span class="font-semibold" x-show="view.winner" x-text="view.winner?.name"></span>
+                            </p>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+
         <footer x-show="$store.realtime.screen() === 'live' && (!game || (isPentahoot && !finished && (phase === 'live' || phase === 'closed')))"
             class="flex items-center justify-between gap-6 rounded-panel bg-surface px-[2.5vw] py-[2.5vh] text-[clamp(18px,2vw,32px)]">
             <span x-text="game ? labels.answer_on_phone : @js(__('realtime.screen.waiting'))">{{ __('realtime.screen.waiting') }}</span>

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Views;
 
+use App\Actions\Games\ReplayOnScreen;
 use App\Enums\EventPhase;
 use App\Enums\GameStatus;
 use App\Games\GameEngines;
+use App\Games\Replay\Moment;
+use App\Games\Replay\ReplayMoments;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Person;
@@ -18,7 +21,7 @@ use Illuminate\Support\Collection;
  */
 final readonly class LiveControlPage
 {
-    public function __construct(private GameEngines $engines) {}
+    public function __construct(private GameEngines $engines, private ReplayMoments $replays) {}
 
     /**
      * @return array<string, mixed>
@@ -58,6 +61,32 @@ final readonly class LiveControlPage
             'questions' => $questions,
             'people' => $people,
             'steps' => $this->steps($phase, $games, $onScreen, $next, $event->people()->count()),
+            'replay' => $this->replay($event),
+        ];
+    }
+
+    /**
+     * D-11: the Replay card: the moments of each game, the one on screen, whether a question
+     * blocks a replay now, and the game picked first (the one replayed, else the last finished).
+     *
+     * @return array{groups: list<array{game: Game, moments: list<Moment>}>, current: ?array{kind: string, game: string, question: ?string}, busy: bool, pick: ?string}
+     */
+    private function replay(Event $event): array
+    {
+        $groups = $this->replays->forEvent($event);
+        $finished = array_values(array_filter($groups, fn (array $group): bool => $group['game']->status === GameStatus::Finished));
+        $last = $finished !== [] ? $finished[array_key_last($finished)] : ($groups !== [] ? $groups[array_key_last($groups)] : null);
+        $current = $event->replay_kind === null ? null : [
+            'kind' => $event->replay_kind->value,
+            'game' => (string) $event->replay_game_id,
+            'question' => $event->replay_question_id,
+        ];
+
+        return [
+            'groups' => $groups,
+            'current' => $current,
+            'busy' => ReplayOnScreen::questionOnScreen($event),
+            'pick' => $current['game'] ?? $last['game']->id ?? null,
         ];
     }
 

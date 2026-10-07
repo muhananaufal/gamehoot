@@ -21,6 +21,7 @@ import { liveRegion } from './live-region.js';
 import { nameReview } from './name-review.js';
 import { packList } from './pack-list.js';
 import { packPicker } from './pack-picker.js';
+import { replayScreen } from './replay-screen.js';
 import { selectBox } from './select-box.js';
 import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
@@ -47,6 +48,8 @@ configureNavigation(window.up);
 Alpine.store('toasts', toastStore());
 Alpine.store('confirm', confirmStore());
 Alpine.store('rowMenu', rowMenuStore());
+// D-11: the game picked in the Replay card of Live control; it outlives the card's refreshes.
+Alpine.store('replayPick', { game: null });
 Alpine.data('tableView', tableView);
 // U8: lists drawn by Alpine (rank lists) slide rows to their new place. x-flip.moves leaves the
 // rows that appear to their own CSS enter animation.
@@ -56,6 +59,7 @@ Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {
 });
 Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
+Alpine.data('replayScreen', replayScreen);
 Alpine.data('dateRangePicker', dateRangePicker);
 Alpine.data('eventLink', eventLink);
 
