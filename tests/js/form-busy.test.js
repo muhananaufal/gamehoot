@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markBusy, markIdle } from '../../resources/js/form-busy.js';
+import { busyPreview, markBusy, markIdle } from '../../resources/js/form-busy.js';
 
 function button(attributes = {}) {
     const values = { ...attributes };
@@ -72,5 +72,26 @@ describe('host forms while they are sent', () => {
         expect(save.disabled).toBe(false);
         expect(save.attributes['aria-busy']).toBeUndefined();
         expect(sent.attributes['aria-busy']).toBeUndefined();
+    });
+});
+
+describe('host forms sent through Unpoly (U16)', () => {
+    it('locks the buttons and spins the clicked one while the request runs, and undoes it when it ends', () => {
+        const save = button({ type: 'submit' });
+        const cancel = button({ type: 'submit' });
+        const sent = form([save, cancel]);
+        const undo = [];
+
+        busyPreview(sent, save)({ undo: (fn) => undo.push(fn) });
+
+        expect(save.disabled).toBe(true);
+        expect(cancel.disabled).toBe(true);
+        expect(save.attributes['aria-busy']).toBe('true');
+        expect(undo).toHaveLength(1);
+
+        undo[0]();
+
+        expect(save.disabled).toBe(false);
+        expect(save.attributes['aria-busy']).toBeUndefined();
     });
 });

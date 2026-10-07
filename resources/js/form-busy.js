@@ -29,6 +29,19 @@ export function markIdle(form) {
     }
 }
 
+/**
+ * U16: the same lock for a form Unpoly sends (every form of the host panel). Unpoly halts the
+ * submit event before watchFormSubmits sees it, so the lock runs as an Unpoly preview, which
+ * Unpoly undoes once the request ends, whether it succeeded or failed.
+ */
+export function busyPreview(form, submitter) {
+    return (preview) => {
+        if (markBusy(form, submitter)) {
+            preview.undo(() => markIdle(form));
+        }
+    };
+}
+
 export function watchFormSubmits(doc = document, win = window) {
     doc.addEventListener('submit', (event) => {
         if (event.defaultPrevented) {

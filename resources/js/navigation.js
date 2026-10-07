@@ -4,6 +4,7 @@
 
 import { animate as motionAnimate } from 'motion';
 import { markPageEntered, SPRING } from './flip.js';
+import { busyPreview } from './form-busy.js';
 
 /** U8: leaving is quicker than arriving (NN/g). */
 const EXIT = { duration: 0.12, ease: 'easeIn' };
@@ -19,6 +20,13 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // default, then shows the old page first and swaps it once the server answers; on a slow
     // server the old data stayed in view for seconds.
     up.network.config.evictCache = (request) => !request.isSafe();
+    // U16: a form sent through Unpoly locks its buttons and spins the clicked one until the
+    // request ends, so it is never sent twice.
+    up.on('up:form:submit', (event) => {
+        event.renderOptions.preview = [event.renderOptions.preview, busyPreview(event.form, event.submitButton)].filter(
+            Boolean,
+        );
+    });
     // CSV exports are downloads, not pages.
     up.link.config.noFollowSelectors.push('a[href$=".csv"]');
 

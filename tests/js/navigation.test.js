@@ -221,3 +221,17 @@ describe('U18 navigation without reloads', () => {
         });
     });
 });
+
+describe('U16 forms sent through Unpoly', () => {
+    it('adds the busy lock to the previews of every submitted form, keeping its own', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+        const own = () => {};
+        const event = { form: { querySelectorAll: () => [] }, submitButton: null, renderOptions: { preview: own } };
+
+        up.handlers['up:form:submit'](event);
+
+        expect(event.renderOptions.preview).toHaveLength(2);
+        expect(event.renderOptions.preview[0]).toBe(own);
+    });
+});
