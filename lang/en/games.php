@@ -90,6 +90,8 @@ return [
     'delete' => 'Delete',
     'delete_confirm' => 'Delete “:title”? Its copied questions are removed too.',
     'start' => 'Start game',
+    'start_named' => 'Start “:title”?',
+    'start_confirm' => 'The game goes on the projector and on the players’ screens.',
     'start_locks_names' => 'Starting the first game locks the name list: names can no longer be added, renamed or deleted. People who have not joined yet can still pick their name.',
     'finish' => 'Finish game',
     'close_game' => 'Close game',

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\EventStatus;
 use App\Enums\LoggedAction;
 use App\Models\ActionLog;
 use App\Models\Event;
@@ -396,5 +397,36 @@ describe('Names page actions (U4, U5, U21)', function (): void {
         $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
 
         expect($html)->toContain('askRow(')->toContain('"value":"rita"')->toContain('"error":');
+    });
+});
+
+describe('the empty list follows the state of the event (U25)', function (): void {
+    it('offers to add or import names while the list can still change', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['status' => EventStatus::Draft])->save();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")
+            ->assertSee('Add the people who can play one by one with Add name')
+            ->assertSee(route('host.events.people.import.create', $event), false);
+    });
+
+    it('says that players cannot join yet once an empty event is open', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['status' => EventStatus::Open])->save();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")
+            ->assertSee('The event is open, but nobody can join until there are names.')
+            ->assertSee(route('host.events.people.import.create', $event), false);
+    });
+
+    it('offers nothing to add once the list is locked', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['status' => EventStatus::Open, 'names_locked_at' => now()])->save();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")
+            ->assertSee('The list locked when the first game started, so names can no longer be added.')
+            ->assertDontSee('one by one with Add name')
+            ->assertDontSee(route('host.events.people.import.create', $event), false)
+            ->assertDontSee('Add name');
     });
 });

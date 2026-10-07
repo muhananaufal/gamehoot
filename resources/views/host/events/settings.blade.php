@@ -19,12 +19,12 @@
                     {{ __('host.event_status.' . $event->status->value) }}
                 </x-chip>
             </div>
-            <x-field name="name" :label="__('events.name')" :value="$event->name" required maxlength="100" />
+            <x-field name="name" :placeholder="__('examples.event_name')" :label="__('events.name')" :value="$event->name" required maxlength="100" />
             @if ($event->status === \App\Enums\EventStatus::Open)
                 {{-- F10: printed QR codes and open phones use the link of an open event. --}}
-                <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_locked_hint')" required readonly maxlength="60" autocapitalize="none" spellcheck="false" />
+                <x-field name="slug" :placeholder="__('examples.slug')" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_locked_hint')" required readonly maxlength="60" autocapitalize="none" spellcheck="false" />
             @else
-                <x-field name="slug" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint')" required pattern="[a-z0-9]+(-[a-z0-9]+)*" minlength="3" :data-pattern-message="__('events.slug_format')" maxlength="60" autocapitalize="none" spellcheck="false" />
+                <x-field name="slug" :placeholder="__('examples.slug')" :label="__('events.link')" :value="$event->slug" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint')" required pattern="[a-z0-9]+(-[a-z0-9]+)*" minlength="3" :data-pattern-message="__('events.slug_format')" maxlength="60" autocapitalize="none" spellcheck="false" />
             @endif
             <h2 class="pt-2 font-display text-xl font-semibold">{{ __('events.screens') }}</h2>
             <x-theme-choice :value="$event->screen_theme->value" :themes="$themes" :hint="__('events.screen_theme_hint')" />
@@ -39,19 +39,26 @@
                 <h2 id="status-heading" class="font-display text-xl font-semibold">{{ __('events.status') }}</h2>
                 @if ($event->status === EventStatus::Draft)
                     <p class="text-sm text-muted">{{ __('events.open_event_help') }}</p>
-                    <form method="POST" action="{{ route('host.events.open', $event) }}">
-                        @csrf
-                        <x-button type="submit">{{ __('events.open_event') }}</x-button>
-                    </form>
+                    {{-- U24: changes of state ask first. --}}
+                    <div>
+                        @include('host.partials.confirm-action', [
+                            'trigger' => __('events.open_event'), 'title' => __('events.open_event') . '?', 'body' => __('events.open_confirm', ['name' => $event->name]),
+                            'action' => route('host.events.open', $event), 'confirm' => __('events.open_event'),
+                        ])
+                    </div>
                 @endif
                 <div class="flex flex-col gap-2 border-t border-line-soft pt-4">
                     <p class="text-sm font-semibold">{{ __('events.join_lock') }}</p>
                     <p class="text-sm text-muted">{{ $event->join_locked_at ? __('events.join_locked_state') : __('events.join_lock_help') }}</p>
-                    <form method="POST" action="{{ route('host.events.join-lock', $event) }}">
-                        @csrf
-                        <input type="hidden" name="locked" value="{{ $event->join_locked_at ? '0' : '1' }}">
-                        <x-button type="submit" variant="secondary">{{ $event->join_locked_at ? __('events.unlock') : __('events.lock') }}</x-button>
-                    </form>
+                    <div>
+                        @include('host.partials.confirm-action', [
+                            'trigger' => $event->join_locked_at ? __('events.unlock') : __('events.lock'), 'variant' => 'secondary',
+                            'title' => ($event->join_locked_at ? __('events.unlock') : __('events.lock')) . '?',
+                            'body' => $event->join_locked_at ? __('events.unlock_confirm') : __('events.lock_confirm'),
+                            'action' => route('host.events.join-lock', $event), 'confirm' => $event->join_locked_at ? __('events.unlock') : __('events.lock'),
+                            'fields' => ['locked' => $event->join_locked_at ? '0' : '1'],
+                        ])
+                    </div>
                 </div>
             </section>
 
@@ -89,7 +96,7 @@
                 @if ($isOwner)
                     <form method="POST" action="{{ route('host.events.cohosts.store', $event) }}" class="flex flex-col gap-3 border-t border-line-soft pt-4" novalidate>
                         @csrf
-                        <x-field name="email" :label="__('events.cohost_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
+                        <x-field name="email" :placeholder="__('examples.username_or_email')" :label="__('events.cohost_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
                         <x-button type="submit" variant="secondary" class="self-start">{{ __('events.add_cohost') }}</x-button>
                     </form>
                 @endif
@@ -102,10 +109,12 @@
                     @can('reopen', $event)
                         <div class="flex flex-col gap-2">
                             <p class="text-sm text-muted">{{ __('events.reopen_help') }}</p>
-                            <form method="POST" action="{{ route('host.events.reopen', $event) }}">
-                                @csrf
-                                <x-button type="submit" variant="secondary">{{ __('events.reopen') }}</x-button>
-                            </form>
+                            <div>
+                                @include('host.partials.confirm-action', [
+                                    'trigger' => __('events.reopen'), 'variant' => 'secondary', 'title' => __('events.reopen') . '?', 'body' => __('events.reopen_confirm', ['name' => $event->name]),
+                                    'action' => route('host.events.reopen', $event), 'confirm' => __('events.reopen'),
+                                ])
+                            </div>
                         </div>
                     @endcan
                 @else
@@ -126,7 +135,7 @@
                             <p class="text-[15px] text-muted">{{ __('events.transfer_confirm', ['name' => $event->name]) }}</p>
                             <form method="POST" action="{{ route('host.events.transfer', $event) }}" class="flex flex-col gap-3" novalidate>
                                 @csrf
-                                <x-field name="new_owner_email" :label="__('events.new_owner_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
+                                <x-field name="new_owner_email" :placeholder="__('examples.username_or_email')" :label="__('events.new_owner_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
                                 <div class="flex justify-end gap-2.5 pt-1.5">
                                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                     <x-button type="submit" variant="destructive">{{ __('events.transfer') }}</x-button>
@@ -144,7 +153,7 @@
                                 @csrf
                                 @method('DELETE')
                                 {{-- U19: Delete turns on only once the name is typed exactly. --}}
-                                <x-field name="confirm_name" :label="__('events.delete_confirm_label') . ': ' . $event->name" autocomplete="off" required x-model="typed" />
+                                <x-field name="confirm_name" :placeholder="$event->name" :label="__('events.delete_confirm_label') . ': ' . $event->name" autocomplete="off" required x-model="typed" />
                                 <div class="flex justify-end gap-2.5 pt-1.5">
                                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                                     <x-button type="submit" variant="destructive" x-bind:disabled="typed !== {{ \Illuminate\Support\Js::from($event->name) }}">{{ __('events.delete') }}</x-button>

@@ -6,7 +6,7 @@
     $confirmTexts = [
         'rename' => ['title' => __('people.rename_title'), 'label' => __('people.save'), 'method' => 'PUT', 'tone' => 'primary',
             'url' => route('host.events.people.update', [$event, '__P__']),
-            'field' => ['name' => 'name', 'label' => __('people.name'), 'maxlength' => 100, 'form' => 'rename-__P__']],
+            'field' => ['name' => 'name', 'label' => __('people.name'), 'placeholder' => __('examples.person_name'), 'maxlength' => 100, 'form' => 'rename-__P__']],
         'release' => ['title' => __('people.release') . '?', 'body' => __('people.release_confirm', ['name' => '__N__']), 'label' => __('people.release'), 'method' => 'POST', 'tone' => 'primary',
             'url' => route('host.events.people.release-claim', [$event, '__P__'])],
         'newLink' => ['title' => __('people.new_link') . '?', 'body' => __('people.new_link_confirm', ['name' => '__N__']), 'label' => __('people.new_link'), 'method' => 'POST', 'tone' => 'primary',
@@ -53,7 +53,7 @@
                 <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate>
                     @csrf
                     <input type="hidden" name="form" value="add-person">
-                    <x-field name="name" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" required maxlength="100" autocomplete="off" autofocus />
+                    <x-field name="name" :placeholder="__('examples.person_name')" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" required maxlength="100" autocomplete="off" autofocus />
                     <div class="flex justify-end gap-2.5 pt-1.5">
                         <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                         <x-button type="submit">{{ __('people.add') }}</x-button>
@@ -73,11 +73,14 @@
         {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
         <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">
             <p>{{ __('people.locked_banner') }} {{ $event->join_locked_at ? __('people.claims_closed') : __('people.claims_open') }}</p>
-            <form method="POST" action="{{ route('host.events.join-lock', $event) }}">
-                @csrf
-                <input type="hidden" name="locked" value="{{ $event->join_locked_at ? '0' : '1' }}">
-                <x-button type="submit" variant="secondary">{{ $event->join_locked_at ? __('events.unlock') : __('events.lock') }}</x-button>
-            </form>
+            {{-- U24: changes of state ask first. --}}
+            @include('host.partials.confirm-action', [
+                'trigger' => $event->join_locked_at ? __('events.unlock') : __('events.lock'), 'variant' => 'secondary',
+                'title' => ($event->join_locked_at ? __('events.unlock') : __('events.lock')) . '?',
+                'body' => $event->join_locked_at ? __('events.unlock_confirm') : __('events.lock_confirm'),
+                'action' => route('host.events.join-lock', $event), 'confirm' => $event->join_locked_at ? __('events.unlock') : __('events.lock'),
+                'fields' => ['locked' => $event->join_locked_at ? '0' : '1'],
+            ])
         </div>
     @endif
     @error('names')
@@ -85,9 +88,14 @@
     @enderror
 
     @if ($people->isEmpty())
-        <x-empty-state :title="__('people.empty_title')" :body="__('people.empty')">
-            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
-        </x-empty-state>
+        {{-- U25: the empty list says what applies now, and offers adding only while the list can change. --}}
+        @if ($locked)
+            <x-empty-state :title="__('people.empty_title')" :body="__('people.empty_locked')" />
+        @else
+            <x-empty-state :title="__('people.empty_title')" :body="$event->status === \App\Enums\EventStatus::Draft ? __('people.empty') : __('people.empty_open')">
+                <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
+            </x-empty-state>
+        @endif
     @else
         {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
         <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase), labels: @js($labels) })"

@@ -57,10 +57,13 @@
                         {{-- D-10: the counts only; the pages are in the sidebar and the steps. --}}
                         <p>{{ trans_choice('live.names', $names, ['count' => $names]) }} · {{ trans_choice('live.games', $games->count(), ['count' => $games->count()]) }}</p>
                         <p class="text-sm text-muted">{{ __('live.get_ready_help') }}</p>
-                        <form method="POST" action="{{ route('host.events.open', $event) }}" class="flex justify-end">
-                            @csrf
-                            <x-button type="submit">{{ __('events.open_event') }}</x-button>
-                        </form>
+                        {{-- U24: changes of state ask first. --}}
+                        <div class="flex justify-end">
+                            @include('host.partials.confirm-action', [
+                                'trigger' => __('events.open_event'), 'title' => __('events.open_event') . '?', 'body' => __('events.open_confirm', ['name' => $event->name]),
+                                'action' => route('host.events.open', $event), 'confirm' => __('events.open_event'),
+                            ])
+                        </div>
                     </div>
                     @break
 
@@ -130,10 +133,10 @@
                         <div class="flex flex-wrap items-center justify-end gap-2.5">
                             <x-button :href="route('host.events.results', $event)" variant="secondary">{{ __('live.results') }}</x-button>
                             @can('reopen', $event)
-                                <form method="POST" action="{{ route('host.events.reopen', $event) }}">
-                                    @csrf
-                                    <x-button type="submit">{{ __('events.reopen') }}</x-button>
-                                </form>
+                                @include('host.partials.confirm-action', [
+                                    'trigger' => __('events.reopen'), 'variant' => 'primary', 'title' => __('events.reopen') . '?', 'body' => __('events.reopen_confirm', ['name' => $event->name]),
+                                    'action' => route('host.events.reopen', $event), 'confirm' => __('events.reopen'),
+                                ])
                             @endcan
                         </div>
                     </div>

@@ -62,7 +62,7 @@ tebakHost({
                 <label for="winner-search" class="text-sm font-bold">{{ __('tebak.find_winner') }}</label>
                 {{-- D-10: × clears the search and the picked name. --}}
                 <div class="relative flex items-center">
-                    <input id="winner-search" x-ref="winnerSearch" type="text" enterkeyhint="search" x-model="query" autocomplete="off" spellcheck="false"
+                    <input id="winner-search" placeholder="{{ __('examples.search_name') }}" x-ref="winnerSearch" type="text" enterkeyhint="search" x-model="query" autocomplete="off" spellcheck="false"
                         class="h-11 w-full rounded-control border border-line-strong bg-field pr-11 pl-3 text-ink">
                     <button type="button" data-test="clear-winner" x-show="query !== '' || chosen" x-cloak @click="query = ''; chosen = null; $refs.winnerSearch?.focus()"
                         class="absolute right-0 flex size-11 items-center justify-center rounded-control text-muted hover:text-ink"
@@ -80,11 +80,19 @@ tebakHost({
                 </ul>
                 {{-- D-10: actions on the right, the main one last. --}}
                 <div class="flex flex-wrap justify-end gap-2.5">
-                    <x-button type="button" variant="secondary" x-bind:disabled="!canSkip || busy" @click="act('skip')" :title="__('tebak.skip_help')">{{ __('tebak.skip') }}</x-button>
+                    {{-- U24: Skip uses the one skip of the question, so it asks first. --}}
+                    <x-button type="button" variant="secondary" data-test="skip" x-bind:disabled="!canSkip || busy" @click="document.getElementById('skip-question').showModal()" :title="__('tebak.skip_help')">{{ __('tebak.skip') }}</x-button>
                     {{-- D-10: off until a name is picked. --}}
                     <x-button type="button" data-test="pick-winner" x-bind:disabled="!chosen || busy" @click="document.getElementById('pick-winner').showModal()">{{ __('tebak.pick_winner') }}</x-button>
                 </div>
                 {{-- Outside the row: their empty wrappers would add gaps and push the buttons left. --}}
+                    <x-confirm-dialog :title="__('tebak.skip_title')" :trigger="__('tebak.skip')" hide-trigger dialog-id="skip-question">
+                        <p class="text-[15px] text-muted">{{ __('tebak.skip_help') }}</p>
+                        <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
+                            <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>
+                            <x-button type="button" data-test="confirm-skip" x-bind:disabled="busy" @click="$el.closest('dialog').close(); act('skip')">{{ __('tebak.skip') }}</x-button>
+                        </form>
+                    </x-confirm-dialog>
                     <x-confirm-dialog :title="__('tebak.confirm_winner_title')" :trigger="__('tebak.pick_winner')" hide-trigger dialog-id="pick-winner">
                         <p class="text-[15px] text-muted" x-text="chosen ? @js(__('tebak.confirm_winner', ['name' => '__NAME__'])).replace('__NAME__', chosen.name) : ''"></p>
                         {{-- The confirm button closes the dialog itself: once act() sets busy, Alpine disables

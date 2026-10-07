@@ -36,6 +36,8 @@ return [
     'add_hint' => 'The name as players and the screen should show it.',
     'empty_title' => 'No names yet.',
     'empty' => 'Add the people who can play one by one with Add name, or import them all from a CSV file.',
+    'empty_open' => 'The event is open, but nobody can join until there are names. Add them one by one with Add name, or import them all from a CSV file.',
+    'empty_locked' => 'The list locked when the first game started, so names can no longer be added.',
     'locked_banner' => 'Name list is locked because a game has started. Names can\'t be added, renamed or deleted.',
     'claims_open' => 'People who have not joined can still pick their name.',
     'claims_closed' => 'New claims are locked too: nobody new can pick a name.',
