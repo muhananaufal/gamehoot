@@ -383,11 +383,12 @@
           <tbody>
             <tr><td class="id">C-1</td><td>Banyak akun host. Tidak ada pendaftaran mandiri: <b>super-admin</b> membuat akun host. Setiap host hanya melihat event miliknya.</td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
             <tr><td class="id">C-2</td><td>
-              <p>Satu event boleh punya <b>co-host</b>. Co-host setara dengan pemilik, kecuali untuk tiga hal yang hanya bisa dilakukan pemilik:</p>
+              <p>Satu event boleh punya <b>co-host</b>. Co-host setara dengan pemilik, kecuali untuk empat hal yang hanya bisa dilakukan pemilik:</p>
               <ul>
-                <li>menghapus event,</li>
+                <li>menghapus event (dan memulihkannya dari Deleted events; super-admin juga bisa memulihkan, C-4),</li>
                 <li>mengatur co-host,</li>
-                <li>mengalihkan kepemilikan.</li>
+                <li>mengalihkan kepemilikan,</li>
+                <li>membuka lagi event yang sudah ditutup (D-7). Co-host tetap bisa menutup event; keputusan membuka lagi, sehingga pemain kembali masuk, dipegang pemilik. <i>Ditegaskan 7 Oktober 2026 oleh pemilik setelah audit hak akses: daftar ini sebelumnya hanya menyebut tiga hal.</i></li>
               </ul>
             </td><td class="st"><span class="pill ok">DISETUJUI</span> <span class="pill dev">BEDA DARI PRD</span></td></tr>
             <tr><td class="id">C-3</td><td>Kalau dua host menekan tombol hampir bersamaan, server hanya menerima aksi yang cocok dengan state saat itu. Aksi yang sudah basi ditolak dengan pesan "Sudah diubah host lain".</td><td class="st"><span class="pill ok">DISETUJUI</span></td></tr>
