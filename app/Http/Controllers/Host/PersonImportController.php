@@ -37,7 +37,16 @@ final class PersonImportController
             return $this->review($event, array_values(array_filter($old, is_string(...))), null, null);
         }
 
-        return view('host.people.import', ['event' => $event, 'rows' => null, 'separator' => null, 'fileName' => null]);
+        // B-4: Back from Review names the last file; the file itself is picked again.
+        $last = $request->query('last');
+
+        return view('host.people.import', [
+            'event' => $event,
+            'rows' => null,
+            'separator' => null,
+            'fileName' => null,
+            'last' => is_string($last) && $last !== '' ? mb_substr($last, 0, 255) : null,
+        ]);
     }
 
     public function store(ImportPeopleRequest $request, Event $event): View|RedirectResponse
@@ -79,6 +88,7 @@ final class PersonImportController
             'event' => $event,
             'separator' => $separator,
             'fileName' => $fileName,
+            'last' => null,
             // B-3: how many more names fit in the event.
             'room' => max(0, PersonNameRequest::MAX_NAMES - $event->people()->count()),
             'rows' => array_map(fn (int $index, string $name): array => [

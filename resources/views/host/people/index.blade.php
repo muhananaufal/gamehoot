@@ -53,12 +53,12 @@
                 <p class="text-[15px] font-semibold text-on-warning">{{ __('people.links_warning') }}</p>
                 <div class="flex justify-end gap-2.5 pt-1.5">
                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                    <x-button :href="route('host.events.people.links', $event)" @click="$el.closest('dialog').close()">{{ __('people.export_links') }}</x-button>
+                    <x-button :href="route('host.events.people.links', $event)" download @click="$el.closest('dialog').close()">{{ __('people.export_links') }}</x-button>
                 </div>
             </x-confirm-dialog>
         @endif
         @unless ($locked)
-            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
+            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)" up-layer="new modal" up-size="large" up-history="false" :up-accept-location="route('host.events.people.index', $event, false)">{{ __('people.import') }}</x-button>
             <x-confirm-dialog :title="__('people.add')" :trigger="__('people.add')" trigger-icon="plus" trigger-variant="primary" :open="$addFailed">
                 {{-- B-4: one name per line; the same checks as the server run while typing (name-batch.js). --}}
                 <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate
@@ -124,7 +124,7 @@
             <x-empty-state :title="__('people.empty_title')" :body="__('people.empty_locked')" />
         @else
             <x-empty-state :title="__('people.empty_title')" :body="$event->status === \App\Enums\EventStatus::Draft ? __('people.empty') : __('people.empty_open')">
-                <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
+                <x-button variant="secondary" :href="route('host.events.people.import.create', $event)" up-layer="new modal" up-size="large" up-history="false" :up-accept-location="route('host.events.people.index', $event, false)">{{ __('people.import') }}</x-button>
             </x-empty-state>
         @endif
     @else

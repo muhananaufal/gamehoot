@@ -30,6 +30,7 @@ use App\Http\Controllers\Host\PackQuestionOrderController;
 use App\Http\Controllers\Host\PersonClaimController;
 use App\Http\Controllers\Host\PersonController;
 use App\Http\Controllers\Host\PersonImportController;
+use App\Http\Controllers\Host\PersonImportTemplateController;
 use App\Http\Controllers\Host\PersonLinksController;
 use App\Http\Controllers\Host\QuestionActionController;
 use App\Http\Controllers\Host\QuestionPackController;
@@ -150,6 +151,7 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
                 Route::get('/', [PersonController::class, 'index'])->name('index');
                 Route::post('/', [PersonController::class, 'store'])->name('store');
                 Route::get('/import', [PersonImportController::class, 'create'])->name('import.create');
+                Route::get('/import/template.csv', PersonImportTemplateController::class)->name('import.template');
                 Route::post('/import', [PersonImportController::class, 'store'])->name('import.store');
                 Route::post('/import/confirm', [PersonImportController::class, 'update'])->name('import.confirm');
                 Route::get('/links.csv', PersonLinksController::class)->name('links');

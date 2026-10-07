@@ -8,6 +8,7 @@ use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Person;
 use App\Models\User;
+use App\People\NameCsv;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -462,4 +463,83 @@ describe('the empty list follows the state of the event (U25)', function (): voi
             ->assertDontSee(route('host.events.people.import.create', $event), false)
             ->assertDontSee('Add name');
     });
+});
+
+describe('Import names in a modal (B-4)', function (): void {
+    it('opens Import CSV as a modal over the Names page, which takes the saved list back', function (): void {
+        $event = eventWithOwner();
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+
+        expect($html)->toMatch('#<a[^>]*href="'.preg_quote(route('host.events.people.import.create', $event), '#').'"[^>]*up-layer="new modal"#')
+            ->and($html)->toContain('up-accept-location="'.route('host.events.people.index', $event, false).'"');
+    });
+
+    it('shows two steps, the supported format and a template to download', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people/import")
+            ->assertSee('up-main="modal"', false)
+            ->assertSeeInOrder(['Upload', 'Review'])
+            ->assertDontSee('Saves all names at once')
+            ->assertSee('Only the first column is read.')
+            ->assertSee(route('host.events.people.import.template', $event), false);
+    });
+
+    it('gives a template every importer reads: a header and one name per row', function (): void {
+        $event = eventWithOwner();
+
+        $response = actingAs(hostOf($event))->get("/host/{$event->id}/people/import/template.csv")->assertOk();
+
+        expect((string) $response->headers->get('content-disposition'))->toContain('pentahoot-names-template.csv')
+            ->and(NameCsv::parse((string) $response->streamedContent())->names)->toBe(['Rita Wulandari', 'Budi Santoso', 'Ana Putri']);
+    });
+
+    it('goes back from Review to Upload, naming the last file', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => realUpload("name\nRita\n", 'staff.csv')])
+            ->assertSee(route('host.events.people.import.create', ['event' => $event, 'last' => 'staff.csv']), false);
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people/import?last=staff.csv")
+            ->assertSee('Last file: staff.csv');
+    });
+
+    it('says so when a file has no names, instead of an empty table', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => realUpload("name\n", 'empty.csv')])
+            ->assertSee('No names found in this file.')
+            ->assertDontSee('<table', false);
+    });
+});
+
+describe('a refused upload stays in the Import modal (B-4)', function (): void {
+    it('returns to the Upload step with the error under the file field, wherever the host came from', function (): void {
+        $event = eventWithOwner();
+        $upload = route('host.events.people.import.create', $event);
+        $png = realUpload((string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==', true), 'photo.csv');
+
+        // The Names page is where the modal closes, so a refusal must never go back there.
+        actingAs(hostOf($event))->from(route('host.events.people.index', $event))
+            ->post("/host/{$event->id}/people/import", ['file' => $png])
+            ->assertRedirect($upload)
+            ->assertSessionHasErrors('file');
+
+        actingAs(hostOf($event))->from(route('host.events.people.index', $event))
+            ->post("/host/{$event->id}/people/import", [])
+            ->assertRedirect($upload)
+            ->assertSessionHasErrors('file');
+    });
+});
+
+it('explains a refused file in plain words (B-4)', function (): void {
+    $event = eventWithOwner();
+    $png = realUpload((string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==', true), 'photo.csv');
+
+    actingAs(hostOf($event))->post("/host/{$event->id}/people/import", [])
+        ->assertSessionHasErrors(['file' => 'Pick a CSV file first.']);
+    actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => $png])
+        ->assertSessionHasErrors(['file' => 'This is not a CSV file. Save the list from Excel as CSV, or use the template.']);
+    actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => UploadedFile::fake()->create('big.csv', 1025, 'text/csv')])
+        ->assertSessionHasErrors(['file' => 'The file is larger than 1 MB. Split the list into smaller files.']);
 });

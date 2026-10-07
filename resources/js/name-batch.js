@@ -2,18 +2,13 @@
 // server applies again (AddNamesRequest, DuplicateNames, PersonName): names already in the
 // event or typed twice, names over 100 characters, and no more than 500 names in all (B-3).
 
-export const MAX_LENGTH = 100;
+import { displayName, MAX_NAME_LENGTH, normalizeName } from './name-review.js';
+
+export const MAX_LENGTH = MAX_NAME_LENGTH;
 export const MAX_NAMES = 500;
 
-/** The name as it is saved (PersonName::display): composed accents, single spaces, trimmed. */
-export function displayName(name) {
-    return name.normalize('NFC').replace(/\s+/gu, ' ').trim();
-}
-
-/** The form names are compared in (PersonName::normalize): case and spaces ignored. */
-export function normalizeName(name) {
-    return displayName(name).toLowerCase();
-}
+// One copy of the rules of PersonName, shared with the import review.
+export { displayName, normalizeName } from './name-review.js';
 
 /**
  * @param {string} text one name per line

@@ -215,3 +215,36 @@ it('moves a question of a game with the arrows and saves the order once (D-9)', 
     expect($game->questions()->orderBy('position')->with('pentahoot')->get()->map(fn ($question) => $question->pentahoot?->prompt)->all())->toBe(['Second?', 'First?']);
     $page->assertNoJavaScriptErrors();
 });
+
+it('follows a link whose query ends in .csv inside the page, and leaves real downloads to the browser (U18, B-4)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $followable = fn (string $attributes): mixed => $page->script('(() => { const a = document.createElement("a"); '.$attributes.' document.querySelector("[data-host-shell] main").appendChild(a); const followed = window.up.link.isFollowable(a); a.remove(); return followed; })()');
+
+    // Back from the import review names the last file, e.g. ?last=staff.csv: it stays in the modal.
+    expect($followable('a.href = "/host/'.$event->id.'/people/import?last=staff.csv";'))->toBeTrue()
+        ->and($followable('a.href = "/host/'.$event->id.'/results.csv"; a.setAttribute("download", "");'))->toBeFalse();
+    $page->assertNoJavaScriptErrors();
+});
+
+it('keeps a refused upload in the Import modal, with its error under the file field and one page inside (B-4)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $page->script('[...document.querySelectorAll("a")].find((a) => a.innerText.trim() === "Import CSV").click()');
+    $page->assertScript('!! document.querySelector("up-modal #import-file")');
+    // Nothing picked: the server refuses, and the modal shows the Upload step again.
+    $page->script('[...document.querySelectorAll("up-modal button[type=submit]")].pop().click()');
+    $page->assertScript('document.querySelector("up-modal")?.innerText.includes("Pick a CSV file first.")');
+    $page->wait(1);
+
+    expect($page->script('window.up.layer.count'))->toBe(2)
+        ->and($page->script('document.querySelectorAll("up-modal [up-main]").length'))->toBe(1)
+        ->and($page->script('document.querySelectorAll("up-bounds").length'))->toBe(0);
+    $page->assertNoJavaScriptErrors();
+});
