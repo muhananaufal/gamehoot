@@ -291,6 +291,38 @@ describe('finishing after the last question (D-8, D-10)', function (): void {
     });
 });
 
+describe('the order of the games still to play (D-9)', function (): void {
+    it('reorders the games not played yet into the places they hold, leaving played ones where they are', function (): void {
+        $event = Pentahoot::event();
+        $played = Pentahoot::game($event, title: 'Warm-up');
+        $played->forceFill(['status' => GameStatus::Finished])->save();
+        $event->forceFill(['active_game_id' => $played->id])->save();
+        $second = Pentahoot::game($event, title: 'Second');
+        $third = Pentahoot::game($event, title: 'Third');
+        $fourth = Pentahoot::game($event, title: 'Fourth');
+
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/reorder", ['order' => [$fourth->id, $second->id, $third->id]])
+            ->assertSessionHasNoErrors();
+
+        expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Warm-up', 'Fourth', 'Second', 'Third'])
+            ->and($played->refresh()->position)->toBe(1);
+    });
+
+    it('refuses an order that leaves out a game or moves a played one', function (): void {
+        $event = Pentahoot::event();
+        $played = Pentahoot::game($event, title: 'Warm-up');
+        $played->forceFill(['status' => GameStatus::Finished])->save();
+        $waiting = Pentahoot::game($event, title: 'Second');
+        $other = Pentahoot::game($event, title: 'Third');
+        actingAs(gamesOwner($event));
+
+        post("/host/{$event->id}/games/reorder", ['order' => [$other->id]])->assertSessionHasErrors('order');
+        post("/host/{$event->id}/games/reorder", ['order' => [$other->id, $played->id, $waiting->id]])->assertSessionHasErrors('order');
+
+        expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Warm-up', 'Second', 'Third']);
+    });
+});
+
 describe('finished is yellow (D-10)', function (): void {
     it('marks questions locked by a finished game in yellow', function (): void {
         $event = Pentahoot::event();

@@ -17,6 +17,7 @@ use App\Http\Controllers\Host\EventOwnerController;
 use App\Http\Controllers\Host\EventStateController as HostEventStateController;
 use App\Http\Controllers\Host\GameController;
 use App\Http\Controllers\Host\GameFinishController;
+use App\Http\Controllers\Host\GameOrderController;
 use App\Http\Controllers\Host\GameQuestionController;
 use App\Http\Controllers\Host\GameReloadController;
 use App\Http\Controllers\Host\GameStartController;
@@ -113,6 +114,7 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             Route::prefix('/games')->name('games.')->scopeBindings()->middleware('can:update,event')->group(function (): void {
                 Route::get('/', [GameController::class, 'index'])->name('index');
                 Route::post('/', [GameController::class, 'store'])->name('store');
+                Route::post('/reorder', [GameOrderController::class, 'store'])->name('reorder');
                 Route::delete('/{game}', [GameController::class, 'destroy'])->whereUuid('game')->name('destroy');
                 Route::post('/{game}/reload', GameReloadController::class)->whereUuid('game')->name('reload');
                 Route::post('/{game}/start', GameStartController::class)->whereUuid('game')->name('start');

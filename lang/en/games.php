@@ -55,6 +55,8 @@ return [
     'reload_help' => 'Replaces the questions with the latest version of the pack.',
     'reload_confirm' => 'The questions of “:title” are replaced with the pack as it is now. Edits made to this game’s questions are lost.',
     'pack_changed' => 'Pack changed since added',
+    'reordered' => 'Game order saved.',
+    'order_mismatch' => 'The order must list every game still to play once.',
     'add_pack' => 'Add “:title” as a game',
     'add_hint' => 'Click a pack to add it as the next game.',
     'delete' => 'Delete',
