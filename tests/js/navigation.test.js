@@ -56,7 +56,9 @@ describe('U18 navigation without reloads', () => {
         const up = fakeUp();
         configureNavigation(up);
 
-        expect(up.link.config.noFollowSelectors).toContain('a[href$=".csv"]');
+        expect(up.link.config.noFollowSelectors).toContain('a[download]');
+        // A query ending in .csv is still a page (Back from the import review, ?last=staff.csv).
+        expect(up.link.config.noFollowSelectors).not.toContain('a[href$=".csv"]');
     });
 
     it('draws the result page of a create modal in the main page and closes the modal (U13)', () => {
@@ -233,5 +235,39 @@ describe('U16 forms sent through Unpoly', () => {
 
         expect(event.renderOptions.preview).toHaveLength(2);
         expect(event.renderOptions.preview[0]).toBe(own);
+    });
+});
+
+describe('U13 a page that changes closes the dialogs of the old one', () => {
+    const withOpenDialog = () => {
+        const dialog = {
+            closed: false,
+            close() {
+                this.closed = true;
+            },
+        };
+
+        return { dialog, element: { id: 'host-content', querySelector: () => null, querySelectorAll: () => [dialog] } };
+    };
+
+    it('closes them at once, before the old page fades, so it never shows over the new one', async () => {
+        const up = fakeUp();
+        configureNavigation(up, { animate: vi.fn(() => Promise.resolve()) });
+        const { dialog, element } = withOpenDialog();
+
+        await up.transitions.page(element, { id: 'host-content', querySelector: () => null }, {});
+
+        expect(dialog.closed).toBe(true);
+    });
+
+    it('closes them also without motion (prefers-reduced-motion)', async () => {
+        const up = fakeUp();
+        up.motion.config.enabled = false;
+        configureNavigation(up, { animate: vi.fn(() => Promise.resolve()) });
+        const { dialog, element } = withOpenDialog();
+
+        await up.transitions.page(element, { id: 'host-content', querySelector: () => null }, {});
+
+        expect(dialog.closed).toBe(true);
     });
 });

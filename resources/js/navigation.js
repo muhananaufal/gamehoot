@@ -27,8 +27,10 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
             Boolean,
         );
     });
-    // CSV exports are downloads, not pages.
-    up.link.config.noFollowSelectors.push('a[href$=".csv"]');
+    // Downloads (CSV exports, the import template) carry the download attribute and are not pages.
+    // Matching the address instead caught a query ending in .csv, such as Back from the import
+    // review naming the last file (?last=staff.csv), and left the modal.
+    up.link.config.noFollowSelectors.push('a[download]');
 
     // U13: when a create modal's form succeeds, the server redirects to the result page (e.g. the
     // new event's Names page, matched by up-accept-location on the link). That page has no modal
@@ -71,6 +73,10 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // the app's spring. Only <main> moves: a transform on the whole content column would carry
     // its fixed toasts along. Unpoly turns motion off for prefers-reduced-motion, so does this.
     up.transition('page', async (oldElement, newElement) => {
+        // U13: the old page stays in the document while it fades; a native dialog left open in it
+        // (the one whose form was just sent) sits on top of everything, so it closes at once.
+        oldElement.querySelectorAll?.('dialog[open]').forEach((dialog) => dialog.close());
+
         if (!up.motion.config.enabled) {
             return;
         }

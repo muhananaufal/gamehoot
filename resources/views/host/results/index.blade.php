@@ -2,7 +2,7 @@
 <x-layouts.host :title="__('results.title') . ' · ' . $event->name" :event="$event"
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [$event->name, null], [__('results.title'), null]]">
     <x-slot:actions>
-        <x-button :href="route('host.events.results.export', $event)" variant="secondary">{{ __('results.export') }}</x-button>
+        <x-button :href="route('host.events.results.export', $event)" download variant="secondary">{{ __('results.export') }}</x-button>
     </x-slot:actions>
 
     @if ($results->lastChange)
