@@ -284,3 +284,47 @@ describe('Open question N only starts a game; after Pick a question the list dec
         expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'q'] }).firstToOpen).toBe(null);
     });
 });
+
+describe('One main action in the middle of Live control (D-10)', () => {
+    const host = (game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const made = pentahootHost({ actionUrl: '/act', labels: {}, questionIds: ['q1', 'q2'] });
+        made.$store = { realtime: store };
+
+        return made;
+    };
+    const revealed = {
+        question: { id: 'q1', number: 1, status: 'revealed', attempt: 1 },
+        statuses: ['revealed', 'ready'],
+    };
+
+    it('lets the list open another question once this one is revealed, not while it runs (D-5)', () => {
+        expect(host(revealed).canOpen(2)).toBe(true);
+        expect(
+            host({
+                question: { id: 'q1', number: 1, status: 'live', attempt: 1, ends_at: 99_000 },
+                statuses: ['live', 'ready'],
+            }).canOpen(2),
+        ).toBe(false);
+    });
+
+    it('names the one main action for the step at hand', () => {
+        expect(host({ question: null, statuses: ['ready', 'ready'] }).mainAction).toEqual({
+            action: 'start',
+            id: 'q1',
+            label: 'open_next',
+            number: 1,
+        });
+        expect(host(revealed).mainAction).toEqual({ action: 'advance', id: 'q1', label: 'next' });
+        expect(
+            host({
+                ...revealed,
+                statuses: ['done', 'revealed'],
+                question: { ...revealed.question, id: 'q2', number: 2 },
+            }).mainAction,
+        ).toEqual({ action: 'finish' });
+        expect(host({ question: null, statuses: ['done', 'ready'] }).mainAction).toBe(null);
+        expect(host({ question: null, statuses: ['done', 'done'] }).mainAction).toEqual({ action: 'finish' });
+    });
+});

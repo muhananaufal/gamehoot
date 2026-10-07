@@ -146,4 +146,30 @@ describe('Live control in three columns (D-10)', function (): void {
             ->and($html)->toContain('See results')
             ->and($html)->not->toContain('→');
     });
+
+    it('names an open event Playing, in green with a dot, here and on the Events page alike (D-10)', function (): void {
+        $event = Pentahoot::event();
+        Pentahoot::game($event);
+
+        $live = liveHtml($event);
+        $events = (string) actingAs($event->owner()->firstOrFail())->get('/host')->getContent();
+
+        foreach ([$live, $events] as $html) {
+            expect($html)->toMatch('#bg-success[^"]*"[^>]*>\s*<span class="size-2 rounded-full bg-success-dot"[^>]*></span>\s*Playing#');
+        }
+        expect($live)->not->toContain('>Open</span>');
+    });
+
+    it('keeps the destructive action on the left and the actions on the right, two at most (D-10)', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::game($event);
+        $game->forceFill(['status' => GameStatus::Finished])->save();
+        $event->forceFill(['active_game_id' => $game->id])->save();
+
+        $html = liveHtml($event);
+
+        // All games played: Close event first (left), Add a game after it (right).
+        expect(strpos($html, '>Close event'))->toBeLessThan((int) strpos($html, '>Add a game'))
+            ->and($html)->not->toContain('>Names</a>');
+    });
 });

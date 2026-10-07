@@ -40,6 +40,7 @@ return [
     'add_game' => 'Add a game',
     'last_game' => 'On screen: :title',
     'up_next' => 'Up next: :title',
+    'more_actions' => 'More actions',
     'all_played' => 'All games played',
     'all_played_help' => ':done of :total games finished. Close the event when you are done, or add another game.',
     'event_closed' => 'Event closed',

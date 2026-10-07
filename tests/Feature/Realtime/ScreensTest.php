@@ -169,7 +169,7 @@ describe('Tebak Kata screens (stage 4)', function (): void {
         actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")
             ->assertOk()
             ->assertSee('Capital of France?')
-            ->assertSee('Show final results')
+            ->assertSee('Finish game')
             ->assertSee('Rita Wulandari');
     });
 
@@ -196,7 +196,7 @@ describe('Tebak Gambar screens (stage 5)', function (): void {
             ->assertOk()
             ->assertSee('Which city is this?')
             ->assertSee('Reveal answer')
-            ->assertSee('Show final results')
+            ->assertSee('Finish game')
             ->assertSee('Rita Wulandari');
     });
 

@@ -41,6 +41,7 @@ return [
     'surrender_help' => 'Shows the answer with no winner. This cannot be undone.',
     'show_leaderboard' => 'Show leaderboard',
     'next_question' => 'Next question',
+    'clear_winner' => 'Clear the name',
     'show_final' => 'Show final results',
     'final_help' => 'Freezes the final board and shows the podium. Questions not played do not count.',
     'show_next' => 'Show question __N__',

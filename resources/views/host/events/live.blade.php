@@ -1,11 +1,12 @@
 @php
     use App\Enums\EventPhase;
 
-    $phaseTone = match ($phase) {
-        // D-10: running green, finished yellow, everything else grey, as everywhere.
-        EventPhase::Playing => 'success',
-        EventPhase::Finished => 'warning',
-        default => 'neutral',
+    // D-10: the pill names the event status, as the Events page does: Draft grey, Playing (open)
+    // green with a dot, Finished yellow. The finer phase drives the steps and the control.
+    $statusTone = match ($event->status) {
+        \App\Enums\EventStatus::Open => 'success',
+        \App\Enums\EventStatus::Finished => 'warning',
+        \App\Enums\EventStatus::Draft => 'neutral',
     };
     $played = $games->where('status', \App\Enums\GameStatus::Finished)->count();
 @endphp
@@ -14,7 +15,7 @@
 <x-layouts.host :title="__('realtime.live.title') . ' · ' . $event->name" :event="$event"
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [$event->name, null], [__('realtime.live.title'), null]]">
     <x-slot:actions>
-        <x-chip :tone="$phaseTone" :dot="$phase === EventPhase::Playing" data-phase="{{ $phase->value }}">{{ __('live.phase.' . $phase->value) }}</x-chip>
+        <x-chip :tone="$statusTone" :dot="$event->status === \App\Enums\EventStatus::Open" data-phase="{{ $phase->value }}">{{ __('host.event_status.' . $event->status->value) }}</x-chip>
         <x-button :href="route('join.screen', $event)" variant="secondary" target="_blank" rel="noopener">{{ __('realtime.live.open_screen') }}</x-button>
     </x-slot:actions>
 
@@ -34,7 +35,7 @@
     {{-- While a game runs, its Alpine component (F13) wraps the columns: its questions sit under
          the steps, its control in the middle, its running count in the monitor. --}}
     <div @if ($running) x-data="@include('host.events.live.' . $running->type->value, ['part' => 'data', 'event' => $event, 'game' => $running, 'questions' => $questions, 'people' => $people])" @endif
-        class="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">
+        class="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">
 
         {{-- Left: the steps. On phones they follow the control. --}}
         <section aria-label="{{ __('live.steps_title') }}" class="order-2 flex flex-col gap-4 self-start rounded-card bg-surface p-5 lg:order-1">
@@ -53,16 +54,8 @@
                 @case(EventPhase::Draft)
                     <div class="flex flex-col gap-4 rounded-card bg-surface p-6">
                         <h2 class="font-display text-xl font-semibold">{{ __('live.get_ready') }}</h2>
-                        <ul class="flex flex-col gap-2">
-                            <li class="flex items-center justify-between gap-3">
-                                <span>{{ trans_choice('live.names', $names, ['count' => $names]) }}</span>
-                                <a href="{{ route('host.events.people.index', $event) }}" class="text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('live.open_names') }}</a>
-                            </li>
-                            <li class="flex items-center justify-between gap-3">
-                                <span>{{ ucfirst(trans_choice('live.games', $games->count(), ['count' => $games->count()])) }}</span>
-                                <a href="{{ route('host.events.games.index', $event) }}" class="text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('live.open_games') }}</a>
-                            </li>
-                        </ul>
+                        {{-- D-10: the counts only; the pages are in the sidebar and the steps. --}}
+                        <p>{{ trans_choice('live.names', $names, ['count' => $names]) }} · {{ trans_choice('live.games', $games->count(), ['count' => $games->count()]) }}</p>
                         <p class="text-sm text-muted">{{ __('live.get_ready_help') }}</p>
                         <form method="POST" action="{{ route('host.events.open', $event) }}" class="flex justify-end">
                             @csrf
@@ -120,9 +113,10 @@
                             <h2 class="font-display text-xl font-semibold">{{ __('live.all_played') }}</h2>
                             <p class="text-sm text-muted">{{ __('live.all_played_help', ['done' => $played, 'total' => $games->count()]) }}</p>
                         </div>
+                        {{-- D-10: destructive on the left, actions on the right. --}}
                         <div class="flex flex-wrap items-center justify-between gap-2.5">
-                            <x-button :href="route('host.events.games.index', $event)" variant="secondary">{{ __('live.add_game') }}</x-button>
                             @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => null])
+                            <x-button :href="route('host.events.games.index', $event)" variant="secondary">{{ __('live.add_game') }}</x-button>
                         </div>
                     </div>
                     @break
@@ -133,7 +127,7 @@
                             <h2 class="font-display text-xl font-semibold">{{ __('live.event_closed') }}</h2>
                             <p class="text-sm text-muted">{{ __('live.event_closed_help') }}</p>
                         </div>
-                        <div class="flex flex-wrap items-center justify-between gap-2.5">
+                        <div class="flex flex-wrap items-center justify-end gap-2.5">
                             <x-button :href="route('host.events.results', $event)" variant="secondary">{{ __('live.results') }}</x-button>
                             @can('reopen', $event)
                                 <form method="POST" action="{{ route('host.events.reopen', $event) }}">

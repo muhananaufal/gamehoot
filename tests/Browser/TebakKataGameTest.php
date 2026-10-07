@@ -80,9 +80,19 @@ it('runs a Tebak Kata question from Live control: show, hint, winner and leaderb
 
     $page->click('@open-box-2')
         ->assertSeeIn('@open-box-2', 'A')
+        // D-10: the buttons end where the search box ends: nothing hidden in the row pushes them left.
+        ->assertScript('Math.round(document.querySelector("[data-test=pick-winner]").getBoundingClientRect().right) === Math.round(document.querySelector("#winner-search").getBoundingClientRect().right)', true)
+        ->type('winner-search', 'rit')
+        // D-10: Pick winner stays off until a name is picked; × clears the pick again.
+        ->assertScript('document.querySelector("[data-test=pick-winner]").disabled', true)
+        ->click('Rita Wulandari')
+        ->assertScript('document.querySelector("[data-test=pick-winner]").disabled', false)
+        ->click('@clear-winner')
+        ->assertScript('document.querySelector("[data-test=pick-winner]").disabled', true)
+        ->assertValue('#winner-search', '')
         ->type('winner-search', 'rit')
         ->click('Rita Wulandari')
-        ->click('Pick winner');
+        ->click('@pick-winner');
 
     // The confirm button closes its dialog and sends the action. A plain click() is retried
     // when it takes over a second, and the retry then waits for a button in a closed dialog
