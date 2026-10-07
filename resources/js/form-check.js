@@ -109,6 +109,30 @@ function labelOf(field) {
 }
 
 /**
+ * U19, U26: checks some fields only (a step of New event), with the messages of a sent form.
+ * Returns the first field with a problem, or null.
+ */
+export function checkFields(fields, messages, valueOf = () => '') {
+    let first = null;
+
+    for (const field of fields) {
+        const message = fieldProblem(field, labelOf(field), messages, valueOf);
+
+        if (message) {
+            showProblem(field, message);
+            first ??= field;
+        } else if (
+            field.hasAttribute('aria-invalid') &&
+            field.closest('[up-form-group]')?.querySelector('[data-check-error]')
+        ) {
+            clearProblem(field);
+        }
+    }
+
+    return first;
+}
+
+/**
  * Watches every form (the browser's own checks are off, see app.js). The listener runs in
  * the capture phase, before Unpoly sends the form.
  */
@@ -123,22 +147,8 @@ export function checkFormsBeforeSubmit(doc = document, messages = {}) {
                 return;
             }
 
-            let first = null;
             const valueOf = (name) => form.elements.namedItem(name)?.value ?? '';
-
-            for (const field of form.querySelectorAll('input, textarea')) {
-                const message = fieldProblem(field, labelOf(field), messages, valueOf);
-
-                if (message) {
-                    showProblem(field, message);
-                    first ??= field;
-                } else if (
-                    field.hasAttribute('aria-invalid') &&
-                    field.closest('[up-form-group]')?.querySelector('[data-check-error]')
-                ) {
-                    clearProblem(field);
-                }
-            }
+            const first = checkFields(form.querySelectorAll('input, textarea'), messages, valueOf);
 
             if (first) {
                 event.preventDefault();

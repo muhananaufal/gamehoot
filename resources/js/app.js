@@ -19,6 +19,7 @@ import { flipList, markPageEntered } from './flip.js';
 import { kataBoxes } from './kata-boxes.js';
 import { liveRegion } from './live-region.js';
 import { nameBatch } from './name-batch.js';
+import { newEventWizard } from './new-event-wizard.js';
 import { nameReview } from './name-review.js';
 import { packList } from './pack-list.js';
 import { packPicker } from './pack-picker.js';
@@ -62,6 +63,7 @@ Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
 Alpine.data('replayScreen', replayScreen);
 Alpine.data('nameBatch', nameBatch);
+Alpine.data('newEventWizard', newEventWizard);
 Alpine.data('dateRangePicker', dateRangePicker);
 Alpine.data('eventLink', eventLink);
 

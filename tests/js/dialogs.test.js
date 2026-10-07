@@ -73,3 +73,21 @@ describe('D-10 no focus ring left on the opening button after a dialog closed wi
         expect(opener.blur).not.toHaveBeenCalled();
     });
 });
+
+describe('U24 a dialog can ask before a click outside closes it', () => {
+    it('sends the cancel event first, like Escape, and stays open when it is prevented', () => {
+        const doc = fakeDocument();
+        closeDialogsOnBackdrop(doc);
+        const kept = { ...dialog(), dispatchEvent: vi.fn(() => false) };
+        const left = { ...dialog(), dispatchEvent: vi.fn(() => true) };
+
+        for (const box of [kept, left]) {
+            doc.fire('pointerdown', box);
+            doc.fire('click', box);
+        }
+
+        expect(kept.dispatchEvent).toHaveBeenCalledOnce();
+        expect(kept.close).not.toHaveBeenCalled();
+        expect(left.close).toHaveBeenCalledOnce();
+    });
+});

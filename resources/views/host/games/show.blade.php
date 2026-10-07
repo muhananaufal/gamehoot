@@ -42,17 +42,7 @@
             @else
                 <div x-data="packPicker({ labels: {{ Js::from(['one' => __('games.add_one'), 'other' => __('games.add_many')]) }} })" class="flex flex-col gap-3">
                     <x-pack-list :packs="$packs" :types="$types" pick />
-                    {{-- D-9: what is picked, in order; each can be taken out again. --}}
-                    <div x-show="picked.length > 0" x-cloak class="flex flex-wrap items-center gap-2 border-t border-line-soft pt-3">
-                        <span class="text-sm font-semibold text-muted">{{ __('games.selected') }}</span>
-                        <template x-for="chip in chips()" :key="chip.id">
-                            <span class="inline-flex items-center gap-1 rounded-full bg-subtle py-1 pr-1 pl-2.5 text-[13px] font-bold text-on-subtle">
-                                <span x-text="chip.number + '. ' + chip.title"></span>
-                                <button type="button" class="flex size-6 items-center justify-center rounded-full hover:bg-line" @click="pick(chip.id, chip.title)"
-                                    :aria-label="{{ Js::from(__('games.unpick', ['title' => '__T__'])) }}.replace('__T__', chip.title)"><x-icon name="close" class="size-3.5" /></button>
-                            </span>
-                        </template>
-                    </div>
+                    @include('host.partials.pack-picks')
                     <form method="POST" action="{{ route('host.events.games.store', $event) }}" class="flex justify-end gap-2.5 pt-1.5">
                         @csrf
                         <template x-for="id in picked" :key="id"><input type="hidden" name="pack_ids[]" :value="id"></template>

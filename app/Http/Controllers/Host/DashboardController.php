@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Host;
 
+use App\Http\Views\PlayablePacks;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
@@ -15,7 +16,7 @@ use Illuminate\View\View;
  */
 final class DashboardController
 {
-    public function __invoke(#[CurrentUser] User $user): View
+    public function __invoke(#[CurrentUser] User $user, PlayablePacks $packs): View
     {
         // U4: every event is sent; filter, search and sort happen in the browser.
         $events = Event::query()
@@ -32,6 +33,8 @@ final class DashboardController
             'counts' => $events->countBy(fn (Event $event): string => $event->status->value),
             'total' => $events->count(),
             'events' => $events,
+            // U26: the games step of New event picks from the same pack list as Add games.
+            ...$packs->for($user),
         ]);
     }
 }

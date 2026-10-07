@@ -10,7 +10,7 @@
     'triggerDisabled' => false,
     // Show the dialog on page load, e.g. to display a validation error from its form.
     'open' => false,
-    // U13: "md" for create forms with several fields.
+    // U13: "md" for create forms with several fields; U26: "lg" for New event.
     'size' => 'sm',
     // D-10: an id for a trigger elsewhere (a step of Live control), which then needs no trigger here.
     'dialogId' => null,
@@ -34,6 +34,8 @@
         'm-auto rounded-panel bg-surface p-0 text-left text-ink shadow-2xl',
         'w-[min(400px,calc(100vw-2rem))]' => $size === 'sm',
         'w-[min(560px,calc(100vw-2rem))]' => $size === 'md',
+        // U26: as wide as an Unpoly large modal (Import names), for New event.
+        'w-[min(1000px,calc(100vw-2rem))]' => $size === 'lg',
     ])>
         <div class="flex flex-col gap-3 p-5.5">
             <h2 class="font-display text-[22px] font-bold">{{ $title }}</h2>

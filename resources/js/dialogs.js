@@ -23,8 +23,12 @@ export function closeDialogsOnBackdrop(doc = document, { defer = (run) => setTim
     doc.addEventListener('click', (event) => {
         const target = event.target;
 
+        // U24: the cancel event goes first, as with Escape, so a dialog holding typed work can
+        // ask before it closes (New event); a prevented event keeps it open.
         if (target?.tagName === 'DIALOG' && target.open && pressedOn === target) {
-            target.close();
+            if (target.dispatchEvent?.(new Event('cancel', { cancelable: true })) !== false) {
+                target.close();
+            }
         }
     });
 

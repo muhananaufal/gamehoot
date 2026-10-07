@@ -5,12 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Views;
 
 use App\Enums\GameStatus;
-use App\Enums\GameType;
-use App\Games\GameEngines;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Question;
-use App\Models\QuestionPack;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -20,7 +17,7 @@ use Illuminate\Support\Collection;
  */
 final readonly class GamesPage
 {
-    public function __construct(private GameEngines $engines) {}
+    public function __construct(private PlayablePacks $packs) {}
 
     /**
      * @return array<string, mixed>
@@ -54,14 +51,7 @@ final readonly class GamesPage
             'creating' => $editable && $creating,
             'startedAt' => GameTimes::startedFor($event),
             // Add games: the pack list of Question packs, for the types that can be played live.
-            'packs' => QuestionPack::query()
-                ->whereBelongsTo($user, 'owner')
-                ->whereIn('game_type', array_map(fn (GameType $type): string => $type->value, $this->engines->playableTypes()))
-                ->withCount('questions')
-                ->orderBy('title')
-                ->get()
-                ->groupBy(fn (QuestionPack $pack): string => $pack->game_type->value),
-            'types' => $this->engines->playableTypes(),
+            ...$this->packs->for($user),
         ];
     }
 }
