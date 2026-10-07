@@ -25,37 +25,40 @@ function validating(Event $event, string $field, ?string $return = null): array
 describe('live validation (U19)', function (): void {
     it('checks a field without saving anything, and returns to the page of the form', function (): void {
         $event = Event::factory()->create();
+        $person = Person::factory()->for($event)->create(['name' => 'Rita', 'name_normalized' => 'rita']);
 
         actingAs($event->owner()->firstOrFail())
             ->withHeaders(validating($event, 'name'))
-            ->post("/host/{$event->id}/people", ['name' => 'Budi Santoso', 'form' => 'add-person'])
+            ->put("/host/{$event->id}/people/{$person->id}", ['name' => 'Budi Santoso', 'form' => 'rename-'.$person->id])
             ->assertRedirect("/host/{$event->id}/people")
             ->assertSessionHasNoErrors()
             ->assertSessionHasInput('name', 'Budi Santoso');
 
-        expect(Person::query()->count())->toBe(0);
+        expect($person->refresh()->name)->toBe('Rita');
     });
 
     it('returns the error of the field, including rules that need the database', function (): void {
         $event = Event::factory()->create();
         Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
+        $person = Person::factory()->for($event)->create(['name' => 'Rita', 'name_normalized' => 'rita']);
 
         actingAs($event->owner()->firstOrFail())
             ->withHeaders(validating($event, 'name'))
-            ->post("/host/{$event->id}/people", ['name' => 'budi  SANTOSO', 'form' => 'add-person'])
+            ->put("/host/{$event->id}/people/{$person->id}", ['name' => 'budi  SANTOSO', 'form' => 'rename-'.$person->id])
             ->assertRedirect("/host/{$event->id}/people")
             ->assertSessionHasErrors('name');
 
-        expect(Person::query()->count())->toBe(1);
+        expect($person->refresh()->name)->toBe('Rita');
     });
 
     it('never sends the browser to another site named in the header', function (): void {
         $event = Event::factory()->create();
+        $person = Person::factory()->for($event)->create(['name' => 'Rita', 'name_normalized' => 'rita']);
 
         $response = actingAs($event->owner()->firstOrFail())
             ->from("/host/{$event->id}/people")
             ->withHeaders(validating($event, 'name', 'https://evil.example/steal'))
-            ->post("/host/{$event->id}/people", ['name' => 'Budi Santoso']);
+            ->put("/host/{$event->id}/people/{$person->id}", ['name' => 'Budi Santoso']);
 
         $location = (string) $response->headers->get('Location');
 
@@ -66,9 +69,11 @@ describe('live validation (U19)', function (): void {
     it('still saves a normal submit', function (): void {
         $event = Event::factory()->create();
 
-        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/people", ['name' => 'Budi Santoso']);
+        $person = Person::factory()->for($event)->create(['name' => 'Rita', 'name_normalized' => 'rita']);
 
-        expect(Person::query()->count())->toBe(1);
+        actingAs($event->owner()->firstOrFail())->put("/host/{$event->id}/people/{$person->id}", ['name' => 'Budi Santoso']);
+
+        expect($person->refresh()->name)->toBe('Budi Santoso');
     });
 });
 

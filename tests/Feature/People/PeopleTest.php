@@ -65,8 +65,9 @@ describe('name list (B-3, B-4)', function (): void {
     it('adds a name with tidy spacing and a random personal link', function (): void {
         $event = eventWithOwner();
 
-        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['name' => '  Budi   Santoso '])
-            ->assertRedirect("/host/{$event->id}/people");
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => '  Budi   Santoso '])
+            ->assertRedirect("/host/{$event->id}/people")
+            ->assertSessionHas('status', '1 name added.');
 
         $person = Person::query()->firstOrFail();
         expect($person->name)->toBe('Budi Santoso')
@@ -74,14 +75,46 @@ describe('name list (B-3, B-4)', function (): void {
             ->and($person->join_token)->toMatch('/^[A-Za-z0-9]{16}$/');
     });
 
-    it('rejects a duplicate name, ignoring case and spaces', function (): void {
+    it('adds several names at once, one per line, skipping empty lines (B-4)', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', '', '  Budi Santoso', 'Ana Putri  ', ' '])])
+            ->assertRedirect("/host/{$event->id}/people")
+            ->assertSessionHas('status', '3 names added.');
+
+        expect($event->people()->orderBy('name')->pluck('name')->all())->toBe(['Ana Putri', 'Budi Santoso', 'Rita Wulandari']);
+    });
+
+    it('rejects a duplicate name, ignoring case and spaces, and saves none of the lines', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
 
-        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['name' => 'BUDI  santoso'])
-            ->assertSessionHasErrors('name');
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', 'BUDI  santoso'])])
+            ->assertSessionHasErrors(['names' => 'Line 2: Same as “Budi Santoso” already in this event (upper/lower case is ignored).']);
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Ana Putri', 'ana  PUTRI'])])
+            ->assertSessionHasErrors(['names' => 'Line 2: Same as line 1. Add something to tell them apart, e.g. “ana PUTRI (IT)”.']);
 
         expect(Person::query()->count())->toBe(1);
+    });
+
+    it('names the lines of the text area, empty lines counted, like the page does', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Ana Putri', '', 'ana  PUTRI', '', 'budi santoso'])])
+            ->assertSessionHasErrors(['names' => 'Line 3: Same as line 1. Add something to tell them apart, e.g. “ana PUTRI (IT)”.'])
+            ->assertSessionHasErrors(['names' => 'Line 5: Same as “Budi Santoso” already in this event (upper/lower case is ignored).']);
+    });
+
+    it('rejects an empty list and a name longer than 100 characters', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, [' ', ''])])
+            ->assertSessionHasErrors('names');
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', str_repeat('A', 101)])])
+            ->assertSessionHasErrors('names');
+
+        expect(Person::query()->count())->toBe(0);
     });
 
     it('renames a name, still rejecting duplicates but not itself', function (): void {
@@ -108,8 +141,8 @@ describe('name list (B-3, B-4)', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->count(500)->create();
 
-        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['name' => 'One Too Many'])
-            ->assertSessionHasErrors('name');
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => 'One Too Many'])
+            ->assertSessionHasErrors('names');
     });
 
     it('refuses to change the list once it is locked (B-3)', function (): void {
@@ -118,7 +151,7 @@ describe('name list (B-3, B-4)', function (): void {
         $event->forceFill(['names_locked_at' => now()])->save();
         $host = hostOf($event);
 
-        actingAs($host)->post("/host/{$event->id}/people", ['name' => 'Late Guest'])->assertSessionHasErrors('names');
+        actingAs($host)->post("/host/{$event->id}/people", ['names' => 'Late Guest'])->assertSessionHasErrors('names');
         actingAs($host)->put("/host/{$event->id}/people/{$person->id}", ['name' => 'Renamed'])->assertSessionHasErrors('names');
         actingAs($host)->delete("/host/{$event->id}/people/{$person->id}")->assertSessionHasErrors('names');
         actingAs($host)->post("/host/{$event->id}/people/import", ['file' => csvUpload("Late\n")])->assertSessionHasErrors('names');
@@ -346,11 +379,11 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
     });
 });
 
-it('marks Add name as a create button with the plus icon (U2)', function (): void {
+it('marks Add names as a create button with the plus icon (U2)', function (): void {
     $event = eventWithOwner();
 
     expect((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent())
-        ->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*Add name\s*<\/button>/');
+        ->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*Add names\s*<\/button>/');
 });
 
 describe('Names page actions (U4, U5, U21)', function (): void {

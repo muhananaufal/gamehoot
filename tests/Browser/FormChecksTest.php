@@ -17,20 +17,21 @@ uses(RefreshDatabase::class);
 // refuse for a simple reason. Every script returns at once (the plugin retries slow ones).
 const COUNT_REQUESTS = "window.__sent = 0; up.on('up:request:load', (e) => { if (e.request.method !== 'GET') window.__sent++; });";
 
-it('stops an empty Add name and an empty rename before sending', function (): void {
+it('stops an empty Add names and an empty rename before sending', function (): void {
     $event = Event::factory()->create();
     Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
     actingAs($event->owner()->firstOrFail());
 
     $page = visit("/host/{$event->id}/people")->wait(0.5);
     $page->script(COUNT_REQUESTS);
-    $page->script('(() => { [...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add name").click(); })()');
+    $page->script('(() => { [...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add names").click(); })()');
     $page->wait(0.3);
+    // B-4: with nothing typed the Add button is off, so nothing can be sent.
     $page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().click()');
     $page->wait(0.3);
 
     expect($page->script('window.__sent'))->toBe(0)
-        ->and($page->script('document.querySelector("dialog[open] [data-check-error]")?.textContent'))->toBe('The name field is required.');
+        ->and($page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().disabled'))->toBeTrue();
 
     $page->script('document.querySelector("dialog[open]").close()');
     $page->script("Alpine.store('confirm').askRow({ dataset: { ask: 'rename' }, closest: () => document.querySelector('tr[data-row]') })");

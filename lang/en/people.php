@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 return [
     'title' => 'Names',
-    'add' => 'Add name',
+    'add' => 'Add names',
+    'names_label' => 'Names, one per line',
+    'add_names_hint' => 'As players and the screen should show them. Paste a column from Excel or a chat to add many at once.',
+    'names_count' => '{1} :count name|[2,*] :count names',
+    'add_count' => '{1} Add :count name|[2,*] Add :count names',
     'import' => 'Import CSV',
     'name' => 'Name',
     'status' => 'Status',
@@ -69,12 +73,15 @@ return [
     'save_names' => '{1} Save :count name|[0,*] Save :count names',
 
     'duplicate_row' => 'Same as row :row. Add something to tell them apart, e.g. “:name (IT)”.',
+    'duplicate_line' => 'Same as line :line. Add something to tell them apart, e.g. “:name (IT)”.',
     'duplicate_existing' => 'Same as “:name” already in this event (upper/lower case is ignored).',
     'duplicate_race' => 'Another host saved the same name a moment ago. Check the list and try again.',
     'too_many' => 'An event can have at most :max names.',
     'locked' => 'The name list is locked because a game has started.',
 
-    'added' => 'Name added.',
+    'added_many' => '{1} 1 name added.|[2,*] :count names added.',
+    'on_line' => 'Line :line: :problem',
+    'names' => 'Names',
     'renamed' => 'Name saved.',
     'deleted' => 'Name deleted.',
     'imported' => '{1} 1 name imported.|[2,*] :count names imported.',

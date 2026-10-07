@@ -18,6 +18,7 @@ import { eventLink } from './event-link.js';
 import { flipList, markPageEntered } from './flip.js';
 import { kataBoxes } from './kata-boxes.js';
 import { liveRegion } from './live-region.js';
+import { nameBatch } from './name-batch.js';
 import { nameReview } from './name-review.js';
 import { packList } from './pack-list.js';
 import { packPicker } from './pack-picker.js';
@@ -60,6 +61,7 @@ Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {
 Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
 Alpine.data('replayScreen', replayScreen);
+Alpine.data('nameBatch', nameBatch);
 Alpine.data('dateRangePicker', dateRangePicker);
 Alpine.data('eventLink', eventLink);
 

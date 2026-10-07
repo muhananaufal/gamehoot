@@ -58,19 +58,27 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
     $page->assertSee('Event created. Next, add the names of the people who can play.')
         ->assertPathEndsWith('/people')
         ->assertScript('! document.querySelector("dialog[open]")')
-        // U2: Add name opens a dialog in the content header; Enter sends it instead of cancelling.
-        ->click('Add name')
-        ->type('add-person-name', 'Budi Santoso')
-        ->keys('add-person-name', 'Enter')
-        ->assertSee('Name added.')
-        ->click('Add name')
-        ->type('add-person-name', 'budi  SANTOSO')
-        ->keys('add-person-name', 'Enter')
-        ->assertSee('Same as “Budi Santoso” already in this event')
-        // The dialog stays open with the error; Escape closes it.
-        ->keys('add-person-name', 'Escape')
-        // The CSV upload itself is covered by feature tests: the browser plugin's test server
-        // does not forward multipart bodies (W11).
+        ->assertNoJavaScriptErrors();
+
+    // U2, B-4: Add names opens a dialog in the content header; one name per line.
+    $type = fn (array $names): string => '(() => { const field = document.querySelector("dialog[open] #add-names"); field.value = '.json_encode($names).'.join(String.fromCharCode(10)); field.dispatchEvent(new Event("input", { bubbles: true })); })()';
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add names").click()');
+    $page->wait(0.3);
+    $page->script($type(['Budi Santoso', 'Rita Wulandari']));
+    expect($page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().innerText.trim()'))->toBe('Add 2 names');
+    $page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().click()');
+    $page->assertSee('2 names added.');
+
+    // A name already in the event is caught while typing; the button stays off.
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add names").click()');
+    $page->wait(0.3);
+    $page->script($type(['budi  SANTOSO']));
+    $page->assertSee('Line 1: Same as “Budi Santoso” already in this event');
+    expect($page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().disabled'))->toBeTrue();
+
+    // Escape closes the dialog. The CSV upload itself is covered by feature tests: the browser
+    // plugin's test server does not forward multipart bodies (W11).
+    $page->keys('add-names', 'Escape')
         ->click('Import CSV')
         ->assertSee('CSV file')
         ->assertNoJavaScriptErrors();

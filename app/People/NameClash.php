@@ -48,4 +48,16 @@ final readonly class NameClash
             ? __('people.duplicate_existing', ['name' => $this->existingName])
             : __('people.duplicate_row', ['row' => $this->row, 'name' => $this->name]);
     }
+
+    /**
+     * B-4: the same message for Add names, where the host typed lines rather than file rows.
+     *
+     * @param  list<int>  $lineOf  the line in the text area of each name, by its place in the list
+     */
+    public function lineMessage(array $lineOf): string
+    {
+        return $this->tooLong || $this->existingName !== null || $this->row === null
+            ? $this->message()
+            : __('people.duplicate_line', ['line' => $lineOf[$this->row - 1] ?? $this->row, 'name' => $this->name]);
+    }
 }

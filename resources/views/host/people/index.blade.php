@@ -26,7 +26,17 @@
         ['key' => 'rename', 'label' => __('people.rename'), 'type' => 'confirm', 'url' => route('host.events.people.update', [$event, '__P__'])],
         ['key' => 'delete', 'label' => __('people.delete'), 'type' => 'confirm', 'danger' => true, 'url' => route('host.events.people.destroy', [$event, '__P__'])],
     ];
-    $addFailed = old('form') === 'add-person' && $errors->has('name');
+    $addFailed = old('form') === 'add-person' && $errors->has('names');
+    // B-4: the texts of the Add names checks, sent once, in the words of the server (AddNamesRequest).
+    $addTexts = [
+        'line' => __('people.on_line', ['line' => '__L__', 'problem' => '__P__']),
+        'existing' => __('people.duplicate_existing', ['name' => '__N__']),
+        'repeat' => __('people.duplicate_line', ['line' => '__R__', 'name' => '__N__']),
+        'too_long' => __('people.too_long', ['max' => \App\People\PersonName::MAX_LENGTH]),
+        'count' => ['one' => trans_choice('people.names_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.names_count', 2, ['count' => '__N__'])],
+        'add' => ['one' => trans_choice('people.add_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.add_count', 2, ['count' => '__N__'])],
+        'empty' => __('people.add'),
+    ];
     // A refused rename reopens its dialog with what was typed and the error.
     $renaming = str_starts_with((string) old('form'), 'rename-') ? $people->firstWhere('id', substr((string) old('form'), 7)) : null;
     $renameRetry = $renaming ? [
@@ -50,13 +60,33 @@
         @unless ($locked)
             <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
             <x-confirm-dialog :title="__('people.add')" :trigger="__('people.add')" trigger-icon="plus" trigger-variant="primary" :open="$addFailed">
-                <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate>
+                {{-- B-4: one name per line; the same checks as the server run while typing (name-batch.js). --}}
+                <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate
+                    x-data="nameBatch({ existing: {{ \Illuminate\Support\Js::from($people->pluck('name')->values()) }}, text: {{ \Illuminate\Support\Js::from($addFailed ? (string) old('names', '') : '') }}, texts: {{ \Illuminate\Support\Js::from($addTexts) }} })">
                     @csrf
                     <input type="hidden" name="form" value="add-person">
-                    <x-field name="name" :placeholder="__('examples.person_name')" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" required maxlength="100" autocomplete="off" autofocus />
+                    <div class="flex flex-col gap-1.5">
+                        <label for="add-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
+                        <textarea id="add-names" name="names" rows="6" x-model="text" autofocus autocomplete="off" placeholder="{{ __('examples.names') }}"
+                            aria-describedby="add-names-hint add-names-check"
+                            class="rounded-control border border-line-strong bg-field px-3 py-2.5 text-[15px] text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
+                        <p id="add-names-hint" class="text-sm text-muted">{{ __('people.add_names_hint') }}</p>
+                        <div id="add-names-check" aria-live="polite" class="flex flex-col gap-1 text-sm">
+                            <p x-show="check.names.length > 0" x-text="summary" class="text-muted"></p>
+                            <template x-for="problem in check.problems" :key="problem.line">
+                                <p class="font-semibold text-on-danger" x-text="problemText(problem)"></p>
+                            </template>
+                            <p x-show="check.tooMany" class="font-semibold text-on-danger">{{ __('people.too_many', ['max' => \App\Http\Requests\Host\PersonNameRequest::MAX_NAMES]) }}</p>
+                        </div>
+                        @if ($addFailed)
+                            @foreach ($errors->get('names') as $message)
+                                <p class="text-sm font-semibold text-on-danger">{{ $message }}</p>
+                            @endforeach
+                        @endif
+                    </div>
                     <div class="flex justify-end gap-2.5 pt-1.5">
                         <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                        <x-button type="submit">{{ __('people.add') }}</x-button>
+                        <x-button type="submit" x-bind:disabled="!check.ok"><span x-text="addLabel">{{ __('people.add') }}</span></x-button>
                     </div>
                 </form>
             </x-confirm-dialog>
@@ -83,9 +113,10 @@
             ])
         </div>
     @endif
-    @error('names')
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
-    @enderror
+    {{-- Errors of Add names show in its dialog, which opens again. --}}
+    @if ($errors->has('names') && ! $addFailed)
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $errors->first('names') }}</div>
+    @endif
 
     @if ($people->isEmpty())
         {{-- U25: the empty list says what applies now, and offers adding only while the list can change. --}}

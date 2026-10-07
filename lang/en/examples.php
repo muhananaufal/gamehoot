@@ -5,6 +5,7 @@ declare(strict_types=1);
 // U25: placeholders show an example of what to type; the label and hint still say what it is.
 return [
     'person_name' => 'e.g. Budi Santoso',
+    'names' => 'Budi Santoso'.PHP_EOL.'Rita Wulandari'.PHP_EOL.'Ana Putri',
     'username' => 'e.g. dina.hr',
     'email' => 'e.g. dina@company.com',
     'username_or_email' => 'e.g. dina.hr or dina@company.com',
