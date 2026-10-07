@@ -19,6 +19,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as Events;
 use Tests\Support\Pentahoot;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\delete;
@@ -336,6 +337,19 @@ describe('the Games page (D-9)', function (): void {
             ->and($html)->toContain('action="'.route('host.events.games.reorder', $event).'"')
             ->and($html)->toContain('data-id="'.$next->id.'" draggable="true"')
             ->and($html)->not->toContain('data-id="'.$played->id.'" draggable');
+    });
+
+    it('filters the games by type, the one filter of the list (D-9)', function (): void {
+        $event = Pentahoot::event();
+        $trivia = Pentahoot::game($event, title: 'Team Trivia');
+        $words = TebakKata::game($event, title: 'Word Round');
+
+        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->getContent();
+
+        expect($html)->toContain('aria-label="Game type"')
+            ->and($html)->toContain('All game types')
+            ->and($html)->toContain('data-type="pentahoot" data-game="'.$trivia->id.'"')
+            ->and($html)->toContain('data-type="tebak_kata" data-game="'.$words->id.'"');
     });
 
     it('marks edited games and deleted packs, and offers Reload only while the pack is there (D-9)', function (): void {
