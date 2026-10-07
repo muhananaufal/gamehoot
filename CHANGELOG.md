@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opening, reopening, locking claims, starting any game and skipping a question now ask for confirmation first.
 - Every text field shows an example of what to type.
 - Long lists offer "Go to page" and show their totals with thousands separators.
+- The Activity log also lists skipped questions, reloads from a pack, deleted questions of a game, finished games and added names.
 - Names can be added several at once, one per line, with duplicates and too-long names marked while typing.
 - Import CSV opens in a two-step modal (Upload, Review) with the supported format, a template to download, a status filter and a search in the review, and Back that keeps the modal. Leaving after a change asks first.
 - Hosts can replay past moments on the projector from Live control, during the event or after it closed: Pentahoot categories, Word and Picture Guess answers with their winners, leaderboards after each win and final podiums, then go back to live.
