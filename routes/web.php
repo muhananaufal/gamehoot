@@ -34,6 +34,7 @@ use App\Http\Controllers\Host\PersonLinksController;
 use App\Http\Controllers\Host\QuestionActionController;
 use App\Http\Controllers\Host\QuestionPackController;
 use App\Http\Controllers\Host\ReopenEventController;
+use App\Http\Controllers\Host\ReplayController;
 use App\Http\Controllers\Host\ResultsController;
 use App\Http\Controllers\Host\ResultsExportController;
 use App\Http\Controllers\Host\TrashController;
@@ -110,6 +111,9 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
             Route::post('/close', CloseEventController::class)->name('close')->can('close', 'event');
             Route::post('/reopen', ReopenEventController::class)->name('reopen')->can('reopen', 'event');
             Route::post('/join-lock', JoinLockController::class)->name('join-lock')->can('lockJoining', 'event');
+            // D-11: a past moment on the Public View, and back to live.
+            Route::post('/replay', [ReplayController::class, 'store'])->name('replay.store')->can('update', 'event');
+            Route::delete('/replay', [ReplayController::class, 'destroy'])->name('replay.destroy')->can('update', 'event');
 
             // D-1, D-8, D-9, T8: the games of the event.
             Route::prefix('/games')->name('games.')->scopeBindings()->middleware('can:update,event')->group(function (): void {

@@ -128,6 +128,14 @@ final class Event extends Model
     }
 
     /**
+     * D-11: back to live. Every game action calls this, so play always wins over a replay.
+     */
+    public function endReplay(): void
+    {
+        $this->forceFill(['replay_kind' => null, 'replay_game_id' => null, 'replay_question_id' => null]);
+    }
+
+    /**
      * B-6: the host changed the name list, so phones with a name fetch their own state again.
      * Saved with the event, inside the change's transaction.
      */

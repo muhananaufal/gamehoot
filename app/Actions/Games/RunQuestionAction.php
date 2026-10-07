@@ -33,6 +33,8 @@ final readonly class RunQuestionAction
 
             $engine->perform($action, $locked, $question, $actor, $input);
 
+            // D-11: play, closing and reopening always end a replay.
+            $locked->endReplay();
             $locked->bumpStateVersion();
             $locked->save();
             $this->publisher->publish($locked);

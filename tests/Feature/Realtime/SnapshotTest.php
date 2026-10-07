@@ -53,6 +53,8 @@ it('gives every screen the event, the lobby count and the version (F1, F15, F23)
         ],
         'lobby' => ['joined' => 2],
         'game' => null,
+        // D-11: no past moment on screen.
+        'replay' => null,
     ]);
 });
 

@@ -6,6 +6,8 @@ declare(strict_types=1);
 return [
     'STALE_ACTION' => 'The screen was out of date. It has been refreshed, try again.',
     'ACTION_UNAVAILABLE' => 'This action is not available for this question right now.',
+    'QUESTION_ON_SCREEN' => 'A question is on screen. Replay a moment once it is over.',
+    'MOMENT_UNAVAILABLE' => 'This moment was never on screen, so it cannot be replayed.',
     'GAME_RUNNING' => 'Another game is running. Finish it first.',
     'GAME_FINISHED' => 'This game has already been played.',
     'NO_QUESTIONS' => 'This game has no questions yet.',

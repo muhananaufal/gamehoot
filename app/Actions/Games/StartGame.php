@@ -57,6 +57,8 @@ final readonly class StartGame
 
             $locked->active_game_id = $lockedGame->id;
             $locked->names_locked_at ??= now();
+            // D-11: play, closing and reopening always end a replay.
+            $locked->endReplay();
             $locked->bumpStateVersion();
             $locked->save();
             // E13: starting a game locks the name list for good (B-3).

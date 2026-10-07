@@ -29,6 +29,8 @@ final readonly class ReopenEvent
             }
 
             $locked->status = EventStatus::Open;
+            // D-11: play, closing and reopening always end a replay.
+            $locked->endReplay();
             $locked->bumpStateVersion();
             $locked->save();
             $this->publisher->publish($locked);

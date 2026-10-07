@@ -51,6 +51,8 @@ final readonly class FinishGame
 
             // G7, E12: the game stays on screen with its final results until the next one starts.
             $lockedGame->forceFill(['status' => GameStatus::Finished, 'current_question_id' => null, 'leaderboard_at' => null])->save();
+            // D-11: play, closing and reopening always end a replay.
+            $locked->endReplay();
             $locked->bumpStateVersion();
             $locked->save();
             $this->publisher->publish($locked);

@@ -2,71 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Enums\GameStatus;
-use App\Enums\QuestionStatus;
 use App\Enums\ReplayKind;
 use App\Games\Replay\Moment;
 use App\Games\Replay\ReplayMoments;
 use App\Models\Event;
 use App\Models\Game;
-use App\Models\GameResult;
 use App\Models\Question;
-use App\Models\QuestionResult;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\Pentahoot;
-use Tests\Support\TebakKata;
+use Tests\Support\Replay;
 
 uses(RefreshDatabase::class);
-
-/**
- * A Pentahoot game whose first category was revealed (Rita 3 votes, Budi 1) and whose second
- * is still open, so only the first can come back.
- */
-function replayablePentahoot(Event $event): Game
-{
-    $game = Pentahoot::game($event, ['Most punctual?', 'Best presenter?']);
-    $first = Pentahoot::question($game);
-    $first->forceFill(['status' => QuestionStatus::Revealed])->save();
-
-    foreach ([['Rita Wulandari', 1, 3], ['Budi Santoso', 2, 1]] as [$name, $rank, $votes]) {
-        QuestionResult::query()->create([
-            'question_id' => $first->id,
-            'attempt' => 1,
-            'person_id' => Pentahoot::person($event, $name)->id,
-            'rank' => $rank,
-            'votes' => $votes,
-            'frozen_at' => now(),
-        ]);
-    }
-
-    Pentahoot::question($game, 2)->forceFill(['status' => QuestionStatus::Live])->save();
-
-    return $game;
-}
-
-/**
- * A finished Tebak Kata game: Rita won the first question, nobody the second (surrendered).
- */
-function replayableKata(Event $event): Game
-{
-    $game = TebakKata::game($event, [['Capital of France?', 'PARIS'], ['Largest ocean?', 'PACIFIC']], 'Word Round');
-    $rita = Pentahoot::person($event, 'Rita Wulandari');
-    [$first, $second] = $game->questions()->orderBy('position')->get()->all();
-    $first->forceFill(['status' => QuestionStatus::Won, 'winner_person_id' => $rita->id, 'resolved_at' => CarbonImmutable::parse('2026-10-07 10:00:00')])->save();
-    $second->forceFill(['status' => QuestionStatus::Surrendered, 'resolved_at' => CarbonImmutable::parse('2026-10-07 10:01:00')])->save();
-    $game->forceFill(['status' => GameStatus::Finished])->save();
-    GameResult::query()->create([
-        'game_id' => $game->id,
-        'person_id' => $rita->id,
-        'rank' => 1,
-        'points' => 1,
-        'reached_at' => CarbonImmutable::parse('2026-10-07 10:00:00'),
-        'frozen_at' => now(),
-    ]);
-
-    return $game;
-}
 
 /**
  * @return list<string> one line per moment: kind, question number, title, names
@@ -92,8 +38,8 @@ function markReplay(Event $event, ReplayKind $kind, Game $game, ?Question $quest
 describe('the moments a host can replay (D-11)', function (): void {
     it('lists only what was on screen: revealed categories, won and surrendered questions, leaderboards after a win and final podiums', function (): void {
         $event = Pentahoot::event();
-        replayablePentahoot($event);
-        replayableKata($event);
+        Replay::pentahoot($event);
+        Replay::kata($event);
 
         expect(replayMomentLines($event))->toBe([
             'Office Awards | result | 1 | Most punctual? | Rita Wulandari',
@@ -113,8 +59,8 @@ describe('the moments a host can replay (D-11)', function (): void {
 
     it('finds a moment only when it can be replayed', function (): void {
         $event = Pentahoot::event();
-        $pentahoot = replayablePentahoot($event);
-        $kata = replayableKata($event);
+        $pentahoot = Replay::pentahoot($event);
+        $kata = Replay::kata($event);
         $moments = app(ReplayMoments::class);
         $surrendered = $kata->questions()->where('position', 2)->firstOrFail();
 
@@ -133,7 +79,7 @@ describe('what the Public View draws for a replay (D-11)', function (): void {
 
     it('draws a Pentahoot category as its ranking', function (): void {
         $event = Pentahoot::event();
-        $game = replayablePentahoot($event);
+        $game = Replay::pentahoot($event);
         markReplay($event, ReplayKind::Result, $game, Pentahoot::question($game));
 
         expect(app(ReplayMoments::class)->payload($event->fresh() ?? $event))->toBe([
@@ -151,7 +97,7 @@ describe('what the Public View draws for a replay (D-11)', function (): void {
 
     it('draws a Tebak question with its answer and winner, a surrendered one without', function (): void {
         $event = Pentahoot::event();
-        $game = replayableKata($event);
+        $game = Replay::kata($event);
         [$won, $surrendered] = $game->questions()->orderBy('position')->get()->all();
 
         markReplay($event, ReplayKind::Result, $game, $won);
@@ -165,7 +111,7 @@ describe('what the Public View draws for a replay (D-11)', function (): void {
 
     it('draws the leaderboard as it stood after a question, and the final podium of a game', function (): void {
         $event = Pentahoot::event();
-        $game = replayableKata($event);
+        $game = Replay::kata($event);
         $won = $game->questions()->where('position', 1)->firstOrFail();
 
         markReplay($event, ReplayKind::Leaderboard, $game, $won);
@@ -179,7 +125,7 @@ describe('what the Public View draws for a replay (D-11)', function (): void {
 
     it('draws nothing for a marker that no longer points at a moment', function (): void {
         $event = Pentahoot::event();
-        $game = replayablePentahoot($event);
+        $game = Replay::pentahoot($event);
         markReplay($event, ReplayKind::Result, $game, Pentahoot::question($game, 2));
 
         expect(app(ReplayMoments::class)->payload($event->fresh() ?? $event))->toBeNull();
