@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opening, reopening, locking claims, starting any game and skipping a question now ask for confirmation first.
 - Every text field shows an example of what to type.
 - Long lists offer "Go to page" and show their totals with thousands separators.
+- New event is set up in four steps (Name and link, Names, Games, Review), saved together at the end; the host then goes on in Live control. Names can be typed or imported from a CSV file, games are picked from the packs, and leaving after typing asks first.
+- Modals no longer have a close button in the corner, like the other dialogs; Cancel, Escape or a click outside close them.
 - The Activity log also lists skipped questions, reloads from a pack, deleted questions of a game, finished games and added names.
 - Names can be added several at once, one per line, with duplicates and too-long names marked while typing.
 - Import CSV opens in a two-step modal (Upload, Review) with the supported format, a template to download, a status filter and a search in the review, and Back that keeps the modal. Leaving after a change asks first.
