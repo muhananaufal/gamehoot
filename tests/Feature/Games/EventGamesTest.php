@@ -67,7 +67,7 @@ describe('games in an event (D-9)', function (): void {
             ->assertDontSee('arrive in later releases');
     });
 
-    it('puts the pack list of Question packs on the left, where a click on a pack adds it (U23)', function (): void {
+    it('offers the pack list of Question packs in Add games, several packs at once (D-9)', function (): void {
         $event = Pentahoot::event();
         $pack = Pentahoot::pack(gamesOwner($event), ['Q?'], 'Office Awards');
         $kata = new QuestionPack(['title' => 'Celebrities', 'game_type' => GameType::TebakKata]);
@@ -76,12 +76,11 @@ describe('games in an event (D-9)', function (): void {
         $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertOk()->getContent();
 
         expect($html)->toContain('<nav id="pack-list" x-data="packList"')
-            ->and(strpos($html, 'id="pack-list"'))->toBeLessThan((int) strpos($html, 'id="games-live"'))
             ->and($html)->toContain('data-group="pentahoot"')
             ->and($html)->toContain('data-group="tebak_kata"')
-            ->and($html)->toMatch('#<button type="submit" name="pack_id" value="'.$pack->id.'" data-pack data-type="pentahoot"#')
+            ->and($html)->toMatch('#<button type="button" data-pack data-type="pentahoot"[^>]*data-title="Office Awards"#')
             ->and($html)->toContain('action="'.route('host.events.games.store', $event).'"')
-            ->and($html)->not->toContain('type="radio" name="pack_id"');
+            ->and($html)->toContain('name="pack_ids[]"');
     });
 
     it('tells a host without packs where to write one, whatever the game type', function (): void {
@@ -153,15 +152,16 @@ describe('games in an event (D-9)', function (): void {
 });
 
 describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
-    it('asks before the first game locks the name list, and not after', function (): void {
+    it('asks before the first game locks the name list, and not after (B-3)', function (): void {
         $event = Pentahoot::event();
         Pentahoot::game($event);
         $warning = 'Starting the first game locks the name list';
 
-        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertSee($warning);
+        // D-10: games start from Live control.
+        actingAs(gamesOwner($event))->get("/host/{$event->id}")->assertSee($warning);
 
         $event->forceFill(['names_locked_at' => now()])->save();
-        actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->assertDontSee($warning);
+        actingAs(gamesOwner($event))->get("/host/{$event->id}")->assertDontSee($warning);
     });
 
     it('starts a game, locks the name list and tells every screen', function (): void {
@@ -260,14 +260,13 @@ it('says when each started game started, from the activity log (U6)', function (
     $event = Pentahoot::event();
     $owner = $event->owner()->firstOrFail();
     $game = Pentahoot::game($event, title: 'Office Awards');
-    Pentahoot::game($event, title: 'Second Round');
+    $second = Pentahoot::game($event, title: 'Second Round');
 
     travelTo(CarbonImmutable::parse('2026-10-02 04:30:00'));
     app(StartGame::class)->handle($event, $game, $owner);
 
-    actingAs($owner)->get("/host/{$event->id}/games")
-        ->assertSeeInOrder(['Office Awards', 'Started 2 Oct, 11:30', 'Second Round'])
-        ->assertSee('Added', false);
+    actingAs($owner)->get("/host/{$event->id}/games/{$game->id}")->assertSee('Started 2 Oct, 11:30');
+    actingAs($owner)->get("/host/{$event->id}/games/{$second->id}")->assertSee('Added', false);
 });
 
 describe('finishing after the last question (D-8, D-10)', function (): void {
@@ -324,66 +323,66 @@ describe('the order of the games still to play (D-9)', function (): void {
 });
 
 describe('the Games page (D-9)', function (): void {
-    it('splits played games from the ones still to play, which can be dragged into a new order', function (): void {
+    it('lists the games by status, the ones still to play first and in a draggable order (D-9)', function (): void {
         $event = Pentahoot::event();
         $played = Pentahoot::game($event, title: 'Warm-up');
         $played->forceFill(['status' => GameStatus::Finished])->save();
         $event->forceFill(['active_game_id' => $played->id])->save();
         $next = Pentahoot::game($event, title: 'Team Trivia');
-        Pentahoot::pack(gamesOwner($event), ['Q?'], 'Office Awards');
 
         $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->getContent();
 
-        expect($html)->toMatch('#id="games-live".*Click a pack on the left to add it as the next game.#s')
-            ->and($html)->toMatch('#Played.*Warm-up.*Up next.*Team Trivia#s')
+        expect($html)->toMatch('#Up next · 1.*Team Trivia.*Played · 1.*Warm-up#s')
             ->and($html)->toContain('action="'.route('host.events.games.reorder', $event).'"')
-            ->and($html)->toContain('data-places="[2]"')
-            ->and($html)->toMatch('#<li data-id="'.$next->id.'" draggable="true"#')
-            ->and($html)->not->toContain('data-id="'.$played->id.'"');
+            ->and($html)->toContain('data-id="'.$next->id.'" draggable="true"')
+            ->and($html)->not->toContain('data-id="'.$played->id.'" draggable');
     });
 
-    it('marks edited games and deleted packs, and offers Reload and Delete as icons', function (): void {
+    it('marks edited games and deleted packs, and offers Reload only while the pack is there (D-9)', function (): void {
         $event = Pentahoot::event();
         $owner = gamesOwner($event);
         $pack = Pentahoot::pack($owner, ['First?'], 'Office Awards');
-        actingAs($owner)->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        actingAs($owner)->post("/host/{$event->id}/games", ['pack_ids' => [$pack->id]]);
         $game = Game::query()->sole();
         $game->forceFill(['edited_at' => now()])->save();
-        post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
 
-        $html = (string) get("/host/{$event->id}/games")->getContent();
-
+        $html = (string) get("/host/{$event->id}/games/{$game->id}")->getContent();
         expect($html)->toContain('Edited in this event')
-            ->and($html)->toContain('aria-label="Reload “Office Awards” from its pack"')
-            ->and($html)->toContain('aria-label="Delete “Office Awards”"')
-            ->and($html)->toContain('Edits made to this game’s questions are lost.');
+            ->and($html)->toContain('data-reload="1"');
 
         $pack->delete();
-        $after = (string) get("/host/{$event->id}/games")->getContent();
+        $after = (string) get("/host/{$event->id}/games/{$game->id}")->getContent();
         expect($after)->toContain('Pack deleted')
-            ->and($after)->not->toContain('aria-label="Reload “Office Awards” from its pack"');
+            ->and($after)->not->toContain('data-reload="1"');
     });
 
     it('warns about lost edits only when the game was edited', function (): void {
         $event = Pentahoot::event();
         $owner = gamesOwner($event);
         $pack = Pentahoot::pack($owner, ['First?'], 'Office Awards');
-        actingAs($owner)->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        actingAs($owner)->post("/host/{$event->id}/games", ['pack_ids' => [$pack->id]]);
+        $game = Game::query()->sole();
         post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
 
-        expect((string) get("/host/{$event->id}/games")->getContent())->not->toContain('Edits made to this game’s questions are lost.');
+        expect((string) get("/host/{$event->id}/games/{$game->id}")->getContent())->not->toContain('Edits made to this game’s questions are lost.');
+
+        $game->forceFill(['edited_at' => now()])->save();
+        expect((string) get("/host/{$event->id}/games/{$game->id}")->getContent())->toContain('Edits made to this game’s questions are lost.');
     });
 });
 
 describe('finished is yellow (D-10)', function (): void {
-    it('marks questions locked by a finished game in yellow', function (): void {
+    it('shows a finished game read-only, in yellow, with its results (D-2, D-10)', function (): void {
         $event = Pentahoot::event();
         $game = Pentahoot::game($event, ['Only?']);
         $game->forceFill(['status' => GameStatus::Finished])->save();
 
-        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games/{$game->id}/questions")->assertOk()->getContent();
+        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games/{$game->id}")->assertOk()->getContent();
 
-        expect($html)->toMatch('/bg-warning[^"]*"[^>]*>\s*Game finished/');
+        expect($html)->toMatch('/bg-warning[^"]*"[^>]*>\s*Finished/')
+            ->and($html)->toContain('This game has started, so it can no longer be changed.')
+            ->and($html)->toContain('href="'.route('host.events.results', $event).'"')
+            ->and($html)->not->toContain('data-menu');
     });
 });
 
@@ -419,22 +418,21 @@ describe('the pack change marker (D-9)', function (): void {
     it('records the copied version, marks a changed pack, and offers reload only then', function (): void {
         $event = Pentahoot::event();
         $pack = Pentahoot::pack(gamesOwner($event), ['First?'], 'Office Awards');
-        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_ids' => [$pack->id]]);
         $game = Game::query()->sole();
+        $page = "/host/{$event->id}/games/{$game->id}";
 
         expect($game->pack_version)->toBe(0);
-        get("/host/{$event->id}/games")->assertDontSee('Pack changed since added')
-            ->assertDontSee("/games/{$game->id}/reload", false);
+        get($page)->assertDontSee('Pack changed since added')->assertDontSee('data-reload="1"', false);
 
         post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
         // D-10: yellow means finished only, so the marker is purple.
-        expect((string) get("/host/{$event->id}/games")->getContent())->toMatch('/bg-accent[^"]*"[^>]*>\s*Pack changed since added/');
-        get("/host/{$event->id}/games")->assertSee('Pack changed since added')
-            ->assertSee("/games/{$game->id}/reload", false);
+        expect((string) get($page)->getContent())->toMatch('/bg-accent[^"]*"[^>]*>\s*Pack changed since added/');
+        get($page)->assertSee('data-reload="1"', false);
 
         post("/host/{$event->id}/games/{$game->id}/reload");
         expect($game->refresh()->pack_version)->toBe(1);
-        get("/host/{$event->id}/games")->assertDontSee('Pack changed since added');
+        get($page)->assertDontSee('Pack changed since added');
     });
 
     it('treats a game copied before the marker existed as version 0', function (): void {

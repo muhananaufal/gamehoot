@@ -23,7 +23,7 @@ it('gives every host page one heading', function (): void {
         '/host/packs' => 'Question packs',
         '/host/trash' => 'Deleted events',
         "/host/{$event->id}" => 'Live control',
-        "/host/{$event->id}/games" => 'Games',
+        "/host/{$event->id}/games" => 'Office Awards',
         "/host/{$event->id}/games/{$game->id}/questions" => 'Office Awards',
         "/host/{$event->id}/people" => 'Names',
         "/host/{$event->id}/results" => 'Results',

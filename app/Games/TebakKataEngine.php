@@ -102,7 +102,8 @@ final readonly class TebakKataEngine implements LiveGameEngine
      */
     public function saveCopyDetail(Question $question, array $attributes): void
     {
-        $detail = $question->kata()->firstOrFail();
+        // D-2: an edited copy, or a question of the event's own getting its detail.
+        $detail = $question->kata()->first() ?? $question->kata()->make();
         $detail->fill($attributes);
         $detail->opened_indexes = $detail->initial_open_indexes;
         $detail->save();

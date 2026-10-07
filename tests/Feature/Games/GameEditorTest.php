@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Enums\QuestionStatus;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\Pentahoot;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\delete;
@@ -108,5 +110,48 @@ describe('adding several games at once (D-9)', function (): void {
         post("/host/{$event->id}/games", ['pack_ids' => [$pack->id, $pack->id]])->assertSessionHasErrors();
 
         expect($event->games()->count())->toBe(0);
+    });
+});
+
+describe('questions for this event only (D-2)', function (): void {
+    it('adds a question at the end of a game that has not started, and leaves the pack alone', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(editorOwner($event), ['First?']);
+        actingAs(editorOwner($event))->post("/host/{$event->id}/games", ['pack_ids' => [$pack->id]]);
+        $game = Game::query()->sole();
+
+        Pest\Laravel\get("/host/{$event->id}/games/{$game->id}/questions/create")->assertOk()
+            ->assertSee('action="'.route('host.events.games.questions.store', [$event, $game]).'"', false);
+        post("/host/{$event->id}/games/{$game->id}/questions", ['prompt' => 'Event only?', 'duration_seconds' => 30])
+            ->assertRedirect("/host/{$event->id}/games/{$game->id}");
+
+        expect(promptsOf($game))->toBe(['First?', 'Event only?'])
+            ->and($game->questions()->where('position', 2)->firstOrFail()->status)->toBe(QuestionStatus::Ready)
+            ->and($pack->questions()->count())->toBe(1)
+            ->and($game->refresh()->edited_at)->not->toBeNull();
+    });
+
+    it('refuses a new question once the game has started', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['First?']);
+
+        actingAs(editorOwner($event))->from("/host/{$event->id}/games/{$game->id}")
+            ->post("/host/{$event->id}/games/{$game->id}/questions", ['prompt' => 'Late?', 'duration_seconds' => 30])
+            ->assertSessionHasErrors('action');
+
+        expect(promptsOf($game))->toBe(['First?']);
+    });
+
+    it('adds a Tebak Kata question for this event only, with its opened letters', function (): void {
+        $event = Pentahoot::event();
+        $game = TebakKata::game($event, [['A?', 'AB']]);
+
+        actingAs(editorOwner($event))->post("/host/{$event->id}/games/{$game->id}/questions", ['prompt' => 'Capital?', 'answer_text' => 'JAKARTA', 'initial_open_indexes' => [0], 'points' => 2])
+            ->assertSessionHasNoErrors();
+
+        $added = $game->questions()->where('position', 2)->with('kata')->firstOrFail();
+        expect($added->kata?->answer_text)->toBe('JAKARTA')
+            ->and($added->kata?->opened_indexes)->toBe([0])
+            ->and($added->points)->toBe(2);
     });
 });

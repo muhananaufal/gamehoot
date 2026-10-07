@@ -18,6 +18,6 @@ final class GameOrderController
     {
         $reorder->handle($event, $request->order());
 
-        return redirect()->route('host.events.games.index', $event)->with('status', __('games.reordered'));
+        return back()->with('status', __('games.reordered'));
     }
 }

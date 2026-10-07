@@ -74,7 +74,8 @@ final class PentahootEngine implements LiveGameEngine
 
     public function saveCopyDetail(Question $question, array $attributes): void
     {
-        $question->pentahoot()->firstOrFail()->fill($attributes)->save();
+        // D-2: an edited copy, or a question of the event's own getting its detail.
+        ($question->pentahoot()->first() ?? $question->pentahoot()->make())->fill($attributes)->save();
     }
 
     public function initialStatus(): QuestionStatus

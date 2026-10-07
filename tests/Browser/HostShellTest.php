@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\QuestionPack;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Pentahoot;
 
 use function Pest\Laravel\actingAs;
 
@@ -160,7 +161,7 @@ it('expands a recent event in place and stays on the page (U23)', function (): v
     $page->assertNoJavaScriptErrors();
 });
 
-it('adds a game from the pack list of the Games page, searched like Question packs (U23)', function (): void {
+it('adds several games from the Add games dialog, in the order picked (D-9)', function (): void {
     $host = User::factory()->create();
     $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
     foreach (['Office Awards', 'Team Trivia'] as $title) {
@@ -170,46 +171,47 @@ it('adds a game from the pack list of the Games page, searched like Question pac
     actingAs($host);
 
     $page = visit("/host/{$event->id}/games")->wait(0.5);
-    $page->script('(() => { const q = document.querySelector("#pack-list input[type=search]"); q.value = "trivia"; q.dispatchEvent(new Event("input", { bubbles: true })); })()');
-    $page->wait(0.5);
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add game").click()');
+    $page->wait(0.3);
+    // Team Trivia first, then Office Awards: the games follow the order picked.
+    $page->script('(() => { const packs = [...document.querySelectorAll("dialog[open] [data-pack]")]; packs.find((p) => p.dataset.title === "Team Trivia").click(); packs.find((p) => p.dataset.title === "Office Awards").click(); })()');
+    $page->wait(0.3);
 
-    expect($page->script('[...document.querySelectorAll("#pack-list [data-pack]")].filter((b) => ! b.hidden).map((b) => b.innerText.split("\n")[0].trim())'))->toBe(['Team Trivia']);
+    expect($page->script('document.querySelector("[data-test=add-games]").innerText.trim()'))->toBe('Add 2 games');
 
-    $page->script('[...document.querySelectorAll("#pack-list [data-pack]")].find((b) => ! b.hidden).click()');
-    // The toast may be gone already on a slow browser; the Up next list shows the new game.
-    $page->assertScript('document.querySelector("#games-live li[data-id]")?.innerText.includes("Team Trivia") === true', true)
-        ->assertPathEndsWith("/host/{$event->id}/games")
-        ->assertNoJavaScriptErrors();
-    expect($event->games()->pluck('title')->all())->toBe(['Team Trivia']);
+    $page->script('document.querySelector("[data-test=add-games]").click()');
+    $page->wait(3);
+
+    expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Team Trivia', 'Office Awards']);
+    $page->assertNoJavaScriptErrors();
 });
 
-it('fills the width with the pack list of the Games page on a phone, like Question packs (U23)', function (): void {
+it('lines the Games page up with Question packs on a wide phone (D-9)', function (): void {
     $host = User::factory()->create();
     $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    $event->games()->create(['type' => GameType::Pentahoot, 'title' => 'Office Awards', 'position' => 1]);
     $pack = new QuestionPack(['title' => 'Office Awards', 'game_type' => GameType::Pentahoot]);
     $pack->owner()->associate($host)->save();
     actingAs($host);
 
-    // A wide phone or a small tablet, where the list alone is narrower than the column.
-    $width = 'Math.round(document.querySelector("#pack-list").getBoundingClientRect().width)';
-    $games = visit("/host/{$event->id}/games")->resize(700, 900)->wait(0.5)->script($width);
-    $packs = visit('/host/packs')->resize(700, 900)->wait(0.5)->script($width);
+    // Both lists fill their column; nothing in a flex column shrinks them to their content.
+    $width = fn (string $selector): string => 'Math.round(document.querySelector("'.$selector.'").getBoundingClientRect().width)';
+    $games = visit("/host/{$event->id}/games")->resize(700, 900)->wait(0.5)->script($width('#games-list'));
+    $packs = visit('/host/packs')->resize(700, 900)->wait(0.5)->script($width('#pack-list'));
 
     expect($games)->toBe($packs);
 });
 
-it('moves a game still to play with the arrows and saves the order once (D-9)', function (): void {
+it('moves a question of a game with the arrows and saves the order once (D-9)', function (): void {
     $host = User::factory()->create();
     $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
-    foreach (['Warm-up', 'Team Trivia'] as $position => $title) {
-        $event->games()->create(['type' => GameType::Pentahoot, 'title' => $title, 'position' => $position + 1]);
-    }
+    $game = Pentahoot::game($event, ['First?', 'Second?']);
     actingAs($host);
 
-    $page = visit("/host/{$event->id}/games")->wait(0.5);
-    $page->script('document.querySelector("[data-move=down]").click()');
+    $page = visit("/host/{$event->id}/games/{$game->id}")->wait(0.5);
+    $page->script('document.querySelector("#game-panel [data-move=down]").click()');
     $page->wait(3);
 
-    expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Team Trivia', 'Warm-up']);
+    expect($game->questions()->orderBy('position')->with('pentahoot')->get()->map(fn ($question) => $question->pentahoot?->prompt)->all())->toBe(['Second?', 'First?']);
     $page->assertNoJavaScriptErrors();
 });

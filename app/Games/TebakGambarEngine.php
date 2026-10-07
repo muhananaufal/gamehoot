@@ -95,7 +95,8 @@ final readonly class TebakGambarEngine implements LiveGameEngine
 
     public function saveCopyDetail(Question $question, array $attributes): void
     {
-        $question->gambar()->firstOrFail()->forceFill($attributes)->save();
+        // D-2: an edited copy, or a question of the event's own getting its detail.
+        ($question->gambar()->first() ?? $question->gambar()->make())->forceFill($attributes)->save();
     }
 
     public function initialStatus(): QuestionStatus

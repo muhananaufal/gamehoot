@@ -124,6 +124,8 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group
                 Route::post('/{game}/finish', GameFinishController::class)->whereUuid('game')->name('finish');
                 // D-2: copied questions, editable until they have been on screen.
                 Route::get('/{game}/questions', [GameQuestionController::class, 'index'])->whereUuid('game')->name('questions.index');
+                Route::get('/{game}/questions/create', [GameQuestionController::class, 'create'])->whereUuid('game')->name('questions.create');
+                Route::post('/{game}/questions', [GameQuestionController::class, 'store'])->whereUuid('game')->name('questions.store');
                 Route::get('/{game}/questions/{question}/edit', [GameQuestionController::class, 'edit'])->whereUuid(['game', 'question'])->name('questions.edit');
                 Route::put('/{game}/questions/{question}', [GameQuestionController::class, 'update'])->whereUuid(['game', 'question'])->name('questions.update');
                 Route::delete('/{game}/questions/{question}', [GameQuestionController::class, 'destroy'])->whereUuid(['game', 'question'])->name('questions.destroy');
