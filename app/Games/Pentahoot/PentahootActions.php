@@ -68,10 +68,15 @@ final readonly class PentahootActions
         }
 
         if ($game->current_question_id !== null && $game->current_question_id !== $question->id) {
-            $current = Question::query()->findOrFail($game->current_question_id);
+            $current = Question::query()->lockForUpdate()->findOrFail($game->current_question_id);
 
-            if (in_array($current->status, [QuestionStatus::Live, QuestionStatus::Revealed], true)) {
+            if ($current->status === QuestionStatus::Live) {
                 throw ActionRefused::stale();
+            }
+
+            // D-5, D-10: a revealed question has its result frozen (G10); opening another closes it.
+            if ($current->status === QuestionStatus::Revealed) {
+                $current->forceFill(['status' => QuestionStatus::Done])->save();
             }
         }
 

@@ -93,6 +93,22 @@ describe('start and stop (F4, D-5)', function (): void {
         hostAction($event, Pentahoot::question($game, 3), 'start')->assertConflict();
         hostAction($event, Pentahoot::question($game, 1), 'start')->assertNoContent();
     });
+
+    it('closes a revealed question when another one opens from the list (D-5, D-10)', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['First?', 'Second?', 'Third?']);
+        [$first, $third] = [Pentahoot::question($game), Pentahoot::question($game, 3)];
+        hostAction($event, $first, 'start');
+        hostAction($event, $first, 'stop');
+        travelTo(now()->addSeconds(2));
+        hostAction($event, $first, 'reveal');
+
+        hostAction($event, $third, 'start')->assertNoContent();
+
+        expect($first->refresh()->status)->toBe(QuestionStatus::Done)
+            ->and($third->refresh()->status)->toBe(QuestionStatus::Live)
+            ->and($game->refresh()->current_question_id)->toBe($third->id);
+    });
 });
 
 describe('reveal and next (E1, E2, E3, E4, G10)', function (): void {
