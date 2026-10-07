@@ -96,7 +96,7 @@ describe('games in an event (D-9)', function (): void {
         $event = Pentahoot::event();
         $foreign = Pentahoot::pack(User::factory()->create());
 
-        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $foreign->id])->assertSessionHasErrors('pack_id');
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games", ['pack_id' => $foreign->id])->assertSessionHasErrors('pack_ids.0');
         expect(Game::query()->count())->toBe(0);
     });
 

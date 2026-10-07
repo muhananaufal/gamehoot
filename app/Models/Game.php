@@ -50,6 +50,15 @@ final class Game extends Model
     }
 
     /**
+     * D-2, D-9: not finished and not on screen. Only such a game can be edited, reordered,
+     * renamed or reloaded.
+     */
+    public function notStarted(Event $event): bool
+    {
+        return $this->status !== GameStatus::Finished && $this->id !== $event->active_game_id;
+    }
+
+    /**
      * D-9: the pack this game was copied from is deleted. The copy stands on its own; Reload is
      * gone with the pack.
      */

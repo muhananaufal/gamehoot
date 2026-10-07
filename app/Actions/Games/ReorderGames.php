@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Games;
 
-use App\Enums\GameStatus;
 use App\Exceptions\ActionRefused;
 use App\Models\Event;
 use App\Models\Game;
@@ -47,6 +46,6 @@ final readonly class ReorderGames
      */
     public static function stillToPlay(Event $event, Game $game): bool
     {
-        return $game->status !== GameStatus::Finished && $game->id !== $event->active_game_id;
+        return $game->notStarted($event);
     }
 }

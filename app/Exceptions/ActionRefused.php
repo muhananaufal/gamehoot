@@ -77,6 +77,14 @@ final class ActionRefused extends RuntimeException
         return new self('QUESTION_LOCKED', 409);
     }
 
+    /**
+     * D-2, D-9: a game that has started (running or finished) can only be looked at.
+     */
+    public static function gameStarted(): self
+    {
+        return new self('GAME_STARTED', 409);
+    }
+
     public static function eventNotOpen(): self
     {
         return new self('EVENT_NOT_OPEN', 409);

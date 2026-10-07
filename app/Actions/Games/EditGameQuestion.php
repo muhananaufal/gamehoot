@@ -8,6 +8,7 @@ use App\Enums\GameStatus;
 use App\Exceptions\ActionRefused;
 use App\Games\GameEngines;
 use App\Media\QuestionImages;
+use App\Models\Event;
 use App\Models\Game;
 use App\Models\Question;
 use App\Models\User;
@@ -30,7 +31,15 @@ final readonly class EditGameQuestion
     public function handle(Game $game, Question $question, array $validated, User $actor): void
     {
         DB::transaction(function () use ($game, $question, $validated, $actor): void {
+            // F6: event, then game, as the other changes to a game.
+            $lockedEvent = Event::query()->lockForUpdate()->findOrFail($game->event_id);
             $lockedGame = Game::query()->lockForUpdate()->findOrFail($game->id);
+
+            // D-2, D-9: a game that has started can only be looked at.
+            if (! $lockedGame->notStarted($lockedEvent)) {
+                throw ActionRefused::gameStarted();
+            }
+
             $locked = Question::query()->lockForUpdate()->with(['pentahoot', 'kata'])->findOrFail($question->id);
             $engine = $this->engines->live($lockedGame->type);
 

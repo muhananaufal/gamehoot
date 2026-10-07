@@ -6,8 +6,10 @@ namespace App\Http\Controllers\Host;
 
 use App\Actions\Games\CreateGame;
 use App\Actions\Games\DeleteGame;
+use App\Actions\Games\RenameGame;
 use App\Enums\GameType;
 use App\Games\GameEngines;
+use App\Http\Requests\Host\RenameGameRequest;
 use App\Http\Requests\Host\StoreGameRequest;
 use App\Http\Views\GameTimes;
 use App\Models\Event;
@@ -43,9 +45,16 @@ final class GameController
 
     public function store(StoreGameRequest $request, Event $event, CreateGame $createGame): RedirectResponse
     {
-        $createGame->handle($event, $request->pack());
+        $createGame->handleMany($event, $request->packs());
 
         return redirect()->route('host.events.games.index', $event)->with('status', __('games.added'));
+    }
+
+    public function update(RenameGameRequest $request, Event $event, Game $game, RenameGame $rename): RedirectResponse
+    {
+        $rename->handle($event, $game, $request->string('title')->trim()->toString());
+
+        return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.renamed'));
     }
 
     public function destroy(Event $event, Game $game, DeleteGame $deleteGame, #[CurrentUser] User $user): RedirectResponse

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Host;
 
+use App\Actions\Games\DeleteGameQuestion;
 use App\Actions\Games\EditGameQuestion;
 use App\Enums\GameStatus;
 use App\Games\GameEngines;
@@ -35,7 +36,14 @@ final class GameQuestionController
     {
         $editQuestion->handle($game, $question, $request->validated(), $actor);
 
-        return redirect()->route('host.events.games.questions.index', [$event, $game])->with('status', __('games.question_saved'));
+        return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_saved'));
+    }
+
+    public function destroy(Event $event, Game $game, Question $question, DeleteGameQuestion $delete): RedirectResponse
+    {
+        $delete->handle($event, $game, $question);
+
+        return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_deleted'));
     }
 
     private function page(Event $event, Game $game, GameEngines $engines, ?Question $editing): View

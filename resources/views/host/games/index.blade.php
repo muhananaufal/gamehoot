@@ -27,7 +27,7 @@
             {{-- A grid, not a flex column: the list keeps its self-start without shrinking to its content. --}}
             <div class="grid gap-2 self-start">
                 <x-pack-list :packs="$packs" :types="$types" :add-to="route('host.events.games.store', $event)" />
-                @error('pack_id')
+                @error('pack_ids.*')
                     <p class="px-1 text-sm font-semibold text-on-danger">{{ $message }}</p>
                 @enderror
             </div>

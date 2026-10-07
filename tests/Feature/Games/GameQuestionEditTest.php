@@ -36,7 +36,7 @@ describe('editing copied questions (D-2)', function (): void {
         get(copyUrl($event, $game, $copy).'/edit')->assertOk()->assertSee('Pack prompt?');
 
         put(copyUrl($event, $game, $copy), ['prompt' => 'Copy prompt?', 'duration_seconds' => 45])
-            ->assertRedirect("/host/{$event->id}/games/{$game->id}/questions")
+            ->assertRedirect("/host/{$event->id}/games/{$game->id}")
             ->assertSessionHas('status', 'Question saved. The pack is not changed.');
 
         expect($copy->pentahoot()->firstOrFail()->only(['prompt', 'duration_seconds']))->toBe(['prompt' => 'Copy prompt?', 'duration_seconds' => 45])
