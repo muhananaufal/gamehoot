@@ -19,6 +19,7 @@ const fakeUp = () => {
         macro: (selector, fn) => (up.macros[selector] = fn),
         link: { config: { followSelectors: [], noFollowSelectors: [] } },
         form: { config: { submitSelectors: [], noSubmitSelectors: [] } },
+        network: { config: { evictCache: false } },
         on: (name, handler) => (handlers[name] = handler),
         render: (options) => rendered.push(options),
     };
@@ -41,6 +42,14 @@ describe('U18 navigation without reloads', () => {
         configureNavigation(up);
 
         expect(up.form.config.noSubmitSelectors).toContain('form[method=dialog]');
+    });
+
+    it('drops every cached page after a change of data, so no page shows the old data first (U19)', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+
+        expect(up.network.config.evictCache({ isSafe: () => false })).toBe(true);
+        expect(up.network.config.evictCache({ isSafe: () => true })).toBe(false);
     });
 
     it('lets file downloads load as plain requests', () => {

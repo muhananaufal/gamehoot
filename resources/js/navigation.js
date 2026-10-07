@@ -15,6 +15,10 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // A <form method="dialog"> only closes its dialog; sent through Unpoly it became a DIALOG
     // request to the page address (405 Method Not Allowed).
     up.form.config.noSubmitSelectors.push('form[method=dialog]');
+    // U19: after a change of data every cached page goes. Unpoly only marks them expired by
+    // default, then shows the old page first and swaps it once the server answers; on a slow
+    // server the old data stayed in view for seconds.
+    up.network.config.evictCache = (request) => !request.isSafe();
     // CSV exports are downloads, not pages.
     up.link.config.noFollowSelectors.push('a[href$=".csv"]');
 
