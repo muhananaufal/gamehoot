@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Views;
 
+use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +27,8 @@ final class RecentEvents
             ->where(fn (Builder $query) => $query
                 ->where('owner_id', $user->id)
                 ->orWhereHas('cohosts', fn (Builder $cohosts) => $cohosts->whereKey($user->id)))
+            // D-10: finished events leave the list; the one open on screen is added below.
+            ->where('status', '!=', EventStatus::Finished)
             ->latest('updated_at')
             ->limit(self::LIMIT)
             ->get(['id', 'name', 'status', 'updated_at']);
