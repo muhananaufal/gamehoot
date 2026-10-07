@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opening, reopening, locking claims, starting any game and skipping a question now ask for confirmation first.
 - Every text field shows an example of what to type.
 - Long lists offer "Go to page" and show their totals with thousands separators.
+- Hosts can replay past moments on the projector from Live control, during the event or after it closed: Pentahoot categories, Word and Picture Guess answers with their winners, leaderboards after each win and final podiums, then go back to live.
 - A recent event in the sidebar expands its pages in place, so Settings and the other pages are one click away.
 - `php artisan db:seed --class=DemoSeeder` builds a demo event with 50 names and one game of each type; `LoadTestSeeder` builds an open event with 500 names for load tests. Neither runs in production.
 - The specification gains a day-to-day guide with every command from branch to release, a debugging chapter with a note format (`docs/debugging/`), and execution lessons in the project blueprint.
