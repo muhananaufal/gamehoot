@@ -30,8 +30,8 @@ final readonly class ReplayMoments
     public function __construct(private TebakBoard $board) {}
 
     /**
-     * The games that have something to replay, in play order, each with its moments: the final
-     * podium first, then each question in order, a Tebak leaderboard right after its question.
+     * The games that have something to replay, in play order, each with its moments in the order
+     * they happened: each question, a Tebak leaderboard right after its question, the final podium last.
      *
      * @return list<array{game: Game, moments: list<Moment>}>
      */
@@ -124,11 +124,6 @@ final readonly class ReplayMoments
         }
 
         $moments = [];
-        $final = $this->board->frozen($game);
-
-        if ($final !== []) {
-            $moments[] = new Moment(ReplayKind::Final, $game->id, null, null, $game->title, [$final[0]['name']]);
-        }
 
         foreach ($questions as $question) {
             if (! in_array($question->status, [QuestionStatus::Won, QuestionStatus::Surrendered], true)) {
@@ -142,6 +137,13 @@ final readonly class ReplayMoments
             if ($winner !== null) {
                 $moments[] = new Moment(ReplayKind::Leaderboard, $game->id, $question->id, $question->position, $this->answer($question), $names);
             }
+        }
+
+        // The final podium closes the game, so it comes last.
+        $final = $this->board->frozen($game);
+
+        if ($final !== []) {
+            $moments[] = new Moment(ReplayKind::Final, $game->id, null, null, $game->title, [$final[0]['name']]);
         }
 
         return $moments;

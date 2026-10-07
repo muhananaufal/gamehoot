@@ -43,10 +43,11 @@ describe('the moments a host can replay (D-11)', function (): void {
 
         expect(replayMomentLines($event))->toBe([
             'Office Awards | result | 1 | Most punctual? | Rita Wulandari',
-            'Word Round | final | - | Word Round | Rita Wulandari',
+            // In the order they happened: each question, its leaderboard, the final podium last.
             'Word Round | result | 1 | PARIS | Rita Wulandari',
             'Word Round | leaderboard | 1 | PARIS | Rita Wulandari',
             'Word Round | result | 2 | PACIFIC | ',
+            'Word Round | final | - | Word Round | Rita Wulandari',
         ]);
     });
 

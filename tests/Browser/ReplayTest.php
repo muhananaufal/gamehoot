@@ -25,8 +25,8 @@ it('replays a final podium from Live control on the Public View, after the event
 
     actingAs($event->owner()->firstOrFail());
     $host = visit("/host/{$event->id}")->assertSee('Replay on screen');
-    // The last finished game is picked first: its final podium is the first moment.
-    $host->script('document.querySelector("#live-replay ol:not([style*=none]) [data-test=replay-show]").click()');
+    // The last finished game is picked first; its final podium closes its moments.
+    $host->script('[...document.querySelectorAll("#live-replay ol:not([style*=none]) li")].find((li) => li.innerText.includes("Final podium")).querySelector("[data-test=replay-show]").click()');
     $host->assertSee('Showing: 2. Word Round · Final podium');
 
     $screen->assertSee('Final results')->assertSee('Rita Wulandari')->assertNoJavaScriptErrors();
