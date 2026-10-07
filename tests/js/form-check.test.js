@@ -133,3 +133,34 @@ describe('U19 every host form is checked, sign in excepted', () => {
         expect(looked).toEqual(['plain']);
     });
 });
+
+describe('U19 Tebak Kata answers are checked before sending', () => {
+    // The same pattern as the answer field (String.raw keeps the backslashes).
+    const answerPattern = String.raw`(?=.*[\p{L}\p{N}])[\p{L}\p{N} \-'./&’‘–]+`;
+    const answer = (value) =>
+        field({ value, pattern: answerPattern, dataset: { patternMessage: 'Unsupported answer.' } });
+
+    it('takes letters of any script, digits, spaces and the allowed punctuation', () => {
+        expect(fieldProblem(answer('JAKARTA'), 'Answer', messages)).toBeNull();
+        expect(fieldProblem(answer('ROCK & ROLL'), 'Answer', messages)).toBeNull();
+        expect(fieldProblem(answer('SÃO PAULO'), 'Answer', messages)).toBeNull();
+        expect(fieldProblem(answer('東京'), 'Answer', messages)).toBeNull();
+    });
+
+    it('refuses other symbols, and an answer without a letter or digit', () => {
+        expect(fieldProblem(answer('HELLO!'), 'Answer', messages)).toBe('Unsupported answer.');
+        expect(fieldProblem(answer('- / -'), 'Answer', messages)).toBe('Unsupported answer.');
+    });
+
+    it('lets a part of the form mark itself invalid with its own message (every box open)', () => {
+        const boxes = field({
+            type: 'hidden',
+            dataset: { invalid: 'true', invalidMessage: 'At least one box must stay closed.' },
+        });
+
+        expect(fieldProblem(boxes, 'Boxes', messages)).toBe('At least one box must stay closed.');
+        expect(
+            fieldProblem({ ...boxes, dataset: { invalid: 'false', invalidMessage: 'x' } }, 'Boxes', messages),
+        ).toBeNull();
+    });
+});

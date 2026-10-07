@@ -14,6 +14,11 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * another field of the form by name (a confirmation must match its field).
  */
 export function fieldProblem(field, label, messages, valueOf = () => '') {
+    // A part of the form can mark itself invalid with its own message (Tebak Kata: every box open).
+    if (field.dataset?.invalid === 'true') {
+        return field.dataset.invalidMessage ?? fieldProblem({ ...field, dataset: {} }, label, messages, valueOf);
+    }
+
     if (field.type === 'hidden' || field.disabled || field.readOnly) {
         return null;
     }
@@ -58,7 +63,8 @@ export function fieldProblem(field, label, messages, valueOf = () => '') {
         return fill(messages.email);
     }
 
-    if (field.pattern && !new RegExp(`^(?:${field.pattern})$`).test(value)) {
+    // Unicode mode: letters of every script match \p{L}, as on the server (Tebak Kata answers).
+    if (field.pattern && !new RegExp(`^(?:${field.pattern})$`, 'u').test(value)) {
         return field.dataset?.patternMessage ?? fill(messages.required);
     }
 
