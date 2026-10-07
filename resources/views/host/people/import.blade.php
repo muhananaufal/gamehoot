@@ -21,7 +21,7 @@
                     ])),
             })"
         @endif>
-        <div class="flex flex-col gap-3 pr-12">
+        <div class="flex flex-col gap-3">
             <h2 class="font-display text-[22px] font-bold">{{ __('people.import_title') }}</h2>
             <ol class="flex flex-wrap items-center gap-2 text-sm font-semibold" aria-label="{{ __('people.import_steps') }}">
                 <li>
@@ -178,8 +178,10 @@
                 {{-- U2: Back on the left, Save on the right. --}}
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <x-button variant="secondary" :href="$backUrl" data-test="import-back" @click="back($event)">{{ __('people.back') }}</x-button>
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center justify-end gap-3">
                         <p class="text-sm font-semibold text-on-danger" x-show="problemCount > 0">{{ __('people.fix_to_save') }}</p>
+                        {{-- U13: modals have no close button; Cancel asks first after a change (import-guard.js). --}}
+                        <x-button variant="secondary" type="button" up-dismiss="" data-test="import-cancel">{{ __('ui.cancel') }}</x-button>
                         <x-button type="submit" x-bind:disabled="problemCount > 0 || overLimit || rows.length === 0"
                             x-text="label('save', rows.length)">
                             {{ trans_choice('people.save_names', count($rows)) }}

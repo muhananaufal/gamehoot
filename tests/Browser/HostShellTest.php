@@ -245,6 +245,8 @@ it('keeps a refused upload in the Import modal, with its error under the file fi
 
     expect($page->script('window.up.layer.count'))->toBe(2)
         ->and($page->script('document.querySelectorAll("up-modal [up-main]").length'))->toBe(1)
-        ->and($page->script('document.querySelectorAll("up-bounds").length'))->toBe(0);
+        ->and($page->script('document.querySelectorAll("up-bounds").length'))->toBe(0)
+        // U13: no close button; Cancel, Escape and a click outside close the modal.
+        ->and($page->script('!! document.querySelector("up-modal up-modal-dismiss")'))->toBeFalse();
     $page->assertNoJavaScriptErrors();
 });

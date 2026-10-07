@@ -271,3 +271,12 @@ describe('U13 a page that changes closes the dialogs of the old one', () => {
         expect(dialog.closed).toBe(true);
     });
 });
+
+describe('U13 modals close like the native dialogs', () => {
+    it('have no close button: Cancel, Escape and a click outside close them', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+
+        expect(up.layer.config.modal.dismissible).toEqual(['key', 'outside']);
+    });
+});

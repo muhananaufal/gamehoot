@@ -104,6 +104,9 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // U8: modals pop in with the spring and leave a little faster.
     up.animation('pop-in', (element) => animate(element, { opacity: [0, 1], scale: [0.95, 1] }, SPRING));
     up.animation('pop-out', (element) => animate(element, { opacity: [1, 0], scale: [1, 0.97] }, EXIT));
+    // U13: modals close like the native dialogs, with no close button: every modal has its own
+    // Cancel, and Escape or a click outside close it too.
+    up.layer.config.modal.dismissible = ['key', 'outside'];
     up.layer.config.modal.openAnimation = 'pop-in';
     up.layer.config.modal.closeAnimation = 'pop-out';
 }
