@@ -50,6 +50,15 @@ final class Game extends Model
     }
 
     /**
+     * D-9: the pack this game was copied from is deleted. The copy stands on its own; Reload is
+     * gone with the pack.
+     */
+    public function packDeleted(): bool
+    {
+        return $this->source_pack_id !== null && $this->sourcePack?->trashed() === true;
+    }
+
+    /**
      * D-9: the pack moved on since its questions were copied. A game copied before the marker
      * existed counts as version 0; a deleted pack cannot be reloaded, so it never counts.
      */

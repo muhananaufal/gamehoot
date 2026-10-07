@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { moveItem, saveLater } from '../../resources/js/sortable-list.js';
+import { moveItem, numberAt, reloadTarget, saveLater } from '../../resources/js/sortable-list.js';
 
 describe('U9 drag to reorder', () => {
     it('moves an item down and up, shifting the others', () => {
@@ -39,5 +39,18 @@ describe('U14 arrows save the order once after the last click', () => {
         expect(save).toHaveBeenCalledOnce();
         expect(save).toHaveBeenCalledWith(['b', 'c', 'a']);
         vi.useRealTimers();
+    });
+});
+
+describe('D-9 lists that share their numbers with rows that do not move', () => {
+    it('numbers a row by the places the list holds, or from 1 without them', () => {
+        expect(numberAt(0, [3, 4, 6])).toBe(3);
+        expect(numberAt(2, [3, 4, 6])).toBe(6);
+        expect(numberAt(1, null)).toBe(2);
+    });
+
+    it('reloads the part of the page the list names after a failed save', () => {
+        expect(reloadTarget({ reload: '#games-live' })).toBe('#games-live');
+        expect(reloadTarget({})).toBe('#pack-panel');
     });
 });

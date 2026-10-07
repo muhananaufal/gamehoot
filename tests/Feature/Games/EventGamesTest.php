@@ -323,6 +323,58 @@ describe('the order of the games still to play (D-9)', function (): void {
     });
 });
 
+describe('the Games page (D-9)', function (): void {
+    it('splits played games from the ones still to play, which can be dragged into a new order', function (): void {
+        $event = Pentahoot::event();
+        $played = Pentahoot::game($event, title: 'Warm-up');
+        $played->forceFill(['status' => GameStatus::Finished])->save();
+        $event->forceFill(['active_game_id' => $played->id])->save();
+        $next = Pentahoot::game($event, title: 'Team Trivia');
+        Pentahoot::pack(gamesOwner($event), ['Q?'], 'Office Awards');
+
+        $html = (string) actingAs(gamesOwner($event))->get("/host/{$event->id}/games")->getContent();
+
+        expect($html)->toMatch('#id="games-live".*Click a pack on the left to add it as the next game.#s')
+            ->and($html)->toMatch('#Played.*Warm-up.*Up next.*Team Trivia#s')
+            ->and($html)->toContain('action="'.route('host.events.games.reorder', $event).'"')
+            ->and($html)->toContain('data-places="[2]"')
+            ->and($html)->toMatch('#<li data-id="'.$next->id.'" draggable="true"#')
+            ->and($html)->not->toContain('data-id="'.$played->id.'"');
+    });
+
+    it('marks edited games and deleted packs, and offers Reload and Delete as icons', function (): void {
+        $event = Pentahoot::event();
+        $owner = gamesOwner($event);
+        $pack = Pentahoot::pack($owner, ['First?'], 'Office Awards');
+        actingAs($owner)->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        $game = Game::query()->sole();
+        $game->forceFill(['edited_at' => now()])->save();
+        post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
+
+        $html = (string) get("/host/{$event->id}/games")->getContent();
+
+        expect($html)->toContain('Edited in this event')
+            ->and($html)->toContain('aria-label="Reload “Office Awards” from its pack"')
+            ->and($html)->toContain('aria-label="Delete “Office Awards”"')
+            ->and($html)->toContain('Edits made to this game’s questions are lost.');
+
+        $pack->delete();
+        $after = (string) get("/host/{$event->id}/games")->getContent();
+        expect($after)->toContain('Pack deleted')
+            ->and($after)->not->toContain('aria-label="Reload “Office Awards” from its pack"');
+    });
+
+    it('warns about lost edits only when the game was edited', function (): void {
+        $event = Pentahoot::event();
+        $owner = gamesOwner($event);
+        $pack = Pentahoot::pack($owner, ['First?'], 'Office Awards');
+        actingAs($owner)->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        post("/host/packs/{$pack->id}/questions", ['prompt' => 'New one?', 'duration_seconds' => 20]);
+
+        expect((string) get("/host/{$event->id}/games")->getContent())->not->toContain('Edits made to this game’s questions are lost.');
+    });
+});
+
 describe('finished is yellow (D-10)', function (): void {
     it('marks questions locked by a finished game in yellow', function (): void {
         $event = Pentahoot::event();

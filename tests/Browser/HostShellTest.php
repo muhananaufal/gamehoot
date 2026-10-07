@@ -176,8 +176,8 @@ it('adds a game from the pack list of the Games page, searched like Question pac
     expect($page->script('[...document.querySelectorAll("#pack-list [data-pack]")].filter((b) => ! b.hidden).map((b) => b.innerText.split("\n")[0].trim())'))->toBe(['Team Trivia']);
 
     $page->script('[...document.querySelectorAll("#pack-list [data-pack]")].find((b) => ! b.hidden).click()');
-    // The toast may be gone already on a slow browser; the list shows the new game.
-    $page->assertSee('1. Team Trivia')
+    // The toast may be gone already on a slow browser; the Up next list shows the new game.
+    $page->assertScript('document.querySelector("#games-live li[data-id]")?.innerText.includes("Team Trivia") === true', true)
         ->assertPathEndsWith("/host/{$event->id}/games")
         ->assertNoJavaScriptErrors();
     expect($event->games()->pluck('title')->all())->toBe(['Team Trivia']);
@@ -196,4 +196,20 @@ it('fills the width with the pack list of the Games page on a phone, like Questi
     $packs = visit('/host/packs')->resize(700, 900)->wait(0.5)->script($width);
 
     expect($games)->toBe($packs);
+});
+
+it('moves a game still to play with the arrows and saves the order once (D-9)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    foreach (['Warm-up', 'Team Trivia'] as $position => $title) {
+        $event->games()->create(['type' => GameType::Pentahoot, 'title' => $title, 'position' => $position + 1]);
+    }
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/games")->wait(0.5);
+    $page->script('document.querySelector("[data-move=down]").click()');
+    $page->wait(3);
+
+    expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Team Trivia', 'Warm-up']);
+    $page->assertNoJavaScriptErrors();
 });
