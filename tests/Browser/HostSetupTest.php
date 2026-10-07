@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\GameType;
 use App\Models\Event;
+use App\Models\Person;
 use App\Models\QuestionPack;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -135,5 +136,24 @@ it('fills the link from the event name and stops an empty name before sending (U
 
     expect($page->script('window.__sent'))->toBeFalse()
         ->and($page->script('document.querySelector("dialog[open] [data-check-error]")?.textContent'))->toBe('The event name field is required.');
+    $page->assertNoJavaScriptErrors();
+});
+
+it('goes to a typed page of a long list, with first, last and neighbours numbered (U4)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    Person::factory()->for($event)->count(100)->create();
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    // 10 rows per page: 10 pages, so the page number field shows.
+    $page->script('Alpine.$data(document.querySelector("[x-data^=tableView]")).size = 10');
+    $page->wait(0.3);
+    $page->script('(() => { const field = document.querySelector("input[type=number][placeholder]"); field.value = "6"; field.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); })()');
+    $page->wait(0.3);
+
+    expect($page->script('[...document.querySelector("nav[aria-label=Pages]").querySelectorAll("[aria-label^=Page], span[aria-hidden]")].map((e) => e.innerText).join(" ")'))->toBe('1 … 5 6 7 … 10')
+        ->and($page->script('document.querySelector("nav[aria-label=Pages] [aria-current=page]").innerText'))->toBe('6')
+        ->and($page->script('[...document.querySelectorAll("p[aria-live=polite]")].map((p) => p.innerText).find((t) => t.startsWith("Showing"))'))->toBe('Showing 51–60 of 100');
     $page->assertNoJavaScriptErrors();
 });
