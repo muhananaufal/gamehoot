@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use App\Enums\ReplayKind;
 use App\Enums\ScreenTheme;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -87,6 +88,26 @@ final class Event extends Model
         return $this->belongsTo(Game::class, 'active_game_id');
     }
 
+    /**
+     * D-11: the game of the moment the Public View replays.
+     *
+     * @return BelongsTo<Game, $this>
+     */
+    public function replayGame(): BelongsTo
+    {
+        return $this->belongsTo(Game::class, 'replay_game_id');
+    }
+
+    /**
+     * D-11: the question of the moment the Public View replays, none for a final podium.
+     *
+     * @return BelongsTo<Question, $this>
+     */
+    public function replayQuestion(): BelongsTo
+    {
+        return $this->belongsTo(Question::class, 'replay_question_id');
+    }
+
     public function isOwnedBy(User $user): bool
     {
         return $this->owner_id === $user->id;
@@ -138,6 +159,7 @@ final class Event extends Model
             'join_locked_at' => 'datetime',
             'state_version' => 'integer',
             'roster_version' => 'integer',
+            'replay_kind' => ReplayKind::class,
         ];
     }
 }
