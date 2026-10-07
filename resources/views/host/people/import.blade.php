@@ -85,7 +85,7 @@
                             @foreach ($rows as $index => $row)
                                 <tr class="border-b border-line-soft">
                                     <td class="px-3 py-2 tabular-nums">{{ $index + 1 }}</td>
-                                    <td class="px-3 py-2"><input type="text" name="names[]" value="{{ $row['name'] }}" aria-label="{{ __('people.name') }} {{ $index + 1 }}" class="h-11 w-full rounded-control border border-line-strong bg-field px-3"></td>
+                                    <td class="px-3 py-2"><input type="text" name="names[]" placeholder="{{ __('examples.person_name') }}" value="{{ $row['name'] }}" aria-label="{{ __('people.name') }} {{ $index + 1 }}" class="h-11 w-full rounded-control border border-line-strong bg-field px-3"></td>
                                     <td @class(['px-3 py-2 text-sm', 'font-semibold text-on-danger' => $row['problem'] !== null, 'text-muted' => $row['problem'] === null])>{{ $row['problem']?->message() ?? '—' }}</td>
                                     <td class="px-3 py-2"></td>
                                 </tr>
@@ -97,7 +97,7 @@
                                     <tr class="border-b border-line-soft">
                                         <td class="px-3 py-2 tabular-nums" x-text="index + 1"></td>
                                         <td class="px-3 py-2">
-                                            <input type="text" name="names[]" x-model="row.name" required maxlength="100" :aria-label="@js(__('people.name')) + ' ' + (index + 1)"
+                                            <input type="text" name="names[]" placeholder="{{ __('examples.person_name') }}" x-model="row.name" required maxlength="100" :aria-label="@js(__('people.name')) + ' ' + (index + 1)"
                                                 class="h-11 w-full rounded-control border bg-field px-3"
                                                 :class="problemAt(index) ? 'border-on-danger' : 'border-line-strong'">
                                         </td>

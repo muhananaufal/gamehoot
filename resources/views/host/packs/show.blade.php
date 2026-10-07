@@ -13,7 +13,7 @@
     $confirmTexts = [
         'delete' => ['title' => __('packs.delete_pack') . '?', 'body' => __('packs.delete_pack_confirm'), 'label' => __('packs.delete_pack'), 'method' => 'DELETE', 'tone' => 'destructive'],
         'rename' => ['title' => __('packs.rename_pack'), 'label' => __('packs.rename'), 'method' => 'PUT', 'tone' => 'primary',
-            'field' => ['name' => 'title', 'label' => __('packs.pack_title'), 'maxlength' => 100, 'form' => 'rename-pack']],
+            'field' => ['name' => 'title', 'label' => __('packs.pack_title'), 'placeholder' => __('examples.pack_title'), 'maxlength' => 100, 'form' => 'rename-pack']],
         'deleteQuestion' => ['title' => __('packs.delete_question_title', ['name' => '__N__']), 'body' => __('packs.delete_question_confirm'), 'label' => __('packs.delete_question'), 'method' => 'DELETE', 'tone' => 'destructive'],
     ];
     // U14: Rename and Delete sit in the pack card's menu.
@@ -32,7 +32,7 @@
             <form method="POST" action="{{ route('host.packs.store') }}" class="flex flex-col gap-3" novalidate>
                 @csrf
                 <input type="hidden" name="form" value="create-pack">
-                <x-field name="title" :label="__('packs.pack_title')" id="new-pack-title" :submitted="old('form') === 'create-pack'" required maxlength="100" autofocus />
+                <x-field name="title" :placeholder="__('examples.pack_title')" :label="__('packs.pack_title')" id="new-pack-title" :submitted="old('form') === 'create-pack'" required maxlength="100" autofocus />
                 <div class="flex flex-col gap-1.5">
                     <span class="text-sm font-semibold">{{ __('packs.game_type') }}</span>
                     <x-select name="game_type" :options="array_map(fn (GameType $type): array => ['value' => $type->value, 'label' => __('games.types.' . $type->value)], $types)"

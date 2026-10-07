@@ -22,7 +22,7 @@
                         <input type="hidden" name="form" :value="$store.confirm.field.form">
                     </template>
                     <label for="confirm-field" class="text-sm font-semibold" x-text="$store.confirm.field.label"></label>
-                    <input id="confirm-field" :name="$store.confirm.field.name" x-model="$store.confirm.field.value" :maxlength="$store.confirm.field.maxlength"
+                    <input id="confirm-field" :placeholder="$store.confirm.field.placeholder ?? ''" :name="$store.confirm.field.name" x-model="$store.confirm.field.value" :maxlength="$store.confirm.field.maxlength"
                         required autocomplete="off" x-init="$nextTick(() => $el.select())"
                         :aria-invalid="$store.confirm.field.error ? 'true' : null" :aria-describedby="$store.confirm.field.error ? 'confirm-field-error' : null"
                         class="h-11 rounded-control border bg-field px-3 text-[15px] text-ink"

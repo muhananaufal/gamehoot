@@ -10,7 +10,7 @@ export function confirmStore() {
         method: 'POST',
         confirmLabel: '',
         tone: 'primary',
-        /** One field to fill in (e.g. rename): {name, label, maxlength, value, error}, or null. */
+        /** One field to fill in (e.g. rename): {name, label, maxlength, placeholder, value, error}, or null. */
         field: null,
         /** U4: hidden form values ({name: value}), so a choice never travels in the address. */
         data: {},

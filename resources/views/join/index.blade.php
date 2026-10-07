@@ -16,7 +16,7 @@
         @else
             <div class="flex flex-col gap-1.5">
                 <label for="name-search" class="text-sm font-semibold">{{ __('join.search') }}</label>
-                <input id="name-search" type="search" x-model="query" autocomplete="off" autocapitalize="words"
+                <input id="name-search" placeholder="{{ __('examples.search_name') }}" type="search" x-model="query" autocomplete="off" autocapitalize="words"
                     class="h-12 rounded-control border border-line-strong bg-field px-4 text-base text-ink">
             </div>
             <p class="text-sm text-muted">{{ __('join.claimed_hidden') }}</p>

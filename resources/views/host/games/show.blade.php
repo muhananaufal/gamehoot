@@ -12,7 +12,7 @@
     $confirmTexts = $game ? [
         'rename' => ['title' => __('games.rename_title'), 'label' => __('games.rename'), 'method' => 'PUT', 'tone' => 'primary',
             'url' => route('host.events.games.update', [$event, '__P__']),
-            'field' => ['name' => 'title', 'label' => __('games.game_title_label'), 'maxlength' => 100, 'form' => 'rename-game']],
+            'field' => ['name' => 'title', 'label' => __('games.game_title_label'), 'placeholder' => __('examples.pack_title'), 'maxlength' => 100, 'form' => 'rename-game']],
         'reload' => ['title' => __('games.reload') . '?', 'label' => __('games.reload'), 'method' => 'POST', 'tone' => 'primary',
             'body' => __('games.reload_confirm', ['title' => $game->title]) . ($game->edited_at ? ' ' . __('games.reload_edits_lost') : ''),
             'url' => route('host.events.games.reload', [$event, '__P__'])],
