@@ -71,7 +71,7 @@ final readonly class TebakActions
     {
         match ($action) {
             'show' => $this->show($game, $question),
-            'skip' => $this->skip($game, $question),
+            'skip' => $this->skip($event, $game, $question, $actor),
             'winner' => $this->winner($event, $game, $question, $actor, is_string($input['person'] ?? null) ? $input['person'] : ''),
             'surrender' => $this->surrender($event, $game, $question, $actor),
             'leaderboard' => $this->leaderboard($game, $question),
@@ -114,8 +114,11 @@ final readonly class TebakActions
     /**
      * Once per question, to the end of the queue. E6: not when nothing else is queued.
      */
-    private function skip(Game $game, Question $question): void
+    private function skip(Event $event, Game $game, Question $question, User $actor): void
     {
+        // E13: the one skip of the question is used.
+        $this->auditLog->record(LoggedAction::QuestionSkipped, $actor, $event, ['question_id' => $question->id]);
+
         $this->expectCurrent($game, $question, QuestionStatus::Shown);
 
         $othersQueued = $game->questions()->where('status', QuestionStatus::Queued)->whereKeyNot($question->id)->exists();

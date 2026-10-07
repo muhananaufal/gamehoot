@@ -60,9 +60,9 @@ final class GameQuestionController
         return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_saved'));
     }
 
-    public function destroy(Event $event, Game $game, Question $question, DeleteGameQuestion $delete): RedirectResponse
+    public function destroy(Event $event, Game $game, Question $question, DeleteGameQuestion $delete, #[CurrentUser] User $user): RedirectResponse
     {
-        $delete->handle($event, $game, $question);
+        $delete->handle($event, $game, $question, $user);
 
         return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_deleted'));
     }

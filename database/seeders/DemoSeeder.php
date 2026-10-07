@@ -35,7 +35,7 @@ final class DemoSeeder extends Seeder
         }
 
         $event = $createEvent->handle($owner, 'Demo Gathering', self::SLUG, ScreenTheme::Dark, false);
-        $names->import($event, SeedContent::names(50));
+        $names->import($event, SeedContent::names(50), $owner);
 
         $packs = [
             SeedContent::pack($owner, GameType::Pentahoot, 'Demo Awards', [

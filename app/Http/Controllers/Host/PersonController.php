@@ -43,11 +43,11 @@ final class PersonController
     /**
      * B-4: Add names, one per line; all of them are saved together or none.
      */
-    public function store(AddNamesRequest $request, Event $event): RedirectResponse
+    public function store(AddNamesRequest $request, Event $event, #[CurrentUser] User $user): RedirectResponse
     {
         $names = $request->names();
 
-        return $this->change($event, fn () => $this->names->import($event, $names), trans_choice('people.added_many', count($names)), 'names');
+        return $this->change($event, fn () => $this->names->import($event, $names, $user), trans_choice('people.added_many', count($names)), 'names');
     }
 
     public function update(PersonNameRequest $request, Event $event, Person $person): RedirectResponse

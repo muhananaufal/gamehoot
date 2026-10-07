@@ -236,7 +236,7 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
             ->assertSessionHasErrors(['action' => 'The screen was out of date. It has been refreshed, try again.']);
     });
 
-    it('finishes a completed game without an early-finish log entry', function (): void {
+    it('finishes a completed game, logged as finished rather than finished early', function (): void {
         $event = Pentahoot::event();
         $game = Pentahoot::running($event);
         $game->questions()->update(['status' => QuestionStatus::Done]);
@@ -244,7 +244,7 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish");
 
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
-            ->and(ActionLog::query()->count())->toBe(0);
+            ->and(ActionLog::query()->pluck('action')->all())->toBe([LoggedAction::GameFinished]);
     });
 
     it('cannot start a finished game again (D-4)', function (): void {

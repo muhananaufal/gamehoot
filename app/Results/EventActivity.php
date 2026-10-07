@@ -82,6 +82,13 @@ final class EventActivity
                 ?? self::text(QuestionGambar::query()->whereKey($payload['question_id'])->value('title'));
         }
 
+        // E13: added names keep their count only.
+        if (isset($payload['count']) && is_int($payload['count'])) {
+            return trans_choice('logs.names_count', $payload['count']);
+        }
+
+        $kept = $payload['name'] ?? $payload['title'] ?? null;
+
         if (isset($payload['game_id']) && is_string($payload['game_id'])) {
             return self::text(Game::query()->whereKey($payload['game_id'])->value('title'));
         }
@@ -96,8 +103,6 @@ final class EventActivity
         }
 
         // Deleted names and games are gone from their tables; the entry kept what they were called.
-        $kept = $payload['name'] ?? $payload['title'] ?? null;
-
         if (is_string($kept)) {
             return $kept;
         }

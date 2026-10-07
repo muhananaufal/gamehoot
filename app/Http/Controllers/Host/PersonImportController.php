@@ -10,8 +10,10 @@ use App\Http\Requests\Host\ConfirmImportRequest;
 use App\Http\Requests\Host\ImportPeopleRequest;
 use App\Http\Requests\Host\PersonNameRequest;
 use App\Models\Event;
+use App\Models\User;
 use App\People\DuplicateNames;
 use App\People\NameCsv;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,10 +65,10 @@ final class PersonImportController
         return $this->review($event, $csv->names, $csv->separator, $file->getClientOriginalName());
     }
 
-    public function update(ConfirmImportRequest $request, Event $event, EditNameList $names): RedirectResponse
+    public function update(ConfirmImportRequest $request, Event $event, EditNameList $names, #[CurrentUser] User $user): RedirectResponse
     {
         try {
-            $names->import($event, $request->names());
+            $names->import($event, $request->names(), $user);
         } catch (NameListLocked) {
             return redirect()->route('host.events.people.index', $event)->withErrors(['names' => __('people.locked')]);
         } catch (UniqueConstraintViolationException) {

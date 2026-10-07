@@ -57,9 +57,8 @@ final readonly class FinishGame
             $locked->save();
             $this->publisher->publish($locked);
 
-            if ($early) {
-                $this->auditLog->record(LoggedAction::GameFinishedEarly, $actor, $locked, ['game_id' => $lockedGame->id]);
-            }
+            // E13: results are frozen either way; an early finish says so.
+            $this->auditLog->record($early ? LoggedAction::GameFinishedEarly : LoggedAction::GameFinished, $actor, $locked, ['game_id' => $lockedGame->id]);
         });
     }
 }
