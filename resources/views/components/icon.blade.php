@@ -27,9 +27,6 @@
         'upload' => '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"></path>',
         'copy' => '<rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 011-1h10"></path>',
         'sidebar' => '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path>',
-        // U27: the Reduce motion switch.
-        'sparkles' => '<path d="M11 3l1.7 4.3L17 9l-4.3 1.7L11 15l-1.7-4.3L5 9l4.3-1.7z"></path><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"></path>',
-        'sparkles-off' => '<path d="M11 3l1.7 4.3L17 9l-4.3 1.7L11 15l-1.7-4.3L5 9l4.3-1.7z"></path><path d="M3 3l18 18"></path>',
         'refresh' => '<path d="M20 11a8 8 0 00-14.9-4M4 3v4h4M4 13a8 8 0 0014.9 4M20 21v-4h-4"></path>',
         'unlink' => '<path d="M9 17H7a5 5 0 010-10h2M15 7h2a5 5 0 014 8M8 12h3M3 3l18 18"></path>',
         'arrow-up' => '<path d="M12 19V5M6 11l6-6 6 6"></path>',

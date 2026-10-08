@@ -93,9 +93,8 @@
     --motion-quick: 160ms;
     --motion-base: 240ms;
     --motion-slow: 360ms;
-    /* The podium rises one step every 250 ms (E17); the idle float and the busy spinner loop. */
+    /* The podium rises one step every 250 ms (E17); the busy spinner loops. */
     --motion-podium-step: 250ms;
-    --motion-float: 3200ms;
     --motion-spin: 700ms;
 
     --ease-out: cubic-bezier(0.2, 0, 0, 1);
@@ -319,6 +318,15 @@
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M5.6 5.6l12.8 12.8'/></svg>");
     }
 
+    /* U27: the Reduce motion switch: sparkles, crossed out while reduced. */
+    [data-icon='sparkles'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 3l1.7 4.3L17 9l-4.3 1.7L11 15l-1.7-4.3L5 9l4.3-1.7z'/><path d='M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z'/></svg>");
+    }
+
+    [data-icon='sparkles-off'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 3l1.7 4.3L17 9l-4.3 1.7L11 15l-1.7-4.3L5 9l4.3-1.7z'/><path d='M3 3l18 18'/></svg>");
+    }
+
     [data-icon='check'] {
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12l5 5 9-10'/></svg>");
     }
@@ -362,9 +370,21 @@
         transform: none;
     }
 
-    /* U8, U10: the mascot of empty pages and the phone's waiting room floats slowly. */
-    .mascot-idle {
-        animation: mascot-float var(--motion-float) ease-in-out infinite;
+    /* U29: Penta's parts turn and shrink around their own middle; the body squashes from its base. */
+    .penta [data-part] {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .penta [data-part='body'] {
+        transform-origin: 50% 100%;
+    }
+
+    .penta-line {
+        fill: none;
+        stroke: var(--color-brand-pupil);
+        stroke-width: 7;
+        stroke-linecap: round;
     }
 
     /* U8: joining succeeded on the phone. */
@@ -526,16 +546,6 @@ button[aria-busy='true']::after {
     }
 }
 
-@keyframes mascot-float {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-4px);
-    }
-}
 
 /* U27: the reduced mode, from the device setting or the Reduce motion switch. */
 :root[data-motion='reduced'] {
@@ -553,7 +563,6 @@ button[aria-busy='true']::after {
         scale: none;
     }
 
-    .mascot-idle,
     dialog[open],
     dialog[open]::backdrop,
     .pop-in,

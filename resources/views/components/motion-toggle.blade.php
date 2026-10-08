@@ -5,10 +5,7 @@
     :aria-label="$store.motion.reduced ? @js(__('ui.allow_motion')) : @js(__('ui.reduce_motion'))"
     :title="$store.motion.reduced ? @js(__('ui.allow_motion')) : @js(__('ui.reduce_motion'))"
     {{ $attributes->merge(['class' => 'flex size-11 shrink-0 items-center justify-center rounded-control']) }}>
-    <span x-show="! $store.motion.reduced" class="flex">
-        <x-icon name="sparkles" />
-    </span>
-    <span x-show="$store.motion.reduced" x-cloak class="flex">
-        <x-icon name="sparkles-off" />
-    </span>
+    {{-- U5: icons drawn once in CSS, so the 500-name join page stays light (A3). --}}
+    <span x-show="! $store.motion.reduced" data-icon="sparkles" aria-hidden="true"></span>
+    <span x-show="$store.motion.reduced" x-cloak data-icon="sparkles-off" aria-hidden="true"></span>
 </button>

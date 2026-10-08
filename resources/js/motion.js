@@ -8,6 +8,15 @@ export const MOTION = Object.freeze({ instant: 100, quick: 160, base: 240, slow:
 /** U8: the spring of the app: settles in about 300 ms with a small overshoot. */
 export const SPRING = Object.freeze({ type: 'spring', visualDuration: 0.3, bounce: 0.2 });
 
+/** Easings, the same strings as the --ease-* tokens in app.css (checked by tests/js/motion.test.js). */
+export const EASE = Object.freeze({
+    out: 'cubic-bezier(0.2, 0, 0, 1)',
+    in: 'cubic-bezier(0.4, 0, 1, 1)',
+    overshoot: 'cubic-bezier(0.34, 1.4, 0.64, 1)',
+    spring: 'linear(0, 0.029 2.2%, 0.118 4.7%, 0.625 14.4%, 0.826 19%, 0.978 24.2%, 1.072 29.4%, 1.112 33.7%, 1.117 38.4%, 1.083 46.1%, 1.008 59.3%, 0.986 66.4%, 0.988 81.2%, 1)',
+    bounce: 'linear(0, 0.2 8%, 0.75 20%, 1.2 32%, 1.32 38%, 1.2 46%, 0.95 60%, 0.92 66%, 1.03 80%, 1)',
+});
+
 export const MOTION_STORAGE_KEY = 'pentahoot-motion';
 
 /** The mode for this device: the viewer's own choice, otherwise the device setting. */

@@ -33,6 +33,7 @@ import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
 import { motionStore } from './motion.js';
+import { mascot } from './mascot.js';
 
 // U8: the first page just opened, so its rows may come in one by one.
 markPageEntered();
@@ -66,6 +67,8 @@ Alpine.store('rowMenu', rowMenuStore());
 // D-11: the game picked in the Replay card of Live control; it outlives the card's refreshes.
 Alpine.store('replayPick', { game: null });
 Alpine.data('tableView', tableView);
+// U29: Penta.
+Alpine.data('mascot', mascot);
 // U8: lists drawn by Alpine (rank lists) slide rows to their new place. x-flip.moves leaves the
 // rows that appear to their own CSS enter animation.
 Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {

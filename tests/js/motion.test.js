@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { MOTION } from '../../resources/js/motion.js';
+import { EASE, MOTION } from '../../resources/js/motion.js';
 
 // U8, U27: motion through tokens, 100-400 ms, and none in the reduced mode (MDN, WCAG 2.2.2).
 const css = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8');
@@ -52,6 +52,10 @@ describe('U27 motion tokens in CSS', () => {
         expect(tokens).toMatch(/--ease-spring:\s*linear\(/);
     });
 
+    it.each(['out', 'in', 'overshoot', 'spring', 'bounce'])('gives JS the same --ease-%s as CSS', (name) => {
+        expect(tokens).toContain(`--ease-${name}: ${EASE[name]};`);
+    });
+
     it('writes no durations or delays by hand outside the tokens', () => {
         const rest = css.replace(tokens, '');
         const manual = rest.match(/(?:transition|animation)[^;{]*?\b[1-9]\d*(?:\.\d+)?m?s\b/g) ?? [];
@@ -69,9 +73,15 @@ describe('U8 key-moment motion', () => {
         expect(tokenMs(match[1])).toBeLessThanOrEqual(400);
     });
 
-    it.each([...KEY_MOMENTS, '.mascot-idle'])('%s stops in the reduced mode', (selector) => {
+    it.each(KEY_MOMENTS)('%s stops in the reduced mode', (selector) => {
         expect(reducedBlock).toContain(selector);
         expect(reducedBlock).toMatch(/animation:\s*none/);
+    });
+
+    it('no longer floats the mascot forever: Penta moves in bursts of at most five seconds (U29, WCAG 2.2.2)', () => {
+        expect(css).not.toContain('mascot-idle');
+        expect(css).not.toContain('mascot-float');
+        expect(css).not.toContain('--motion-float');
     });
 
     it('raises the podium from the third step to the first', () => {

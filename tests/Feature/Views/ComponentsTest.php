@@ -74,8 +74,26 @@ it('switches motion for this device and says which way it goes (U27)', function 
         ->and($html)->toContain(':aria-pressed="$store.motion.reduced.toString()"')
         ->and($html)->toContain('aria-label="Reduce motion"')
         ->and($html)->toContain('Allow motion')
-        ->and($html)->toMatch('/<span x-show="! \$store.motion.reduced"[^>]*>\s*<svg/')
-        ->and($html)->toMatch('/<span x-show="\$store.motion.reduced"[^>]*>\s*<svg/');
+        // U5: icons drawn once in CSS, so the 500-name join page stays light (A3).
+        ->and($html)->toContain('<span x-show="! $store.motion.reduced" data-icon="sparkles"')
+        ->and($html)->toContain('<span x-show="$store.motion.reduced" x-cloak data-icon="sparkles-off"')
+        ->and($html)->not->toContain('<svg');
+});
+
+it('draws Penta from the logo with parts that move, as decoration (U29)', function (): void {
+    $html = Blade::render('<x-mascot :size="96" mood="wave" />');
+
+    expect($html)->toContain('x-data="mascot({ mood: '."'wave'")
+        ->and(substr_count($html, 'data-part="segment"'))->toBe(5)
+        ->and(substr_count($html, 'data-part="eye"'))->toBe(2)
+        ->and(substr_count($html, 'data-part="pupil"'))->toBe(2)
+        ->and($html)->toContain('data-part="happy"')
+        ->and($html)->toContain('data-part="smile"')
+        ->and($html)->toContain('data-part="oh"')
+        ->and($html)->toContain('data-part="zz"')
+        ->and($html)->toContain('data-mood="wave"')
+        ->and($html)->toContain('aria-hidden="true"')
+        ->and($html)->toContain('@mascot-react.window="react($event.detail)"');
 });
 
 it('lets every password field be shown and hidden (U17)', function (): void {
