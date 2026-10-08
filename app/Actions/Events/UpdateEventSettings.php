@@ -16,9 +16,9 @@ final readonly class UpdateEventSettings
 {
     public function __construct(private StatePublisher $publisher, private AuditLog $auditLog) {}
 
-    public function handle(Event $event, string $name, string $slug, ScreenTheme $theme, bool $showOnDevices, User $actor): void
+    public function handle(Event $event, string $name, string $slug, ScreenTheme $theme, bool $showOnDevices, bool $screenAnimations, User $actor): void
     {
-        DB::transaction(function () use ($event, $name, $slug, $theme, $showOnDevices, $actor): void {
+        DB::transaction(function () use ($event, $name, $slug, $theme, $showOnDevices, $screenAnimations, $actor): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
 
             // F10: printed QR codes and open phones still use the old link.
@@ -31,6 +31,8 @@ final readonly class UpdateEventSettings
                 'slug' => $slug,
                 'screen_theme' => $theme,
                 'show_on_devices' => $showOnDevices,
+                // U31: idle bursts and confetti on the Public View.
+                'screen_animations' => $screenAnimations,
             ]);
             $locked->bumpStateVersion();
             $locked->save();

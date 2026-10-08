@@ -25,6 +25,8 @@ return [
     'themes' => ['dark' => 'Dark', 'light' => 'Light'],
     'show_on_devices' => 'Show questions to players too',
     'show_on_devices_hint' => 'Every player downloads the pictures at the same time. Turn this on only if the venue WiFi is strong.',
+    'screen_animations' => 'Screen animations',
+    'screen_animations_hint' => 'Penta plays now and then and confetti celebrates the winners on the Public View. Turn this off for a formal event or a slow projector laptop.',
     'create' => 'Create event',
     'steps' => 'Steps of a new event',
     'step_details' => 'Name and link',

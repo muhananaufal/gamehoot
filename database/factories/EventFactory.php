@@ -31,6 +31,7 @@ final class EventFactory extends Factory
             'slug' => Str::slug($name),
             'status' => EventStatus::Draft,
             'show_on_devices' => false,
+            'screen_animations' => true,
             'screen_theme' => ScreenTheme::Dark,
             'state_version' => 0,
         ];

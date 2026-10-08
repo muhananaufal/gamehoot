@@ -49,7 +49,7 @@ it('broadcasts the new version after each state change', function (Closure $chan
         $e->delete();
         app(RestoreEvent::class)->handle($e, 'gathering-2026', $h);
     }, 'open', 1],
-    'settings' => [fn (Event $e) => app(UpdateEventSettings::class)->handle($e, 'New name', 'new-name', ScreenTheme::Light, true, $e->owner()->firstOrFail()), 'open', 1],
+    'settings' => [fn (Event $e) => app(UpdateEventSettings::class)->handle($e, 'New name', 'new-name', ScreenTheme::Light, true, true, $e->owner()->firstOrFail()), 'open', 1],
     'join lock' => [fn (Event $e, Person $p, $h) => app(SetJoinLock::class)->handle($e, true, $h), 'open', 1],
     'add name' => [fn (Event $e) => app(EditNameList::class)->add($e, 'Rita Wulandari'), 'open', 1],
     'rename' => [fn (Event $e, Person $p) => app(EditNameList::class)->rename($e, $p, 'Rita'), 'open', 1],

@@ -49,6 +49,8 @@ it('gives every screen the event, the lobby count and the version (F1, F15, F23)
             'claims_locked' => false,
             'screen_theme' => 'dark',
             'show_on_devices' => false,
+            // U31: idle bursts and confetti on the Public View.
+            'screen_animations' => true,
             'roster' => 0,
         ],
         'lobby' => ['joined' => 2],

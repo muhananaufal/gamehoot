@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'slug', 'show_on_devices', 'screen_theme'])]
+#[Fillable(['name', 'slug', 'show_on_devices', 'screen_animations', 'screen_theme'])]
 final class Event extends Model
 {
     /** @use HasFactory<EventFactory> */
@@ -29,6 +29,7 @@ final class Event extends Model
     protected $attributes = [
         'status' => 'draft',
         'show_on_devices' => false,
+        'screen_animations' => true,
         'screen_theme' => 'dark',
         'state_version' => 0,
         'roster_version' => 0,
@@ -163,6 +164,7 @@ final class Event extends Model
             'status' => EventStatus::class,
             'screen_theme' => ScreenTheme::class,
             'show_on_devices' => 'boolean',
+            'screen_animations' => 'boolean',
             'names_locked_at' => 'datetime',
             'join_locked_at' => 'datetime',
             'state_version' => 'integer',

@@ -152,6 +152,32 @@ describe('settings', function (): void {
             ->and($event->state_version)->toBe(1);
     });
 
+    it('lets the host calm the Public View: no idle bursts and no confetti (U31)', function (): void {
+        $event = ownedEvent();
+        expect($event->screen_animations)->toBeTrue();
+
+        actingAs(ownerOf($event))->get("/host/{$event->id}/settings")
+            ->assertSee('name="screen_animations"', false)
+            ->assertSee('Screen animations');
+
+        actingAs(ownerOf($event))->put("/host/{$event->id}/settings", [
+            'name' => 'Formal dinner',
+            'slug' => $event->slug,
+            'screen_theme' => 'dark',
+        ])->assertSessionHasNoErrors();
+
+        expect($event->refresh()->screen_animations)->toBeFalse();
+
+        actingAs(ownerOf($event))->put("/host/{$event->id}/settings", [
+            'name' => 'Formal dinner',
+            'slug' => $event->slug,
+            'screen_theme' => 'dark',
+            'screen_animations' => '1',
+        ])->assertSessionHasNoErrors();
+
+        expect($event->refresh()->screen_animations)->toBeTrue();
+    });
+
     it('keeps the link while the event is open, since printed QR codes and open phones use it (F10)', function (): void {
         $event = ownedEvent(attributes: ['slug' => 'gathering', 'status' => EventStatus::Open]);
 
