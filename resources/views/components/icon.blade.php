@@ -24,6 +24,7 @@
         'sort' => '<path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"></path>',
         'grip' => '<circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle>',
         'plus' => '<path d="M12 5v14M5 12h14"></path>',
+        'upload' => '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"></path>',
         'copy' => '<rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 011-1h10"></path>',
         'sidebar' => '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path>',
         'refresh' => '<path d="M20 11a8 8 0 00-14.9-4M4 3v4h4M4 13a8 8 0 0014.9 4M20 21v-4h-4"></path>',

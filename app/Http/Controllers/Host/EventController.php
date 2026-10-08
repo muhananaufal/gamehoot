@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Host;
 
-use App\Actions\Events\CreateEvent;
 use App\Actions\Events\DeleteEvent;
+use App\Actions\Events\SetUpEvent;
 use App\Actions\Events\UpdateEventSettings;
 use App\Enums\GameStatus;
 use App\Enums\ScreenTheme;
@@ -24,18 +24,23 @@ final class EventController
         return view('host.events.create', ['themes' => ScreenTheme::cases()]);
     }
 
-    public function store(StoreEventRequest $request, CreateEvent $createEvent, #[CurrentUser] User $user): RedirectResponse
+    /**
+     * U26: the event, its names and its games are saved together at the last step of New event;
+     * the host goes on in Live control, where the event is opened.
+     */
+    public function store(StoreEventRequest $request, SetUpEvent $setUpEvent, #[CurrentUser] User $user): RedirectResponse
     {
-        $event = $createEvent->handle(
+        $event = $setUpEvent->handle(
             $user,
             $request->string('name')->toString(),
             $request->string('slug')->toString(),
             $request->theme(),
             $request->boolean('show_on_devices'),
+            $request->names(),
+            $request->packs(),
         );
 
-        // Setup step 2: add names.
-        return redirect()->route('host.events.people.index', $event)->with('status', __('events.created'));
+        return redirect()->route('host.events.live', $event)->with('status', __('events.created'));
     }
 
     public function edit(Event $event, #[CurrentUser] User $user): View
@@ -47,8 +52,8 @@ final class EventController
             'owner' => $event->owner()->firstOrFail(),
             'cohosts' => $event->cohosts()->orderBy('event_hosts.created_at')->get(),
             'isOwner' => $event->isOwnedBy($user),
-            // T6: an event closes only once its game is no longer running.
-            'gameRunning' => $event->activeGame()->where('status', '!=', GameStatus::Finished)->exists(),
+            // T6, D-10: closing ends this game first; the dialog names it.
+            'runningGame' => $event->activeGame()->where('status', '!=', GameStatus::Finished)->first(),
         ]);
     }
 

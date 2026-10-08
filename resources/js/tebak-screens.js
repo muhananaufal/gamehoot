@@ -92,7 +92,7 @@ export function tebakScreen({ types, labels, projector = false }) {
  * with a confirmation (D-6), surrender, and show the leaderboard (E11). STALE_ACTION is shown
  * when the state moved on (C-3).
  */
-export function tebakHost({ type, actionUrl, people, labels }) {
+export function tebakHost({ type, actionUrl, people, labels, questionIds = [] }) {
     return {
         ...base(labels),
         busy: false,
@@ -150,6 +150,19 @@ export function tebakHost({ type, actionUrl, people, labels }) {
         },
 
         /** D-5: any queued question, while none is on screen (G7). */
+        /** D-10: Show question 1 starts a game; once a question was shown, Next question or the list goes on. */
+        get firstToOpen() {
+            return this.codes.length > 0 && this.codes.every((code) => code === 'q') ? this.nextToOpen : null;
+        },
+
+        /** D-10: the first queued question, then a skipped one (E6), for Next question. */
+        get nextToOpen() {
+            const queued = this.codes.indexOf('q');
+            const index = queued === -1 ? this.codes.indexOf('Q') : queued;
+
+            return index === -1 || !questionIds[index] ? null : { number: index + 1, id: questionIds[index] };
+        },
+
         canShow(index) {
             const code = this.codes[index];
 

@@ -25,6 +25,19 @@ export function saveLater(save, ms) {
     };
 }
 
+/**
+ * D-9: the number shown on the row at `index`. A list that shares its numbers with rows that do
+ * not move (the games still to play after the played ones) names the places it holds.
+ */
+export function numberAt(index, places) {
+    return Array.isArray(places) && places[index] !== undefined ? places[index] : index + 1;
+}
+
+/** The part of the page reloaded after a failed save (data-reload on the list), back to the saved order. */
+export function reloadTarget(dataset) {
+    return dataset?.reload ?? '#pack-panel';
+}
+
 /** U14: how long the arrows wait after the last click before the order is saved. */
 const SAVE_AFTER_MS = 900;
 
@@ -82,7 +95,7 @@ export function sortableList() {
             if (window.up) {
                 window.up.submit(form).catch(() => {
                     this.$store.toasts?.push(this.$el.dataset.saveFailed ?? '');
-                    window.up.reload('#pack-panel');
+                    window.up.reload(reloadTarget(this.$el.dataset));
                 });
             } else {
                 form.requestSubmit();
@@ -112,12 +125,13 @@ export function sortableList() {
 
         renumber(list) {
             const items = [...list.querySelectorAll(':scope > [data-id]')];
+            const places = list.dataset.places ? JSON.parse(list.dataset.places) : null;
 
             items.forEach((item, index) => {
                 const number = item.querySelector('[data-number]');
 
                 if (number) {
-                    number.textContent = String(index + 1);
+                    number.textContent = String(numberAt(index, places));
                 }
 
                 item.querySelector('[data-move="up"]')?.toggleAttribute('disabled', index === 0);

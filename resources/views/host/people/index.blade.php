@@ -6,7 +6,7 @@
     $confirmTexts = [
         'rename' => ['title' => __('people.rename_title'), 'label' => __('people.save'), 'method' => 'PUT', 'tone' => 'primary',
             'url' => route('host.events.people.update', [$event, '__P__']),
-            'field' => ['name' => 'name', 'label' => __('people.name'), 'maxlength' => 100, 'form' => 'rename-__P__']],
+            'field' => ['name' => 'name', 'label' => __('people.name'), 'placeholder' => __('examples.person_name'), 'maxlength' => 100, 'form' => 'rename-__P__']],
         'release' => ['title' => __('people.release') . '?', 'body' => __('people.release_confirm', ['name' => '__N__']), 'label' => __('people.release'), 'method' => 'POST', 'tone' => 'primary',
             'url' => route('host.events.people.release-claim', [$event, '__P__'])],
         'newLink' => ['title' => __('people.new_link') . '?', 'body' => __('people.new_link_confirm', ['name' => '__N__']), 'label' => __('people.new_link'), 'method' => 'POST', 'tone' => 'primary',
@@ -26,7 +26,17 @@
         ['key' => 'rename', 'label' => __('people.rename'), 'type' => 'confirm', 'url' => route('host.events.people.update', [$event, '__P__'])],
         ['key' => 'delete', 'label' => __('people.delete'), 'type' => 'confirm', 'danger' => true, 'url' => route('host.events.people.destroy', [$event, '__P__'])],
     ];
-    $addFailed = old('form') === 'add-person' && $errors->has('name');
+    $addFailed = old('form') === 'add-person' && $errors->has('names');
+    // B-4: the texts of the Add names checks, sent once, in the words of the server (AddNamesRequest).
+    $addTexts = [
+        'line' => __('people.on_line', ['line' => '__L__', 'problem' => '__P__']),
+        'existing' => __('people.duplicate_existing', ['name' => '__N__']),
+        'repeat' => __('people.duplicate_line', ['line' => '__R__', 'name' => '__N__']),
+        'too_long' => __('people.too_long', ['max' => \App\People\PersonName::MAX_LENGTH]),
+        'count' => ['one' => trans_choice('people.names_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.names_count', 2, ['count' => '__N__'])],
+        'add' => ['one' => trans_choice('people.add_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.add_count', 2, ['count' => '__N__'])],
+        'empty' => __('people.add'),
+    ];
     // A refused rename reopens its dialog with what was typed and the error.
     $renaming = str_starts_with((string) old('form'), 'rename-') ? $people->firstWhere('id', substr((string) old('form'), 7)) : null;
     $renameRetry = $renaming ? [
@@ -43,20 +53,40 @@
                 <p class="text-[15px] font-semibold text-on-warning">{{ __('people.links_warning') }}</p>
                 <div class="flex justify-end gap-2.5 pt-1.5">
                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                    <x-button :href="route('host.events.people.links', $event)" @click="$el.closest('dialog').close()">{{ __('people.export_links') }}</x-button>
+                    <x-button :href="route('host.events.people.links', $event)" download @click="$el.closest('dialog').close()">{{ __('people.export_links') }}</x-button>
                 </div>
             </x-confirm-dialog>
         @endif
         @unless ($locked)
-            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
+            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)" up-layer="new modal" up-size="large" up-history="false" :up-accept-location="route('host.events.people.index', $event, false)">{{ __('people.import') }}</x-button>
             <x-confirm-dialog :title="__('people.add')" :trigger="__('people.add')" trigger-icon="plus" trigger-variant="primary" :open="$addFailed">
-                <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate>
+                {{-- B-4: one name per line; the same checks as the server run while typing (name-batch.js). --}}
+                <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate
+                    x-data="nameBatch({ existing: {{ \Illuminate\Support\Js::from($people->pluck('name')->values()) }}, text: {{ \Illuminate\Support\Js::from($addFailed ? (string) old('names', '') : '') }}, texts: {{ \Illuminate\Support\Js::from($addTexts) }} })">
                     @csrf
                     <input type="hidden" name="form" value="add-person">
-                    <x-field name="name" :label="__('people.name')" id="add-person-name" :hint="__('people.add_hint')" :submitted="old('form') === 'add-person'" required maxlength="100" autocomplete="off" autofocus />
+                    <div class="flex flex-col gap-1.5">
+                        <label for="add-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
+                        <textarea id="add-names" name="names" rows="6" x-model="text" autofocus autocomplete="off" placeholder="{{ __('examples.names') }}"
+                            aria-describedby="add-names-hint add-names-check"
+                            class="rounded-control border border-line-strong bg-field px-3 py-2.5 text-[15px] text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
+                        <p id="add-names-hint" class="text-sm text-muted">{{ __('people.add_names_hint') }}</p>
+                        <div id="add-names-check" aria-live="polite" class="flex flex-col gap-1 text-sm">
+                            <p x-show="check.names.length > 0" x-text="summary" class="text-muted"></p>
+                            <template x-for="problem in check.problems" :key="problem.line">
+                                <p class="font-semibold text-on-danger" x-text="problemText(problem)"></p>
+                            </template>
+                            <p x-show="check.tooMany" class="font-semibold text-on-danger">{{ __('people.too_many', ['max' => \App\Http\Requests\Host\PersonNameRequest::MAX_NAMES]) }}</p>
+                        </div>
+                        @if ($addFailed)
+                            @foreach ($errors->get('names') as $message)
+                                <p class="text-sm font-semibold text-on-danger">{{ $message }}</p>
+                            @endforeach
+                        @endif
+                    </div>
                     <div class="flex justify-end gap-2.5 pt-1.5">
                         <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
-                        <x-button type="submit">{{ __('people.add') }}</x-button>
+                        <x-button type="submit" x-bind:disabled="!check.ok"><span x-text="addLabel">{{ __('people.add') }}</span></x-button>
                     </div>
                 </form>
             </x-confirm-dialog>
@@ -73,21 +103,30 @@
         {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
         <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">
             <p>{{ __('people.locked_banner') }} {{ $event->join_locked_at ? __('people.claims_closed') : __('people.claims_open') }}</p>
-            <form method="POST" action="{{ route('host.events.join-lock', $event) }}">
-                @csrf
-                <input type="hidden" name="locked" value="{{ $event->join_locked_at ? '0' : '1' }}">
-                <x-button type="submit" variant="secondary">{{ $event->join_locked_at ? __('events.unlock') : __('events.lock') }}</x-button>
-            </form>
+            {{-- U24: changes of state ask first. --}}
+            @include('host.partials.confirm-action', [
+                'trigger' => $event->join_locked_at ? __('events.unlock') : __('events.lock'), 'variant' => 'secondary',
+                'title' => ($event->join_locked_at ? __('events.unlock') : __('events.lock')) . '?',
+                'body' => $event->join_locked_at ? __('events.unlock_confirm') : __('events.lock_confirm'),
+                'action' => route('host.events.join-lock', $event), 'confirm' => $event->join_locked_at ? __('events.unlock') : __('events.lock'),
+                'fields' => ['locked' => $event->join_locked_at ? '0' : '1'],
+            ])
         </div>
     @endif
-    @error('names')
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
-    @enderror
+    {{-- Errors of Add names show in its dialog, which opens again. --}}
+    @if ($errors->has('names') && ! $addFailed)
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $errors->first('names') }}</div>
+    @endif
 
     @if ($people->isEmpty())
-        <x-empty-state :title="__('people.empty_title')" :body="__('people.empty')">
-            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
-        </x-empty-state>
+        {{-- U25: the empty list says what applies now, and offers adding only while the list can change. --}}
+        @if ($locked)
+            <x-empty-state :title="__('people.empty_title')" :body="__('people.empty_locked')" />
+        @else
+            <x-empty-state :title="__('people.empty_title')" :body="$event->status === \App\Enums\EventStatus::Draft ? __('people.empty') : __('people.empty_open')">
+                <x-button variant="secondary" :href="route('host.events.people.import.create', $event)" up-layer="new modal" up-size="large" up-history="false" :up-accept-location="route('host.events.people.index', $event, false)">{{ __('people.import') }}</x-button>
+            </x-empty-state>
+        @endif
     @else
         {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
         <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase), labels: @js($labels) })"

@@ -6,9 +6,9 @@
      follows the name until the host types one (resources/js/event-link.js); once the name is
      done, the filled link is checked on the server too (U19), so a taken link shows at once. --}}
 <div class="contents" x-data="eventLink({ reserved: {{ \Illuminate\Support\Js::from(\App\Rules\EventSlug::RESERVED) }}, link: {{ \Illuminate\Support\Js::from($submitted ? (string) old('slug', '') : '') }} })">
-    <x-field name="name" :label="__('events.name')" :submitted="$submitted" required autofocus maxlength="100"
+    <x-field name="name" :placeholder="__('examples.event_name')" :label="__('events.name')" :submitted="$submitted" required autofocus maxlength="100"
         x-on:input="nameTyped($event.target.value)" x-on:change="! own && link !== '' && $nextTick(() => $refs.link.dispatchEvent(new Event('change', { bubbles: true })))" />
-    <x-field name="slug" :label="__('events.link')" :submitted="$submitted" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint_new')" maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" minlength="3" :data-pattern-message="__('events.slug_format')" autocapitalize="none" spellcheck="false"
+    <x-field name="slug" :placeholder="__('examples.slug')" :label="__('events.link')" :submitted="$submitted" :prefix="parse_url(config('app.url'), PHP_URL_HOST) . '/'" :hint="__('events.link_hint_new')" maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*" minlength="3" :data-pattern-message="__('events.slug_format')" autocapitalize="none" spellcheck="false"
         x-ref="link" x-model="link" x-on:input="linkTyped($event.target.value)" />
 </div>
 <x-theme-choice :value="$submitted ? old('screen_theme', 'dark') : 'dark'" :themes="\App\Enums\ScreenTheme::cases()" :hint="__('events.screen_theme_hint')" />

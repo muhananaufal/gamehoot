@@ -28,7 +28,7 @@ final class GameQuestionRequest extends FormRequest
             abort(404);
         }
 
-        return $engines->for($game->type)->questionRules(creating: false);
+        return $engines->for($game->type)->questionRules(creating: $this->route('question') === null);
     }
 
     /**

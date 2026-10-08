@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'showing' => 'Showing __S__–__E__ of __T__',
     'rows_per_page' => 'Rows per page',
+    'go_to_page' => 'Go to page',
     'previous_page' => 'Previous page',
     'next_page' => 'Next page',
     'pages' => 'Pages',

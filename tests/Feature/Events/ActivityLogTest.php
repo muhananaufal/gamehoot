@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Events\SetJoinLock;
 use App\Enums\LoggedAction;
+use App\Enums\QuestionStatus;
 use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Person;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\Pentahoot;
 use Tests\Support\TebakGambar;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\travelTo;
@@ -175,4 +177,70 @@ it('puts the Who filter beside Rows per page, before the date and the search (U2
     $html = (string) actingAs($host)->get("/host/{$event->id}/logs")->assertOk()->getContent();
 
     expect(strpos($html, 'aria-label="Who"'))->toBeLessThan((int) strpos($html, 'Reset filters'));
+});
+
+describe('E13: skips, reloads, deleted questions, finished games and added names (audit 7 October 2026)', function (): void {
+    it('logs a Tebak skip, which uses the one skip of the question', function (): void {
+        $event = Pentahoot::event();
+        $game = TebakKata::running($event, [['A?', 'AB'], ['B?', 'CD']]);
+        $first = $game->questions()->where('position', 1)->firstOrFail();
+        actingAs(hostOfEvent($event))->postJson("/host/{$event->id}/questions/{$first->id}/show")->assertNoContent();
+
+        actingAs(hostOfEvent($event))->postJson("/host/{$event->id}/questions/{$first->id}/skip")->assertNoContent();
+
+        expect(loggedOnce(LoggedAction::QuestionSkipped)->payload)->toBe(['question_id' => $first->id]);
+    });
+
+    it('logs Reload from pack, which replaces the edits of the copies', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack(hostOfEvent($event));
+        $game = Pentahoot::game($event);
+        $game->sourcePack()->associate($pack)->save();
+
+        actingAs(hostOfEvent($event))->post("/host/{$event->id}/games/{$game->id}/reload")->assertRedirect();
+
+        expect(loggedOnce(LoggedAction::GameReloaded)->payload)->toBe(['game_id' => $game->id]);
+    });
+
+    it('logs a deleted question with its text, so the entry stays readable', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::game($event, ['Most punctual?', 'Best presenter?']);
+        $question = Pentahoot::question($game, 2);
+
+        actingAs(hostOfEvent($event))->delete("/host/{$event->id}/games/{$game->id}/questions/{$question->id}")->assertRedirect();
+
+        // The JSON column keeps its own key order.
+        expect(loggedOnce(LoggedAction::QuestionDeleted)->payload)->toEqual(['game_id' => $game->id, 'title' => 'Best presenter?']);
+    });
+
+    it('logs a game finished after its last question, apart from an early finish', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event);
+        $game->questions()->update(['status' => QuestionStatus::Done]);
+
+        actingAs(hostOfEvent($event))->post("/host/{$event->id}/games/{$game->id}/finish")->assertRedirect();
+
+        expect(loggedOnce(LoggedAction::GameFinished)->payload)->toBe(['game_id' => $game->id])
+            ->and(ActionLog::query()->where('action', LoggedAction::GameFinishedEarly)->exists())->toBeFalse();
+    });
+
+    it('logs names added by hand or by import with their count only', function (): void {
+        $event = Event::factory()->for(User::factory(), 'owner')->create();
+        $host = hostOfEvent($event);
+
+        actingAs($host)->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', 'Budi Santoso'])])->assertRedirect();
+        actingAs($host)->post("/host/{$event->id}/people/import/confirm", ['names' => ['Ana Putri']])->assertRedirect();
+
+        expect(ActionLog::query()->where('action', LoggedAction::NamesAdded)->orderBy('id')->pluck('payload')->all())
+            ->toBe([['count' => 2], ['count' => 1]]);
+    });
+
+    it('shows the new entries in the words of the page', function (): void {
+        $event = Event::factory()->for(User::factory(), 'owner')->create();
+        actingAs(hostOfEvent($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', 'Budi Santoso'])]);
+
+        actingAs(hostOfEvent($event))->get("/host/{$event->id}/logs")
+            ->assertSee('Added names')
+            ->assertSee('2 names');
+    });
 });

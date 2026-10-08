@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Host;
 
+use App\Actions\Games\AddGameQuestion;
+use App\Actions\Games\DeleteGameQuestion;
 use App\Actions\Games\EditGameQuestion;
-use App\Enums\GameStatus;
-use App\Games\GameEngines;
 use App\Http\Requests\Host\GameQuestionRequest;
+use App\Http\Views\GamesPage;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Question;
@@ -21,39 +22,48 @@ use Illuminate\Http\RedirectResponse;
  */
 final class GameQuestionController
 {
-    public function index(Event $event, Game $game, GameEngines $engines): View
+    /**
+     * D-9: the Games page with this game open.
+     */
+    public function index(Event $event, Game $game, GamesPage $page, #[CurrentUser] User $user): View
     {
-        return $this->page($event, $game, $engines, null);
+        return view('host.games.show', $page->data($event, $user, $game));
     }
 
-    public function edit(Event $event, Game $game, Question $question, GameEngines $engines): View
+    /**
+     * D-2, D-9: the Games page with the question form beside the list.
+     */
+    public function edit(Event $event, Game $game, Question $question, GamesPage $page, #[CurrentUser] User $user): View
     {
-        return $this->page($event, $game, $engines, $question);
+        return view('host.games.show', $page->data($event, $user, $game, $question));
+    }
+
+    /**
+     * D-2: the Games page with an empty question form beside the list.
+     */
+    public function create(Event $event, Game $game, GamesPage $page, #[CurrentUser] User $user): View
+    {
+        return view('host.games.show', $page->data($event, $user, $game, creating: true));
+    }
+
+    public function store(GameQuestionRequest $request, Event $event, Game $game, AddGameQuestion $addQuestion, #[CurrentUser] User $actor): RedirectResponse
+    {
+        $addQuestion->handle($event, $game, $request->validated(), $actor);
+
+        return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_added'));
     }
 
     public function update(GameQuestionRequest $request, Event $event, Game $game, Question $question, EditGameQuestion $editQuestion, #[CurrentUser] User $actor): RedirectResponse
     {
         $editQuestion->handle($game, $question, $request->validated(), $actor);
 
-        return redirect()->route('host.events.games.questions.index', [$event, $game])->with('status', __('games.question_saved'));
+        return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_saved'));
     }
 
-    private function page(Event $event, Game $game, GameEngines $engines, ?Question $editing): View
+    public function destroy(Event $event, Game $game, Question $question, DeleteGameQuestion $delete, #[CurrentUser] User $user): RedirectResponse
     {
-        $engine = $engines->live($game->type);
-        $questions = $game->questions()->orderBy('position')->with(['pentahoot', 'kata', 'gambar.questionImage.variants'])->get();
+        $delete->handle($event, $game, $question, $user);
 
-        return view('host.games.questions', [
-            'event' => $event,
-            'game' => $game,
-            'questions' => $questions,
-            // D-2: null while editable, otherwise the reason it is locked.
-            'locked' => $questions->mapWithKeys(fn (Question $question): array => [$question->id => match (true) {
-                $engine->wasShown($question) => 'shown',
-                $game->status === GameStatus::Finished => 'finished',
-                default => null,
-            }])->all(),
-            'editing' => $editing?->load(['pentahoot', 'kata']),
-        ]);
+        return redirect()->route('host.events.games.show', [$event, $game])->with('status', __('games.question_deleted'));
     }
 }

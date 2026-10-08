@@ -5,7 +5,9 @@ import {
     labelButtons,
     loadState,
     matchesRow,
+    goToPage,
     pageItems,
+    rangeText,
     pageOf,
     saveState,
 } from '../../resources/js/table-view.js';
@@ -274,5 +276,19 @@ describe('U4 a second filter (role on Host accounts)', () => {
         saveState(storage, 'accounts', { ...loadState(storage, 'accounts', DEFAULTS), kind: 'host' }, DEFAULTS);
         expect(loadState(storage, 'accounts', DEFAULTS).kind).toBe('host');
         expect(filtersActive({ ...loadState(memory(), 'x', DEFAULTS), kind: 'host' })).toBe(true);
+    });
+});
+
+describe('U4 long lists: going to a page and the range summary', () => {
+    it('goes to a typed page, kept inside the list, and ignores what is not a number', () => {
+        expect(goToPage('7', 3, 42)).toBe(7);
+        expect(goToPage('99', 3, 42)).toBe(42);
+        expect(goToPage('0', 3, 42)).toBe(1);
+        expect(goToPage('', 3, 42)).toBe(3);
+        expect(goToPage('abc', 3, 42)).toBe(3);
+    });
+
+    it('writes the range with thousands separators', () => {
+        expect(rangeText('Showing __S__–__E__ of __T__', 50, 75, 1243)).toBe('Showing 51–75 of 1,243');
     });
 });

@@ -126,6 +126,23 @@ export function pageItems(page, pages) {
     return items;
 }
 
+/** U4: the page typed in "Go to page", kept inside the list; anything else keeps the current page. */
+export function goToPage(typed, page, pages) {
+    const wanted = Number.parseInt(String(typed).trim(), 10);
+
+    return Number.isNaN(wanted) ? page : Math.min(Math.max(1, wanted), pages);
+}
+
+/** U4: "Showing 51–75 of 1,243", with thousands separators. */
+export function rangeText(template, start, end, total) {
+    const number = (value) => value.toLocaleString('en-US');
+
+    return template
+        .replace('__S__', number(start + 1))
+        .replace('__E__', number(end))
+        .replace('__T__', number(total));
+}
+
 /** The rows of one page; the page is kept inside the list when rows disappear. */
 export function pageOf(total, page, size) {
     const pages = Math.max(1, Math.ceil(total / size));
@@ -288,6 +305,14 @@ export function tableView({
 
         next() {
             this.page = Math.min(this.pages, this.page + 1);
+        },
+
+        goTo(typed) {
+            this.page = goToPage(typed, this.page, this.pages);
+        },
+
+        rangeText(template) {
+            return rangeText(template, this.start, this.end, this.shown);
         },
 
         apply() {

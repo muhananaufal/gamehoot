@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Enums\EventStatus;
 use App\Enums\LoggedAction;
 use App\Models\ActionLog;
 use App\Models\Event;
 use App\Models\Person;
 use App\Models\User;
+use App\People\NameCsv;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -64,8 +66,9 @@ describe('name list (B-3, B-4)', function (): void {
     it('adds a name with tidy spacing and a random personal link', function (): void {
         $event = eventWithOwner();
 
-        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['name' => '  Budi   Santoso '])
-            ->assertRedirect("/host/{$event->id}/people");
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => '  Budi   Santoso '])
+            ->assertRedirect("/host/{$event->id}/people")
+            ->assertSessionHas('status', '1 name added.');
 
         $person = Person::query()->firstOrFail();
         expect($person->name)->toBe('Budi Santoso')
@@ -73,14 +76,46 @@ describe('name list (B-3, B-4)', function (): void {
             ->and($person->join_token)->toMatch('/^[A-Za-z0-9]{16}$/');
     });
 
-    it('rejects a duplicate name, ignoring case and spaces', function (): void {
+    it('adds several names at once, one per line, skipping empty lines (B-4)', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', '', '  Budi Santoso', 'Ana Putri  ', ' '])])
+            ->assertRedirect("/host/{$event->id}/people")
+            ->assertSessionHas('status', '3 names added.');
+
+        expect($event->people()->orderBy('name')->pluck('name')->all())->toBe(['Ana Putri', 'Budi Santoso', 'Rita Wulandari']);
+    });
+
+    it('rejects a duplicate name, ignoring case and spaces, and saves none of the lines', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
 
-        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['name' => 'BUDI  santoso'])
-            ->assertSessionHasErrors('name');
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', 'BUDI  santoso'])])
+            ->assertSessionHasErrors(['names' => 'Line 2: Same as “Budi Santoso” already in this event (upper/lower case is ignored).']);
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Ana Putri', 'ana  PUTRI'])])
+            ->assertSessionHasErrors(['names' => 'Line 2: Same as line 1. Add something to tell them apart, e.g. “ana PUTRI (IT)”.']);
 
         expect(Person::query()->count())->toBe(1);
+    });
+
+    it('names the lines of the text area, empty lines counted, like the page does', function (): void {
+        $event = eventWithOwner();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Ana Putri', '', 'ana  PUTRI', '', 'budi santoso'])])
+            ->assertSessionHasErrors(['names' => 'Line 3: Same as line 1. Add something to tell them apart, e.g. “ana PUTRI (IT)”.'])
+            ->assertSessionHasErrors(['names' => 'Line 5: Same as “Budi Santoso” already in this event (upper/lower case is ignored).']);
+    });
+
+    it('rejects an empty list and a name longer than 100 characters', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, [' ', ''])])
+            ->assertSessionHasErrors('names');
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', str_repeat('A', 101)])])
+            ->assertSessionHasErrors('names');
+
+        expect(Person::query()->count())->toBe(0);
     });
 
     it('renames a name, still rejecting duplicates but not itself', function (): void {
@@ -107,8 +142,8 @@ describe('name list (B-3, B-4)', function (): void {
         $event = eventWithOwner();
         Person::factory()->for($event)->count(500)->create();
 
-        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['name' => 'One Too Many'])
-            ->assertSessionHasErrors('name');
+        actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => 'One Too Many'])
+            ->assertSessionHasErrors('names');
     });
 
     it('refuses to change the list once it is locked (B-3)', function (): void {
@@ -117,7 +152,7 @@ describe('name list (B-3, B-4)', function (): void {
         $event->forceFill(['names_locked_at' => now()])->save();
         $host = hostOf($event);
 
-        actingAs($host)->post("/host/{$event->id}/people", ['name' => 'Late Guest'])->assertSessionHasErrors('names');
+        actingAs($host)->post("/host/{$event->id}/people", ['names' => 'Late Guest'])->assertSessionHasErrors('names');
         actingAs($host)->put("/host/{$event->id}/people/{$person->id}", ['name' => 'Renamed'])->assertSessionHasErrors('names');
         actingAs($host)->delete("/host/{$event->id}/people/{$person->id}")->assertSessionHasErrors('names');
         actingAs($host)->post("/host/{$event->id}/people/import", ['file' => csvUpload("Late\n")])->assertSessionHasErrors('names');
@@ -345,11 +380,11 @@ describe('the Names page (U2, U4, U5, U6)', function (): void {
     });
 });
 
-it('marks Add name as a create button with the plus icon (U2)', function (): void {
+it('marks Add names as a create button with the plus icon (U2)', function (): void {
     $event = eventWithOwner();
 
     expect((string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent())
-        ->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*Add name\s*<\/button>/');
+        ->toMatch('/<svg[^>]*>[\s\S]{0,200}<\/svg>\s*Add names\s*<\/button>/');
 });
 
 describe('Names page actions (U4, U5, U21)', function (): void {
@@ -397,4 +432,114 @@ describe('Names page actions (U4, U5, U21)', function (): void {
 
         expect($html)->toContain('askRow(')->toContain('"value":"rita"')->toContain('"error":');
     });
+});
+
+describe('the empty list follows the state of the event (U25)', function (): void {
+    it('offers to add or import names while the list can still change', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['status' => EventStatus::Draft])->save();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")
+            ->assertSee('Add the people who can play one by one with Add name')
+            ->assertSee(route('host.events.people.import.create', $event), false);
+    });
+
+    it('says that players cannot join yet once an empty event is open', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['status' => EventStatus::Open])->save();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")
+            ->assertSee('The event is open, but nobody can join until there are names.')
+            ->assertSee(route('host.events.people.import.create', $event), false);
+    });
+
+    it('offers nothing to add once the list is locked', function (): void {
+        $event = eventWithOwner();
+        $event->forceFill(['status' => EventStatus::Open, 'names_locked_at' => now()])->save();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people")
+            ->assertSee('The list locked when the first game started, so names can no longer be added.')
+            ->assertDontSee('one by one with Add name')
+            ->assertDontSee(route('host.events.people.import.create', $event), false)
+            ->assertDontSee('Add name');
+    });
+});
+
+describe('Import names in a modal (B-4)', function (): void {
+    it('opens Import CSV as a modal over the Names page, which takes the saved list back', function (): void {
+        $event = eventWithOwner();
+        $html = (string) actingAs(hostOf($event))->get("/host/{$event->id}/people")->getContent();
+
+        expect($html)->toMatch('#<a[^>]*href="'.preg_quote(route('host.events.people.import.create', $event), '#').'"[^>]*up-layer="new modal"#')
+            ->and($html)->toContain('up-accept-location="'.route('host.events.people.index', $event, false).'"');
+    });
+
+    it('shows two steps, the supported format and a template to download', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people/import")
+            ->assertSee('up-main="modal"', false)
+            ->assertSeeInOrder(['Upload', 'Review'])
+            ->assertDontSee('Saves all names at once')
+            ->assertSee('Only the first column is read.')
+            ->assertSee(route('host.events.people.import.template', $event), false);
+    });
+
+    it('gives a template every importer reads: a header and one name per row', function (): void {
+        $event = eventWithOwner();
+
+        $response = actingAs(hostOf($event))->get("/host/{$event->id}/people/import/template.csv")->assertOk();
+
+        expect((string) $response->headers->get('content-disposition'))->toContain('pentahoot-names-template.csv')
+            ->and(NameCsv::parse((string) $response->streamedContent())->names)->toBe(['Rita Wulandari', 'Budi Santoso', 'Ana Putri']);
+    });
+
+    it('goes back from Review to Upload, naming the last file', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => realUpload("name\nRita\n", 'staff.csv')])
+            ->assertSee(route('host.events.people.import.create', ['event' => $event, 'last' => 'staff.csv']), false);
+
+        actingAs(hostOf($event))->get("/host/{$event->id}/people/import?last=staff.csv")
+            ->assertSee('Last file: staff.csv');
+    });
+
+    it('says so when a file has no names, instead of an empty table', function (): void {
+        $event = eventWithOwner();
+
+        actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => realUpload("name\n", 'empty.csv')])
+            ->assertSee('No names found in this file.')
+            ->assertDontSee('<table', false);
+    });
+});
+
+describe('a refused upload stays in the Import modal (B-4)', function (): void {
+    it('returns to the Upload step with the error under the file field, wherever the host came from', function (): void {
+        $event = eventWithOwner();
+        $upload = route('host.events.people.import.create', $event);
+        $png = realUpload((string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==', true), 'photo.csv');
+
+        // The Names page is where the modal closes, so a refusal must never go back there.
+        actingAs(hostOf($event))->from(route('host.events.people.index', $event))
+            ->post("/host/{$event->id}/people/import", ['file' => $png])
+            ->assertRedirect($upload)
+            ->assertSessionHasErrors('file');
+
+        actingAs(hostOf($event))->from(route('host.events.people.index', $event))
+            ->post("/host/{$event->id}/people/import", [])
+            ->assertRedirect($upload)
+            ->assertSessionHasErrors('file');
+    });
+});
+
+it('explains a refused file in plain words (B-4)', function (): void {
+    $event = eventWithOwner();
+    $png = realUpload((string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==', true), 'photo.csv');
+
+    actingAs(hostOf($event))->post("/host/{$event->id}/people/import", [])
+        ->assertSessionHasErrors(['file' => 'Pick a CSV file first.']);
+    actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => $png])
+        ->assertSessionHasErrors(['file' => 'This is not a CSV file. Save the list from Excel as CSV, or use the template.']);
+    actingAs(hostOf($event))->post("/host/{$event->id}/people/import", ['file' => UploadedFile::fake()->create('big.csv', 1025, 'text/csv')])
+        ->assertSessionHasErrors(['file' => 'The file is larger than 1 MB. Split the list into smaller files.']);
 });

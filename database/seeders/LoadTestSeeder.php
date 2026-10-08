@@ -35,7 +35,7 @@ final class LoadTestSeeder extends Seeder
         }
 
         $event = $createEvent->handle($owner, 'Load Test', self::SLUG, ScreenTheme::Dark, false);
-        $names->import($event, SeedContent::names(500));
+        $names->import($event, SeedContent::names(500), $owner);
 
         $questions = array_map(
             fn (int $number): array => ['prompt' => "Load test question {$number}?", 'duration_seconds' => 20],

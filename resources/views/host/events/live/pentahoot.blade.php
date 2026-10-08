@@ -1,17 +1,15 @@
-{{-- F20, D-5, D-8: Live control for a Pentahoot game. A finished game stays on screen (G7). --}}
-<div x-data="pentahootHost({
+{{-- F20, D-5, D-8, D-10: Live control for a Pentahoot game, in parts that Live control places in
+     its columns: 'data' is the Alpine component around them, 'questions' goes under the steps,
+     'control' in the middle, 'board' (the running count) in the monitor. --}}
+@switch($part)
+    @case('data')
+pentahootHost({
         actionUrl: @js(url("/host/{$event->id}/questions/__QUESTION__/__ACTION__")),
         labels: @js(__('pentahoot')),
-    })"
-    class="flex flex-col gap-5">
-    <section x-cloak x-show="finished" class="flex flex-col items-start gap-3 rounded-card bg-surface p-6">
-        <p class="font-semibold">{{ $game->title }}</p>
-        <p class="text-sm text-muted">{{ __('pentahoot.game_over_host') }}</p>
-        <x-button :href="route('host.events.games.index', $event)" variant="secondary">{{ __('pentahoot.open_games') }}</x-button>
-    </section>
-
-    <div x-show="!finished" class="grid gap-5 xl:grid-cols-[minmax(0,320px)_minmax(0,1fr)_minmax(0,320px)]">
-
+        questionIds: @js($questions->pluck('id')->values()),
+    })
+        @break
+    @case('questions')
         {{-- D-5: any question that is not done can be opened. --}}
         <section class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="questions-heading">
             <h2 id="questions-heading" class="font-display text-xl font-semibold">{{ __('pentahoot.questions') }} ({{ $questions->count() }})</h2>
@@ -24,15 +22,15 @@
                 'clickable' => 'canOpen(' . $question->position . ') && !busy',
             ])->all()" />
         </section>
-
-        {{-- The question on screen: countdown, answers, and the actions its state allows. --}}
+        @break
+    @case('control')
+        {{-- D-10: the question on screen and one main action for the step at hand (mainAction).
+             Another question opens from the list under the steps; rare actions are in the game
+             card menu. --}}
         <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
+            {{-- Always above the button while no question is open, as in Tebak. --}}
             <p x-show="(!question || phase === 'done') && !allDone" class="text-muted">{{ __('pentahoot.no_question') }}</p>
-            {{-- D-8: after the last question the only step left is finishing the game. --}}
-            <div x-cloak x-show="allDone" class="flex flex-col items-start gap-3 rounded-card bg-success px-4 py-3 text-on-success">
-                <p class="font-semibold">{{ __('pentahoot.all_done') }}</p>
-                @include('host.events.live.finish', ['label' => __('games.finish')])
-            </div>
+            <p x-cloak x-show="allDone" class="text-muted">{{ __('pentahoot.all_done') }}</p>
             <template x-if="question && phase !== 'done'">
                 <div class="flex flex-col gap-5">
                     <div class="flex items-center justify-between gap-3">
@@ -48,32 +46,23 @@
                         x-text="label('all_answered', { N: answered, TOTAL: total })"></p>
                     <x-rank-list x-show="phase === 'revealed'" rows="results" />
                     <p x-show="phase === 'revealed' && results.length === 0" class="text-muted">{{ __('pentahoot.no_votes') }}</p>
-                    <div class="flex flex-wrap gap-2.5">
-                        <x-button type="button" x-show="phase === 'ready'" x-bind:disabled="busy" @click="act('start')">{{ __('pentahoot.start') }}</x-button>
-                        <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('stop')" @click="act('stop')">{{ __('pentahoot.stop') }}</x-button>
-                        <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('reveal')" @click="act('reveal')">{{ __('pentahoot.reveal') }}</x-button>
-                        <x-button type="button" x-show="phase !== 'ready'" x-bind:disabled="busy || !can('next')" @click="act('next')">{{ __('pentahoot.next') }}</x-button>
-                    </div>
                 </div>
             </template>
-            <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
-
-            {{-- T1, E13: Reset is irreversible and logged. --}}
-            <div x-show="can('reset')" class="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-4">
-                <div class="flex flex-col">
-                    <span class="text-sm font-bold">{{ __('pentahoot.danger') }}</span>
-                    <span class="text-sm text-muted">{{ __('pentahoot.reset_help') }}</span>
-                </div>
-                <x-confirm-dialog :title="__('pentahoot.reset_title')" :trigger="__('pentahoot.reset')" trigger-variant="destructive">
-                    <p class="text-[15px] text-muted">{{ __('pentahoot.reset_help') }}</p>
-                    <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
-                        <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>
-                        <x-button type="submit" variant="destructive" @click="act('reset')">{{ __('pentahoot.reset') }}</x-button>
-                    </form>
-                </x-confirm-dialog>
+            {{-- The one main action. Busy keeps a quick double click from running the next step. --}}
+            <div x-show="mainAction && mainAction.action !== 'finish'" class="flex justify-end">
+                <x-button type="button" data-test="main-action" x-bind:disabled="busy || (mainAction?.action === 'stop' && !can('stop'))" @click="act(mainAction.action, mainAction.id)">
+                    <span x-text="mainAction ? label(mainAction.label, { N: mainAction.number ?? '' }) : ''"></span>
+                </x-button>
             </div>
+            {{-- D-10: after the last question Finish game is the one step left; it closes the question too. --}}
+            <div x-cloak x-show="mainAction?.action === 'finish'" class="flex justify-end">
+                @include('host.events.live.finish', ['label' => __('games.finish'), 'direct' => true])
+            </div>
+            <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
         </section>
-
+        @include('host.events.live.game-card', ['menu' => [['label' => __('pentahoot.reset'), 'click' => "document.getElementById('reset-question').showModal()", 'show' => "can('reset')"]], 'dialogs' => 'host.events.live.reset-dialog'])
+        @break
+    @case('board')
         {{-- F2, F14: the running count per name, for hosts only. --}}
         <section class="flex flex-col gap-3 rounded-card bg-surface p-6" aria-labelledby="tally-heading">
             <div class="flex items-baseline justify-between gap-3">
@@ -90,11 +79,5 @@
                 </template>
             </ol>
         </section>
-    </div>
-
-    {{-- D-8, E13: finishing early leaves unfinished questions out and is logged. --}}
-    <section x-show="!finished" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface p-6">
-        <span class="font-semibold">{{ $game->title }}</span>
-        @include('host.events.live.finish', ['label' => __('games.finish')])
-    </section>
-</div>
+        @break
+@endswitch

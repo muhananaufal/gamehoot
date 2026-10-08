@@ -4,8 +4,8 @@
     {{-- U19: sign in leaves every check to the server. --}}
     <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4" novalidate data-no-check>
         @csrf
-        <x-field name="login" :label="__('accounts.login')" :placeholder="__('accounts.login')" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus :live="false" />
-        <x-field name="password" type="password" :label="__('accounts.password')" autocomplete="current-password" required />
+        <x-field name="login" :label="__('accounts.login')" :placeholder="__('examples.username_or_email')" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus :live="false" />
+        <x-field name="password" :placeholder="__('examples.password')" type="password" :label="__('accounts.password')" autocomplete="current-password" required />
         <x-button type="submit" class="mt-1.5 h-12 font-display text-[19px] font-semibold">{{ __('accounts.sign_in') }}</x-button>
     </form>
 

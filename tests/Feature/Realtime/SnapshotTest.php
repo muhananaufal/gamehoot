@@ -53,6 +53,8 @@ it('gives every screen the event, the lobby count and the version (F1, F15, F23)
         ],
         'lobby' => ['joined' => 2],
         'game' => null,
+        // D-11: no past moment on screen.
+        'replay' => null,
     ]);
 });
 
@@ -144,7 +146,7 @@ it('moves the roster when the host changes the name list, not when a phone claim
 
     $added = $names->add($event, 'Budi Santoso');
     expect($roster())->toBe(1);
-    $names->import($event, ['Citra Dewi']);
+    $names->import($event, ['Citra Dewi'], $host);
     expect($roster())->toBe(2);
     $names->rename($event, $added, 'Budi S.');
     expect($roster())->toBe(3);

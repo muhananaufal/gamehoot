@@ -4,22 +4,30 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
-use App\Enums\GameType;
 use App\Games\GameEngines;
 use App\Http\Concerns\LiveValidation;
 use App\Models\QuestionPack;
 use App\Models\User;
+use App\Rules\HostPack;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
+use RuntimeException;
 
 /**
- * D-9: a game is made from one of the host's own packs, of a type that can be played live.
+ * D-9: games are made from the host's own packs, of a type that can be played live. Several
+ * packs can be picked at once (pack_ids, in the order picked); a single pack_id still works.
  */
 final class StoreGameRequest extends FormRequest
 {
     use LiveValidation;
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('pack_id') && ! $this->has('pack_ids')) {
+            $this->merge(['pack_ids' => [$this->input('pack_id')]]);
+        }
+    }
 
     /**
      * @return array<string, list<string|ValidationRule|Exists>>
@@ -29,13 +37,11 @@ final class StoreGameRequest extends FormRequest
         $user = $this->user();
 
         return [
-            'pack_id' => [
-                'required',
+            'pack_ids' => ['required', 'array', 'min:1'],
+            'pack_ids.*' => [
+                'distinct',
                 'uuid',
-                Rule::exists('question_packs', 'id')
-                    ->where('owner_id', $user instanceof User ? $user->id : null)
-                    ->whereIn('game_type', array_map(fn (GameType $type): string => $type->value, $engines->playableTypes()))
-                    ->whereNull('deleted_at'),
+                HostPack::of($user instanceof User ? $user : null, $engines),
             ],
         ];
     }
@@ -45,11 +51,17 @@ final class StoreGameRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['pack_id' => __('games.pack')];
+        return ['pack_ids' => __('games.pack'), 'pack_ids.*' => __('games.pack')];
     }
 
-    public function pack(): QuestionPack
+    /**
+     * @return list<QuestionPack>
+     */
+    public function packs(): array
     {
-        return QuestionPack::query()->findOrFail($this->string('pack_id')->toString());
+        $ids = array_values(array_filter((array) $this->input('pack_ids', []), is_string(...)));
+        $packs = QuestionPack::query()->whereKey($ids)->get()->keyBy('id');
+
+        return array_map(fn (string $id): QuestionPack => $packs->get($id) ?? throw new RuntimeException('Pack not found.'), $ids);
     }
 }

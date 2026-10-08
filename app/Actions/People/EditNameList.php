@@ -38,12 +38,15 @@ final readonly class EditNameList
     /**
      * @param  list<string>  $names
      */
-    public function import(Event $event, array $names): void
+    public function import(Event $event, array $names, User $actor): void
     {
-        $this->locked($event, function (Event $locked) use ($names): void {
+        $this->locked($event, function (Event $locked) use ($names, $actor): void {
             foreach ($names as $name) {
                 $this->newPerson($name)->event()->associate($locked)->save();
             }
+
+            // E13: who added names, and how many; the names themselves are in the list.
+            $this->auditLog->record(LoggedAction::NamesAdded, $actor, $locked, ['count' => count($names)]);
         });
     }
 

@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\QuestionPack;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Pentahoot;
 
 use function Pest\Laravel\actingAs;
 
@@ -160,7 +161,7 @@ it('expands a recent event in place and stays on the page (U23)', function (): v
     $page->assertNoJavaScriptErrors();
 });
 
-it('adds a game from the pack list of the Games page, searched like Question packs (U23)', function (): void {
+it('adds several games from the Add games dialog, in the order picked (D-9)', function (): void {
     $host = User::factory()->create();
     $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
     foreach (['Office Awards', 'Team Trivia'] as $title) {
@@ -170,15 +171,82 @@ it('adds a game from the pack list of the Games page, searched like Question pac
     actingAs($host);
 
     $page = visit("/host/{$event->id}/games")->wait(0.5);
-    $page->script('(() => { const q = document.querySelector("#pack-list input[type=search]"); q.value = "trivia"; q.dispatchEvent(new Event("input", { bubbles: true })); })()');
-    $page->wait(0.5);
+    $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add game").click()');
+    $page->wait(0.3);
+    // Team Trivia first, then Office Awards: the games follow the order picked.
+    $page->script('(() => { const packs = [...document.querySelectorAll("dialog[open] [data-pack]")]; packs.find((p) => p.dataset.title === "Team Trivia").click(); packs.find((p) => p.dataset.title === "Office Awards").click(); })()');
+    $page->wait(0.3);
 
-    expect($page->script('[...document.querySelectorAll("#pack-list [data-pack]")].filter((b) => ! b.hidden).map((b) => b.innerText.split("\n")[0].trim())'))->toBe(['Team Trivia']);
+    expect($page->script('document.querySelector("[data-test=add-games]").innerText.trim()'))->toBe('Add 2 games');
 
-    $page->script('[...document.querySelectorAll("#pack-list [data-pack]")].find((b) => ! b.hidden).click()');
-    // The toast may be gone already on a slow browser; the list shows the new game.
-    $page->assertSee('1. Team Trivia')
-        ->assertPathEndsWith("/host/{$event->id}/games")
-        ->assertNoJavaScriptErrors();
-    expect($event->games()->pluck('title')->all())->toBe(['Team Trivia']);
+    $page->script('document.querySelector("[data-test=add-games]").click()');
+    $page->wait(3);
+
+    expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Team Trivia', 'Office Awards']);
+    $page->assertNoJavaScriptErrors();
+});
+
+it('lines the Games page up with Question packs on a wide phone (D-9)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    $event->games()->create(['type' => GameType::Pentahoot, 'title' => 'Office Awards', 'position' => 1]);
+    $pack = new QuestionPack(['title' => 'Office Awards', 'game_type' => GameType::Pentahoot]);
+    $pack->owner()->associate($host)->save();
+    actingAs($host);
+
+    // Both lists fill their column; nothing in a flex column shrinks them to their content.
+    $width = fn (string $selector): string => 'Math.round(document.querySelector("'.$selector.'").getBoundingClientRect().width)';
+    $games = visit("/host/{$event->id}/games")->resize(700, 900)->wait(0.5)->script($width('#games-list'));
+    $packs = visit('/host/packs')->resize(700, 900)->wait(0.5)->script($width('#pack-list'));
+
+    expect($games)->toBe($packs);
+});
+
+it('moves a question of a game with the arrows and saves the order once (D-9)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    $game = Pentahoot::game($event, ['First?', 'Second?']);
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/games/{$game->id}")->wait(0.5);
+    $page->script('document.querySelector("#game-panel [data-move=down]").click()');
+    $page->wait(3);
+
+    expect($game->questions()->orderBy('position')->with('pentahoot')->get()->map(fn ($question) => $question->pentahoot?->prompt)->all())->toBe(['Second?', 'First?']);
+    $page->assertNoJavaScriptErrors();
+});
+
+it('follows a link whose query ends in .csv inside the page, and leaves real downloads to the browser (U18, B-4)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $followable = fn (string $attributes): mixed => $page->script('(() => { const a = document.createElement("a"); '.$attributes.' document.querySelector("[data-host-shell] main").appendChild(a); const followed = window.up.link.isFollowable(a); a.remove(); return followed; })()');
+
+    // Back from the import review names the last file, e.g. ?last=staff.csv: it stays in the modal.
+    expect($followable('a.href = "/host/'.$event->id.'/people/import?last=staff.csv";'))->toBeTrue()
+        ->and($followable('a.href = "/host/'.$event->id.'/results.csv"; a.setAttribute("download", "");'))->toBeFalse();
+    $page->assertNoJavaScriptErrors();
+});
+
+it('keeps a refused upload in the Import modal, with its error under the file field and one page inside (B-4)', function (): void {
+    $host = User::factory()->create();
+    $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
+    actingAs($host);
+
+    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $page->script('[...document.querySelectorAll("a")].find((a) => a.innerText.trim() === "Import CSV").click()');
+    $page->assertScript('!! document.querySelector("up-modal #import-file")');
+    // Nothing picked: the server refuses, and the modal shows the Upload step again.
+    $page->script('[...document.querySelectorAll("up-modal button[type=submit]")].pop().click()');
+    $page->assertScript('document.querySelector("up-modal")?.innerText.includes("Pick a CSV file first.")');
+    $page->wait(1);
+
+    expect($page->script('window.up.layer.count'))->toBe(2)
+        ->and($page->script('document.querySelectorAll("up-modal [up-main]").length'))->toBe(1)
+        ->and($page->script('document.querySelectorAll("up-bounds").length'))->toBe(0)
+        // U13: no close button; Cancel, Escape and a click outside close the modal.
+        ->and($page->script('!! document.querySelector("up-modal up-modal-dismiss")'))->toBeFalse();
+    $page->assertNoJavaScriptErrors();
 });

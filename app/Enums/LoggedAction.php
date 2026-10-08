@@ -31,11 +31,16 @@ enum LoggedAction: string
     case ClaimReleased = 'person.claim_released';
     case LinkRegenerated = 'person.link_regenerated';
     case PersonDeleted = 'person.deleted';
+    case NamesAdded = 'person.added';
     case GameStarted = 'game.started';
     case GameDeleted = 'game.deleted';
     case GameFinishedEarly = 'game.finished_early';
+    case GameFinished = 'game.finished';
+    case GameReloaded = 'game.reloaded';
     case QuestionRevealed = 'question.revealed';
     case QuestionReset = 'question.reset';
     case WinnerPicked = 'question.winner_picked';
     case QuestionSurrendered = 'question.surrendered';
+    case QuestionSkipped = 'question.skipped';
+    case QuestionDeleted = 'question.deleted';
 }

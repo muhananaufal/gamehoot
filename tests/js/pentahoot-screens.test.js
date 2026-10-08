@@ -178,3 +178,153 @@ describe('B-6 the vote list follows the name list', () => {
         expect(fetchPeople).toHaveBeenCalledTimes(2);
     });
 });
+
+describe('Live control opens the next question from the middle, in order', () => {
+    const withGame = (make, game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const host = make();
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('offers the first Pentahoot question that is still ready', () => {
+        const host = () => pentahootHost({ actionUrl: '/act', labels: {}, questionIds: ['q1', 'q2', 'q3'] });
+
+        expect(withGame(host, { question: null, statuses: ['done', 'ready', 'ready'] }).nextToOpen).toEqual({
+            number: 2,
+            id: 'q2',
+        });
+        expect(withGame(host, { question: null, statuses: ['done', 'done', 'done'] }).nextToOpen).toBe(null);
+    });
+
+    it('offers the first queued Tebak question, then a skipped one', () => {
+        const host = () =>
+            tebakHost({
+                type: 'tebak_kata',
+                actionUrl: '/act',
+                people: [],
+                labels: {},
+                questionIds: ['q1', 'q2', 'q3'],
+            });
+
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'Q', 'q'] }).nextToOpen).toEqual({
+            number: 3,
+            id: 'q3',
+        });
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'Q', 'x'] }).nextToOpen).toEqual({
+            number: 2,
+            id: 'q2',
+        });
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'w', 'x'] }).nextToOpen).toBe(null);
+    });
+});
+
+describe('Next question goes on in order; Pick a question leaves the choice to the host', () => {
+    const revealed = () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({
+            ...live,
+            game: {
+                ...live.game,
+                question: { id: 'q1', number: 1, status: 'revealed', attempt: 1 },
+                statuses: ['revealed', 'ready', 'ready'],
+            },
+        });
+        store.refresh = vi.fn(async () => {});
+        const host = pentahootHost({
+            actionUrl: '/act/__QUESTION__/__ACTION__',
+            labels: { network_error: 'Network' },
+            questionIds: ['q1', 'q2', 'q3'],
+        });
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('goes on in one server action, so no screen shows the moment in between', async () => {
+        const post = vi.fn(async () => answer(204, {}));
+        vi.stubGlobal('fetch', post);
+
+        await revealed().act('advance');
+
+        expect(post.mock.calls.map(([url]) => url)).toEqual(['/act/q1/advance']);
+    });
+});
+
+describe('Open question N only starts a game; after Pick a question the list decides', () => {
+    const withGame = (make, game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const host = make();
+        host.$store = { realtime: store };
+
+        return host;
+    };
+
+    it('offers the first Pentahoot question only before any question was played', () => {
+        const host = () => pentahootHost({ actionUrl: '/act', labels: {}, questionIds: ['q1', 'q2'] });
+
+        expect(withGame(host, { question: null, statuses: ['ready', 'ready'] }).firstToOpen).toEqual({
+            number: 1,
+            id: 'q1',
+        });
+        expect(withGame(host, { question: null, statuses: ['done', 'ready'] }).firstToOpen).toBe(null);
+    });
+
+    it('offers the first Tebak question only before any question was shown', () => {
+        const host = () =>
+            tebakHost({ type: 'tebak_kata', actionUrl: '/act', people: [], labels: {}, questionIds: ['q1', 'q2'] });
+
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['q', 'q'] }).firstToOpen).toEqual({
+            number: 1,
+            id: 'q1',
+        });
+        expect(withGame(host, { type: 'tebak_kata', question: null, statuses: ['w', 'q'] }).firstToOpen).toBe(null);
+    });
+});
+
+describe('One main action in the middle of Live control (D-10)', () => {
+    const host = (game) => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({ ...live, game: { ...live.game, ...game } });
+        const made = pentahootHost({ actionUrl: '/act', labels: {}, questionIds: ['q1', 'q2'] });
+        made.$store = { realtime: store };
+
+        return made;
+    };
+    const revealed = {
+        question: { id: 'q1', number: 1, status: 'revealed', attempt: 1 },
+        statuses: ['revealed', 'ready'],
+    };
+
+    it('lets the list open another question once this one is revealed, not while it runs (D-5)', () => {
+        expect(host(revealed).canOpen(2)).toBe(true);
+        expect(
+            host({
+                question: { id: 'q1', number: 1, status: 'live', attempt: 1, ends_at: 99_000 },
+                statuses: ['live', 'ready'],
+            }).canOpen(2),
+        ).toBe(false);
+    });
+
+    it('names the one main action for the step at hand', () => {
+        expect(host({ question: null, statuses: ['ready', 'ready'] }).mainAction).toEqual({
+            action: 'start',
+            id: 'q1',
+            label: 'open_next',
+            number: 1,
+        });
+        expect(host(revealed).mainAction).toEqual({ action: 'advance', id: 'q1', label: 'next' });
+        expect(
+            host({
+                ...revealed,
+                statuses: ['done', 'revealed'],
+                question: { ...revealed.question, id: 'q2', number: 2 },
+            }).mainAction,
+        ).toEqual({ action: 'finish' });
+        expect(host({ question: null, statuses: ['done', 'ready'] }).mainAction).toBe(null);
+        expect(host({ question: null, statuses: ['done', 'done'] }).mainAction).toEqual({ action: 'finish' });
+    });
+});

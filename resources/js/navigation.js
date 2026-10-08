@@ -4,6 +4,7 @@
 
 import { animate as motionAnimate } from 'motion';
 import { markPageEntered, SPRING } from './flip.js';
+import { busyPreview } from './form-busy.js';
 
 /** U8: leaving is quicker than arriving (NN/g). */
 const EXIT = { duration: 0.12, ease: 'easeIn' };
@@ -12,8 +13,24 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // Unpoly puts modals at the end of <body>, outside the shell: their links and forms count too.
     up.link.config.followSelectors.push('[data-host-shell] a[href]', 'up-modal a[href]');
     up.form.config.submitSelectors.push('[data-host-shell] form', 'up-modal form');
-    // CSV exports are downloads, not pages.
-    up.link.config.noFollowSelectors.push('a[href$=".csv"]');
+    // A <form method="dialog"> only closes its dialog; sent through Unpoly it became a DIALOG
+    // request to the page address (405 Method Not Allowed).
+    up.form.config.noSubmitSelectors.push('form[method=dialog]');
+    // U19: after a change of data every cached page goes. Unpoly only marks them expired by
+    // default, then shows the old page first and swaps it once the server answers; on a slow
+    // server the old data stayed in view for seconds.
+    up.network.config.evictCache = (request) => !request.isSafe();
+    // U16: a form sent through Unpoly locks its buttons and spins the clicked one until the
+    // request ends, so it is never sent twice.
+    up.on('up:form:submit', (event) => {
+        event.renderOptions.preview = [event.renderOptions.preview, busyPreview(event.form, event.submitButton)].filter(
+            Boolean,
+        );
+    });
+    // Downloads (CSV exports, the import template) carry the download attribute and are not pages.
+    // Matching the address instead caught a query ending in .csv, such as Back from the import
+    // review naming the last file (?last=staff.csv), and left the modal.
+    up.link.config.noFollowSelectors.push('a[download]');
 
     // U13: when a create modal's form succeeds, the server redirects to the result page (e.g. the
     // new event's Names page, matched by up-accept-location on the link). That page has no modal
@@ -56,6 +73,10 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // the app's spring. Only <main> moves: a transform on the whole content column would carry
     // its fixed toasts along. Unpoly turns motion off for prefers-reduced-motion, so does this.
     up.transition('page', async (oldElement, newElement) => {
+        // U13: the old page stays in the document while it fades; a native dialog left open in it
+        // (the one whose form was just sent) sits on top of everything, so it closes at once.
+        oldElement.querySelectorAll?.('dialog[open]').forEach((dialog) => dialog.close());
+
         if (!up.motion.config.enabled) {
             return;
         }
@@ -83,6 +104,9 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
     // U8: modals pop in with the spring and leave a little faster.
     up.animation('pop-in', (element) => animate(element, { opacity: [0, 1], scale: [0.95, 1] }, SPRING));
     up.animation('pop-out', (element) => animate(element, { opacity: [1, 0], scale: [1, 0.97] }, EXIT));
+    // U13: modals close like the native dialogs, with no close button: every modal has its own
+    // Cancel, and Escape or a click outside close it too.
+    up.layer.config.modal.dismissible = ['key', 'outside'];
     up.layer.config.modal.openAnimation = 'pop-in';
     up.layer.config.modal.closeAnimation = 'pop-out';
 }

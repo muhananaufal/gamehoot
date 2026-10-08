@@ -39,6 +39,9 @@ final readonly class FinishGame
                 throw ActionRefused::stale();
             }
 
+            // D-10: a question already revealed has its result frozen (G10); finishing closes it.
+            $lockedGame->questions()->where('status', QuestionStatus::Revealed)->update(['status' => QuestionStatus::Done]);
+
             $early = $lockedGame->questions()
                 ->whereNotIn('status', [QuestionStatus::Done, QuestionStatus::Won, QuestionStatus::Surrendered])
                 ->exists();
@@ -48,13 +51,14 @@ final readonly class FinishGame
 
             // G7, E12: the game stays on screen with its final results until the next one starts.
             $lockedGame->forceFill(['status' => GameStatus::Finished, 'current_question_id' => null, 'leaderboard_at' => null])->save();
+            // D-11: play, closing and reopening always end a replay.
+            $locked->endReplay();
             $locked->bumpStateVersion();
             $locked->save();
             $this->publisher->publish($locked);
 
-            if ($early) {
-                $this->auditLog->record(LoggedAction::GameFinishedEarly, $actor, $locked, ['game_id' => $lockedGame->id]);
-            }
+            // E13: results are frozen either way; an early finish says so.
+            $this->auditLog->record($early ? LoggedAction::GameFinishedEarly : LoggedAction::GameFinished, $actor, $locked, ['game_id' => $lockedGame->id]);
         });
     }
 }

@@ -54,7 +54,7 @@ it('broadcasts the new version after each state change', function (Closure $chan
     'add name' => [fn (Event $e) => app(EditNameList::class)->add($e, 'Rita Wulandari'), 'open', 1],
     'rename' => [fn (Event $e, Person $p) => app(EditNameList::class)->rename($e, $p, 'Rita'), 'open', 1],
     'delete name' => [fn (Event $e, Person $p) => app(EditNameList::class)->delete($e, $p, $e->owner()->firstOrFail()), 'open', 1],
-    'import' => [fn (Event $e) => app(EditNameList::class)->import($e, ['Ana', 'Budi']), 'open', 1],
+    'import' => [fn (Event $e, Person $p, $h) => app(EditNameList::class)->import($e, ['Ana', 'Budi'], $h), 'open', 1],
     'claim (F23)' => [fn (Event $e, Person $p) => app(ClaimName::class)->handle($e, $p), 'open', 2],
     'release claim (F23)' => [fn (Event $e, Person $p, $h) => app(ReleaseClaim::class)->handle($e, $e->people()->whereNotNull('claimed_at')->firstOrFail(), $h), 'open', 0],
 ]);

@@ -366,7 +366,7 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
  * Live control: open any question that is not done (D-5), run it, see the live count only
  * hosts see (F2), and read STALE_ACTION when the state moved on (C-3).
  */
-export function pentahootHost({ actionUrl, labels }) {
+export function pentahootHost({ actionUrl, labels, questionIds = [] }) {
     return {
         ...base(labels),
         busy: false,
@@ -461,8 +461,55 @@ export function pentahootHost({ actionUrl, labels }) {
             return status === 'ready' ? 'todo' : 'current';
         },
 
+        /** D-5, D-10: the list opens a ready question unless one runs; a revealed one is closed on the way. */
         canOpen(number) {
-            return !this.busyQuestion && this.statusOf(number) === 'ready';
+            return (!this.busyQuestion || this.phase === 'revealed') && this.statusOf(number) === 'ready';
+        },
+
+        /**
+         * D-10: the one main action of the middle, for the step at hand: open the first question,
+         * start, stop voting, reveal, go on to the next question, or finish after the last one.
+         * Null when the list decides (a game under way with no question open).
+         */
+        get mainAction() {
+            const question = this.question;
+
+            if (!question || this.phase === 'done') {
+                if (this.allDone) {
+                    return { action: 'finish' };
+                }
+
+                const first = this.firstToOpen;
+
+                return first ? { action: 'start', id: first.id, label: 'open_next', number: first.number } : null;
+            }
+
+            switch (this.phase) {
+                case 'ready':
+                    return { action: 'start', id: question.id, label: 'start' };
+                case 'live':
+                    return { action: 'stop', id: question.id, label: 'stop' };
+                case 'closed':
+                    return { action: 'reveal', id: question.id, label: 'reveal' };
+                case 'revealed':
+                    return this.nextToOpen
+                        ? { action: 'advance', id: question.id, label: 'next' }
+                        : { action: 'finish' };
+                default:
+                    return null;
+            }
+        },
+
+        /** D-10: Open question 1 starts a game; once a question was played, Next question or the list goes on. */
+        get firstToOpen() {
+            return questionIds.every((_, i) => this.statusOf(i + 1) === 'ready') ? this.nextToOpen : null;
+        },
+
+        /** D-10: the first question still to play, for Next question. */
+        get nextToOpen() {
+            const index = questionIds.findIndex((_, i) => this.statusOf(i + 1) === 'ready');
+
+            return index === -1 ? null : { number: index + 1, id: questionIds[index] };
         },
 
         async act(action, questionId = this.question?.id) {

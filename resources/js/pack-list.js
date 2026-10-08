@@ -80,7 +80,7 @@ export function packList({ storage = globalThis.localStorage } = {}) {
                 const items = [...list.querySelectorAll('[data-pack]')].map((el) => ({
                     el,
                     // The first span holds the title; the second the question count.
-                    title: (el.querySelector('span')?.textContent ?? '').trim(),
+                    title: (el.dataset.title ?? el.querySelector('span')?.textContent ?? '').trim(),
                     type: el.dataset.type,
                     changed: Number(el.dataset.changed ?? 0),
                 }));

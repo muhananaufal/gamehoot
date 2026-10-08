@@ -51,7 +51,7 @@ it('filters, searches and sorts events in the browser, with the counts per statu
     $options = str_replace(chr(92).'u0022', '"', $html);
 
     expect($options)->toContain('"label":"All statuses","count":2')
-        ->toContain('"label":"Open","count":1')
+        ->toContain('"label":"Playing","count":1')
         ->and($html)->toContain('x-data="tableView({ key: \'events\', sort: \'created\', dir: \'desc\' })"')
         ->and($html)->toContain('Rows per page')
         ->and($html)->toMatch('/data-sort-created="\d+" data-date="\d{4}-\d{2}-\d{2}"/')

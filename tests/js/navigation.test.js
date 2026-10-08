@@ -19,6 +19,7 @@ const fakeUp = () => {
         macro: (selector, fn) => (up.macros[selector] = fn),
         link: { config: { followSelectors: [], noFollowSelectors: [] } },
         form: { config: { submitSelectors: [], noSubmitSelectors: [] } },
+        network: { config: { evictCache: false } },
         on: (name, handler) => (handlers[name] = handler),
         render: (options) => rendered.push(options),
     };
@@ -36,11 +37,28 @@ describe('U18 navigation without reloads', () => {
         expect(up.form.config.submitSelectors).toEqual(['[data-host-shell] form', 'up-modal form']);
     });
 
+    it('leaves dialog forms to the browser, so Cancel closes the dialog instead of sending a DIALOG request', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+
+        expect(up.form.config.noSubmitSelectors).toContain('form[method=dialog]');
+    });
+
+    it('drops every cached page after a change of data, so no page shows the old data first (U19)', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+
+        expect(up.network.config.evictCache({ isSafe: () => false })).toBe(true);
+        expect(up.network.config.evictCache({ isSafe: () => true })).toBe(false);
+    });
+
     it('lets file downloads load as plain requests', () => {
         const up = fakeUp();
         configureNavigation(up);
 
-        expect(up.link.config.noFollowSelectors).toContain('a[href$=".csv"]');
+        expect(up.link.config.noFollowSelectors).toContain('a[download]');
+        // A query ending in .csv is still a page (Back from the import review, ?last=staff.csv).
+        expect(up.link.config.noFollowSelectors).not.toContain('a[href$=".csv"]');
     });
 
     it('draws the result page of a create modal in the main page and closes the modal (U13)', () => {
@@ -203,5 +221,62 @@ describe('U18 navigation without reloads', () => {
             'up-history': 'true',
             'up-alias': '/host/packs/p1/*',
         });
+    });
+});
+
+describe('U16 forms sent through Unpoly', () => {
+    it('adds the busy lock to the previews of every submitted form, keeping its own', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+        const own = () => {};
+        const event = { form: { querySelectorAll: () => [] }, submitButton: null, renderOptions: { preview: own } };
+
+        up.handlers['up:form:submit'](event);
+
+        expect(event.renderOptions.preview).toHaveLength(2);
+        expect(event.renderOptions.preview[0]).toBe(own);
+    });
+});
+
+describe('U13 a page that changes closes the dialogs of the old one', () => {
+    const withOpenDialog = () => {
+        const dialog = {
+            closed: false,
+            close() {
+                this.closed = true;
+            },
+        };
+
+        return { dialog, element: { id: 'host-content', querySelector: () => null, querySelectorAll: () => [dialog] } };
+    };
+
+    it('closes them at once, before the old page fades, so it never shows over the new one', async () => {
+        const up = fakeUp();
+        configureNavigation(up, { animate: vi.fn(() => Promise.resolve()) });
+        const { dialog, element } = withOpenDialog();
+
+        await up.transitions.page(element, { id: 'host-content', querySelector: () => null }, {});
+
+        expect(dialog.closed).toBe(true);
+    });
+
+    it('closes them also without motion (prefers-reduced-motion)', async () => {
+        const up = fakeUp();
+        up.motion.config.enabled = false;
+        configureNavigation(up, { animate: vi.fn(() => Promise.resolve()) });
+        const { dialog, element } = withOpenDialog();
+
+        await up.transitions.page(element, { id: 'host-content', querySelector: () => null }, {});
+
+        expect(dialog.closed).toBe(true);
+    });
+});
+
+describe('U13 modals close like the native dialogs', () => {
+    it('have no close button: Cancel, Escape and a click outside close them', () => {
+        const up = fakeUp();
+        configureNavigation(up);
+
+        expect(up.layer.config.modal.dismissible).toEqual(['key', 'outside']);
     });
 });

@@ -38,4 +38,18 @@ final readonly class CreateGame
             return $game;
         });
     }
+
+    /**
+     * D-9: several packs at once, as games at the end, in the order given; all or none.
+     *
+     * @param  list<QuestionPack>  $packs
+     */
+    public function handleMany(Event $event, array $packs): void
+    {
+        DB::transaction(function () use ($event, $packs): void {
+            foreach ($packs as $pack) {
+                $this->handle($event, $pack);
+            }
+        });
+    }
 }

@@ -6,6 +6,7 @@ namespace App\Realtime;
 
 use App\Enums\Audience;
 use App\Games\GameEngines;
+use App\Games\Replay\ReplayMoments;
 use App\Models\Event;
 use App\Models\Game;
 use Illuminate\Contracts\Cache\Repository as Cache;
@@ -17,8 +18,11 @@ use Illuminate\Contracts\Cache\Repository as Cache;
  * without a version bump (F24) are added fresh on every call.
  *
  * @phpstan-type EventPart array{name: string, status: string, link: string, claims_locked: bool, screen_theme: string, show_on_devices: bool, roster: int}
- * @phpstan-type Body array{version: int, event: EventPart, lobby: array{joined: int}, game: array<string, mixed>|null, host?: array{names: int}}
- * @phpstan-type Snapshot array{server_now: int, version: int, event: EventPart, lobby: array{joined: int}, game: array<string, mixed>|null, host?: array{names: int}}
+ *
+ * @phpstan-import-type Payload from ReplayMoments
+ *
+ * @phpstan-type Body array{version: int, event: EventPart, lobby: array{joined: int}, game: array<string, mixed>|null, replay: Payload|null, host?: array{names: int}}
+ * @phpstan-type Snapshot array{server_now: int, version: int, event: EventPart, lobby: array{joined: int}, game: array<string, mixed>|null, replay: Payload|null, host?: array{names: int}}
  */
 final readonly class EventSnapshot
 {
@@ -30,7 +34,7 @@ final readonly class EventSnapshot
 
     private const int CACHE_SECONDS = 600;
 
-    public function __construct(private Cache $cache, private GameEngines $engines) {}
+    public function __construct(private Cache $cache, private GameEngines $engines, private ReplayMoments $replays) {}
 
     /**
      * @return Snapshot
@@ -77,6 +81,8 @@ final readonly class EventSnapshot
             'lobby' => ['joined' => $event->people()->whereNotNull('claimed_at')->count()],
             // D-1, F13: the active game, drawn by its engine.
             'game' => null,
+            // D-11: the past moment the Public View replays (at most ten names, F14). Phones ignore it.
+            'replay' => $event->trashed() ? null : $this->replays->payload($event),
         ];
 
         $game = $event->trashed() ? null : $event->activeGame()->first();

@@ -25,7 +25,7 @@ it('updates the Public View lobby count on a 16:9 projector as names are claimed
 
     $page = visit('/year-end-party/screen')
         ->resize(1920, 1080)
-        ->assertSee('Join on your phone at')
+        ->assertSee('Join at')
         ->assertSee('/year-end-party')
         ->assertSee('0 players joined')
         ->assertSee('Connection lost. The screen still updates every few seconds.');

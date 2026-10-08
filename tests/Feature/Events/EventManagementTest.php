@@ -12,6 +12,7 @@ use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Tests\Support\Pentahoot;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -55,8 +56,8 @@ describe('creating an event', function (): void {
         ]);
 
         $event = Event::query()->firstOrFail();
-        // Setup step 2 comes next: adding names.
-        $response->assertRedirect("/host/{$event->id}/people");
+        // U26: the host goes on in Live control, where the event is opened.
+        $response->assertRedirect("/host/{$event->id}");
         expect($event->owner_id)->toBe($host->id)
             ->and($event->slug)->toBe('gathering-2026')
             ->and($event->status)->toBe(EventStatus::Draft)
@@ -155,7 +156,7 @@ describe('settings', function (): void {
         $event = ownedEvent(attributes: ['slug' => 'gathering', 'status' => EventStatus::Open]);
 
         actingAs(ownerOf($event))->put("/host/{$event->id}/settings", ['name' => 'Gathering', 'slug' => 'gathering-2026', 'screen_theme' => 'dark'])
-            ->assertSessionHasErrors(['slug' => 'The link cannot change while the event is open: printed QR codes and open phones use it. Close the event first.']);
+            ->assertSessionHasErrors(['slug' => 'The link cannot change while the event is open: printed QR codes and players who already joined use it. Close the event first.']);
 
         expect($event->refresh()->slug)->toBe('gathering');
         actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->assertSee('Close the event to change its link');
@@ -365,13 +366,17 @@ describe('closing and reopening (D-7)', function (): void {
             ->and(logged(LoggedAction::EventReopened))->toBe(1);
     });
 
-    it('refuses to close while a game is running (T6)', function (): void {
-        $event = ownedEvent();
-        $game = Game::factory()->for($event)->create();
-        $event->forceFill(['status' => EventStatus::Open, 'active_game_id' => $game->id])->save();
+    it('ends a running game first, like Finish game, then closes (T6, D-10)', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event);
 
-        actingAs(ownerOf($event))->post("/host/{$event->id}/close")->assertSessionHasErrors('event');
-        expect($event->refresh()->status)->toBe(EventStatus::Open);
+        actingAs(ownerOf($event))->post("/host/{$event->id}/close")->assertSessionHasNoErrors();
+
+        expect($event->refresh()->status)->toBe(EventStatus::Finished)
+            ->and($game->refresh()->status)->toBe(GameStatus::Finished)
+            ->and($event->active_game_id)->toBe($game->id)
+            ->and(logged(LoggedAction::GameFinishedEarly))->toBe(1)
+            ->and(logged(LoggedAction::EventClosed))->toBe(1);
     });
 
     it('closes while a finished game only shows its results (T6, G7)', function (): void {
@@ -434,15 +439,17 @@ describe('the Settings page (U20)', function (): void {
             ->toContain('Transfer ownership?');
     });
 
-    it('turns Close event off with the reason while a game runs', function (): void {
+    it('keeps Close event on while a game runs and names the game it ends (T6, D-10)', function (): void {
         $event = ownedEvent();
-        $game = Game::factory()->for($event)->create();
+        $game = Game::factory()->for($event)->create(['title' => 'Office Awards']);
         $event->forceFill(['status' => EventStatus::Open, 'active_game_id' => $game->id])->save();
 
         $html = (string) actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->getContent();
 
-        expect($html)->toMatch('/<button[^>]*disabled[^>]*>\s*Close event/')
-            ->toContain('End the running game before closing the event.');
+        // The attribute, not the disabled: classes every button carries.
+        expect($html)->toMatch('/<button[^>]*>\s*Close event/');
+        expect($html)->not->toMatch('/<button[^>]*\sdisabled[\s>=][^>]*>\s*Close event/')
+            ->toContain('“Office Awards” is still running. It ends first');
     });
 });
 

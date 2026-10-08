@@ -25,11 +25,14 @@ final class SecurityHeaders
     {
         $nonce = Vite::useCspNonce();
         $response = $next($request);
+        // D-10: Live control previews the Public View in a frame; only that page, and only from
+        // this site. It has no actions to click, so being framed risks no clickjacking.
+        $framable = $request->routeIs('join.screen');
 
         $headers = [
-            'Content-Security-Policy' => $this->policy($nonce),
+            'Content-Security-Policy' => $this->policy($nonce, $framable),
             'X-Content-Type-Options' => 'nosniff',
-            'X-Frame-Options' => 'DENY',
+            'X-Frame-Options' => $framable ? 'SAMEORIGIN' : 'DENY',
             // Personal links carry a token in the path; it never leaves the site in a Referer.
             'Referrer-Policy' => 'same-origin',
             'Permissions-Policy' => 'camera=(), microphone=(), geolocation=()',
@@ -46,7 +49,7 @@ final class SecurityHeaders
         return $response;
     }
 
-    private function policy(string $nonce): string
+    private function policy(string $nonce, bool $framable): string
     {
         $dev = $this->viteDevServer();
         $socket = $this->socketOrigin();
@@ -62,7 +65,7 @@ final class SecurityHeaders
             'object-src' => ["'none'"],
             'base-uri' => ["'self'"],
             'form-action' => ["'self'"],
-            'frame-ancestors' => ["'none'"],
+            'frame-ancestors' => [$framable ? "'self'" : "'none'"],
         ];
 
         return collect($directives)->map(fn (array $sources, string $directive): string => $directive.' '.implode(' ', $sources))->implode('; ');

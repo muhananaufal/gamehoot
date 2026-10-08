@@ -51,7 +51,8 @@ return [
 
     'event_status' => [
         'draft' => 'Draft',
-        'open' => 'Open',
+        // D-10: an open event reads Playing everywhere; Open event stays the action that opens it.
+        'open' => 'Playing',
         'finished' => 'Finished',
     ],
 ];

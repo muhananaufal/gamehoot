@@ -5,7 +5,8 @@
  * @returns {boolean} whether the form was marked (dialog buttons only close their dialog)
  */
 export function markBusy(form, submitter) {
-    if (submitter?.getAttribute('formmethod') === 'dialog') {
+    // A dialog form only closes its dialog; nothing comes back to unlock it, so it is never marked.
+    if (submitter?.getAttribute('formmethod') === 'dialog' || form.getAttribute?.('method') === 'dialog') {
         return false;
     }
 
@@ -26,6 +27,19 @@ export function markIdle(form) {
         button.disabled = false;
         button.removeAttribute('aria-busy');
     }
+}
+
+/**
+ * U16: the same lock for a form Unpoly sends (every form of the host panel). Unpoly halts the
+ * submit event before watchFormSubmits sees it, so the lock runs as an Unpoly preview, which
+ * Unpoly undoes once the request ends, whether it succeeded or failed.
+ */
+export function busyPreview(form, submitter) {
+    return (preview) => {
+        if (markBusy(form, submitter)) {
+            preview.undo(() => markIdle(form));
+        }
+    };
 }
 
 export function watchFormSubmits(doc = document, win = window) {

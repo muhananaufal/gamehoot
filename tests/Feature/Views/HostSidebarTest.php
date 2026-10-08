@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\travelTo;
@@ -53,6 +55,30 @@ describe('U1 host sidebar', function (): void {
         // The event being worked on starts expanded.
         $current = (string) actingAs($host)->get("/host/{$event->id}/people")->getContent();
         expect($current)->toMatch('/<button type="button"[^>]*aria-expanded="true"[^>]*title="Gathering 2026"/');
+    });
+
+    it('colours a recent event like everywhere else: open green, finished yellow, draft grey (D-10)', function (): void {
+        $host = User::factory()->create();
+        foreach ([['Open party', EventStatus::Open], ['Closed party', EventStatus::Finished], ['Draft party', EventStatus::Draft]] as [$name, $status]) {
+            Event::factory()->for($host, 'owner')->create(['name' => $name, 'status' => $status]);
+        }
+
+        $closed = Event::query()->where('name', 'Closed party')->sole();
+        $html = (string) actingAs($host)->get("/host/{$closed->id}/results")->getContent();
+        $dot = fn (string $name): string => (string) Str::of($html)->after('title="'.$name.'"')->match('/size-2 rounded-full ([a-z-]+)/');
+
+        expect($dot('Open party'))->toBe('bg-success-dot')
+            ->and($dot('Closed party'))->toBe('bg-warning-dot')
+            ->and($dot('Draft party'))->toBe('bg-nav-icon');
+    });
+
+    it('leaves finished events out of the recent ones, unless one is open on screen (D-10)', function (): void {
+        $host = User::factory()->create();
+        Event::factory()->for($host, 'owner')->create(['name' => 'Open party', 'status' => EventStatus::Open]);
+        $closed = Event::factory()->for($host, 'owner')->create(['name' => 'Closed party', 'status' => EventStatus::Finished]);
+
+        actingAs($host)->get('/host/packs')->assertSee('title="Open party"', false)->assertDontSee('title="Closed party"', false);
+        actingAs($host)->get("/host/{$closed->id}/results")->assertSee('title="Closed party"', false);
     });
 
     it('scrolls on its own, apart from the page, and keeps theme and sign out in view', function (): void {

@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live control and phones get a clear message for actions that are not available, instead of a generic error.
 - A stuck realtime server no longer slows every host action and vote for up to 30 seconds.
 - Refused actions such as late votes no longer fill the server log.
+- A refused CSV upload stays in the Import modal and explains why in plain words.
+- A dialog no longer lingers for a moment over the page after its form is sent.
+- Every submit button in the host panel now spins and locks while its form is sent, so nothing is sent twice.
+- After a change, other pages no longer show the old data for a few seconds before updating.
+- Word Guess answers with unsupported symbols, or with every box open, are caught before the form is sent.
+- The Names page no longer offers to add or import names once the list is locked, and says why players cannot join an open event without names.
 
 ### Added
 
@@ -48,6 +54,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Phones follow the host's changes to the name list at once: a released or deleted name goes back to picking a name, a renamed one shows the new name.
 - The Games page adds games from the same pack list as Question packs, with search, type filter and folding groups.
 - Deleted events can be filtered by the date they were deleted and by who deleted them.
+- The Games page of an event works like Question packs: games grouped by Up next, Running and Played, filtered by game type, with questions reordered, edited, added or deleted in place, and several packs added at once.
+- Opening, reopening, locking claims, starting any game and skipping a question now ask for confirmation first.
+- Every text field shows an example of what to type.
+- Long lists offer "Go to page" and show their totals with thousands separators.
+- New event is set up in four steps (Name and link, Names, Games, Review), saved together at the end; the host then goes on in Live control. Names can be typed or imported from a CSV file, games are picked from the packs, and leaving after typing asks first.
+- Modals no longer have a close button in the corner, like the other dialogs; Cancel, Escape or a click outside close them.
+- The Activity log also lists skipped questions, reloads from a pack, deleted questions of a game, finished games and added names.
+- Names can be added several at once, one per line, with duplicates and too-long names marked while typing.
+- Import CSV opens in a two-step modal (Upload, Review) with the supported format, a template to download, a status filter and a search in the review, and Back that keeps the modal. Leaving after a change asks first.
+- Hosts can replay past moments on the projector from Live control, during the event or after it closed: Pentahoot categories, Word and Picture Guess answers with their winners, leaderboards after each win and final podiums, then go back to live.
 - A recent event in the sidebar expands its pages in place, so Settings and the other pages are one click away.
 - `php artisan db:seed --class=DemoSeeder` builds a demo event with 50 names and one game of each type; `LoadTestSeeder` builds an open event with 500 names for load tests. Neither runs in production.
 - The specification gains a day-to-day guide with every command from branch to release, a debugging chapter with a note format (`docs/debugging/`), and execution lessons in the project blueprint.
