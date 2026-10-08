@@ -415,6 +415,18 @@
         transform: none;
     }
 
+    /* U30: a word that lands like a stamp (Sent on the phone). */
+    .stamp-in {
+        animation: stamp-in var(--motion-slow) var(--ease-overshoot) both;
+    }
+
+    @keyframes stamp-in {
+        from {
+            opacity: 0;
+            transform: scale(1.6) rotate(-6deg);
+        }
+    }
+
     /* U31: one DOM piece of the phone confetti (the projector draws on a canvas). */
     .confetti-piece {
         position: absolute;
@@ -646,6 +658,10 @@ button[aria-busy='true']::after {
 
     .curtain-load {
         clip-path: none;
+    }
+
+    .stamp-in {
+        animation: none;
     }
 
     dialog,
