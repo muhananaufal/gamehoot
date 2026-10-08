@@ -96,7 +96,16 @@ export function pentahootPhone({
             );
             this.$watch(
                 () => this.view,
-                (view) => view === 'vote' && this.loadPeople(),
+                (view) => {
+                    if (view === 'vote') {
+                        this.loadPeople();
+                    }
+
+                    // U31: a phone celebrates the results it was waiting for, not a reload.
+                    if (view === 'results' && this.results.length > 0) {
+                        this.$dispatch('celebrate', { key: `reveal:${this.question.id}:${this.question.attempt}` });
+                    }
+                },
             );
 
             if (this.view === 'vote') {
@@ -369,7 +378,13 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
                 this.timers.push(setTimeout(() => (this.shown = step), delay));
             }
 
-            this.timers.push(setTimeout(() => (this.final = true), delay + STEP_MS));
+            this.timers.push(
+                setTimeout(() => {
+                    this.final = true;
+                    // U31: rank 1 is out; a screen that opened on a past reveal stays quiet.
+                    this.$dispatch('celebrate', { key: `reveal:${key}` });
+                }, delay + STEP_MS),
+            );
         },
     };
 }

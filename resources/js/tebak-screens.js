@@ -51,6 +51,22 @@ export function tebakScreen({ types, labels, projector = false }) {
     return {
         ...base(labels),
 
+        // U31: a winner and the final podium are worth a celebration, once they happen here.
+        init() {
+            this.$watch(
+                () => this.view,
+                (view) => {
+                    if (view === 'won') {
+                        this.$dispatch('celebrate', { key: `won:${this.question.id}` });
+                    }
+
+                    if (view === 'final') {
+                        this.$dispatch('celebrate', { key: `final:${this.game.id}` });
+                    }
+                },
+            );
+        },
+
         get store() {
             return this.$store.realtime;
         },

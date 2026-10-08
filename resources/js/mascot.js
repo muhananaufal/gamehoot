@@ -233,6 +233,11 @@ export function mascot({
 
         burst() {
             this.stop();
+
+            // U31: the host turned the screen animations off for this Public View.
+            if (doc?.documentElement?.dataset?.screenAnimations === 'off') {
+                return;
+            }
             this.parts('body').forEach((body) =>
                 this.animate(body, KEYFRAMES.breathe, { duration: 2_400, iterations: 2, easing: 'ease-in-out' }),
             );

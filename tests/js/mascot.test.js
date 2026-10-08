@@ -116,7 +116,7 @@ function fakePenta() {
     };
 }
 
-function mount({ mood = 'idle', reduced = false, hidden = false } = {}) {
+function mount({ mood = 'idle', reduced = false, hidden = false, screenAnimations = 'on' } = {}) {
     const penta = fakePenta();
     const motion = {
         reduced,
@@ -126,6 +126,7 @@ function mount({ mood = 'idle', reduced = false, hidden = false } = {}) {
     };
     const doc = {
         hidden,
+        documentElement: { dataset: { screenAnimations } },
         listeners: {},
         addEventListener(type, fn) {
             this.listeners[type] = fn;
@@ -169,6 +170,18 @@ describe('U29 Penta component', () => {
         component.poke();
         vi.advanceTimersByTime(BURST_MS + 100);
         expect(penta.parts.eye[0].animations.length).toBeGreaterThan(count);
+    });
+
+    it('rests on a Public View whose host turned the screen animations off (U31)', () => {
+        const { penta, component } = mount({ mood: 'idle', screenAnimations: 'off' });
+
+        vi.advanceTimersByTime(BURST_MS + 100);
+        expect(penta.parts.eye[0].animations.length).toBe(0);
+
+        // A click still gets its one blink, but no burst follows.
+        component.poke();
+        vi.advanceTimersByTime(BURST_MS + 100);
+        expect(penta.parts.eye[0].animations.length).toBe(1);
     });
 
     it('only takes the pose in the reduced mode, without moving', () => {

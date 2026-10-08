@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pentahootHost, pentahootPhone, pentahootScreen } from '../../resources/js/pentahoot-screens.js';
 import { realtimeStore } from '../../resources/js/realtime.js';
-import { tebakHost } from '../../resources/js/tebak-screens.js';
+import { tebakHost, tebakScreen } from '../../resources/js/tebak-screens.js';
 
 const live = {
     version: 3,
@@ -347,5 +347,109 @@ describe('U30 the countdown on the Public View', () => {
 
         clock = 18_000;
         expect(screen.urgency).toBe('last');
+    });
+});
+
+describe('U31 the moments worth a celebration', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const revealed = (results) => ({
+        ...live,
+        version: 4,
+        game: {
+            ...live.game,
+            question: { ...live.game.question, status: 'revealed', results, total_votes: results.length },
+        },
+    });
+    const winner = [{ rank: 1, name: 'Ana Putri', votes: 3 }];
+
+    function watching(component, store) {
+        const watchers = [];
+        const told = [];
+        component.$store = { realtime: store };
+        component.$watch = (read, fn) => {
+            let last = read();
+            watchers.push(() => {
+                const next = read();
+
+                if (next !== last) {
+                    last = next;
+                    fn(next);
+                }
+            });
+        };
+        component.$dispatch = (name, detail) => told.push([name, detail]);
+        component.init();
+
+        return { told, flush: () => watchers.forEach((run) => run()) };
+    }
+
+    it('celebrates rank 1 on the Public View once the E2 pause is over', () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept(live);
+        const screen = pentahootScreen({ labels: {} });
+        const { told, flush } = watching(screen, store);
+
+        store.accept(revealed(winner));
+        flush();
+        expect(told).toEqual([]);
+
+        vi.advanceTimersByTime(30_000);
+        expect(told).toEqual([['celebrate', { key: 'reveal:q1:1' }]]);
+    });
+
+    it('stays quiet when the Public View opens on a reveal it did not see, or with no votes', () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept(revealed(winner));
+        const late = pentahootScreen({ labels: {} });
+        const first = watching(late, store);
+        vi.advanceTimersByTime(30_000);
+        expect(first.told).toEqual([]);
+
+        const empty = realtimeStore({ now: () => 0 });
+        empty.accept(live);
+        const screen = pentahootScreen({ labels: {} });
+        const second = watching(screen, empty);
+        empty.accept(revealed([]));
+        second.flush();
+        vi.advanceTimersByTime(30_000);
+        expect(second.told).toEqual([]);
+    });
+
+    it('celebrates on the phone when the results come in', () => {
+        const store = realtimeStore({ now: () => 0 });
+        store.accept(live);
+        const phone = pentahootPhone({ peopleUrl: '/people', voteUrl: '/vote/__QUESTION__', labels: {} });
+        phone.loadPeople = vi.fn();
+        const { told, flush } = watching(phone, store);
+
+        store.accept(revealed(winner));
+        flush();
+
+        expect(told).toEqual([['celebrate', { key: 'reveal:q1:1' }]]);
+    });
+
+    it('celebrates a Tebak winner and the final podium, not a surrender', () => {
+        const tebak = (game) => ({
+            ...live,
+            game: { id: 'g1', type: 'tebak_kata', status: 'running', leaderboard: null, ...game },
+        });
+        const store = realtimeStore({ now: () => 0 });
+        store.accept(tebak({ question: { id: 'k1', status: 'shown' } }));
+        const screen = tebakScreen({ types: ['tebak_kata'], labels: {} });
+        const { told, flush } = watching(screen, store);
+
+        store.accept({ ...tebak({ question: { id: 'k1', status: 'surrendered' } }), version: 4 });
+        flush();
+        store.accept({ ...tebak({ question: { id: 'k2', status: 'won' } }), version: 5 });
+        flush();
+        store.accept({ ...tebak({ status: 'finished', question: null, final: [] }), version: 6 });
+        flush();
+
+        expect(told).toEqual([
+            ['celebrate', { key: 'won:k2' }],
+            ['celebrate', { key: 'final:g1' }],
+        ]);
     });
 });

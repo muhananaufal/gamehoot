@@ -1,6 +1,7 @@
 <x-layouts.phone :title="$event->name" :event="$event" :person="$person">
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" :me="$me" />
     <x-connection-status class="mb-4" />
+    <x-celebration />
 
     <div x-data="pentahootPhone({
             peopleUrl: @js(route('join.people', $event)),

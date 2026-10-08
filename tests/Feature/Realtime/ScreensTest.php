@@ -95,6 +95,21 @@ describe('Public View (F23)', function (): void {
             ->assertSee('Back online', false);
     });
 
+    it('celebrates on a canvas and follows the host Screen animations setting (U31)', function (): void {
+        $event = screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('data-screen-animations="on"', false)
+            ->assertSee('x-data="celebration({ projector: true })"', false)
+            ->assertSee('@celebrate.window="play($event.detail)"', false)
+            ->assertSee('name: '."'celebration'", false);
+
+        $event->forceFill(['screen_animations' => false])->save();
+
+        get('/gathering-2026/screen')->assertSee('data-screen-animations="off"', false);
+    });
+
     it('answers unknown events with the not found screen', function (): void {
         get('/no-such-event/screen')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
     });
