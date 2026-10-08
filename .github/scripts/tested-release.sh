@@ -14,7 +14,7 @@ not_tested() {
     exit 0
 }
 
-required="${REQUIRED_JOBS:-PHP|ESLint, Prettier, Vitest, build|Gitleaks|Pest (MySQL 8.0)|Pest browser (chrome)|Pest browser (safari)|Production images}"
+required="${REQUIRED_JOBS:-PHP|ESLint, Prettier, Vitest, build|Gitleaks, workflow lint, repo rules|Pest (MySQL 8.0), mutation (K2)|Pest browser (chrome)|Pest browser (safari)|Production images}"
 IFS='|' read -ra names <<< "$required"
 
 merged="$(git rev-parse --verify --quiet 'HEAD^2')" || not_tested "HEAD is not a merge commit"
