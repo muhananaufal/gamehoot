@@ -216,6 +216,15 @@ export function mascot({
                     return;
                 }
 
+                // U32: where to look (the login caret), without a change of mood.
+                if (detail.look) {
+                    if (!this.reduced) {
+                        this.look(detail.look.x, detail.look.y);
+                    }
+
+                    return;
+                }
+
                 this.play(detail.mood);
 
                 return;

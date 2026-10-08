@@ -453,3 +453,54 @@ describe('U31 the moments worth a celebration', () => {
         ]);
     });
 });
+
+describe('U32 Live control stamps a Tebak winner', () => {
+    function hostWith({ reduced = false } = {}) {
+        const pieces = [];
+        vi.stubGlobal('document', {
+            querySelector: () => null,
+            createElement: () => ({ className: '', style: {}, remove: vi.fn(), animate: vi.fn(() => ({})) }),
+        });
+        const store = realtimeStore({ now: () => 0 });
+        store.accept({
+            ...live,
+            game: { id: 'g1', type: 'tebak_kata', status: 'running', question: { id: 'k1', status: 'shown' } },
+        });
+        const host = tebakHost({ type: 'tebak_kata', actionUrl: '/a', people: [], labels: {} });
+        let watcher = null;
+        host.$store = { realtime: store, motion: { reduced } };
+        host.$refs = { winnerConfetti: { clientHeight: 200, append: (el) => pieces.push(el) } };
+        host.$watch = (read, fn) => {
+            watcher = { read, fn };
+        };
+        host.init();
+
+        return {
+            pieces,
+            win() {
+                store.accept({
+                    ...live,
+                    version: 4,
+                    game: { id: 'g1', type: 'tebak_kata', status: 'running', question: { id: 'k1', status: 'won' } },
+                });
+                watcher.fn(watcher.read());
+            },
+        };
+    }
+
+    it('throws a little confetti in the card when the winner is set', () => {
+        const { pieces, win } = hostWith();
+
+        win();
+
+        expect(pieces.length).toBeGreaterThan(0);
+    });
+
+    it('throws none in the reduced mode', () => {
+        const { pieces, win } = hostWith({ reduced: true });
+
+        win();
+
+        expect(pieces).toHaveLength(0);
+    });
+});

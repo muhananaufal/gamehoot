@@ -28,9 +28,11 @@ tebakHost({
         </section>
         @break
     @case('control')
-        <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
+        <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error" x-nudge.shake="error"></p>
         {{-- The question on screen, with the answer only hosts see. --}}
-        <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
+        <section class="relative flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
+            {{-- U32: a little confetti over the card when the winner is set. --}}
+            <div x-ref="winnerConfetti" class="pointer-events-none absolute inset-0 overflow-hidden rounded-card" aria-hidden="true"></div>
             <p x-show="!question && !allResolved" class="text-muted">{{ __('tebak.no_question') }}</p>
             {{-- D-10: the first question starts from the middle; after that, Next question or the list. --}}
             <div x-show="!question && firstToOpen" class="flex justify-end">
@@ -50,7 +52,7 @@ tebakHost({
                         <span class="text-sm font-semibold" x-text="count('points', question.points)"></span>
                     </div>
                     @include('host.events.live.tebak.' . $game->type->value)
-                    <p x-show="question.status === 'won'" class="rounded-card bg-rank-1 px-4 py-3 font-display text-lg font-bold text-on-rank-1">
+                    <p x-show="question.status === 'won'" class="stamp-in rounded-card bg-rank-1 px-4 py-3 font-display text-lg font-bold text-on-rank-1">
                         <span>{{ __('tebak.winner') }}:</span> <span x-text="question.winner"></span>
                     </p>
                     <p x-show="question.status === 'surrendered'" class="font-semibold text-muted">{{ __('tebak.no_winner') }}</p>

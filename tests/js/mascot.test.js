@@ -203,6 +203,17 @@ describe('U29 Penta component', () => {
         expect(penta.parts.smile[0].attributes.opacity).toBe('1');
     });
 
+    it('looks where it is told without changing its mood (U32, the login caret)', () => {
+        const { penta, component } = mount({ mood: 'idle' });
+        component.name = 'login';
+        const before = penta.parts.pupil[0].animations.length;
+
+        component.react({ name: 'login', look: { x: 4, y: 3 } });
+
+        expect(penta.el.dataset.mood).toBe('idle');
+        expect(penta.parts.pupil[0].animations.length).toBe(before + 1);
+    });
+
     it('hears only reactions meant for it when it has a name (U30)', () => {
         const { penta, component } = mount({ mood: 'idle' });
         component.name = 'lobby';

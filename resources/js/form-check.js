@@ -7,6 +7,8 @@
 // application's (A10), sent once by the layout; rules that need the database stay with the
 // server (up-validate), which checks everything again.
 
+import { nudge } from './scene.js';
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
@@ -90,6 +92,8 @@ function showProblem(field, message) {
     field.setAttribute('aria-invalid', 'true');
     field.setAttribute('aria-describedby', error.id);
     box?.classList.replace('border-line-strong', 'border-on-danger');
+    // U32: one short shake points at the field (none in the reduced mode, U27).
+    nudge(box ?? field, 'shake', { reduced: document.documentElement.dataset.motion === 'reduced' });
 }
 
 function clearProblem(field) {

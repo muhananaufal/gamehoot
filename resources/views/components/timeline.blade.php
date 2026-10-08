@@ -24,10 +24,14 @@
             @if ($live) :aria-current="({{ $live }}) === 'current' ? 'step' : null" @elseif ($state === 'current') aria-current="step" @endif>
             @unless ($loop->last)
                 <span class="absolute top-9 bottom-1 left-[15px] w-0.5 bg-line-strong" aria-hidden="true"></span>
+                @if ($live)
+                    {{-- U32: the line fills once the step is done. --}}
+                    <span class="timeline-fill absolute top-9 bottom-1 left-[15px] w-0.5 bg-success-dot" :class="({{ $live }}) === 'done' && 'is-filled'" aria-hidden="true"></span>
+                @endif
             @endunless
             @if ($live)
                 <span class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                    :class="@js($classes)[{{ $live }}]" aria-hidden="true">
+                    :class="@js($classes)[{{ $live }}]" aria-hidden="true" x-nudge.pulse="({{ $live }}) === 'current' ? 'current' : null">
                     <svg x-show="({{ $live }}) === 'done'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
                     <span x-show="({{ $live }}) !== 'done'">{{ $loop->iteration }}</span>
                 </span>

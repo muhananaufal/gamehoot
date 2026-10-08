@@ -11,7 +11,9 @@ it('makes the whole switch of a toggle clickable, not only its text (E14)', func
     $html = Blade::render('<x-toggle name="show_on_devices" label="Show questions" />');
 
     // The drawn switch is a label for the hidden checkbox, so a tap on it toggles.
-    expect($html)->toMatch('/<label for="toggle-show_on_devices" class="[^"]*cursor-pointer[^"]*">\s*<input id="toggle-show_on_devices"/');
+    expect($html)->toMatch('/<label for="toggle-show_on_devices" class="[^"]*cursor-pointer[^"]*">\s*<input id="toggle-show_on_devices"/')
+        // U32: the knob moves with a spring.
+        ->and($html)->toContain('toggle-knob');
 });
 
 it('writes the score under each podium name with its unit (E17)', function (): void {

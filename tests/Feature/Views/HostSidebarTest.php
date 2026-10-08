@@ -93,7 +93,10 @@ describe('U1 host sidebar', function (): void {
         $html = (string) actingAs($host)->get('/host')->getContent();
 
         expect($html)->toMatch('/<aside id="host-sidebar"[^>]*lg:sticky[^>]*lg:h-dvh/')
-            ->and($html)->toMatch('/<nav [^>]*class="[^"]*overflow-y-auto[^"]*" aria-label="Main"/');
+            ->and($html)->toMatch('/<nav [^>]*class="[^"]*overflow-y-auto[^"]*" aria-label="Main"/')
+            // U32: the phone drawer slides in with the motion tokens, not a fixed 200 ms.
+            ->and($html)->toMatch('/<aside id="host-sidebar"[^>]*class="[^"]* drawer /')
+            ->and($html)->not->toMatch('/<aside id="host-sidebar"[^>]*duration-200/');
     });
 
     it('can be narrowed to icons on wide screens, with a labelled button', function (): void {

@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { canvasSize, celebration, CONFETTI, confettiPieces, firstTime } from '../../resources/js/celebrate.js';
+import {
+    canvasSize,
+    cardConfetti,
+    celebration,
+    CONFETTI,
+    confettiPieces,
+    firstTime,
+} from '../../resources/js/celebrate.js';
 
 function memoryStorage() {
     const items = new Map();
@@ -125,5 +132,43 @@ describe('U31 the celebration component', () => {
         component.play({ key: 'final:g1' });
 
         expect(component.throwConfetti).toHaveBeenCalledOnce();
+    });
+});
+
+describe('U32 confetti in a card', () => {
+    function fakeLayer() {
+        const pieces = [];
+
+        return {
+            pieces,
+            clientHeight: 240,
+            append: (el) => pieces.push(el),
+        };
+    }
+    const doc = {
+        createElement: () => ({
+            className: '',
+            style: {},
+            remove: vi.fn(),
+            animate: vi.fn(() => ({})),
+        }),
+    };
+
+    it('throws a few pieces that fall just past the bottom of the card', () => {
+        const layer = fakeLayer();
+
+        cardConfetti(layer, { doc, reduced: false });
+
+        expect(layer.pieces).toHaveLength(CONFETTI.card.count);
+        const frames = layer.pieces[0].animate.mock.calls[0][0];
+        expect(frames[1].transform).toContain('260px');
+    });
+
+    it('throws nothing in the reduced mode', () => {
+        const layer = fakeLayer();
+
+        cardConfetti(layer, { doc, reduced: true });
+
+        expect(layer.pieces).toHaveLength(0);
     });
 });

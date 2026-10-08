@@ -24,6 +24,7 @@
 {{-- U26: New event in four steps; nothing is saved before Create event. Every step stays in the
      form (only hidden), so Create event sends them all; the server checks them all again. --}}
 <form method="POST" action="{{ route('host.events.store') }}" novalidate x-ref="wizardForm"
+    :style="'--step-dir: ' + (direction === 'back' ? -1 : 1)"
     x-data="newEventWizard({
         texts: {{ Js::from($texts) }},
         parseUrl: {{ Js::from(route('host.events.names.parse')) }},
@@ -58,14 +59,14 @@
 
     {{-- ① Name and link: the fields New event had before. --}}
     {{-- A field the host changes drops its old server error; the server checks it again (live check, Create). --}}
-    <div x-show="step === 1" x-ref="details" @input="$event.target.removeAttribute('aria-invalid'); refreshDetails(quietlyValid($refs.details))" class="flex flex-col gap-4">
+    <div x-show="step === 1" x-transition:enter="step-in" x-transition:enter-start="step-from" x-ref="details" @input="$event.target.removeAttribute('aria-invalid'); refreshDetails(quietlyValid($refs.details))" class="flex flex-col gap-4">
         {{-- U19: every send of this form keeps what was typed, the live checks too; with $sent (errors only) a
              field the server drew again after a check came back empty. --}}
         <x-forms.new-event-fields :submitted="old('form') === 'create-event'" />
     </div>
 
     {{-- ② Names: typed one per line, and the names of a CSV file added under them. --}}
-    <div x-show="step === 2" x-cloak class="flex flex-col gap-2">
+    <div x-show="step === 2" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-2">
         <div class="flex flex-wrap items-end justify-between gap-2">
             <label for="new-event-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
             <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-4 text-sm font-bold text-ink hover:bg-subtle"
@@ -99,7 +100,7 @@
     </div>
 
     {{-- ③ Games: the pack list of Add games, picked in order. --}}
-    <div x-show="step === 3" x-cloak class="flex flex-col gap-3">
+    <div x-show="step === 3" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-3">
         @if ($packs->isEmpty())
             <p class="text-[15px] text-muted">{{ __('games.no_packs') }}</p>
         @else
@@ -113,7 +114,7 @@
     </div>
 
     {{-- ④ Review: what Create event saves, each part with the way back to its step. --}}
-    <div x-show="step === 4" x-cloak class="flex flex-col gap-1">
+    <div x-show="step === 4" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-1">
         <dl class="flex flex-col divide-y divide-line-soft">
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_event') }}</dt>

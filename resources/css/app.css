@@ -415,6 +415,47 @@
         transform: none;
     }
 
+    /* U32: the host drawer slides in at the base pace and leaves faster. */
+    .drawer {
+        transition:
+            transform var(--motion-quick) var(--ease-in),
+            width var(--motion-base) var(--ease-out);
+    }
+
+    .drawer.translate-x-0 {
+        transition:
+            transform var(--motion-base) var(--ease-out),
+            width var(--motion-base) var(--ease-out);
+    }
+
+    /* U32: a toggle knob moves with a spring. */
+    .toggle-knob {
+        transition: transform var(--motion-base) var(--ease-spring);
+    }
+
+    /* U32: the line of a live timeline fills once its step is done. */
+    .timeline-fill {
+        transform: scaleY(0);
+        transform-origin: top;
+        transition: transform var(--motion-slow) var(--ease-out);
+    }
+
+    .timeline-fill.is-filled {
+        transform: none;
+    }
+
+    /* U32: the steps of New event slide the way the host moves (--step-dir is 1 or -1). */
+    .step-in {
+        transition:
+            opacity var(--motion-base) var(--ease-out),
+            transform var(--motion-base) var(--ease-out);
+    }
+
+    .step-from {
+        opacity: 0;
+        transform: translateX(calc(var(--step-dir, 1) * 24px));
+    }
+
     /* U30: a word that lands like a stamp (Sent on the phone). */
     .stamp-in {
         animation: stamp-in var(--motion-slow) var(--ease-overshoot) both;
@@ -662,6 +703,14 @@ button[aria-busy='true']::after {
 
     .stamp-in {
         animation: none;
+    }
+
+    .step-from {
+        transform: none;
+    }
+
+    .toggle-knob {
+        transition-timing-function: var(--ease-out);
     }
 
     dialog,

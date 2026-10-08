@@ -176,7 +176,7 @@
                             <dd class="flex items-center gap-2">
                                 <a href="{{ $url }}" class="min-w-0 truncate text-link underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ $url }}</a>
                                 <button type="button" class="row-action shrink-0" :aria-label="copied ? @js(__('live.copied')) : @js(__('live.copy') . ' ' . $label)" :title="copied ? @js(__('live.copied')) : @js(__('live.copy'))"
-                                    @click="navigator.clipboard?.writeText(@js($url)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"><i data-icon="copy"></i></button>
+                                    @click="navigator.clipboard?.writeText(@js($url)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"><i data-icon="copy" :data-icon="copied ? 'check' : 'copy'" x-nudge.pulse="copied ? 'copied' : null"></i></button>
                             </dd>
                         </div>
                     @endforeach

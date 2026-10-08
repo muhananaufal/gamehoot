@@ -64,6 +64,8 @@ export const NUDGES = Object.freeze({
         duration: MOTION.quick,
         easing: 'linear',
     },
+    // U32: content that changed its meaning (the main action of Live control) fades in.
+    fade: { frames: [{ opacity: 0 }, { opacity: 1 }], duration: MOTION.base, easing: EASE.out },
 });
 
 /** Whether a value change deserves a nudge. The first value never moves (a reload is not news). */
@@ -72,8 +74,9 @@ export function shouldNudge(kind, previous, next, first) {
         return false;
     }
 
-    if (kind === 'pulse') {
-        return next !== null && next !== undefined;
+    // A beat or a shake needs something to show: a new count, a new problem.
+    if (kind === 'pulse' || kind === 'shake') {
+        return next !== null && next !== undefined && next !== '';
     }
 
     if (kind === 'flip') {
@@ -192,6 +195,46 @@ export function lobbyPenta({ quietMs = 60_000 } = {}) {
 
         destroy() {
             lobby?.stop();
+        },
+    };
+}
+
+/** U32: what Penta on the sign in page does for the focused field. */
+export function loginReaction(field) {
+    if (field?.tagName !== 'INPUT') {
+        return { mood: 'idle' };
+    }
+
+    if (field.name === 'password') {
+        return { mood: field.type === 'password' ? 'shy' : 'peek' };
+    }
+
+    // The pupils move from -5 (start of the field) to 5 (about 24 characters in).
+    const caret = Math.min(field.selectionStart ?? field.value.length, 24);
+
+    return { look: { x: Math.round((caret / 24) * 10 - 5), y: 4 } };
+}
+
+/**
+ * U32: the sign in form tells the Penta named "login" where to look and how to feel. A mood is
+ * only sent when it changes, so typing a password does not replay it.
+ */
+export function loginPenta() {
+    let mood = 'idle';
+
+    return {
+        follow(field) {
+            const reaction = loginReaction(field);
+            const next = reaction.mood ?? 'idle';
+
+            if (next !== mood) {
+                mood = next;
+                this.$dispatch('mascot-react', { name: 'login', mood });
+            }
+
+            if (reaction.look) {
+                this.$dispatch('mascot-react', { name: 'login', look: reaction.look });
+            }
         },
     };
 }

@@ -1,5 +1,6 @@
 // F20: the Alpine components of the Tebak screens (Tebak Kata and Tebak Gambar). They only read
 // the shared realtime store; the rules live in tebak.js, kata.js and on the server.
+import { cardConfetti } from './celebrate.js';
 import { withBusyButton } from './action-busy.js';
 import { legendOf } from './kata.js';
 import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
@@ -115,6 +116,18 @@ export function tebakHost({ type, actionUrl, people, labels, questionIds = [] })
         error: '',
         query: '',
         chosen: null,
+
+        // U32: the winner is stamped with a little confetti in the card.
+        init() {
+            this.$watch(
+                () => this.status,
+                (status) => {
+                    if (status === 'won' && this.$refs.winnerConfetti) {
+                        cardConfetti(this.$refs.winnerConfetti, { reduced: this.$store.motion?.reduced ?? false });
+                    }
+                },
+            );
+        },
 
         get store() {
             return this.$store.realtime;

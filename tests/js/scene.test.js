@@ -4,6 +4,8 @@ import {
     connectionNotice,
     lobbyMood,
     lobbyPenta,
+    loginPenta,
+    loginReaction,
     nudge,
     NUDGES,
     ringOffset,
@@ -53,7 +55,7 @@ describe('U30 connection banner', () => {
 
 describe('U30 nudges', () => {
     it('knows its kinds', () => {
-        expect(Object.keys(NUDGES)).toEqual(['pop', 'pulse', 'flip', 'shake']);
+        expect(Object.keys(NUDGES)).toEqual(['pop', 'pulse', 'flip', 'shake', 'fade']);
     });
 
     it('never moves on the first value, only on a change', () => {
@@ -66,6 +68,12 @@ describe('U30 nudges', () => {
         expect(shouldNudge('pulse', null, 5, false)).toBe(true);
         expect(shouldNudge('pulse', 5, 4, false)).toBe(true);
         expect(shouldNudge('pulse', 1, null, false)).toBe(false);
+    });
+
+    it('shakes for a new problem, never when the problem goes away (U32)', () => {
+        expect(shouldNudge('shake', null, 'The state moved on.', false)).toBe(true);
+        expect(shouldNudge('shake', 'The state moved on.', '', false)).toBe(false);
+        expect(shouldNudge('shake', 'The state moved on.', null, false)).toBe(false);
     });
 
     it('flips a letter box when it opens, never when a new question closes it again', () => {
@@ -201,5 +209,48 @@ describe('U30 the lobby tells Penta what happens', () => {
         lobby.destroy();
         vi.advanceTimersByTime(120_000);
         expect(told).toHaveLength(1);
+    });
+});
+
+describe('U32 Penta on the sign in page', () => {
+    const input = (props) => ({
+        tagName: 'INPUT',
+        name: 'login',
+        type: 'text',
+        value: '',
+        selectionStart: 0,
+        ...props,
+    });
+
+    it('follows the caret of the login field from left to right', () => {
+        expect(loginReaction(input({ value: '', selectionStart: 0 }))).toEqual({ look: { x: -5, y: 4 } });
+        expect(loginReaction(input({ value: 'arif@company.test', selectionStart: 12 }))).toEqual({
+            look: { x: 0, y: 4 },
+        });
+        expect(loginReaction(input({ value: 'a'.repeat(40), selectionStart: 40 }))).toEqual({ look: { x: 5, y: 4 } });
+    });
+
+    it('covers its eyes while the password is hidden and peeks once it is shown', () => {
+        expect(loginReaction(input({ name: 'password', type: 'password' }))).toEqual({ mood: 'shy' });
+        expect(loginReaction(input({ name: 'password', type: 'text' }))).toEqual({ mood: 'peek' });
+        expect(loginReaction({ tagName: 'BUTTON' })).toEqual({ mood: 'idle' });
+    });
+
+    it('tells Penta a mood only when it changes, so typing does not replay it', () => {
+        const told = [];
+        const penta = loginPenta();
+        penta.$dispatch = (name, detail) => told.push(detail);
+
+        penta.follow(input({ name: 'password', type: 'password' }));
+        penta.follow(input({ name: 'password', type: 'password' }));
+        penta.follow(input({ value: 'ar', selectionStart: 2 }));
+        penta.follow(input({ name: 'password', type: 'text' }));
+
+        expect(told).toEqual([
+            { name: 'login', mood: 'shy' },
+            { name: 'login', mood: 'idle' },
+            { name: 'login', look: { x: -4, y: 4 } },
+            { name: 'login', mood: 'peek' },
+        ]);
     });
 });

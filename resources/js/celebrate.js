@@ -10,6 +10,7 @@ export const CONFETTI = Object.freeze({
     spreadMs: 400,
     projector: Object.freeze({ count: 140, durationMs: 2_800, maxDpr: 1.5 }),
     phone: Object.freeze({ count: 28, durationMs: 1_800 }),
+    card: Object.freeze({ count: 14, durationMs: 1_400 }),
 });
 
 /** True the first time this tab sees the moment; a reconnect or a reload then stays quiet. */
@@ -110,10 +111,7 @@ function canvasConfetti(doc, layer, random) {
     win.requestAnimationFrame(frame);
 }
 
-function domConfetti(doc, layer, random) {
-    const { count, durationMs } = CONFETTI.phone;
-    const height = doc.defaultView.innerHeight;
-
+function domConfetti(doc, layer, random, { count, durationMs } = CONFETTI.phone, height = doc.defaultView.innerHeight) {
     for (const piece of confettiPieces({ count, random })) {
         const el = doc.createElement('span');
         el.className = 'confetti-piece';
@@ -136,6 +134,15 @@ function domConfetti(doc, layer, random) {
             },
         ).onfinish = () => el.remove();
     }
+}
+
+/** U32: a few pieces over a card (the winner of Live control), falling the card's own height. */
+export function cardConfetti(layer, { doc = globalThis.document, random = Math.random, reduced = false } = {}) {
+    if (reduced) {
+        return;
+    }
+
+    domConfetti(doc, layer, random, CONFETTI.card, layer.clientHeight);
 }
 
 /**
