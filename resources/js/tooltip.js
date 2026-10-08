@@ -86,8 +86,8 @@ export function tooltips({ doc = globalThis.document, win = globalThis.window } 
         }
     };
 
-    const hide = () => {
-        clearTimeout(showTimer);
+    // Hides the tooltip on screen only; a tooltip waiting for its hover delay keeps waiting.
+    const hideShown = () => {
         clearTimeout(hideTimer);
 
         if (tip) {
@@ -97,9 +97,15 @@ export function tooltips({ doc = globalThis.document, win = globalThis.window } 
         current = null;
     };
 
+    const hide = () => {
+        clearTimeout(showTimer);
+        hideShown();
+    };
+
+    // The grace period of a pointer that left: sliding on to the next button still shows its tooltip.
     const later = () => {
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(hide, HIDE_GRACE_MS);
+        hideTimer = setTimeout(hideShown, HIDE_GRACE_MS);
     };
 
     const ensure = () => {
@@ -165,7 +171,10 @@ export function tooltips({ doc = globalThis.document, win = globalThis.window } 
     });
 
     doc.addEventListener('pointerout', (event) => {
-        if (!trigger(event.target)) {
+        const el = trigger(event.target);
+
+        // Moving onto the icon inside the same button is not leaving it.
+        if (!el || el.contains(event.relatedTarget)) {
             return;
         }
 

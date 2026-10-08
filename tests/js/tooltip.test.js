@@ -34,9 +34,14 @@ function element({ tag = 'BUTTON', label = null, title = null, text = '', side =
         },
         matches: (selector) => selector.includes('[title]') || selector.includes('[data-tip-title]'),
         contains(other) {
-            return other === this;
+            return other === this || other?.parent === this;
         },
     };
+}
+
+/** The icon inside a button: events reach the document with it as their target. */
+function iconOf(button) {
+    return { tagName: 'I', parent: button, closest: (selector) => button.closest(selector) };
 }
 
 describe('U33 the text of a tooltip', () => {
@@ -161,6 +166,38 @@ describe('U33 the tooltip controller', () => {
         listeners['tip:pointerleave']({ relatedTarget: null });
         vi.advanceTimersByTime(500);
         expect(tip.hidden).toBe(true);
+    });
+
+    it('still shows when the pointer moves from the edge of a button onto its icon', () => {
+        const { listeners, tip } = mount();
+        const button = element({ label: 'Switch theme', title: 'Switch theme' });
+        const icon = iconOf(button);
+
+        listeners.pointerover({ target: button });
+        vi.advanceTimersByTime(50);
+        listeners.pointerout({ target: button, relatedTarget: icon });
+        listeners.pointerover({ target: icon });
+        vi.advanceTimersByTime(HOVER_DELAY_MS + 200);
+
+        expect(tip.hidden).toBe(false);
+        expect(tip.textContent).toBe('Switch theme');
+    });
+
+    it('shows the next button when the pointer slides along a row of icon buttons', () => {
+        const { listeners, tip } = mount();
+        const theme = element({ label: 'Switch theme' });
+        const motion = element({ label: 'Reduce motion' });
+
+        listeners.pointerover({ target: theme });
+        vi.advanceTimersByTime(HOVER_DELAY_MS);
+        expect(tip.textContent).toBe('Switch theme');
+
+        listeners.pointerout({ target: theme, relatedTarget: motion });
+        listeners.pointerover({ target: motion });
+        vi.advanceTimersByTime(HOVER_DELAY_MS + 200);
+
+        expect(tip.hidden).toBe(false);
+        expect(tip.textContent).toBe('Reduce motion');
     });
 
     it('works only inside the host panel', () => {
