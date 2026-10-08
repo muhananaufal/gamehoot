@@ -32,6 +32,7 @@ import { sortableList } from './sortable-list.js';
 import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
+import { motionStore } from './motion.js';
 
 // U8: the first page just opened, so its rows may come in one by one.
 markPageEntered();
@@ -45,6 +46,18 @@ window.up.compiler('form', (form) => {
     form.noValidate = true;
 });
 configureNavigation(window.up);
+
+// U27: full or reduced motion for this device. Unpoly's own animations follow the same mode. The
+// Public View follows the device setting only (data-motion-device-only, U31).
+Alpine.store(
+    'motion',
+    motionStore({
+        storage: document.documentElement.hasAttribute('data-motion-device-only') ? null : globalThis.localStorage,
+        onChange: (mode) => {
+            window.up.motion.config.enabled = mode === 'full';
+        },
+    }),
+);
 
 // U3: one toast area per page, used by session messages and by page actions (Copy link).
 Alpine.store('toasts', toastStore());

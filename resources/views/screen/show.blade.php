@@ -8,7 +8,7 @@
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" />
     <div x-data="pentahootScreen({
             labels: @js(__('pentahoot')),
-            reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+            reducedMotion: document.documentElement.dataset.motion === 'reduced',
         })"
         class="flex min-h-dvh flex-col gap-[4vh] px-[5vw] py-[5vh]">
         <header class="flex items-center justify-between gap-6">

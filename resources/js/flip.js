@@ -4,9 +4,10 @@
 // rebuild a row when its rank changes) or else by the element itself (tables reorder rows).
 // Positions are taken against the list, so scrolling the page never moves rows.
 import { animate as motionAnimate } from 'motion';
+import { SPRING } from './motion.js';
 
-/** U8: the spring of the app: settles in about 300 ms with a small overshoot. */
-export const SPRING = { type: 'spring', visualDuration: 0.3, bounce: 0.2 };
+// U27: the spring now lives with the other motion tokens; kept here for the modules that import it.
+export { SPRING };
 
 /** At most this many rows wait for their turn when a page opens; the rest come in together. */
 const STAGGER_ROWS = 12;
@@ -24,7 +25,14 @@ export function pageJustEntered(now = globalThis.performance?.now() ?? 0) {
     return now - enteredAt < 600;
 }
 
+/** U27: the mode on <html data-motion> (device setting or Reduce motion switch), else the device setting. */
 export function prefersReducedMotion(win = globalThis) {
+    const mode = win.document?.documentElement?.dataset?.motion;
+
+    if (mode === 'full' || mode === 'reduced') {
+        return mode === 'reduced';
+    }
+
     return win.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
