@@ -1531,10 +1531,15 @@ sudo chown -R deploy:deploy /home/deploy/.ssh &amp;&amp; sudo chmod 700 /home/de
 scp deploy/env.example pentahoot-staging:/srv/pentahoot/.env
 ssh pentahoot-staging 'nano /srv/pentahoot/.env &amp;&amp; chmod 600 /srv/pentahoot/.env'</pre>
       <p><b>Setiap deploy staging</b> (setelah merge ke develop); production sama dengan host <code>pentahoot-prod</code> dan tag versi <code>vx.y.z</code> dari main.</p>
-      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout develop &amp;&amp; git pull --rebase origin develop
-TAG=$(git rev-parse --short=12 HEAD)
-docker build --target production -t ghcr.io/devivace-groups/pentahoot:$TAG .
-docker build --target web        -t ghcr.io/devivace-groups/pentahoot-web:$TAG .
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git fetch origin --tags
+TAG=$(git rev-parse --short=12 origin/develop)             # production: TAG=vx.y.z (tag di main)
+# Build dari salinan bersih commit itu, bukan dari folder kerja: berkas yang tidak di-commit
+# (media lokal di storage/app, cache, manifest dev) jangan sampai ikut masuk image.
+git worktree remove --force ../pentahoot-build 2&gt;/dev/null; git worktree prune
+git worktree add --detach ../pentahoot-build $TAG
+docker build --target production -t ghcr.io/devivace-groups/pentahoot:$TAG ../pentahoot-build
+docker build --target web        -t ghcr.io/devivace-groups/pentahoot-web:$TAG ../pentahoot-build
+git worktree remove --force ../pentahoot-build
 for i in pentahoot pentahoot-web; do                       # P3, seperti job CI
   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 \
     image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 ghcr.io/devivace-groups/$i:$TAG
