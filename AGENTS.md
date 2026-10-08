@@ -173,7 +173,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 ## 6d. Pipeline (P1–P7)
 
 - **Image (P1, P2):** dibangun sekali di CI, disimpan di GitHub Container Registry dengan tag commit SHA dan versi. Build bertahap, base image Debian bookworm, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
-- **Scan (P3):** gitleaks + Trivy + `composer audit`.
+- **Scan (P3):** gitleaks + Trivy + `composer audit`, ditambah `actionlint` dan `zizmor` untuk workflow. Action GitHub dipin ke SHA commit (tanpa Dependabot); pin diperbarui manual saat menyiapkan `release/x.y.z`. Temuan zizmor yang diterima dicatat beserta alasannya di `.github/zizmor.yml`.
 - **Deploy (P4):** lewat SSH, **tanpa `git pull` dan tanpa `composer install` di server**: salin `compose.yaml` → `IMAGE_TAG=<sha> docker compose pull` → `docker compose run --rm app php artisan migrate --force` → `docker compose up -d` → smoke test `/up` + satu koneksi WebSocket → kalau gagal, kembali ke tag image sebelumnya.
 - **Production (P5):** deploy menunggu persetujuan manual di environment GitHub.
 - **Job CI (P6), berlapis:** *ringan* di setiap push branch fitur (PHP: Pint + Larastan + audit + Pest MySQL 8.4; frontend; Gitleaks). *Penuh* (+ Pest MySQL 8.0, browser Chrome dan Safari, image + Trivy) otomatis di `develop`, `release/*`, `hotfix/*`, tag, dan manual di branch fitur sebelum merge. Tag versi memakai ulang CI penuh branch rilis kalau isi kodenya sama. Cache dipakai; run lama dibatalkan kecuali di `develop` dan tag.
