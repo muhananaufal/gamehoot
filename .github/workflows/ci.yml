@@ -142,6 +142,7 @@ jobs:
         run: |
           bash .github/scripts/repo-rules.test.sh
           bash deploy/deploy.test.sh
+          bash scripts/ci-report.test.sh
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "A tag adds no commits of its own; its release branch was checked."
             exit 0

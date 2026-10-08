@@ -1,0 +1,57 @@
+# P3: once a week, vulnerabilities published after the last push: the locked Composer and npm
+# runtime packages, and the images that are deployed (staging: develop's newest image,
+# production: the newest version tag). A failed run is the alert; GitHub notifies by email.
+name: Security scan
+
+on:
+  schedule:
+    # Monday 02:17 UTC (09:17 in Jakarta), away from the full hour when scheduled runs pile up.
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: security-scan
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Weekly security scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Audit Composer packages
+        run: docker run --rm -v "$PWD:/app" -w /app composer:2.10.3 audit --locked
+      - name: Audit npm runtime packages
+        run: docker run --rm -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" npm audit --omit=dev --audit-level=high
+      - name: Log in to the registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Scan the deployed images (Trivy)
+        env:
+          REPO: ghcr.io/${{ github.repository_owner }}/pentahoot
+        run: |
+          refs=("${GITHUB_SHA::12}")
+          release="$(git tag --list 'v*' --sort=-v:refname | head -1)"
+          if [ -n "$release" ]; then refs+=("$release"); fi
+          for ref in "${refs[@]}"; do
+            for image in "$REPO:$ref" "$REPO-web:$ref"; do
+              if ! docker pull --quiet "$image" > /dev/null 2>&1; then
+                echo "::notice::$image is not in the registry (deploys not switched on yet); skipped."
+                continue
+              fi
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            done
+          done
