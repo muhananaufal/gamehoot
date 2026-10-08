@@ -95,6 +95,9 @@
     --motion-slow: 360ms;
     /* The podium rises one step every 250 ms (E17); the busy spinner loops. */
     --motion-podium-step: 250ms;
+    /* U30: a projector scene comes in slowly over a long way; .phone-scenes overrides both. */
+    --scene-duration: var(--motion-slow);
+    --scene-rise: 3vh;
     --motion-spin: 700ms;
 
     --ease-out: cubic-bezier(0.2, 0, 0, 1);
@@ -370,6 +373,70 @@
         transform: none;
     }
 
+    /* U30: scenes of the Public View and the phones (components/scene.blade.php) share one grid
+       cell, so the old scene leaves while the new one comes in. Phones move less and faster. */
+    .scene-stack {
+        display: grid;
+        grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    }
+
+    .scene-stack > *,
+    .scene-stack > .contents > * {
+        grid-area: 1 / 1;
+        min-height: 0;
+    }
+
+    .scene-in {
+        transition:
+            opacity var(--scene-duration) var(--ease-out),
+            transform var(--scene-duration) var(--ease-out);
+    }
+
+    .scene-out {
+        transition:
+            opacity var(--motion-quick) var(--ease-in),
+            transform var(--motion-quick) var(--ease-in);
+    }
+
+    .scene-from {
+        opacity: 0;
+        transform: translateY(var(--scene-rise)) scale(0.98);
+    }
+
+    .scene-gone {
+        opacity: 0;
+        transform: translateY(calc(var(--scene-rise) * -0.5));
+    }
+
+    .scene-at {
+        opacity: 1;
+        transform: none;
+    }
+
+    .phone-scenes {
+        --scene-duration: var(--motion-base);
+        --scene-rise: 10px;
+    }
+
+    /* U30: images fade in once loaded, never half drawn; the answer image opens like a curtain (E9). */
+    .fade-load {
+        opacity: 0;
+        transition: opacity var(--motion-slow) var(--ease-out);
+    }
+
+    .curtain-load {
+        clip-path: inset(0 50% 0 50%);
+        transition: clip-path var(--motion-slow) var(--ease-out);
+    }
+
+    .fade-load.is-loaded {
+        opacity: 1;
+    }
+
+    .curtain-load.is-loaded {
+        clip-path: inset(0);
+    }
+
     /* U29: Penta's parts turn and shrink around their own middle; the body squashes from its base. */
     .penta [data-part] {
         transform-box: fill-box;
@@ -549,9 +616,21 @@ button[aria-busy='true']::after {
 
 /* U27: the reduced mode, from the device setting or the Reduce motion switch. */
 :root[data-motion='reduced'] {
+    --scene-duration: var(--motion-quick);
+
     .toast-from,
-    .menu-from {
+    .menu-from,
+    .scene-from,
+    .scene-gone {
         transform: none;
+    }
+
+    .phone-scenes {
+        --scene-duration: var(--motion-quick);
+    }
+
+    .curtain-load {
+        clip-path: none;
     }
 
     dialog,

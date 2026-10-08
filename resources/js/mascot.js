@@ -108,7 +108,13 @@ const KEYFRAMES = {
 };
 
 /** U29: the Alpine component of components/mascot.blade.php. */
-export function mascot({ mood = 'idle', labels = {}, random = Math.random, doc = globalThis.document } = {}) {
+export function mascot({
+    mood = 'idle',
+    name = null,
+    labels = {},
+    random = Math.random,
+    doc = globalThis.document,
+} = {}) {
     let timers = [];
     let running = [];
     let pressTimer = null;
@@ -116,6 +122,8 @@ export function mascot({ mood = 'idle', labels = {}, random = Math.random, doc =
 
     return {
         mood,
+        // U30: a named Penta hears only reactions for its name; unnamed reactions reach every Penta.
+        name,
         bubble: '',
 
         init() {
@@ -201,9 +209,19 @@ export function mascot({ mood = 'idle', labels = {}, random = Math.random, doc =
             this.moves[this.mood].call(this);
         },
 
-        /** A moment the page tells Penta about: $dispatch('mascot-react', 'cheer'). */
-        react(next) {
-            this.play(next);
+        /** A moment the page tells Penta about: $dispatch('mascot-react', 'cheer') or { name, mood }. */
+        react(detail) {
+            if (detail !== null && typeof detail === 'object') {
+                if (detail.name && detail.name !== this.name) {
+                    return;
+                }
+
+                this.play(detail.mood);
+
+                return;
+            }
+
+            this.play(detail);
         },
 
         poke() {

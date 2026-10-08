@@ -96,6 +96,20 @@ it('draws Penta from the logo with parts that move, as decoration (U29)', functi
         ->and($html)->toContain('@mascot-react.window="react($event.detail)"');
 });
 
+it('changes a scene with the motion tokens: the new one comes in while the old one leaves (U30)', function (): void {
+    $html = Blade::render('<x-scene show="phase === 1" class="grow">Question</x-scene>');
+
+    expect($html)->toContain('<main x-cloak x-show="phase === 1"')
+        ->and($html)->toContain('x-transition:enter="scene-in"')
+        ->and($html)->toContain('x-transition:enter-start="scene-from"')
+        ->and($html)->toContain('x-transition:leave="scene-out"')
+        ->and($html)->toContain('x-transition:leave-end="scene-gone"')
+        ->and($html)->toContain('class="grow"')
+        ->and($html)->toContain('Question');
+
+    expect(Blade::render('<x-scene show="open" as="div" :cloak="false">Lobby</x-scene>'))->toStartWith('<div x-show="open"');
+});
+
 it('lets every password field be shown and hidden (U17)', function (): void {
     view()->share('errors', new ViewErrorBag);
     $html = Blade::render('<x-field name="password" type="password" label="Password" />');

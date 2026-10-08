@@ -190,6 +190,20 @@ describe('U29 Penta component', () => {
         expect(penta.parts.smile[0].attributes.opacity).toBe('1');
     });
 
+    it('hears only reactions meant for it when it has a name (U30)', () => {
+        const { penta, component } = mount({ mood: 'idle' });
+        component.name = 'lobby';
+
+        component.react({ name: 'podium', mood: 'cheer' });
+        expect(penta.el.dataset.mood).toBe('idle');
+
+        component.react({ name: 'lobby', mood: 'sleepy' });
+        expect(penta.el.dataset.mood).toBe('sleepy');
+
+        component.react('happy');
+        expect(penta.el.dataset.mood).toBe('happy');
+    });
+
     it('calms the motion of this device when held, and says so (U27, option C)', () => {
         const { component, motion } = mount();
 
