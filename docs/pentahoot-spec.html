@@ -1504,6 +1504,57 @@ cd ../pentahoot-gladi
 COMPOSE_PROJECT_NAME=pentahoot-gladi SKIP_PULL=1 ./deploy.sh gladi-1
 COMPOSE_PROJECT_NAME=pentahoot-gladi IMAGE_TAG=gladi-1 docker compose down -v   # selesai</pre>
 
+      <h3>Deploy manual tanpa GitHub Actions</h3>
+      <p><i>Ditambah 8 Oktober 2026 (W18 break-glass).</i> Selama GitHub Actions tidak berjalan (jatah menit habis), image dibangun di laptop dan dikirim langsung ke VM lewat SSH, tanpa registry; <code>deploy.sh</code> dijalankan dengan <code>SKIP_PULL=1</code>, sehingga migration, smoke test, dan rollback otomatis tetap sama dengan deploy dari CI. Perintah di bawah belum dibuktikan ke server sungguhan; jalankan pertama kali sambil membaca keluarannya.</p>
+      <p><b>Sekali di laptop:</b> kunci SSH khusus deploy per lingkungan dan alias SSH.</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">ssh-keygen -t ed25519 -C "pentahoot-deploy-staging" -f ~/.ssh/pentahoot-staging -N ""
+ssh-keygen -t ed25519 -C "pentahoot-deploy-prod"    -f ~/.ssh/pentahoot-prod -N ""
+cat &gt;&gt; ~/.ssh/config &lt;&lt;'EOF'
+Host pentahoot-staging
+  HostName [IP STATIS STAGING]
+  User deploy
+  IdentityFile ~/.ssh/pentahoot-staging
+Host pentahoot-prod
+  HostName [IP STATIS PRODUCTION]
+  User deploy
+  IdentityFile ~/.ssh/pentahoot-prod
+EOF</pre>
+      <p><b>Sekali per server:</b> langkah Google Cloud di atas (VM, IP, firewall, DNS, Docker, Caddy, database), dengan user <code>deploy</code> yang memakai kunci laptop di atas; login registry tidak diperlukan.</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;"># di VM
+sudo adduser --disabled-password --gecos "" deploy
+sudo usermod -aG docker deploy
+sudo mkdir -p /home/deploy/.ssh /srv/pentahoot
+sudo chown deploy:deploy /srv/pentahoot
+sudo nano /home/deploy/.ssh/authorized_keys      # isi ~/.ssh/pentahoot-staging.pub dari laptop
+sudo chown -R deploy:deploy /home/deploy/.ssh &amp;&amp; sudo chmod 700 /home/deploy/.ssh &amp;&amp; sudo chmod 600 /home/deploy/.ssh/authorized_keys
+# di laptop: .env dari contoh, lalu isi nilainya di VM (kunci Reverb staging dan production berbeda)
+scp deploy/env.example pentahoot-staging:/srv/pentahoot/.env
+ssh pentahoot-staging 'nano /srv/pentahoot/.env &amp;&amp; chmod 600 /srv/pentahoot/.env'</pre>
+      <p><b>Setiap deploy staging</b> (setelah merge ke develop); production sama dengan host <code>pentahoot-prod</code> dan tag versi <code>vx.y.z</code> dari main.</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git checkout develop &amp;&amp; git pull --rebase origin develop
+TAG=$(git rev-parse --short=12 HEAD)
+docker build --target production -t ghcr.io/devivace-groups/pentahoot:$TAG .
+docker build --target web        -t ghcr.io/devivace-groups/pentahoot-web:$TAG .
+for i in pentahoot pentahoot-web; do                       # P3, seperti job CI
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 \
+    image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 ghcr.io/devivace-groups/$i:$TAG
+done
+docker save ghcr.io/devivace-groups/pentahoot:$TAG ghcr.io/devivace-groups/pentahoot-web:$TAG \
+  | gzip | ssh pentahoot-staging 'gunzip | docker load'
+scp deploy/compose.yaml deploy/deploy.sh deploy/smoke.sh pentahoot-staging:/srv/pentahoot/
+ssh pentahoot-staging "chmod +x /srv/pentahoot/deploy.sh /srv/pentahoot/smoke.sh &amp;&amp; cd /srv/pentahoot &amp;&amp; SKIP_PULL=1 ./deploy.sh $TAG"
+curl -fsS https://[DOMAIN STAGING]/up</pre>
+      <p><b>Deploy pertama</b> ditambah super-admin (email dan password ditanya interaktif) dan, di staging saja, data demo (O10).</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">ssh -t pentahoot-staging 'cd /srv/pentahoot &amp;&amp; export IMAGE_TAG=$(cat .image-tag) \
+  &amp;&amp; docker compose run --rm app php artisan pentahoot:create-super-admin \
+  &amp;&amp; docker compose run --rm app php artisan db:seed --class=DemoSeeder'</pre>
+      <p><b>Perintah harian di VM.</b> Rollback manual hanya bisa ke tag yang image-nya masih ada di VM, jadi pembersihan image menyisakan beberapa tag terakhir.</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">ssh pentahoot-staging 'cat /srv/pentahoot/.image-tag'                               # tag yang berjalan
+ssh pentahoot-staging 'cd /srv/pentahoot &amp;&amp; SKIP_PULL=1 ./deploy.sh [TAG LAMA]'       # rollback manual
+ssh pentahoot-staging 'cd /srv/pentahoot &amp;&amp; IMAGE_TAG=$(cat .image-tag) docker compose logs -f --tail=100 app reverb'
+ssh pentahoot-staging 'docker image prune -a --filter "until=168h"'                   # image lebih dari 7 hari</pre>
+      <p>Tetap berlaku: merge ke main menunggu CI GitHub hijau (W18), dilarang deploy selama event berlangsung (O2), dan backup manual <code>mysqldump</code> tepat sebelum dan sesudah event, disimpan di luar VM (O4).</p>
+
       <h3>Staging: disiapkan sekali</h3>
       <ol class="phases">
         <li><span class="n">1</span><div><b>Akses server</b><p>Senior menyiapkan VM (boleh sama dengan production atau terpisah), memasang Docker, membuat user deploy dengan kunci SSH khusus, dan membuka port 80/443.</p></div></li>
