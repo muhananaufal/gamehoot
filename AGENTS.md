@@ -84,7 +84,7 @@ Siklus satu tugas:
    Trailer `aetheris` **wajib**. Trailer AI lain boleh ditambahkan di bawahnya, tidak menggantikan.
 5. Isi `CHANGELOG.md` dan penuhi Definition of Done (bagian 6).
 6. `git fetch origin && git rebase origin/develop` → `git push --force-with-lease origin feature/<nama>` (force hanya di branch fitur sendiri, setelah rebase).
-7. **Tunggu CI hijau untuk commit terakhir branch itu (W18)**, misalnya dengan `gh run watch`. Merah → perbaiki di branch yang sama → push → tunggu hijau lagi. **Dilarang merge selama CI belum hijau.**
+7. **Picu CI penuh untuk commit terakhir branch itu dan tunggu hijau (W18, P6):** `gh workflow run ci.yml --ref feature/<nama>` → `gh run watch`. Push biasa hanya menjalankan CI ringan. Merah → perbaiki di branch yang sama → push → tunggu hijau lagi. **Dilarang merge selama CI belum hijau.**
 8. `git checkout develop && git merge --no-ff feature/<nama>` → `git push origin develop` → `git branch -d feature/<nama>` → `git push origin --delete feature/<nama>`.
 
 Aturan tetap:
@@ -149,7 +149,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6b. Operasional (O1–O10)
 
-- **CI (O1):** GitHub Actions menjalankan gerbang kualitas + `composer audit` di setiap push.
+- **CI (O1):** GitHub Actions menjalankan gerbang kualitas + `composer audit` di setiap push, kecuali push yang hanya mengubah `docs/` atau `*.md` dan push ke `main` (deploy berjalan dari tag).
 - **Deploy (O2):** `develop` → staging, tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
 - **Rahasia (O3):** hanya di `.env` tiap lingkungan dan GitHub Secrets. `.env.example` selalu lengkap.
 - **Seeder (O10):**
@@ -176,7 +176,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 - **Scan (P3):** gitleaks + Trivy + `composer audit`.
 - **Deploy (P4):** lewat SSH, **tanpa `git pull` dan tanpa `composer install` di server**: salin `compose.yaml` → `IMAGE_TAG=<sha> docker compose pull` → `docker compose run --rm app php artisan migrate --force` → `docker compose up -d` → smoke test `/up` + satu koneksi WebSocket → kalau gagal, kembali ke tag image sebelumnya.
 - **Production (P5):** deploy menunggu persetujuan manual di environment GitHub.
-- **Job CI (P6):** lint, analisis statis, test, mutation, browser, dijalankan paralel dengan cache; run lama dibatalkan.
+- **Job CI (P6), berlapis:** *ringan* di setiap push branch fitur (PHP: Pint + Larastan + audit + Pest MySQL 8.4; frontend; Gitleaks). *Penuh* (+ Pest MySQL 8.0, browser Chrome dan Safari, image + Trivy) otomatis di `develop`, `release/*`, `hotfix/*`, tag, dan manual di branch fitur sebelum merge. Tag versi memakai ulang CI penuh branch rilis kalau isi kodenya sama. Cache dipakai; run lama dibatalkan kecuali di `develop` dan tag.
 - **Data (P7):** staging hanya data demo; data production tidak pernah disalin ke staging.
 - **Langkah rilis lengkap** (persiapan pertama dan langkah berulang untuk staging, production, hotfix, dan hari event) ada di bagian 15 spesifikasi. Ikuti urutannya, jangan dihafal.
 

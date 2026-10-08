@@ -1,13 +1,26 @@
-# O1, P6: quality gate on every push. PHP comes from the project image (6a),
-# MySQL from the versions production may run until O-B is answered (W13).
+# O1, P6: tiered quality gate. Light checks on every push of a feature branch; the full gate
+# (MySQL 8.0, browsers, production images) on develop, release/*, hotfix/* and version tags,
+# and started by hand on a feature branch before merge (W18):
+#   gh workflow run ci.yml --ref feature/<name>
+# PHP comes from the project image (6a), MySQL from the versions production may run until O-B
+# is answered (W13).
 name: CI
 
 on:
   push:
+    # main only receives merges of release/* and hotfix/*, already tested; production deploys
+    # from the version tag. Tags are listed because GitHub skips a ref type without a filter.
+    branches-ignore: [main]
+    tags: ['v*']
+    # Documentation-only pushes run nothing. GitHub does not apply path filters to tags.
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # The event is part of the group, so a push never cancels a full gate started by hand.
+  group: ci-${{ github.ref }}-${{ github.event_name }}
   # P6: a new push cancels the old run of a feature branch, but never a run that may be
   # deploying (develop, version tags).
   cancel-in-progress: ${{ github.ref != 'refs/heads/develop' && !startsWith(github.ref, 'refs/tags/') }}
@@ -16,35 +29,65 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Pint
+  reused:
+    # W18: a version tag reuses the green full gate of the release/* or hotfix/* commit it
+    # merges when the code is identical. Anything uncertain runs the full gate on the tag.
+    name: Tested release
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      tested: ${{ steps.check.outputs.tested }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Look for the green full gate of the merged branch
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/tested-release.sh >> "$GITHUB_OUTPUT"
+
+  php:
+    # One job for the PHP checks: the image setup dominates each of them (P6).
+    name: PHP
+    needs: reused
+    if: ${{ !cancelled() && needs.reused.outputs.tested != 'true' }}
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-root
+          MYSQL_DATABASE: pentahoot_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/php-image
-      - name: Check formatting
+      - name: Check formatting (Pint)
         run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/pint --test
-
-  static-analysis:
-    name: Larastan
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: ./.github/actions/php-image
-      - name: Analyse
+      - name: Analyse (Larastan)
         run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/phpstan analyse --no-progress --memory-limit=1G
-
-  audit:
-    name: Composer audit
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: ./.github/actions/php-image
       - name: Audit dependencies
         run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci composer audit
+      - name: Run test suite (MySQL 8.4)
+        run: |
+          cp .env.example .env
+          app_key="base64:$(openssl rand -base64 32)"
+          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="$app_key" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci php artisan test --display-warnings
 
   frontend:
     name: ESLint, Prettier, Vitest, build
+    needs: reused
+    if: ${{ !cancelled() && needs.reused.outputs.tested != 'true' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
@@ -63,15 +106,56 @@ jobs:
             npm run build
           '
 
+  secrets:
+    name: Gitleaks
+    needs: reused
+    if: ${{ !cancelled() && needs.reused.outputs.tested != 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Scan history for secrets
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git --redact --no-banner /repo
+
+  test:
+    # Full gate only. Dropped once the production MySQL version is known (O-B).
+    name: Pest (MySQL 8.0)
+    needs: reused
+    if: ${{ !cancelled() && needs.reused.outputs.tested != 'true' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/') || startsWith(github.ref, 'refs/tags/v')) }}
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-root
+          MYSQL_DATABASE: pentahoot_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/php-image
+      - name: Run test suite
+        run: |
+          cp .env.example .env
+          app_key="base64:$(openssl rand -base64 32)"
+          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="$app_key" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci php artisan test --display-warnings
+
   browser:
-    # P6: each browser runs in two shards, the slowest jobs of the pipeline.
-    name: Pest browser (${{ matrix.browser }} ${{ matrix.shard }}/2)
+    # Full gate only. One job per browser: shards paid the image and asset setup twice (P6).
+    name: Pest browser (${{ matrix.browser }})
+    needs: reused
+    if: ${{ !cancelled() && needs.reused.outputs.tested != 'true' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/') || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         browser: [chrome, safari]
-        shard: [1, 2]
     services:
       mysql:
         image: mysql:8.4
@@ -97,67 +181,26 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json', '.nvmrc') }}
       - name: Install packages and build assets
         run: |
-          docker run --rm -v "$PWD:/app" -w /app -e npm_config_cache=/app/.npm-cache "node:$(cat .nvmrc)-bookworm-slim"             sh -c 'npm ci --no-audit --no-fund && npm run build'
+          docker run --rm -v "$PWD:/app" -w /app -e npm_config_cache=/app/.npm-cache "node:$(cat .nvmrc)-bookworm-slim" sh -c 'npm ci --no-audit --no-fund && npm run build'
       - name: Run browser tests (W11)
         # storage:link serves the public question images under /media (F16).
         run: |
           cp .env.example .env
           app_key="base64:$(openssl rand -base64 32)"
-          docker run --rm --network host -v "$PWD:/var/www/html"             -e APP_KEY="$app_key"             -e DB_HOST=127.0.0.1 -e DB_PORT=3306             -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root             pentahoot-php:ci sh -c "php artisan storage:link && php artisan test --testsuite=Browser --browser ${{ matrix.browser }} --shard=${{ matrix.shard }}/2"
+          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="$app_key" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci sh -c "php artisan storage:link && php artisan test --testsuite=Browser --browser ${{ matrix.browser }}"
       - name: Keep failure screenshots
         if: failure()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: browser-screenshots-${{ matrix.browser }}-${{ matrix.shard }}
+          name: browser-screenshots-${{ matrix.browser }}
           path: tests/Browser/Screenshots
 
-  secrets:
-    name: Gitleaks
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-      - name: Scan history for secrets
-        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git --redact --no-banner /repo
-
-  test:
-    name: Pest (MySQL ${{ matrix.mysql }})
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        mysql: ['8.0', '8.4']
-    services:
-      mysql:
-        image: mysql:${{ matrix.mysql }}
-        env:
-          MYSQL_ROOT_PASSWORD: ci-only-root
-          MYSQL_DATABASE: pentahoot_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: ./.github/actions/php-image
-      - name: Run test suite
-        run: |
-          cp .env.example .env
-          app_key="base64:$(openssl rand -base64 32)"
-          docker run --rm --network host -v "$PWD:/var/www/html" \
-            -e APP_KEY="$app_key" \
-            -e DB_HOST=127.0.0.1 -e DB_PORT=3306 \
-            -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root \
-            pentahoot-php:ci php artisan test --display-warnings
-
   image:
-    # P1, P2, P3: the production images are built on every push and scanned, so a branch
-    # proves them before merge; only develop and version tags push them to the registry.
+    # P1, P2, P3: the production images are built and scanned in every full gate, so a branch
+    # proves them before merge; only develop and version tags push them to the registry. A tag
+    # always builds its own images, also when it reuses the tests of its release branch.
     name: Production images
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/') || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -198,8 +241,7 @@ jobs:
       - name: Scan images (Trivy)
         run: |
           for image in "$REPO:${{ steps.tag.outputs.tag }}" "$REPO-web:${{ steps.tag.outputs.tag }}"; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 \
-              image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
       - name: Push to the registry
         if: env.PUBLISH == 'true'
@@ -216,10 +258,11 @@ jobs:
           done
 
   deploy-staging:
-    # O2, P4: develop deploys staging once every check of the same push is green (W18).
+    # O2, P4: develop deploys staging once every check of the same push is green (W18). The
+    # explicit status check keeps the job from inheriting the skipped "Tested release" job.
     name: Deploy staging
-    if: github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on'
-    needs: [lint, static-analysis, audit, frontend, browser, secrets, test, image]
+    needs: [php, frontend, secrets, test, browser, image]
+    if: ${{ !cancelled() && github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && needs.php.result == 'success' && needs.frontend.result == 'success' && needs.secrets.result == 'success' && needs.test.result == 'success' && needs.browser.result == 'success' && needs.image.result == 'success' }}
     runs-on: ubuntu-24.04
     environment: staging
     concurrency:
@@ -239,10 +282,11 @@ jobs:
 
   deploy-production:
     # O2, P5: a version tag on main deploys production after a manual approval of the
-    # production environment in GitHub. Never during an event.
+    # production environment in GitHub. Never during an event. The checks are either the
+    # reused full gate of the release branch (W18) or the full gate run on the tag.
     name: Deploy production
-    if: startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on'
-    needs: [lint, static-analysis, audit, frontend, browser, secrets, test, image]
+    needs: [reused, php, frontend, secrets, test, browser, image]
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on' && needs.image.result == 'success' && (needs.reused.outputs.tested == 'true' || (needs.php.result == 'success' && needs.frontend.result == 'success' && needs.secrets.result == 'success' && needs.test.result == 'success' && needs.browser.result == 'success')) }}
     runs-on: ubuntu-24.04
     environment: production
     concurrency:
