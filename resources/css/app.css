@@ -82,6 +82,32 @@
     --color-brand-pupil: #1a1433;
 }
 
+/*
+ * U27: motion tokens, the one source for durations and easings (resources/js/motion.js holds the
+ * same durations). Outside any layer, so they win over Tailwind's own --ease-in/--ease-out and the
+ * ease-* utilities in views move the same way. Reduced motion is decided by <html data-motion>
+ * (components/motion-script.blade.php), never by a media query here.
+ */
+:root {
+    --motion-instant: 100ms;
+    --motion-quick: 160ms;
+    --motion-base: 240ms;
+    --motion-slow: 360ms;
+    /* The podium rises one step every 250 ms (E17); the idle float and the busy spinner loop. */
+    --motion-podium-step: 250ms;
+    --motion-float: 3200ms;
+    --motion-spin: 700ms;
+
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    /* The small overshoot of dialogs and toasts. */
+    --ease-overshoot: cubic-bezier(0.34, 1.4, 0.64, 1);
+    /* U8's spring (visualDuration 0.3, bounce 0.2) sampled for CSS. */
+    --ease-spring: linear(0, 0.029 2.2%, 0.118 4.7%, 0.625 14.4%, 0.826 19%, 0.978 24.2%, 1.072 29.4%, 1.112 33.7%, 1.117 38.4%, 1.083 46.1%, 1.008 59.3%, 0.986 66.4%, 0.988 81.2%, 1);
+    /* A bigger bounce, for Penta and celebrations only (U29, U31). */
+    --ease-bounce: linear(0, 0.2 8%, 0.75 20%, 1.2 32%, 1.32 38%, 1.2 46%, 0.95 60%, 0.92 66%, 1.03 80%, 1);
+}
+
 @layer base {
     [data-theme='dark'] {
         --color-canvas: #15102b;
@@ -300,14 +326,14 @@
     /* U8: toasts arrive with the app's small overshoot. */
     .toast-enter {
         transition:
-            opacity 200ms ease-out,
-            transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+            opacity var(--motion-quick) var(--ease-out),
+            transform var(--motion-base) var(--ease-overshoot);
     }
 
     .toast-leave {
         transition:
-            opacity 150ms ease-in,
-            transform 150ms ease-in;
+            opacity var(--motion-quick) var(--ease-in),
+            transform var(--motion-quick) var(--ease-in);
     }
 
     .toast-from {
@@ -322,8 +348,8 @@
 
     .menu-enter {
         transition:
-            opacity 120ms ease-out,
-            transform 120ms ease-out;
+            opacity var(--motion-instant) var(--ease-out),
+            transform var(--motion-instant) var(--ease-out);
     }
 
     .menu-from {
@@ -338,39 +364,39 @@
 
     /* U8, U10: the mascot of empty pages and the phone's waiting room floats slowly. */
     .mascot-idle {
-        animation: mascot-float 3.2s ease-in-out infinite;
+        animation: mascot-float var(--motion-float) ease-in-out infinite;
     }
 
     /* U8: joining succeeded on the phone. */
     .pop-in {
-        animation: pop-in 240ms ease-out both;
+        animation: pop-in var(--motion-base) var(--ease-out) both;
     }
 
     /* U8: a ranking or reveal row appears. */
     .row-enter {
-        animation: row-enter 200ms ease-out both;
+        animation: row-enter var(--motion-base) var(--ease-out) both;
     }
 
     /* U8: the final podium rises 3, 2, 1, then the names appear. */
     .podium-step {
         transform-origin: bottom;
-        animation: podium-rise 300ms ease-out both;
+        animation: podium-rise var(--motion-base) var(--ease-out) both;
     }
 
     .podium-step-3 {
-        animation-delay: 0ms;
+        animation-delay: 0s;
     }
 
     .podium-step-2 {
-        animation-delay: 250ms;
+        animation-delay: var(--motion-podium-step);
     }
 
     .podium-step-1 {
-        animation-delay: 500ms;
+        animation-delay: calc(var(--motion-podium-step) * 2);
     }
 
     .podium-name {
-        animation: pop-in 240ms ease-out 800ms both;
+        animation: pop-in var(--motion-base) var(--ease-out) calc(var(--motion-podium-step) * 3.2) both;
     }
 }
 
@@ -379,10 +405,10 @@
    also plays when Escape or a click outside closes the dialog. */
 dialog {
     transition:
-        opacity 120ms ease-in,
-        scale 120ms ease-in,
-        overlay 120ms ease-in allow-discrete,
-        display 120ms ease-in allow-discrete;
+        opacity var(--motion-instant) var(--ease-in),
+        scale var(--motion-instant) var(--ease-in),
+        overlay var(--motion-instant) var(--ease-in) allow-discrete,
+        display var(--motion-instant) var(--ease-in) allow-discrete;
 }
 
 dialog:not([open]) {
@@ -392,9 +418,9 @@ dialog:not([open]) {
 
 dialog::backdrop {
     transition:
-        opacity 120ms ease-in,
-        overlay 120ms ease-in allow-discrete,
-        display 120ms ease-in allow-discrete;
+        opacity var(--motion-instant) var(--ease-in),
+        overlay var(--motion-instant) var(--ease-in) allow-discrete,
+        display var(--motion-instant) var(--ease-in) allow-discrete;
 }
 
 dialog:not([open])::backdrop {
@@ -402,11 +428,11 @@ dialog:not([open])::backdrop {
 }
 
 dialog[open] {
-    animation: dialog-in 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+    animation: dialog-in var(--motion-base) var(--ease-overshoot);
 }
 
 dialog[open]::backdrop {
-    animation: backdrop-in 180ms ease-out;
+    animation: backdrop-in var(--motion-quick) var(--ease-out);
 }
 
 @keyframes dialog-in {
@@ -419,7 +445,7 @@ dialog[open]::backdrop {
 /* U8: buttons give a little under the finger. */
 :is(button, a[class*='rounded-control']):active:not(:disabled) {
     scale: 0.97;
-    transition: scale 80ms ease-out;
+    transition: scale var(--motion-instant) var(--ease-out);
 }
 
 @keyframes backdrop-in {
@@ -471,7 +497,7 @@ button[aria-busy='true']::after {
     border-radius: 9999px;
     border: 2px solid var(--busy-ink, var(--color-ink));
     border-right-color: transparent;
-    animation: busy-spin 700ms linear infinite;
+    animation: busy-spin var(--motion-spin) linear infinite;
 }
 
 @keyframes busy-spin {
@@ -511,7 +537,8 @@ button[aria-busy='true']::after {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
+/* U27: the reduced mode, from the device setting or the Reduce motion switch. */
+:root[data-motion='reduced'] {
     .toast-from,
     .menu-from {
         transform: none;
