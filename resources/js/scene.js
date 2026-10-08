@@ -149,3 +149,49 @@ export function lobbyMood({ quietMs = 60_000, tell }) {
         },
     };
 }
+
+/** T2, U30: the connection banner of every live page, with a short Back online after a drop. */
+export function connectionBanner({ holdMs = 1_500 } = {}) {
+    let previous = null;
+    let timer = null;
+
+    return {
+        back: false,
+
+        init() {
+            previous = this.$store.realtime.connection;
+            this.$watch(
+                () => this.$store.realtime.connection,
+                (current) => {
+                    if (connectionNotice(previous, current) === 'back_online') {
+                        this.back = true;
+                        clearTimeout(timer);
+                        timer = setTimeout(() => {
+                            this.back = false;
+                        }, holdMs);
+                    }
+
+                    previous = current;
+                },
+            );
+        },
+    };
+}
+
+/** U30: the lobby of the Public View tells the Penta named "lobby" when players join or stay away. */
+export function lobbyPenta({ quietMs = 60_000 } = {}) {
+    let lobby = null;
+
+    return {
+        init() {
+            lobby = lobbyMood({ quietMs, tell: (mood) => this.$dispatch('mascot-react', { name: 'lobby', mood }) });
+            const joined = () => this.$store.realtime.snapshot?.lobby?.joined ?? 0;
+            lobby.joined(joined());
+            this.$watch(joined, (count) => lobby.joined(count));
+        },
+
+        destroy() {
+            lobby?.stop();
+        },
+    };
+}

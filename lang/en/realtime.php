@@ -8,6 +8,8 @@ return [
         'connecting' => 'Connecting…',
         'reconnecting' => 'Reconnecting…',
         'offline' => 'Connection lost. The screen still updates every few seconds.',
+        // U30: shown for a moment when the socket returns after a drop.
+        'back_online' => 'Back online',
     ],
 
     'loading' => 'Loading…',

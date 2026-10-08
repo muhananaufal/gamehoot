@@ -3,12 +3,14 @@
     'size' => 96,
     // U29: idle, wave, happy, cheer, thinking, surprised, sad, sleepy, loading, peek, dizzy, shy.
     'mood' => 'idle',
+    // U30: a named Penta only hears reactions sent for its name ({ name, mood }).
+    'name' => null,
     // Stroke between the segments: the color of the surface behind Penta.
     'outline' => 'stroke-canvas',
 ])
 {{-- U29: Penta, the logo of E19 come to life (resources/js/mascot.js). Decoration: the page around it
      always says the same in words. Holding it calms the motion of this device (U27, option C). --}}
-<span x-data="mascot({ mood: '{{ $mood }}', labels: {{ Js::from(['rest' => __('ui.penta_rest'), 'awake' => __('ui.penta_awake')]) }} })"
+<span x-data="mascot({ mood: '{{ $mood }}', name: {{ Js::from($name) }}, labels: {{ Js::from(['rest' => __('ui.penta_rest'), 'awake' => __('ui.penta_awake')]) }} })"
     data-mood="{{ $mood }}" @mascot-react.window="react($event.detail)" @click="poke()"
     @pointerdown="press()" @pointerup="release()" @pointerleave="release()" @pointercancel="release()" @contextmenu.prevent
     {{ $attributes->merge(['class' => 'relative inline-flex touch-manipulation select-none']) }}>

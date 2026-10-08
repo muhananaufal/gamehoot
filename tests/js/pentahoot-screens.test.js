@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { pentahootHost, pentahootPhone } from '../../resources/js/pentahoot-screens.js';
+import { pentahootHost, pentahootPhone, pentahootScreen } from '../../resources/js/pentahoot-screens.js';
 import { realtimeStore } from '../../resources/js/realtime.js';
 import { tebakHost } from '../../resources/js/tebak-screens.js';
 
@@ -326,5 +326,26 @@ describe('One main action in the middle of Live control (D-10)', () => {
         ).toEqual({ action: 'finish' });
         expect(host({ question: null, statuses: ['done', 'ready'] }).mainAction).toBe(null);
         expect(host({ question: null, statuses: ['done', 'done'] }).mainAction).toEqual({ action: 'finish' });
+    });
+});
+
+describe('U30 the countdown on the Public View', () => {
+    it('draws the ring from the time left and grows tense in the last seconds', () => {
+        let clock = 0;
+        const store = realtimeStore({ now: () => clock });
+        store.accept({ ...live, game: { ...live.game, question: { ...live.game.question, duration: 20 } } });
+        const screen = pentahootScreen({ labels: {} });
+        screen.$store = { realtime: store };
+
+        clock = 10_000;
+        expect(screen.ring).toBe(50);
+        expect(screen.urgency).toBe('calm');
+
+        clock = 16_500;
+        expect(screen.seconds).toBe(4);
+        expect(screen.urgency).toBe('soon');
+
+        clock = 18_000;
+        expect(screen.urgency).toBe('last');
     });
 });

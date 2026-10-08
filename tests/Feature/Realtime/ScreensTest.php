@@ -77,6 +77,24 @@ describe('Public View (F23)', function (): void {
             ->assertDontSee('pentahoot-motion', false);
     });
 
+    it('changes its scenes with motion and keeps every live number moving (U30)', function (): void {
+        screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('class="scene-stack', false)
+            ->assertSee('x-transition:enter="scene-in"', false)
+            // The countdown ring and the last five seconds.
+            ->assertSee('pathLength="100"', false)
+            ->assertSee(':stroke-dashoffset="ring"', false)
+            ->assertSee('x-nudge.pulse=', false)
+            // Penta greets the lobby, and the player count pops when someone joins.
+            ->assertSee('name: '."'lobby'", false)
+            ->assertSee('x-nudge.pop=', false)
+            // T2: the banner says so when the connection comes back.
+            ->assertSee('Back online', false);
+    });
+
     it('answers unknown events with the not found screen', function (): void {
         get('/no-such-event/screen')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
     });

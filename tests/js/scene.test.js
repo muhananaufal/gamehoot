@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    connectionBanner,
     connectionNotice,
     lobbyMood,
+    lobbyPenta,
     nudge,
     NUDGES,
     ringOffset,
@@ -127,5 +129,77 @@ describe('U30 Penta in the lobby', () => {
         vi.advanceTimersByTime(120_000);
 
         expect(moods).toEqual([]);
+    });
+});
+
+describe('U30 the connection banner component', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    function mountBanner(connection) {
+        const realtime = { connection };
+        let watcher = null;
+        const banner = connectionBanner({ holdMs: 1_500 });
+        banner.$store = { realtime };
+        banner.$watch = (read, fn) => {
+            watcher = { read, fn };
+        };
+        banner.init();
+
+        return {
+            banner,
+            change(next) {
+                realtime.connection = next;
+                watcher.fn(watcher.read());
+            },
+        };
+    }
+
+    it('says Back online for a moment once the socket returns', () => {
+        const { banner, change } = mountBanner('connected');
+
+        change('reconnecting');
+        expect(banner.back).toBe(false);
+
+        change('connected');
+        expect(banner.back).toBe(true);
+
+        vi.advanceTimersByTime(1_600);
+        expect(banner.back).toBe(false);
+    });
+
+    it('stays quiet on the first connection', () => {
+        const { banner, change } = mountBanner('connecting');
+
+        change('connected');
+
+        expect(banner.back).toBe(false);
+    });
+});
+
+describe('U30 the lobby tells Penta what happens', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('hands the moods to the Penta named lobby as players join', () => {
+        const realtime = { snapshot: { lobby: { joined: 2 } } };
+        let watcher = null;
+        const told = [];
+        const lobby = lobbyPenta({ quietMs: 60_000 });
+        lobby.$store = { realtime };
+        lobby.$watch = (read, fn) => {
+            watcher = { read, fn };
+        };
+        lobby.$dispatch = (name, detail) => told.push([name, detail]);
+        lobby.init();
+
+        realtime.snapshot.lobby.joined = 3;
+        watcher.fn(watcher.read());
+
+        expect(told).toEqual([['mascot-react', { name: 'lobby', mood: 'wave' }]]);
+
+        lobby.destroy();
+        vi.advanceTimersByTime(120_000);
+        expect(told).toHaveLength(1);
     });
 });

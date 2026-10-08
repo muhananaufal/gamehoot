@@ -34,7 +34,7 @@ import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
 import { motionStore } from './motion.js';
 import { mascot } from './mascot.js';
-import { nudgeDirective } from './scene.js';
+import { connectionBanner, lobbyPenta, nudgeDirective } from './scene.js';
 
 // U8: the first page just opened, so its rows may come in one by one.
 markPageEntered();
@@ -72,6 +72,8 @@ Alpine.data('tableView', tableView);
 Alpine.data('mascot', mascot);
 // U30: x-nudge.pop / .pulse / .flip / .shake: a small move when a shown value changes.
 Alpine.directive('nudge', nudgeDirective(Alpine));
+Alpine.data('connectionBanner', connectionBanner);
+Alpine.data('lobbyPenta', lobbyPenta);
 // U8: lists drawn by Alpine (rank lists) slide rows to their new place. x-flip.moves leaves the
 // rows that appear to their own CSS enter animation.
 Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {

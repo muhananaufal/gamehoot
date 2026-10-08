@@ -98,6 +98,8 @@
     /* U30: a projector scene comes in slowly over a long way; .phone-scenes overrides both. */
     --scene-duration: var(--motion-slow);
     --scene-rise: 3vh;
+    /* TICK_MS of resources/js/pentahoot-screens.js. */
+    --motion-countdown-tick: 250ms;
     --motion-spin: 700ms;
 
     --ease-out: cubic-bezier(0.2, 0, 0, 1);
@@ -411,6 +413,11 @@
     .scene-at {
         opacity: 1;
         transform: none;
+    }
+
+    /* U30: the countdown ring follows the 250 ms tick of the screen. */
+    .countdown-ring {
+        transition: stroke-dashoffset var(--motion-countdown-tick) linear;
     }
 
     .phone-scenes {
