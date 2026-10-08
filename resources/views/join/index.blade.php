@@ -7,7 +7,7 @@
         get noMatch() { return this.query.trim() !== '' && ! this.names.some((_, i) => this.shows(i)); },
     }" class="flex flex-col gap-4">
         <div class="flex flex-col items-center gap-2 text-center">
-            <x-logo :size="64" :wordmark="false" outline="stroke-canvas" />
+            <x-mascot :size="64" mood="idle" />
             <h1 class="font-display text-[26px] leading-tight font-bold">{{ __('join.pick_title') }}</h1>
         </div>
 

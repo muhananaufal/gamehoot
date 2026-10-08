@@ -13,14 +13,15 @@
         {{-- No game yet: the waiting room. --}}
         {{-- U8: joining succeeded, so the welcome pops in and the mascot floats while waiting. --}}
         <div x-show="view === 'waiting'" class="pop-in flex grow flex-col items-center justify-center gap-5 text-center">
-            <x-logo :size="96" :wordmark="false" outline="stroke-canvas" class="mascot-idle" />
+            {{-- U29: Penta waves hello, then rests between short bursts. --}}
+            <x-mascot :size="96" mood="wave" />
             <h1 class="font-display text-[32px] leading-tight font-bold" x-text="@js(__('join.welcome', ['name' => '__NAME__'])).replace('__NAME__', $store.realtime.me?.name ?? @js($person->name))">{{ __('join.welcome', ['name' => $person->name]) }}</h1>
             <p class="max-w-xs text-lg text-muted">{{ __('join.waiting') }}</p>
         </div>
 
         {{-- A game runs, no question is open. --}}
         <div x-cloak x-show="view === 'next'" class="flex grow flex-col items-center justify-center gap-4 text-center">
-            <x-logo :size="80" :wordmark="false" outline="stroke-canvas" />
+            <x-mascot :size="80" mood="surprised" />
             <h1 class="font-display text-[28px] leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
             <p class="max-w-xs text-lg text-muted">{{ __('pentahoot.get_ready') }}</p>
         </div>
@@ -87,7 +88,7 @@
 
         {{-- G7, E12: the Pentahoot game is over; the next game can start any time. --}}
         <div x-cloak x-show="view === 'finished'" class="flex grow flex-col items-center justify-center gap-4 text-center" role="status">
-            <x-logo :size="80" :wordmark="false" outline="stroke-canvas" />
+            <x-mascot :size="80" mood="wave" />
             <h1 class="font-display text-[28px] leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
             <p class="max-w-xs text-lg text-muted">{{ __('pentahoot.game_over') }}</p>
         </div>
@@ -102,7 +103,7 @@
         </div>
 
         <div x-show="view !== 'final' && !mirrored" class="flex grow flex-col items-center justify-center gap-4 text-center" role="status">
-            <x-logo :size="80" :wordmark="false" outline="stroke-canvas" />
+            <x-mascot :size="80" mood="thinking" />
             <h1 class="font-display text-[28px] leading-tight font-bold" x-text="game?.title"></h1>
             <p class="max-w-xs text-lg text-muted">{{ __('tebak.watch_screen') }}</p>
         </div>
