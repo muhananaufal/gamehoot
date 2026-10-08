@@ -62,15 +62,15 @@
                                         <x-chip :tone="$event->owner_id === $user->id ? 'accent' : 'neutral'">{{ $event->owner_id === $user->id ? __('host.dashboard.owner') : __('host.dashboard.cohost') }}</x-chip>
                                     </span>
                                     {{-- U6: when it last changed, and whose it is when the host only co-hosts it. --}}
-                                    <span class="text-[13px] text-muted">/{{ $event->slug }} · {{ __('host.dashboard.changed_at', ['time' => $event->updated_at?->timezone($tz)->format('j M, H:i')]) }}@if ($event->owner_id !== $user->id) · {{ __('host.dashboard.owned_by', ['name' => $event->owner?->name]) }}@endif</span>
+                                    <span class="text-caption text-muted">/{{ $event->slug }} · {{ __('host.dashboard.changed_at', ['time' => $event->updated_at?->timezone($tz)->format('j M, H:i')]) }}@if ($event->owner_id !== $user->id) · {{ __('host.dashboard.owned_by', ['name' => $event->owner?->name]) }}@endif</span>
                                 </td>
                                 <td class="px-4 py-3.5">
                                     <x-chip :tone="$statusTone($event->status)" :dot="$event->status === EventStatus::Open">
                                         {{ __('host.event_status.' . $event->status->value) }}
                                     </x-chip>
                                 </td>
-                                <td class="px-4 py-3.5 text-[15px] tabular-nums">{{ trans_choice('host.dashboard.names_count', $event->people_count) }}</td>
-                                <td @class(['px-4 py-3.5 text-[15px]', 'font-semibold text-on-danger' => $event->games_count === 0])>
+                                <td class="px-4 py-3.5 text-body tabular-nums">{{ trans_choice('host.dashboard.names_count', $event->people_count) }}</td>
+                                <td @class(['px-4 py-3.5 text-body', 'font-semibold text-on-danger' => $event->games_count === 0])>
                                     {{ trans_choice('host.dashboard.games_count', $event->games_count) }}
                                 </td>
                                 <td class="px-4 py-3.5 text-sm text-muted tabular-nums">{{ $event->created_at?->timezone($tz)->format('j M Y') }}</td>

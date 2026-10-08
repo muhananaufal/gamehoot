@@ -82,9 +82,9 @@
                             {{-- D-10: a later game, started from its step, out of order. --}}
                             @foreach ($games->filter(fn ($game) => $game->status !== \App\Enums\GameStatus::Finished && $game->id !== $event->active_game_id && ! $game->is($next)) as $later)
                                 <x-confirm-dialog :title="__('live.start_out_of_order', ['title' => $later->title])" :trigger="__('games.start')" hide-trigger dialog-id="start-{{ $later->id }}">
-                                    <p class="text-[15px] text-muted">{{ __('live.start_out_of_order_help', ['title' => $later->title, 'next' => $next->title]) }}</p>
+                                    <p class="text-body text-muted">{{ __('live.start_out_of_order_help', ['title' => $later->title, 'next' => $next->title]) }}</p>
                                     @if ($event->names_locked_at === null)
-                                        <p class="text-[15px] text-muted">{{ __('games.start_locks_names') }}</p>
+                                        <p class="text-body text-muted">{{ __('games.start_locks_names') }}</p>
                                     @endif
                                     <form method="POST" action="{{ route('host.events.games.start', [$event, $later]) }}" class="flex justify-end gap-2.5 pt-1.5">
                                         @csrf

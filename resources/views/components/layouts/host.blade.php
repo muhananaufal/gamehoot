@@ -28,10 +28,10 @@
         <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-nav/70 lg:hidden" @click="menuOpen = false"></div>
         {{-- U1: the sidebar scrolls on its own, so theme and sign out stay in view on long pages. --}}
         <aside id="host-sidebar" :data-collapsed="collapsed"
-            class="group fixed inset-y-0 left-0 z-40 flex h-dvh w-64 -translate-x-full flex-col bg-nav text-[15px] text-nav-ink drawer lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0 lg:data-[collapsed=true]:w-[4.75rem]"
+            class="group fixed inset-y-0 left-0 z-40 flex h-dvh w-64 -translate-x-full flex-col bg-nav text-body text-nav-ink drawer lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0 lg:data-[collapsed=true]:w-[4.75rem]"
             :class="{ 'translate-x-0': menuOpen }">
             <div class="flex shrink-0 items-center justify-between px-5.5 pt-4 pb-4 lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0">
-                <span class="lg:group-data-[collapsed=true]:hidden"><x-logo :size="32" class="text-[22px]" /></span>
+                <span class="lg:group-data-[collapsed=true]:hidden"><x-logo :size="32" class="text-title-s" /></span>
                 <span class="hidden lg:group-data-[collapsed=true]:block"><x-logo :size="32" :wordmark="false" /></span>
                 <button type="button" class="flex size-11 items-center justify-center rounded-control text-nav-icon lg:hidden"
                     @click="menuOpen = false" aria-label="{{ __('host.nav.close_menu') }}">
@@ -130,7 +130,7 @@
                     aria-label="{{ __('host.nav.collapse') }}" :title="collapsed ? @js(__('host.nav.expand')) : @js(__('host.nav.collapse'))">
                     <x-icon name="sidebar" />
                 </button>
-                <nav id="breadcrumbs" aria-label="{{ __('host.nav.breadcrumb') }}" class="flex min-w-0 grow items-center gap-2 text-[15px]">
+                <nav id="breadcrumbs" aria-label="{{ __('host.nav.breadcrumb') }}" class="flex min-w-0 grow items-center gap-2 text-body">
                     @foreach ($breadcrumbs as [$label, $url])
                         @if ($loop->last)
                             <span class="truncate font-bold" aria-current="page">{{ $label }}</span>

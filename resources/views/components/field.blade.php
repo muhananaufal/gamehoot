@@ -27,7 +27,7 @@
     {{-- U20: a field that cannot change now (e.g. the link of an open event) looks switched off. --}}
     <div @class(['flex h-11 overflow-hidden rounded-control border bg-field has-[input:read-only]:bg-subtle', $border]) @if ($type === 'password') x-data="{ shown: false }" @endif>
         @if ($prefix)
-            <span class="flex items-center border-r border-line-strong bg-subtle px-3 text-[15px] text-muted" aria-hidden="true">{{ $prefix }}</span>
+            <span class="flex items-center border-r border-line-strong bg-subtle px-3 text-body text-muted" aria-hidden="true">{{ $prefix }}</span>
         @endif
         <input id="{{ $id }}" name="{{ $name }}" type="{{ $type }}"
             @if ($type !== 'password') value="{{ $submitted ? old($name, $value) : $value }}" @endif
@@ -35,7 +35,7 @@
             @if ($error) aria-invalid="true" @endif
             @if ($live) up-validate up-validate-headers="{{ json_encode(['X-Pentahoot-Return' => url()->current()]) }}" @endif
             @if ($type === 'password') :type="shown ? 'text' : 'password'" @endif
-            {{ $attributes->merge(['class' => 'min-w-0 grow bg-transparent px-3 text-[15px] text-ink read-only:cursor-not-allowed read-only:text-muted']) }}>
+            {{ $attributes->merge(['class' => 'min-w-0 grow bg-transparent px-3 text-body text-ink read-only:cursor-not-allowed read-only:text-muted']) }}>
         @if ($type === 'password')
             <button type="button" @click="shown = ! shown" :aria-pressed="shown.toString()" aria-label="{{ __('accounts.show_password') }}" title="{{ __('accounts.show_password') }}"
                 class="flex w-11 shrink-0 items-center justify-center text-muted hover:text-ink">

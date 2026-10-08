@@ -19,7 +19,7 @@
     @endif
     <button type="button" x-ref="button" role="combobox" aria-label="{{ $label }}" aria-haspopup="listbox" aria-controls="{{ $id }}"
         :aria-expanded="open.toString()" @click="toggle()" @keydown="onKey($event)"
-        class="inline-flex h-11 w-full min-w-28 cursor-pointer items-center justify-between gap-3 rounded-control border border-line-strong bg-field px-3.5 text-[15px] font-semibold text-ink tabular-nums hover:bg-subtle">
+        class="inline-flex h-11 w-full min-w-28 cursor-pointer items-center justify-between gap-3 rounded-control border border-line-strong bg-field px-3.5 text-body font-semibold text-ink tabular-nums hover:bg-subtle">
         <span class="truncate" x-text="selectedLabel"></span>
         <x-icon name="chevron-down" class="size-4 shrink-0 text-muted transition-transform" ::class="open && 'rotate-180'" />
     </button>

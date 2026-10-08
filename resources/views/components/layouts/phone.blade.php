@@ -7,9 +7,9 @@
 <x-layouts.base :title="$title" class="flex flex-col bg-canvas">
     <header class="flex items-center justify-between gap-3 rounded-b-[28px] bg-nav px-5 py-5 text-nav-ink">
         @if ($event)
-            <span class="truncate font-display text-[22px] font-bold">{{ $event->name }}</span>
+            <span class="truncate font-display text-title-s font-bold">{{ $event->name }}</span>
         @else
-            <x-logo :size="32" class="text-[22px]" />
+            <x-logo :size="32" class="text-title-s" />
         @endif
         <div class="flex min-w-0 items-center gap-1">
             @if ($person)

@@ -89,14 +89,14 @@ tebakHost({
                 </div>
                 {{-- Outside the row: their empty wrappers would add gaps and push the buttons left. --}}
                     <x-confirm-dialog :title="__('tebak.skip_title')" :trigger="__('tebak.skip')" hide-trigger dialog-id="skip-question">
-                        <p class="text-[15px] text-muted">{{ __('tebak.skip_help') }}</p>
+                        <p class="text-body text-muted">{{ __('tebak.skip_help') }}</p>
                         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
                             <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>
                             <x-button type="button" data-test="confirm-skip" x-bind:disabled="busy" @click="$el.closest('dialog').close(); act('skip')">{{ __('tebak.skip') }}</x-button>
                         </form>
                     </x-confirm-dialog>
                     <x-confirm-dialog :title="__('tebak.confirm_winner_title')" :trigger="__('tebak.pick_winner')" hide-trigger dialog-id="pick-winner">
-                        <p class="text-[15px] text-muted" x-text="chosen ? @js(__('tebak.confirm_winner', ['name' => '__NAME__'])).replace('__NAME__', chosen.name) : ''"></p>
+                        <p class="text-body text-muted" x-text="chosen ? @js(__('tebak.confirm_winner', ['name' => '__NAME__'])).replace('__NAME__', chosen.name) : ''"></p>
                         {{-- The confirm button closes the dialog itself: once act() sets busy, Alpine disables
                              it before the click's default action, so the dialog form would never submit. --}}
                         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
@@ -106,7 +106,7 @@ tebakHost({
                     </x-confirm-dialog>
                     {{-- D-10: Surrender is rare; it opens from the game card menu. --}}
                     <x-confirm-dialog :title="__('tebak.surrender_title')" :trigger="__('tebak.surrender')" hide-trigger dialog-id="give-up">
-                        <p class="text-[15px] text-muted">{{ __('tebak.surrender_help') }}</p>
+                        <p class="text-body text-muted">{{ __('tebak.surrender_help') }}</p>
                         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
                             <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>
                             <x-button type="submit" variant="destructive" @click="act('surrender')">{{ __('tebak.surrender') }}</x-button>

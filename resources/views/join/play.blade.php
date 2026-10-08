@@ -23,14 +23,14 @@
         <x-scene as="div" :cloak="false" show="view === 'waiting'" class="pop-in flex flex-col items-center justify-center gap-5 text-center">
             {{-- U29: Penta waves hello, then rests between short bursts. --}}
             <x-mascot :size="96" mood="wave" />
-            <h1 class="font-display text-[32px] leading-tight font-bold" x-text="@js(__('join.welcome', ['name' => '__NAME__'])).replace('__NAME__', $store.realtime.me?.name ?? @js($person->name))">{{ __('join.welcome', ['name' => $person->name]) }}</h1>
+            <h1 class="font-display text-display leading-tight font-bold" x-text="@js(__('join.welcome', ['name' => '__NAME__'])).replace('__NAME__', $store.realtime.me?.name ?? @js($person->name))">{{ __('join.welcome', ['name' => $person->name]) }}</h1>
             <p class="max-w-xs text-lg text-muted">{{ __('join.waiting') }}</p>
         </x-scene>
 
         {{-- A game runs, no question is open. --}}
         <x-scene as="div" show="view === 'next'" class="flex flex-col items-center justify-center gap-4 text-center">
             <x-mascot :size="80" mood="surprised" />
-            <h1 class="font-display text-[28px] leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
+            <h1 class="font-display text-title leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
             <p class="max-w-xs text-lg text-muted">{{ __('pentahoot.get_ready') }}</p>
         </x-scene>
 
@@ -82,7 +82,7 @@
 
         {{-- E4, E4b, E17: the same results as the Public View, as text. --}}
         <x-scene as="div" show="view === 'results'" class="flex flex-col gap-4">
-            <h1 class="font-display text-[22px] font-bold" x-text="label('results_of', { N: question?.number })"></h1>
+            <h1 class="font-display text-title-s font-bold" x-text="label('results_of', { N: question?.number })"></h1>
             <p class="text-muted" x-text="question?.prompt"></p>
             <p x-show="results.length === 0" class="rounded-card bg-surface px-4 py-6 text-center font-semibold">{{ __('pentahoot.no_votes') }}</p>
             {{-- E17: the same podium as the Public View, with ranks 4 and 5 below it. --}}
@@ -95,7 +95,7 @@
         {{-- G7, E12: the Pentahoot game is over; the next game can start any time. --}}
         <x-scene as="div" show="view === 'finished'" class="flex flex-col items-center justify-center gap-4 text-center" role="status">
             <x-mascot :size="80" mood="wave" />
-            <h1 class="font-display text-[28px] leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
+            <h1 class="font-display text-title leading-tight font-bold" x-text="$store.realtime.snapshot?.game?.title"></h1>
             <p class="max-w-xs text-lg text-muted">{{ __('pentahoot.game_over') }}</p>
         </x-scene>
         </div>
@@ -105,13 +105,13 @@
          (E14), with no buttons; players answer out loud. The final podium always shows, as text (E17). --}}
     <div x-data="tebakScreen({ types: ['tebak_kata', 'tebak_gambar'], labels: @js(__('tebak')) })" x-cloak x-show="$store.realtime.screen() === 'live' && game" class="flex grow flex-col">
         <div x-show="view === 'final'" class="flex grow flex-col gap-4">
-            <h1 class="font-display text-[22px] font-bold"><span x-text="game?.title"></span> · {{ __('tebak.final') }}</h1>
+            <h1 class="font-display text-title-s font-bold"><span x-text="game?.title"></span> · {{ __('tebak.final') }}</h1>
             <x-podium stand="stand" :score="__('tebak.points')" self="$store.realtime.me?.name" class="pt-2" />
         </div>
 
         <div x-show="view !== 'final' && !mirrored" class="flex grow flex-col items-center justify-center gap-4 text-center" role="status">
             <x-mascot :size="80" mood="thinking" />
-            <h1 class="font-display text-[28px] leading-tight font-bold" x-text="game?.title"></h1>
+            <h1 class="font-display text-title leading-tight font-bold" x-text="game?.title"></h1>
             <p class="max-w-xs text-lg text-muted">{{ __('tebak.watch_screen') }}</p>
         </div>
 
@@ -135,7 +135,7 @@
                 </div>
             </template>
             <div x-show="view === 'leaderboard'" class="flex flex-col gap-3">
-                <h1 class="font-display text-[22px] font-bold">{{ __('tebak.leaderboard') }}</h1>
+                <h1 class="font-display text-title-s font-bold">{{ __('tebak.leaderboard') }}</h1>
                 <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" note="moveLabel(row)" />
             </div>
         </div>

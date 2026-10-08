@@ -15,6 +15,15 @@
     --font-sans: var(--font-figtree);
     --font-display: var(--font-fredoka);
 
+    /* U28: the named type sizes of the panel and the phones (text-caption ... text-display). */
+    --text-caption: 13px;
+    --text-body-s: 14px;
+    --text-body: 15px;
+    --text-body-l: 18px;
+    --text-title-s: 22px;
+    --text-title: 28px;
+    --text-display: 32px;
+
     --radius-control: 10px;
     --radius-card: 16px;
     --radius-panel: 20px;
@@ -164,6 +173,17 @@
         background-color: var(--color-canvas);
         color: var(--color-ink);
         font-family: var(--font-sans);
+    }
+
+    /* U28: headings break into even lines, paragraphs avoid a lonely last word. */
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+
+    p {
+        text-wrap: pretty;
     }
 
     [x-cloak] {

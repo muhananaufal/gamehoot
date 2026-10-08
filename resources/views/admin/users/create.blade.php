@@ -2,7 +2,7 @@
     :breadcrumbs="[[__('host.nav.admin'), null], [__('accounts.host_accounts'), route('admin.users.index')], [__('accounts.add_host'), null]]">
     {{-- U13: what the Add host modal shows: a title, fields as wide as the box, buttons at the bottom right. --}}
     <div up-main="modal" class="flex flex-col gap-5 p-6">
-        <h2 class="font-display text-[22px] font-bold">{{ __('accounts.add_host') }}</h2>
+        <h2 class="font-display text-title-s font-bold">{{ __('accounts.add_host') }}</h2>
         <form method="POST" action="{{ route('admin.users.store') }}" class="flex flex-col gap-4" novalidate>
             @csrf
             <x-forms.new-host-fields />

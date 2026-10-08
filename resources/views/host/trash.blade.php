@@ -23,7 +23,7 @@
             </x-table.toolbar>
 
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
-                <table class="w-full min-w-[640px] text-left text-[15px]">
+                <table class="w-full min-w-[640px] text-left text-body">
                     <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                         <tr>
                             <x-table.th sort="name">{{ __('host.dashboard.event') }}</x-table.th>
@@ -43,7 +43,7 @@
                                 data-who="{{ $event->deleted_by }}" data-date="{{ $event->deleted_at?->timezone($tz)->format('Y-m-d') }}">
                                 <td>
                                     <b class="block">{{ $event->name }}</b>
-                                    <span class="text-[13px] text-muted">{{ __('events.was_link', ['slug' => $original]) }}</span>
+                                    <span class="text-caption text-muted">{{ __('events.was_link', ['slug' => $original]) }}</span>
                                 </td>
                                 @if ($showOwner)
                                     <td>{{ $event->owner?->name }}</td>
@@ -54,7 +54,7 @@
                                 <td class="text-center">
                                     <x-confirm-dialog :title="__('events.restore_title', ['name' => $event->name])" :trigger="__('events.restore_named', ['name' => $event->name])" trigger-icon="refresh" icon-only
                                         :open="old('restoring') === $event->id && $errors->any()">
-                                        <p class="text-left text-[15px] text-muted">{{ __('events.restore_confirm') }}</p>
+                                        <p class="text-left text-body text-muted">{{ __('events.restore_confirm') }}</p>
                                         <form method="POST" action="{{ route($restoreRoute, $event) }}" class="flex flex-col gap-3 text-left" novalidate>
                                             @csrf
                                             <input type="hidden" name="restoring" value="{{ $event->id }}">

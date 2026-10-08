@@ -78,7 +78,7 @@
         </div>
         <textarea id="new-event-names" name="names" rows="8" x-model="text" autocomplete="off" placeholder="{{ __('examples.names') }}"
             aria-describedby="new-event-names-hint new-event-names-check"
-            class="max-h-[40dvh] rounded-control border border-line-strong bg-field px-3 py-2.5 text-[15px] text-ink"></textarea>
+            class="max-h-[40dvh] rounded-control border border-line-strong bg-field px-3 py-2.5 text-body text-ink"></textarea>
         <p id="new-event-names-hint" class="text-sm text-muted">{{ __('events.names_step_hint') }}</p>
         <p x-show="importError !== ''" x-cloak x-text="importError" role="alert" class="text-sm font-semibold text-on-danger"></p>
         <p x-show="importNote !== ''" x-cloak class="flex flex-wrap items-center gap-2 text-sm text-on-success">
@@ -102,7 +102,7 @@
     {{-- ③ Games: the pack list of Add games, picked in order. --}}
     <div x-show="step === 3" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-3">
         @if ($packs->isEmpty())
-            <p class="text-[15px] text-muted">{{ __('games.no_packs') }}</p>
+            <p class="text-body text-muted">{{ __('games.no_packs') }}</p>
         @else
             <x-pack-list :packs="$packs" :types="$types" pick />
             @include('host.partials.pack-picks')
@@ -118,7 +118,7 @@
         <dl class="flex flex-col divide-y divide-line-soft">
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_event') }}</dt>
-                <dd class="flex min-w-0 grow flex-col gap-0.5 text-[15px]">
+                <dd class="flex min-w-0 grow flex-col gap-0.5 text-body">
                     <span class="font-semibold" x-text="step === 4 ? details().name : ''"></span>
                     <span class="text-sm text-muted" x-text="step === 4 ? @js(parse_url(config('app.url'), PHP_URL_HOST) . '/') + details().slug : ''"></span>
                     <span class="text-sm text-muted" x-text="step === 4 ? details().summary : ''"></span>
@@ -127,7 +127,7 @@
             </div>
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_names') }}</dt>
-                <dd class="flex min-w-0 grow flex-col gap-0.5 text-[15px]">
+                <dd class="flex min-w-0 grow flex-col gap-0.5 text-body">
                     <span x-text="nameCheck.names.length > 0 ? nameCount : @js(__('events.no_names_yet'))"></span>
                     <span x-show="! namesOk" class="text-sm font-semibold text-on-danger">{{ __('events.names_to_fix') }}</span>
                 </dd>
@@ -135,7 +135,7 @@
             </div>
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_games') }}</dt>
-                <dd class="min-w-0 grow text-[15px]" x-text="picked.length > 0 ? chips().map((chip) => chip.number + '. ' + chip.title).join(' · ') : @js(__('events.no_games_yet'))"></dd>
+                <dd class="min-w-0 grow text-body" x-text="picked.length > 0 ? chips().map((chip) => chip.number + '. ' + chip.title).join(' · ') : @js(__('events.no_games_yet'))"></dd>
                 <button type="button" @click="go(3)" class="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
             </div>
         </dl>
@@ -160,8 +160,8 @@
     {{-- U24: leaving after typing asks first. --}}
     <dialog x-ref="discard" class="m-auto w-[min(400px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-left text-ink shadow-2xl">
         <div class="flex flex-col gap-3 p-5.5">
-            <h2 class="font-display text-[22px] font-bold">{{ __('events.discard_title') }}</h2>
-            <p class="text-[15px] text-muted">{{ __('events.discard_body') }}</p>
+            <h2 class="font-display text-title-s font-bold">{{ __('events.discard_title') }}</h2>
+            <p class="text-body text-muted">{{ __('events.discard_body') }}</p>
             <div class="flex justify-end gap-2.5 pt-1.5">
                 <x-button variant="secondary" type="button" @click="$refs.discard.close()">{{ __('people.keep_editing') }}</x-button>
                 <x-button variant="destructive" type="button" @click="$refs.discard.close(); discard()">{{ __('people.discard') }}</x-button>

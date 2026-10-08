@@ -50,7 +50,7 @@
     <x-slot:actions>
         @if ($people->isNotEmpty())
             <x-confirm-dialog :title="__('people.export_links') . '?'" :trigger="__('people.export_links')">
-                <p class="text-[15px] font-semibold text-on-warning">{{ __('people.links_warning') }}</p>
+                <p class="text-body font-semibold text-on-warning">{{ __('people.links_warning') }}</p>
                 <div class="flex justify-end gap-2.5 pt-1.5">
                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                     <x-button :href="route('host.events.people.links', $event)" download @click="$el.closest('dialog').close()">{{ __('people.export_links') }}</x-button>
@@ -69,7 +69,7 @@
                         <label for="add-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
                         <textarea id="add-names" name="names" rows="6" x-model="text" autofocus autocomplete="off" placeholder="{{ __('examples.names') }}"
                             aria-describedby="add-names-hint add-names-check"
-                            class="rounded-control border border-line-strong bg-field px-3 py-2.5 text-[15px] text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
+                            class="rounded-control border border-line-strong bg-field px-3 py-2.5 text-body text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
                         <p id="add-names-hint" class="text-sm text-muted">{{ __('people.add_names_hint') }}</p>
                         <div id="add-names-check" aria-live="polite" class="flex flex-col gap-1 text-sm">
                             <p x-show="check.names.length > 0" x-text="summary" class="text-muted"></p>
@@ -143,7 +143,7 @@
 
             {{-- Sideways scrolling only on narrow screens: a scrolling box would pin the header to the box, not the page. --}}
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
-                <table class="w-full min-w-[640px] text-left text-[15px]" @click="onRowClick($event)">
+                <table class="w-full min-w-[640px] text-left text-body" @click="onRowClick($event)">
                     <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                         <tr>
                             <x-table.th sort="name">{{ __('people.name') }}</x-table.th>

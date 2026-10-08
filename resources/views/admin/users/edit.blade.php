@@ -2,7 +2,7 @@
     :breadcrumbs="[[__('host.nav.admin'), null], [__('accounts.host_accounts'), route('admin.users.index')], [__('accounts.edit_title', ['name' => $account->name]), null]]">
     {{-- C-7, U13: what the Edit modal shows: a title, fields as wide as the box, buttons at the bottom right. --}}
     <div up-main="modal" class="flex flex-col gap-5 p-6">
-        <h2 class="font-display text-[22px] font-bold">{{ __('accounts.edit_title', ['name' => $account->name]) }}</h2>
+        <h2 class="font-display text-title-s font-bold">{{ __('accounts.edit_title', ['name' => $account->name]) }}</h2>
         <form method="POST" action="{{ route('admin.users.update', $account) }}" class="flex flex-col gap-4" novalidate>
             @csrf
             @method('PUT')

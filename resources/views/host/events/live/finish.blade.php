@@ -8,7 +8,7 @@
     </form>
 @else
     <x-confirm-dialog :title="$label . '?'" :trigger="$label" :hide-trigger="isset($dialogId)" :dialog-id="$dialogId ?? null">
-        <p class="text-[15px] text-muted">{{ __('games.close_game_confirm', ['title' => $game->title]) }}</p>
+        <p class="text-body text-muted">{{ __('games.close_game_confirm', ['title' => $game->title]) }}</p>
         <form method="POST" action="{{ route('host.events.games.finish', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
             @csrf
             <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
