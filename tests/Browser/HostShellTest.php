@@ -250,3 +250,38 @@ it('keeps a refused upload in the Import modal, with its error under the file fi
         ->and($page->script('!! document.querySelector("up-modal up-modal-dismiss")'))->toBeFalse();
     $page->assertNoJavaScriptErrors();
 });
+
+it('keeps the name and role of the signed-in host readable in the sidebar (U1)', function (): void {
+    actingAs(User::factory()->create(['name' => 'Rita Wulandari']));
+
+    $page = visit('/host')->wait(1);
+
+    $page->assertScript("document.querySelector('[data-test=account-name]').getBoundingClientRect().width > 100", true)
+        ->assertScript("document.querySelector('[data-test=account-name]').scrollWidth <= document.querySelector('[data-test=account-name]').clientWidth", true)
+        ->assertNoJavaScriptErrors();
+});
+
+it('shows the tooltip when the pointer crosses onto the icon or slides to the next button (U33)', function (): void {
+    actingAs(User::factory()->create());
+
+    $page = visit('/host')->wait(1);
+    // The real pointer path: over the button's edge, onto its icon, then on to the next button.
+    $page->script(<<<'JS'
+        (() => {
+            const theme = document.querySelector('#host-sidebar [aria-label="Switch theme"]');
+            const motion = document.querySelector('#host-sidebar [x-data] [aria-label="Reduce motion"], #host-sidebar button[aria-label="Reduce motion"]');
+            const icon = theme.querySelector('svg, i, span') ?? theme;
+            const fire = (type, target, relatedTarget) => target.dispatchEvent(new PointerEvent(type, { bubbles: true, relatedTarget }));
+            fire('pointerover', theme, null);
+            setTimeout(() => { fire('pointerout', theme, icon); fire('pointerover', icon, theme); }, 50);
+            setTimeout(() => { window.__first = document.getElementById('host-tip')?.hidden === false ? document.getElementById('host-tip').textContent : null; }, 600);
+            setTimeout(() => { fire('pointerout', icon, motion); fire('pointerover', motion, icon); }, 700);
+            setTimeout(() => { window.__second = document.getElementById('host-tip')?.hidden === false ? document.getElementById('host-tip').textContent : null; }, 1300);
+        })()
+        JS);
+    $page->wait(1.8);
+
+    $page->assertScript('window.__first', 'Switch theme')
+        ->assertScript('window.__second', 'Reduce motion')
+        ->assertNoJavaScriptErrors();
+});

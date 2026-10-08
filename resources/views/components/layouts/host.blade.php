@@ -94,21 +94,28 @@
                 @endcan
             </nav>
 
-            <div class="flex shrink-0 items-center gap-2.5 border-t border-nav-active px-5.5 py-3 lg:group-data-[collapsed=true]:flex-col lg:group-data-[collapsed=true]:px-2">
-                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
-                <div class="flex min-w-0 grow flex-col lg:group-data-[collapsed=true]:sr-only">
-                    <span class="truncate text-sm font-bold">{{ $user->name }}</span>
-                    <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+            {{-- U1: the account on its own row, so the name and role stay readable beside the avatar;
+                 theme, motion and log out sit on the row below, from the left. Narrowed, both rows stack as icons. --}}
+            <div class="flex shrink-0 flex-col gap-1 border-t border-nav-active px-5.5 py-3 lg:group-data-[collapsed=true]:items-center lg:group-data-[collapsed=true]:px-2">
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
+                    <div class="flex min-w-0 grow flex-col lg:group-data-[collapsed=true]:sr-only">
+                        <span class="truncate text-sm font-bold" data-test="account-name">{{ $user->name }}</span>
+                        <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+                    </div>
                 </div>
-                <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
-                <x-motion-toggle class="text-nav-icon hover:bg-nav-active" />
-                <form method="POST" action="{{ route('logout') }}" up-submit="false">
-                    @csrf
-                    <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
-                        class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
-                        <x-icon name="logout" />
-                    </button>
-                </form>
+                {{-- The first icon sits under the middle of the avatar. --}}
+                <div class="-ml-1 flex items-center lg:group-data-[collapsed=true]:ml-0 lg:group-data-[collapsed=true]:flex-col">
+                    <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
+                    <x-motion-toggle class="text-nav-icon hover:bg-nav-active" />
+                    <form method="POST" action="{{ route('logout') }}" up-submit="false">
+                        @csrf
+                        <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
+                            class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
+                            <x-icon name="logout" />
+                        </button>
+                    </form>
+                </div>
             </div>
         </aside>
         {{-- U1: apply a remembered narrow sidebar before the first paint, so it does not flash wide. --}}
