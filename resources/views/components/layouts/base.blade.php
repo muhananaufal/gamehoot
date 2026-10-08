@@ -2,9 +2,11 @@
     'title',
     // F21: null follows the viewer's choice or system setting; 'dark' or 'light' is fixed (Public View).
     'theme' => null,
+    // U27: false where only the device setting counts (the Public View, U31).
+    'rememberMotion' => true,
 ])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($theme) data-theme="{{ $theme }}" @endif>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($theme) data-theme="{{ $theme }}" @endif @unless ($rememberMotion) data-motion-device-only @endunless>
 <head>
     {{-- U18: Unpoly reads the page nonce here and gives it to scripts in new fragments. --}}
     {{-- U19: the messages of the checks made before a form is sent, in the server's words. --}}
@@ -18,6 +20,7 @@
     @if (! $theme)
         <x-theme-script />
     @endif
+    <x-motion-script :remember="$rememberMotion" />
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

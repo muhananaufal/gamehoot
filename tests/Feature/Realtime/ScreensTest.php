@@ -67,6 +67,16 @@ describe('Public View (F23)', function (): void {
             ->toHaveKey('initial.lobby.joined', 1);
     });
 
+    it('follows the device motion setting only, never a choice made in the panel on the same browser (U27, U31)', function (): void {
+        screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('data-motion-device-only', false)
+            ->assertSee('document.documentElement.dataset.motion', false)
+            ->assertDontSee('pentahoot-motion', false);
+    });
+
     it('answers unknown events with the not found screen', function (): void {
         get('/no-such-event/screen')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
     });
