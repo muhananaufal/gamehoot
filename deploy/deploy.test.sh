@@ -13,12 +13,13 @@ setup() {
     cp "$source_dir/deploy.sh" "$dir/"
     cat > "$dir/smoke.sh" <<'SMOKE'
 #!/usr/bin/env bash
+[ "${STUB_SMOKE_FAIL:-0}" = 1 ] && [ ! -f "$(dirname "$0")/smoke-failed" ] && touch "$(dirname "$0")/smoke-failed" && exit 1
 exit 0
 SMOKE
     # The stub prints a dump for "backup dump" and fails it when STUB_BACKUP_FAIL=1.
     cat > "$dir/bin/docker" <<'STUB'
 #!/usr/bin/env bash
-echo "$*" >> "$STUB_LOG"
+echo "$* [APP_DIGEST=${APP_DIGEST:-} WEB_DIGEST=${WEB_DIGEST:-}]" >> "$STUB_LOG"
 if [[ "$*" == *" backup dump"* ]]; then
     [ "${STUB_BACKUP_FAIL:-0}" = 1 ] && exit 1
     echo "-- MySQL dump"
@@ -107,6 +108,37 @@ rehearsal() { [ "$code" = 0 ] && ! called "compose pull" && called " backup dump
 setup
 deploy env SKIP_PULL=1; code=$?
 check "SKIP_PULL skips the pull but not the dump" rehearsal
+
+# P1, P4: CI passes the digests of the scanned images; compose pulls exactly those and the
+# deploy remembers them for a rollback.
+new_app="sha256:$(printf 'a%.0s' {1..64})"
+new_web="sha256:$(printf 'b%.0s' {1..64})"
+old_app="sha256:$(printf 'c%.0s' {1..64})"
+old_web="sha256:$(printf 'd%.0s' {1..64})"
+pinned() {
+    [ "$code" = 0 ] && grep "compose up" "$STUB_LOG" | grep -q "APP_DIGEST=$new_app WEB_DIGEST=$new_web" &&
+        grep -qx "APP_DIGEST=$new_app" "$dir/.image-digests" && grep -qx "WEB_DIGEST=$new_web" "$dir/.image-digests"
+}
+setup
+deploy env APP_DIGEST="$new_app" WEB_DIGEST="$new_web"; code=$?
+check "digests from CI reach compose and are kept for a rollback (P1, P4)" pinned
+
+# A digest that is not sha256:<64 hex> stops the deploy before any docker call.
+refused() { [ "$code" = 1 ] && [ ! -s "$STUB_LOG" ] && grep -q "APP_DIGEST" "$dir/out.log"; }
+setup
+deploy env APP_DIGEST="sha256:nope; rm -rf /" WEB_DIGEST="$new_web"; code=$?
+check "a malformed digest stops the deploy before any docker call" refused
+
+# A failed smoke test rolls back to the previous tag with the previous digests.
+rolled_back() {
+    [ "$code" = 1 ] && grep "compose up" "$STUB_LOG" | tail -1 | grep -q "APP_DIGEST=$old_app WEB_DIGEST=$old_web" &&
+        [ "$(cat "$dir/.image-tag")" = old1 ] && grep -qx "APP_DIGEST=$old_app" "$dir/.image-digests"
+}
+setup
+echo old1 > "$dir/.image-tag"
+printf 'APP_DIGEST=%s\nWEB_DIGEST=%s\n' "$old_app" "$old_web" > "$dir/.image-digests"
+deploy env APP_DIGEST="$new_app" WEB_DIGEST="$new_web" STUB_SMOKE_FAIL=1; code=$?
+check "a rollback returns to the previous tag and its digests (P4)" rolled_back
 
 echo "$((total - failures))/$total passed"
 [ "$failures" = 0 ]

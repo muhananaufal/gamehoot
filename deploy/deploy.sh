@@ -21,7 +21,21 @@ if [ -f FREEZE ]; then
     exit 1
 fi
 
+# P1, P4: CI passes the registry digests of the images it scanned (APP_DIGEST, WEB_DIGEST);
+# compose then pulls exactly those (repo:tag@digest). A manual deploy of loaded images has no
+# digests and uses the tag.
+for name in APP_DIGEST WEB_DIGEST; do
+    value="${!name:-}"
+    if [ -n "$value" ] && ! [[ "$value" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+        echo "$name is not a sha256 digest." >&2
+        exit 1
+    fi
+done
+export APP_DIGEST="${APP_DIGEST:-}" WEB_DIGEST="${WEB_DIGEST:-}"
+
 previous="$(cat .image-tag 2>/dev/null || true)"
+previous_app="$(sed -n 's/^APP_DIGEST=\(sha256:[0-9a-f]\{64\}\)$/\1/p' .image-digests 2>/dev/null || true)"
+previous_web="$(sed -n 's/^WEB_DIGEST=\(sha256:[0-9a-f]\{64\}\)$/\1/p' .image-digests 2>/dev/null || true)"
 
 run() {
     echo "+ $*"
@@ -52,6 +66,7 @@ run docker compose run --rm --no-deps app php artisan migrate --force
 # Containers that never become healthy count as a failed release too.
 if run docker compose up -d --remove-orphans --wait --wait-timeout 120 && "$here/smoke.sh"; then
     echo "$tag" > .image-tag
+    { echo "APP_DIGEST=$APP_DIGEST"; echo "WEB_DIGEST=$WEB_DIGEST"; } > .image-digests
     echo "Deployed $tag."
     exit 0
 fi
@@ -64,7 +79,7 @@ if [ -z "$previous" ]; then
 fi
 
 echo "Rolling back to $previous." >&2
-export IMAGE_TAG="$previous"
+export IMAGE_TAG="$previous" APP_DIGEST="$previous_app" WEB_DIGEST="$previous_web"
 run docker compose up -d --remove-orphans --wait --wait-timeout 120
 "$here/smoke.sh" && echo "Rolled back to $previous." >&2
 exit 1

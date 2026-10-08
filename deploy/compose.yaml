@@ -13,7 +13,8 @@
 name: pentahoot
 
 x-app: &app
-  image: ${IMAGE_REPO:-ghcr.io/devivace-groups/pentahoot}:${IMAGE_TAG:?set IMAGE_TAG}
+  # P1, P4: deploy.sh passes the digests of the scanned images; the tag stays readable.
+  image: ${IMAGE_REPO:-ghcr.io/devivace-groups/pentahoot}:${IMAGE_TAG:?set IMAGE_TAG}${APP_DIGEST:+@${APP_DIGEST}}
   env_file: .env
   restart: unless-stopped
   extra_hosts:
@@ -28,7 +29,7 @@ services:
     <<: *app
 
   web:
-    image: ${IMAGE_REPO:-ghcr.io/devivace-groups/pentahoot}-web:${IMAGE_TAG:?set IMAGE_TAG}
+    image: ${IMAGE_REPO:-ghcr.io/devivace-groups/pentahoot}-web:${IMAGE_TAG:?set IMAGE_TAG}${WEB_DIGEST:+@${WEB_DIGEST}}
     restart: unless-stopped
     depends_on:
       app:

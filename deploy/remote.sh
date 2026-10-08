@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 # P4: run by the deploy jobs in CI. Copies the deploy files to the VM and runs deploy.sh there
 # over SSH: no git pull and no Composer on the server (A7). Needs SSH_HOST, SSH_USER, SSH_KEY,
-# SSH_KNOWN_HOSTS, DEPLOY_PATH (environment secrets in GitHub) and TAG.
+# SSH_KNOWN_HOSTS, DEPLOY_PATH (environment secrets in GitHub) and TAG; APP_DIGEST and WEB_DIGEST
+# (the registry digests of the scanned images, P1) when CI pushed them.
 set -euo pipefail
 
 : "${SSH_HOST:?}" "${SSH_USER:?}" "${SSH_KEY:?}" "${SSH_KNOWN_HOSTS:?}" "${DEPLOY_PATH:?}" "${TAG:?}"
+
+# The digests end up inside the remote command, so only sha256:<64 hex> passes.
+for name in APP_DIGEST WEB_DIGEST; do
+    value="${!name:-}"
+    if [ -n "$value" ] && ! [[ "$value" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+        echo "$name is not a sha256 digest." >&2
+        exit 1
+    fi
+done
 
 dir="$(mktemp -d)"
 trap 'rm -rf "$dir"' EXIT
@@ -20,4 +30,4 @@ scp "${ssh_opts[@]}" deploy/compose.yaml "$target:$DEPLOY_PATH/compose.yaml"
 scp "${ssh_opts[@]}" deploy/deploy.sh deploy/smoke.sh "$target:$DEPLOY_PATH/"
 # The path and tag come from CI and are meant to expand here, before the command is sent.
 # shellcheck disable=SC2029
-ssh "${ssh_opts[@]}" "$target" "chmod +x '$DEPLOY_PATH/deploy.sh' '$DEPLOY_PATH/smoke.sh' && '$DEPLOY_PATH/deploy.sh' '$TAG'"
+ssh "${ssh_opts[@]}" "$target" "chmod +x '$DEPLOY_PATH/deploy.sh' '$DEPLOY_PATH/smoke.sh' && APP_DIGEST='${APP_DIGEST:-}' WEB_DIGEST='${WEB_DIGEST:-}' '$DEPLOY_PATH/deploy.sh' '$TAG'"
