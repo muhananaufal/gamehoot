@@ -11,9 +11,13 @@
         @else
             <x-logo :size="32" class="text-[22px]" />
         @endif
-        @if ($person)
-            <span class="truncate text-sm text-nav-muted" x-data x-text="$store.realtime.me?.name ?? @js($person->name)">{{ $person->name }}</span>
-        @endif
+        <div class="flex min-w-0 items-center gap-1">
+            @if ($person)
+                <span class="truncate text-sm text-nav-muted" x-data x-text="$store.realtime.me?.name ?? @js($person->name)">{{ $person->name }}</span>
+            @endif
+            {{-- U27: each player can calm the motion on their own phone. --}}
+            <x-motion-toggle class="-mr-2 text-nav-icon hover:bg-nav-active" />
+        </div>
     </header>
     <main class="mx-auto flex w-full max-w-md grow flex-col px-5 py-6">
         {{ $slot }}

@@ -32,6 +32,12 @@ describe('U1 host sidebar', function (): void {
             ->assertDontSee('Someone else party');
     });
 
+    it('keeps the Reduce motion switch beside the theme switch at the foot of the sidebar (U27)', function (): void {
+        actingAs(User::factory()->create())->get('/host/packs')
+            ->assertOk()
+            ->assertSeeInOrder(['aria-label="Switch theme"', '$store.motion.toggle()', 'aria-label="Log out"'], false);
+    });
+
     it('opens the pages of the event being worked on under its name', function (): void {
         $host = User::factory()->create();
         $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);

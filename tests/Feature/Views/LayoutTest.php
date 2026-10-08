@@ -47,6 +47,19 @@ it('lets a page follow the device setting only, never a stored choice (U27, U31)
     expect($html)->not->toContain('pentahoot-motion');
 });
 
+it('puts the Reduce motion switch next to the theme switch on sign in (U27)', function (): void {
+    $html = Blade::render('<x-layouts.auth title="Sign in">Form here</x-layouts.auth>');
+
+    expect($html)->toContain('$store.motion.toggle()')
+        ->and($html)->toContain('aria-label="Switch theme"');
+});
+
+it('gives the phone header the Reduce motion switch (U27)', function (): void {
+    $html = Blade::render('<x-layouts.phone title="Party">Body</x-layouts.phone>');
+
+    expect($html)->toContain('$store.motion.toggle()');
+});
+
 it('grows the logo eyes below 48 px so they stay visible (E19)', function (): void {
     expect(Blade::render('<x-logo :size="32" />'))->toContain('r="23"')
         ->and(Blade::render('<x-logo :size="96" />'))->toContain('r="21"');

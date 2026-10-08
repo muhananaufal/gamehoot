@@ -101,6 +101,7 @@
                     <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
                 </div>
                 <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
+                <x-motion-toggle class="text-nav-icon hover:bg-nav-active" />
                 <form method="POST" action="{{ route('logout') }}" up-submit="false">
                     @csrf
                     <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
