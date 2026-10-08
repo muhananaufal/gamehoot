@@ -36,6 +36,7 @@ import { motionStore } from './motion.js';
 import { mascot } from './mascot.js';
 import { connectionBanner, lobbyPenta, loginPenta, nudgeDirective } from './scene.js';
 import { celebration } from './celebrate.js';
+import { tooltips } from './tooltip.js';
 
 // U8: the first page just opened, so its rows may come in one by one.
 markPageEntered();
@@ -78,6 +79,8 @@ Alpine.data('lobbyPenta', lobbyPenta);
 Alpine.data('loginPenta', loginPenta);
 // U31: confetti and a cheering Penta for the key moments.
 Alpine.data('celebration', celebration);
+// U33: the tooltips of the host panel.
+tooltips();
 // U8: lists drawn by Alpine (rank lists) slide rows to their new place. x-flip.moves leaves the
 // rows that appear to their own CSS enter animation.
 Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {

@@ -104,6 +104,8 @@ describe('U1 host sidebar', function (): void {
 
         actingAs($host)->get('/host')
             ->assertSee('aria-label="Collapse sidebar"', false)
+            // U33: a narrowed sidebar names its links in a Pentahoot tooltip to their right.
+            ->assertSee('data-tip-collapsed data-tip-side="right"', false)
             ->assertSee('aria-controls="host-sidebar"', false);
     });
 });
