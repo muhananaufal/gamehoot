@@ -11,8 +11,7 @@ failures=0
 total=0
 gate_jobs='PHP (Pint, Larastan, audit, Pest, mutation)
 Pest browser (Chrome, Safari)
-Frontend, Gitleaks, workflow lint, repo rules
-Production images (proof)'
+Production image proof, frontend, Gitleaks, workflow lint, repo rules'
 
 setup() {
     root="$(mktemp -d)"

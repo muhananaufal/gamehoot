@@ -17,8 +17,7 @@ set -uo pipefail
 required_jobs=(
     'PHP (Pint, Larastan, audit, Pest, mutation)'
     'Pest browser (Chrome, Safari)'
-    'Frontend, Gitleaks, workflow lint, repo rules'
-    'Production images (proof)'
+    'Production image proof, frontend, Gitleaks, workflow lint, repo rules'
 )
 origin="${GATE_ORIGIN_REMOTE:-origin}"
 local_cmd="${GATE_LOCAL_CMD:-scripts/ci-local.sh}"
