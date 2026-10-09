@@ -23,7 +23,7 @@ Aturan:
 ## 2. Keputusan yang dikunci — jangan diusulkan ulang
 
 - **Laravel 13 + PHP 8.4, dijalankan di Docker** di lokal, CI, staging, dan production: container `app` (php-fpm), `web` (nginx), `reverb` (A8). Pola compose mengikuti staging `vivace-board`. Base image **Debian bookworm**, bukan Alpine: Playwright (W11) hanya mendukung Debian/Ubuntu (P2).
-- **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). Sampai versi server diketahui (O-B), hanya pakai fitur MySQL 8.0 ke atas; CI menguji MySQL 8.0 dan 8.4.
+- **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). CI menguji MySQL 8.4 saja (keputusan pemilik, 9 Oktober 2026); versi server production tetap dicek saat database dibuat (O-B).
 - **Laravel Reverb** satu server, **tanpa Redis**, **tanpa queue worker** (F5, F7).
 - **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**. Panel host memakai **Unpoly** untuk navigasi tanpa reload dan modal dari halaman server (U18); halaman peserta dan Public View tidak.
 - **Pest v5** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
@@ -82,16 +82,18 @@ Siklus satu tugas:
    ```
 
    Trailer `aetheris` **wajib**. Trailer AI lain boleh ditambahkan di bawahnya, tidak menggantikan.
-5. Isi `CHANGELOG.md` dan penuhi Definition of Done (bagian 6).
-6. `git fetch origin && git rebase origin/develop` → `git push --force-with-lease origin feature/<nama>` (force hanya di branch fitur sendiri, setelah rebase).
-7. **Picu CI penuh untuk commit terakhir branch itu dan tunggu hijau (W18, P6):** `gh workflow run ci.yml --ref feature/<nama>` → `gh run watch`. Push biasa hanya menjalankan CI ringan. Merah → perbaiki di branch yang sama → push → tunggu hijau lagi. **Dilarang merge selama CI belum hijau.**
-8. `git checkout develop && git merge --no-ff feature/<nama>` → `git push origin develop` → `git branch -d feature/<nama>` → `git push origin --delete feature/<nama>`.
+5. Isi `CHANGELOG.md` dan penuhi Definition of Done (bagian 6). Commit changelog tetap yang terakhir (W10); perubahan yang hanya menyentuh `CHANGELOG.md`, `docs/`, atau `*.md` tidak membutuhkan gerbang ulang (W18).
+6. `git fetch origin && git rebase origin/develop` → `git push --force-with-lease origin feature/<nama>` (force hanya di branch fitur sendiri, setelah rebase). **Push ke origin tidak menjalankan CI** (P6).
+7. **Gerbang dan merge lewat satu perintah (W18):** `scripts/gate-and-merge.sh feature/<nama>`. Script menjalankan `scripts/ci-local.sh`, menjalankan gerbang penuh di repo gerbang untuk hasil merge, menunggu hijau, mengecek `develop` belum bergerak, lalu membuat merge commit `--no-ff` dengan trailer `Gate-Run` dan `Gate-Tree` dan mendorongnya ke `origin`. Merah → perbaiki di branch yang sama → jalankan lagi. **Dilarang merge tanpa script ini**, dan dilarang menulis trailer `Gate-*` dengan tangan.
+8. `git branch -d feature/<nama>` → `git push origin --delete feature/<nama>`.
 
 Aturan tetap:
 
-- **Tanpa pull request** untuk merge ke `develop` (W2), **tapi CI wajib hijau sebelum merge** (W18). Pengganti review: berhenti untuk review pemilik proyek setelah batch fondasi dan setelah setiap game selesai.
-- `release/*` dan `hotfix/*` juga wajib CI hijau sebelum merge ke `main`. Job deploy hanya jalan kalau job CI di push yang sama hijau.
-- Sebelum remote GitHub ada, atau selama GitHub Actions tidak bisa jalan (W18): jalankan `scripts/ci-local.sh` (job dan image yang sama dengan workflow), dan laporkan hasilnya sebagai pengganti sementara. `scripts/ci-report.sh` membaca pemakaian menit CI dan metrik DORA.
+- **Tanpa pull request** untuk merge ke `develop` (W2), **tapi gerbang wajib hijau sebelum merge** (W18). Pengganti review: berhenti untuk review pemilik proyek setelah batch fondasi dan setelah setiap game selesai. Kalau suatu saat PR dipakai, ikuti jalur PR di W2.
+- **Merge satu per satu, segera setelah gerbangnya hijau.** Kalau `develop` bergerak sebelum merge, script berhenti: rebase, lalu jalankan lagi.
+- `release/*` dan `hotfix/*` juga lewat `scripts/gate-and-merge.sh <branch> main`. Tag versi dibuat di merge commit hasil script. Tag rc: `scripts/gate-and-merge.sh --tag v<x.y.z>-rc.<n> release/<x.y.z>`.
+- **Gerbang penuh berjalan di repo gerbang** (repo GitHub terpisah yang ditunjuk pemilik proyek, variabel `GATE_ROLE=gate`, remote lokalnya di `git config pentahoot.gateRemote`). Origin hanya membangun image, memindai, dan men-deploy, setelah mengecek trailer. Trailer hilang atau tree tidak cocok → job image berhenti; gerbang penuh lalu dijalankan di origin: `gh workflow run ci.yml --ref <tag atau develop> -f gate=true [-f deploy=staging]`.
+- Kalau repo gerbang tidak bisa dipakai: `scripts/ci-local.sh` (job dan image yang sama dengan workflow), hasilnya dilaporkan, dan merge tanpa trailer berarti deploy berikutnya butuh gerbang penuh di origin (`-f gate=true`). `scripts/ci-report.sh` membaca pemakaian menit CI dan metrik DORA.
 - **Merge ke `main` selalu ditanyakan dulu** ke pemilik proyek, setiap rilis.
 - Dilarang commit langsung di `main`/`develop`, dilarang commit `wip`/`temp`, dilarang `git push --force` di `main`, `develop`, `release/*`.
 - Remote GitHub (`devivace-groups`) menyusul. Saat dibuat, cek branch protection (W7).
@@ -141,7 +143,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 ## 6a. Aturan repo dan tooling (W12–W17)
 
 - **`.gitattributes`** memaksa akhir baris LF untuk semua berkas teks (pengembangan di Windows, container di Linux).
-- **Test memakai MySQL**, bukan SQLite. CI menguji MySQL 8.0 dan 8.4 sampai versi server diketahui.
+- **Test memakai MySQL**, bukan SQLite. CI menguji MySQL 8.4 (W13).
 - **Migration yang sudah masuk `develop` tidak boleh diedit**; perubahan lewat migration baru. Migration harus aman saat container lama masih jalan sebentar selama deploy (tambah kolom dulu, hapus kolom lama di rilis berikutnya).
 - **Hook lokal sebelum commit:** Pint pada berkas yang diubah, ESLint/Prettier untuk JS, dan pengecekan format pesan commit.
 - **ESLint + Prettier** untuk kode Alpine dan JS, di hook lokal dan di CI.
@@ -149,8 +151,8 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6b. Operasional (O1–O10)
 
-- **CI (O1):** GitHub Actions menjalankan gerbang kualitas + `composer audit` di setiap push, kecuali push yang hanya mengubah `docs/` atau `*.md` dan push ke `main` (deploy berjalan dari tag).
-- **Deploy (O2):** `develop` → staging, tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
+- **CI (O1):** gerbang kualitas + `composer audit` berjalan di repo gerbang lewat `scripts/gate-and-merge.sh`, bukan di setiap push. Origin tidak menjalankan CI saat push; hanya tag versi, deploy staging yang diminta, dan PR yang siap.
+- **Deploy (O2):** staging di-deploy **saat diminta** dari `develop` (`gh workflow run ci.yml --ref develop -f deploy=staging`), atau otomatis di setiap push ke `develop` kalau variabel `STAGING_AUTO=on`; tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
 - **Rahasia (O3):** hanya di `.env` tiap lingkungan dan GitHub Secrets. `.env.example` selalu lengkap.
 - **Seeder (O10):**
   - Super-admin dibuat dengan `php artisan pentahoot:create-super-admin`; email dan password ditanyakan saat perintah dijalankan, **tidak pernah** di seeder atau di kode.
@@ -172,11 +174,11 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6d. Pipeline (P1–P7)
 
-- **Image (P1, P2):** dibangun sekali di CI, disimpan di GitHub Container Registry dengan tag commit SHA dan versi. Build bertahap, base image Debian bookworm, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
-- **Scan (P3):** gitleaks + Trivy + `composer audit`, ditambah `actionlint` dan `zizmor` untuk workflow. Action GitHub dipin ke SHA commit (tanpa Dependabot); pin diperbarui manual saat menyiapkan `release/x.y.z`. Temuan zizmor yang diterima dicatat beserta alasannya di `.github/zizmor.yml`. `security-scan.yml` memeriksa ulang dependency dan image yang terpasang tiap Senin.
+- **Image (P1, P2):** dibangun di origin hanya saat akan di-deploy (tag versi atau deploy staging), dipindai Trivy, disimpan di GitHub Container Registry org dengan tag commit SHA dan versi. Build bertahap, base image Debian bookworm, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
+- **Scan (P3):** gitleaks + Trivy + `composer audit`, ditambah `actionlint` dan `zizmor` untuk workflow. Action GitHub dipin ke SHA commit (tanpa Dependabot); pin diperbarui manual saat menyiapkan `release/x.y.z`. Temuan zizmor yang diterima dicatat beserta alasannya di `.github/zizmor.yml`. `security-scan.yml` memeriksa ulang dependency tiap Senin di repo gerbang; image dipindai saat dibangun.
 - **Deploy (P4):** lewat SSH, **tanpa `git pull` dan tanpa `composer install` di server**: salin `compose.yaml` → `IMAGE_TAG=<sha> docker compose pull` → `docker compose run --rm app php artisan migrate --force` → `docker compose up -d` → smoke test `/up` + satu koneksi WebSocket → kalau gagal, kembali ke tag image sebelumnya.
 - **Production (P5):** deploy menunggu persetujuan manual di environment GitHub.
-- **Job CI (P6), berlapis:** *ringan* di setiap push branch fitur (PHP: Pint + Larastan + audit + Pest MySQL 8.4; frontend; Gitleaks). *Penuh* (+ Pest MySQL 8.0, browser Chrome dan Safari, image + Trivy) otomatis di `develop`, `release/*`, `hotfix/*`, tag, dan manual di branch fitur sebelum merge. Tag versi memakai ulang CI penuh branch rilis kalau isi kodenya sama. Cache dipakai; run lama dibatalkan kecuali di `develop` dan tag.
+- **Job CI (P6), dibagi dua repo:** *repo gerbang* menjalankan gerbang penuh (PHP: Pint + Larastan + audit + Pest MySQL 8.4 + mutation K2; browser Chrome lalu Safari dalam satu job; frontend + Gitleaks + lint workflow + aturan repo; build image + Trivy sebagai bukti) dengan image CI siap pakai. *Origin* hanya menjalankan job image (cek trailer `Gate-Tree` → build → push → Trivy) lalu deploy, di tag versi dan deploy staging yang diminta. Trailer hilang atau tree tidak cocok → job image berhenti dan menyebut perintah gerbang penuh di origin (`-f gate=true`). PR yang siap atau berlabel `gate` menjalankan gerbang penuh di origin (W2). Browser test tidak dijalankan paralel (flaky di runner 2 core).
 - **Data (P7):** staging hanya data demo; data production tidak pernah disalin ke staging.
 - **Langkah rilis lengkap** (persiapan pertama dan langkah berulang untuk staging, production, hotfix, dan hari event) ada di bagian 15 spesifikasi. Ikuti urutannya, jangan dihafal.
 

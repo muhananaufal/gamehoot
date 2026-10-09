@@ -5,9 +5,3 @@ rules:
       # zizmor suggests the "$/" form for actions in this repository. The form documented by
       # GitHub is "./"; keep it until "$/" appears in the GitHub documentation.
       - ci.yml
-  cache-poisoning:
-    ignore:
-      # The npm caches serve only the frontend and browser test jobs. The published images
-      # build their assets with their own npm ci inside the Dockerfile and never read these
-      # caches, and tag pushes skip restoring them (the "if" on each Cache npm step).
-      - ci.yml
