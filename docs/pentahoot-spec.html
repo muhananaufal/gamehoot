@@ -1318,7 +1318,7 @@ erDiagram
                 <li><i>Diubah 9 Oktober 2026 (keputusan pemilik, untuk menghemat jatah menit Actions org yang dipakai bersama banyak repo):</i> <b>gerbang penuh berjalan di repo gerbang</b>, repo GitHub terpisah yang ditunjuk pemilik proyek (variabel repo <code>GATE_ROLE=gate</code>). Nama repo itu tidak ditulis di berkas mana pun di repo ini. Isi kodenya sama dengan origin; repo gerbang tidak menyimpan rahasia dan tidak bisa men-deploy.</li>
                 <li><b>Satu perintah untuk gerbang dan merge:</b> <code>scripts/gate-and-merge.sh &lt;branch&gt; [develop|main]</code>. Script membuat merge <code>--no-ff</code> ke target terbaru, menjalankan <code>scripts/ci-local.sh</code>, menjalankan gerbang penuh di repo gerbang untuk <b>tree hasil merge</b> itu (atau memakai run hijau yang sudah ada untuk tree yang sama), mengecek target belum bergerak, lalu mendorong merge commit dengan trailer <code>Gate-Run: &lt;id run&gt;</code> dan <code>Gate-Tree: &lt;tree&gt;</code> ke <code>origin</code>. Gerbang dikunci pada tree, bukan SHA, karena menulis trailer mengubah SHA tetapi tidak mengubah tree. Kalau target bergerak, script berhenti: rebase, lalu jalankan lagi. Tag rc (bukan merge) memakai <code>--tag</code>; trailernya ada di pesan tag beranotasi.</li>
                 <li>Perubahan yang hanya menyentuh <code>CHANGELOG.md</code>, <code>docs/</code>, atau berkas <code>.md</code> lain dari tree yang sudah lulus tidak membutuhkan gerbang ulang. Ini menutup juga celah lama: branch rilis yang hanya mengubah changelog dilewati <code>paths-ignore</code>, sehingga tag tidak menemukan gerbang di commit rilis dan menjalankan CI penuh.</li>
-                <li><b>Origin memercayai trailer</b> (opsi yang dipilih pemilik karena ia bukan admin org, sehingga token baca lintas repo belum bisa dipasang): job image di tag versi dan deploy staging mengecek bahwa <code>Gate-Tree</code> sama dengan tree yang akan dibangun, atau hanya berbeda di berkas yang diizinkan di atas. Trailer hilang atau tree tidak cocok berarti job image berhenti dan menyebut perintah gerbang penuh di origin (<code>gh workflow run ci.yml --ref &lt;tag atau develop&gt; -f gate=true</code>), yang menjalankan gerbang lalu membangun image dalam run yang sama. Cadangan ini sengaja dipicu dengan tangan: pengecekan otomatis di job terpisah akan dibayar satu menit di setiap deploy. <b>Batasannya:</b> trailer menjaga dari kesalahan (lupa menggerbang, commit tambahan setelah gerbang, merge tanpa rebase), bukan dari kesengajaan; trailer yang ditulis tangan tidak bisa dibedakan dari yang asli. Karena itu trailer <code>Gate-*</code> hanya boleh ditulis oleh script. Kalau nanti admin memasang variabel <code>GATE_REPO</code> dan secret <code>GATE_TOKEN</code> (token baca Actions dan isi repo gerbang), origin juga memeriksa lewat API bahwa run itu hijau dan tree-nya sama.</li>
+                <li><b>Origin memercayai trailer</b> (opsi yang dipilih pemilik karena ia bukan admin org, sehingga token baca lintas repo belum bisa dipasang): job image di tag versi dan deploy staging mengecek bahwa <code>Gate-Tree</code> sama dengan tree yang akan dibangun, atau hanya berbeda di berkas yang diizinkan di atas. Trailer hilang atau tree tidak cocok berarti job image berhenti dan menyebut perintah gerbang penuh di origin (<code>gh workflow run ci.yml --ref &lt;tag atau develop&gt; -f gate=true</code>), yang menjalankan gerbang lalu membangun image dalam run yang sama. Cadangan ini sengaja dipicu dengan tangan: pengecekan otomatis di job terpisah akan dibayar satu menit di setiap deploy. <b>Batasannya:</b> trailer menjaga dari kesalahan (lupa menggerbang, commit tambahan setelah gerbang, merge tanpa rebase), bukan dari kesengajaan; trailer yang ditulis tangan tidak bisa dibedakan dari yang asli. Karena itu trailer <code>Gate-*</code> hanya boleh ditulis oleh script. Kalau nanti admin bisa memasang variabel <code>GATE_REPO</code> dan secret <code>GATE_TOKEN</code> (token baca Actions dan isi repo gerbang), origin bisa ditambah pengecekan lewat API bahwa run itu hijau dan tree-nya sama; langkah itu <b>belum diimplementasi</b> di <code>ci.yml</code>.</li>
                 <li>Push ke branch apa pun di origin tidak menjalankan CI. Branch <code>release/*</code> dan <code>hotfix/*</code> digerbang dengan script yang sama sebelum merge ke <code>main</code> (<code>scripts/gate-and-merge.sh &lt;branch&gt; main</code>). Tag versi dibuat di merge commit hasil script.</li>
                 <li>Sebelum remote GitHub ada (W7), langkah CI yang sama dijalankan lokal di container yang sama, dan hasilnya dilaporkan sebagai pengganti sementara.</li>
                 <li><i>Ditambah 8 Oktober 2026 (break-glass, dipilih pemilik):</i> GitHub Actions berhenti karena jatah menit organisasi habis dan billing tidak bisa dinaikkan. <b>Sampai Actions berjalan lagi</b>, merge ke develop memakai bukti CI lokal: setiap job CI dijalankan di container lokal dengan image dan versi yang sama (Pint, Larastan, Pest di MySQL 8.0 dan 8.4, Composer audit, ESLint, Prettier, Vitest dan build, Pest browser Chrome dan Safari, Gitleaks, build image produksi dan Trivy), dan hasilnya ditulis di pesan merge. Begitu Actions kembali, CI dijalankan ulang di develop. Sejak 8 Oktober 2026 job-job itu dijalankan dengan <code>scripts/ci-local.sh</code>, yang mengikuti image dan versi di workflow. Deploy staging dan production selama masa ini manual lewat SSH mengikuti langkah P4. Rilis ke main (staging dan production) tetap boleh selama masa ini, dengan syarat: CI lokal hijau untuk commit branch rilis, CI di repo pribadi pemilik hijau bila tersedia, staging sudah dicek manual, dan pemilik proyek menyetujui rilis itu secara eksplisit. Deploy production juga manual lewat SSH (bab 15). <i>Sejak 9 Oktober 2026</i> masa ini digantikan oleh repo gerbang di atas; <code>scripts/ci-local.sh</code> tetap menjadi cadangan kalau repo gerbang tidak bisa dipakai, dan merge tanpa trailer berarti deploy-nya butuh gerbang penuh di origin (<code>-f gate=true</code>).</li>
@@ -1449,6 +1449,160 @@ erDiagram
     <section id="rilis">
       <h2><span class="num">15</span>Rilis staging dan production</h2>
       <p class="sub">Langkah sekali jalan untuk menyiapkan tiap lingkungan, lalu langkah yang diulang di setiap rilis. Bagian dalam kurung siku, seperti [DOMAIN STAGING], diisi saat server disiapkan. Perintah di bab ini ditulis sebagai acuan urutan; nama service, path, dan flag persisnya dipastikan saat <code>compose.yaml</code> dan workflow CI ditulis di tahap 1, lalu bab ini diperbarui kalau ada yang berbeda.</p>
+
+      <h3>Mulai dari nol: CI/CD untuk pemula</h3>
+      <p><i>Ditambah 9 Oktober 2026.</i> Bagian ini untuk orang yang belum pernah memegang CI/CD atau Docker. Isinya urutan lengkap: setup sekali, kerja harian, deploy staging, rilis production, dan yang dilakukan kalau ada yang gagal. Setiap langkah menyebut gunanya, perintahnya, tempat menjalankannya, dan tanda berhasilnya. Langkah yang sudah ditulis di subbab lain bab ini ditautkan, tidak diulang. Aturannya sendiri ada di W2, W18, O2, dan P1–P6.</p>
+
+      <p><b>Peta besar.</b> Kode diuji di <b>repo gerbang</b> (repo GitHub terpisah yang ditunjuk pemilik proyek, supaya jatah menit Actions organisasi tidak habis). Origin (<code>devivace-groups/pentahoot</code>) hanya membangun image dan men-deploy.</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">Laptop                          Repo gerbang (GitHub)
+------                          ---------------------
+kode + test lokal
+scripts/gate-and-merge.sh --push gate/&lt;branch&gt;--&gt;  gerbang penuh: PHP, browser,
+        ^                                          cek repo, image + Trivy
+        +------------------- hijau ----------------+
+        |
+        | merge commit dengan trailer Gate-Run / Gate-Tree
+        v
+Origin: devivace-groups/pentahoot
+---------------------------------
+develop  (merge saja; staging tidak berubah kecuali diminta atau STAGING_AUTO=on)
+tag v*   --&gt; cek trailer --&gt; build image --&gt; GHCR org --&gt; Trivy --&gt; deploy lewat SSH
+deploy=staging (diminta) --&gt; sama, ke VM staging                     |
+                                                                        v
+                                               VM staging / VM production (Docker + .env)</pre>
+
+      <p><b>Kamus singkat.</b></p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Istilah</th><th>Artinya di proyek ini</th></tr></thead>
+          <tbody>
+            <tr><td>CI / workflow</td><td>Pekerjaan otomatis di server GitHub (runner) yang dijalankan oleh berkas <code>.github/workflows/ci.yml</code>. Setiap run terdiri dari beberapa job; jatah menit dihitung per job, dibulatkan ke atas.</td></tr>
+            <tr><td>Gerbang</td><td>Semua pemeriksaan yang wajib hijau sebelum kode masuk <code>develop</code> atau <code>main</code>: format, analisis statis, semua test, test browser, aturan repo, dan build image.</td></tr>
+            <tr><td>Repo gerbang</td><td>Salinan repo di GitHub tempat gerbang dijalankan. Tidak menyimpan rahasia dan tidak bisa men-deploy. Ditandai variabel <code>GATE_ROLE=gate</code>.</td></tr>
+            <tr><td>Trailer <code>Gate-Run</code>, <code>Gate-Tree</code></td><td>Dua baris di akhir pesan merge commit yang ditulis <code>scripts/gate-and-merge.sh</code>: nomor run gerbang dan "sidik jari" isi kode (tree) yang lulus. Origin hanya mau membangun image untuk isi kode yang cocok dengan trailer ini. Jangan pernah ditulis dengan tangan.</td></tr>
+            <tr><td>Image</td><td>Paket aplikasi siap jalan (PHP, kode, dan aset sudah di dalamnya). Ada dua: <code>pentahoot</code> (app dan Reverb) dan <code>pentahoot-web</code> (nginx).</td></tr>
+            <tr><td>Container</td><td>Image yang sedang berjalan. Di server ada tiga: <code>app</code>, <code>web</code>, <code>reverb</code>.</td></tr>
+            <tr><td>Registry (GHCR)</td><td>Gudang image di GitHub: <code>ghcr.io/devivace-groups/pentahoot</code>. CI menaruh image di sana, server mengambilnya.</td></tr>
+            <tr><td>Trivy</td><td>Pemindai celah keamanan pada image. Celah CRITICAL yang sudah ada perbaikannya menggagalkan job.</td></tr>
+            <tr><td>Variable</td><td>Setelan yang tidak rahasia, terlihat oleh siapa pun yang punya akses repo (misalnya <code>STAGING_DEPLOY=on</code>).</td></tr>
+            <tr><td>Secret</td><td>Setelan rahasia (kunci SSH, alamat server). Setelah disimpan, isinya tidak bisa dilihat lagi, hanya diganti.</td></tr>
+            <tr><td>Environment</td><td>Kelompok secret per lingkungan di GitHub (<code>staging</code>, <code>production</code>). Environment <code>production</code> meminta persetujuan manusia sebelum deploy jalan (P5).</td></tr>
+            <tr><td>Tag versi, rc</td><td>Nama permanen untuk satu commit, misalnya <code>v1.1.0</code>. Tag yang di-push memicu deploy production. <code>v1.1.0-rc.1</code> adalah calon rilis untuk uji beban dan gladi.</td></tr>
+            <tr><td><code>gh</code></td><td>Alat baris perintah GitHub. Semua langkah GitHub di bawah bisa dijalankan dengan <code>gh</code> atau lewat halaman Settings di web.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Mulai dari nol: setup sekali</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Laptop</b><p>Pasang git, Docker Desktop (di Windows dengan backend WSL), dan <code>gh</code>, lalu ikuti "Local setup" di <code>README.md</code>. Masuk ke GitHub dari terminal. Berhasil kalau <code>docker version</code> menjawab bagian Client dan Server, dan <code>gh auth status</code> menyebut akunmu.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">docker version
+gh auth login        # pilih GitHub.com, HTTPS, login lewat browser
+gh auth status</pre></div></li>
+        <li><span class="n">2</span><div><b>Repo gerbang (sekali per proyek, oleh pemilik proyek)</b><p>Buat repo private, isi dengan <code>develop</code>, jadikan <code>develop</code> default branch (supaya cache dan jadwal mingguan jalan dari sana), lalu tandai perannya. Pemilik repo itu yang memutuskan; nama repo tidak ditulis di repo ini. Berhasil kalau <code>gh variable list</code> menampilkan <code>GATE_ROLE gate</code>.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gh repo create [AKUN]/[NAMA REPO GERBANG] --private
+git remote add gate https://github.com/[AKUN]/[NAMA REPO GERBANG].git
+git push gate develop
+gh api -X PATCH repos/[AKUN]/[NAMA REPO GERBANG] -f default_branch=develop
+gh variable set GATE_ROLE --body gate --repo [AKUN]/[NAMA REPO GERBANG]
+gh variable list --repo [AKUN]/[NAMA REPO GERBANG]</pre></div></li>
+        <li><span class="n">3</span><div><b>Setiap laptop yang akan merge</b><p>Catat nama remote repo gerbang untuk <code>scripts/gate-and-merge.sh</code>, dan pastikan akun <code>gh</code> di laptop itu bisa membaca repo gerbang. Kalau remote-nya belum ada di laptop itu, tambahkan dulu seperti langkah 2.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">git remote -v                              # lihat nama remote repo gerbang
+git config pentahoot.gateRemote gate       # nama remote dari baris di atas
+gh repo view [AKUN]/[NAMA REPO GERBANG]    # harus berhasil, bukan "Could not resolve"</pre></div></li>
+        <li><span class="n">4</span><div><b>Server</b><p>Siapkan VM, domain, database, login registry, dan berkas <code>.env</code> mengikuti "Server di Google Cloud" dan "Staging: disiapkan sekali" langkah 1–6 di bawah (production: "Production: disiapkan sekali"). Isi <code>.env</code> dan cara mendapatkannya ada di tabel "<code>.env</code> di server" di bawah.</p></div></li>
+        <li><span class="n">5</span><div><b>Environment di origin (butuh admin repo origin)</b><p>Settings → Environments → New environment, buat <code>staging</code> dan <code>production</code>. Di <code>production</code>, centang <i>Required reviewers</i> dan isi pemilik proyek (P5), lalu batasi <i>Deployment branches and tags</i> ke tag <code>v*</code>. Di <code>staging</code>, batasi ke branch <code>develop</code>. Nama menu di halaman GitHub bisa sedikit berbeda; yang penting dua environment itu ada dan production meminta persetujuan.</p></div></li>
+        <li><span class="n">6</span><div><b>Secret dan variable di origin</b><p>Isi semua baris tabel di bawah. Secret SSH disimpan <b>per environment</b> (staging dan production punya server dan kunci sendiri, namanya sama). Variabel disimpan di tingkat repo. Berhasil kalau daftar di bawah ini menampilkan semua nama (isinya secret tidak pernah ditampilkan).</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gh secret set SSH_HOST --env staging --repo devivace-groups/pentahoot   # ditanya isinya; ketik sendiri
+gh secret set SSH_KEY  --env staging --repo devivace-groups/pentahoot &lt; pentahoot-deploy-staging
+gh secret list   --env staging    --repo devivace-groups/pentahoot
+gh secret list   --env production --repo devivace-groups/pentahoot
+gh variable list --repo devivace-groups/pentahoot</pre></div></li>
+        <li><span class="n">7</span><div><b>Deploy pertama, lalu nyalakan saklarnya</b><p>Deploy pertama tiap lingkungan dilakukan dengan tangan sesuai "Staging/Production: disiapkan sekali" langkah deploy pertama (migration, super-admin). Setelah <code>/up</code> menjawab, nyalakan deploy dari CI. Selama saklar mati, origin tidak membangun image apa pun.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gh variable set STAGING_DEPLOY    --body on --repo devivace-groups/pentahoot
+gh variable set PRODUCTION_DEPLOY --body on --repo devivace-groups/pentahoot</pre></div></li>
+      </ol>
+
+      <p><b>Secret dan variable di GitHub, dan cara mendapatkan isinya.</b></p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Nama</th><th>Di mana</th><th>Jenis</th><th>Isi</th><th>Cara mendapatkan</th></tr></thead>
+          <tbody>
+            <tr><td><code>GATE_ROLE</code></td><td>Repo gerbang</td><td>Variable</td><td><code>gate</code></td><td>Ditulis apa adanya (setup langkah 2). Jangan pernah dipasang di origin.</td></tr>
+            <tr><td><code>pentahoot.gateRemote</code></td><td>Git config di laptop</td><td>Setelan git</td><td>Nama remote repo gerbang, misalnya <code>gate</code></td><td><code>git remote -v</code> (setup langkah 3).</td></tr>
+            <tr><td><code>STAGING_DEPLOY</code></td><td>Origin, repo</td><td>Variable</td><td><code>on</code>, atau tidak ada</td><td>Ditulis apa adanya setelah server staging siap. Tanpa ini, deploy staging tidak pernah jalan.</td></tr>
+            <tr><td><code>PRODUCTION_DEPLOY</code></td><td>Origin, repo</td><td>Variable</td><td><code>on</code>, atau tidak ada</td><td>Sama, untuk production. Tanpa ini, tag versi tidak membangun dan tidak men-deploy apa pun.</td></tr>
+            <tr><td><code>STAGING_AUTO</code></td><td>Origin, repo</td><td>Variable</td><td><code>on</code>, atau tidak ada</td><td>Pilihan jalur staging (O2): tidak ada = sesuai permintaan, <code>on</code> = otomatis di setiap merge ke <code>develop</code>.</td></tr>
+            <tr><td><code>SSH_HOST</code></td><td>Origin, environment staging dan production</td><td>Secret</td><td>IP atau nama host VM</td><td>Google Cloud Console → Compute Engine → VM instances → kolom <i>External IP</i>, atau tanyakan ke yang menyiapkan VM.</td></tr>
+            <tr><td><code>SSH_USER</code></td><td>Sama</td><td>Secret</td><td>User deploy di VM, misalnya <code>deploy</code></td><td>User yang dibuat saat VM disiapkan (Staging langkah 1). Bukan root.</td></tr>
+            <tr><td><code>SSH_KEY</code></td><td>Sama</td><td>Secret</td><td>Isi lengkap kunci privat SSH, termasuk baris BEGIN dan END</td><td>Buat pasangan kunci khusus deploy per lingkungan, di laptop: <code>ssh-keygen -t ed25519 -N "" -C pentahoot-deploy-staging -f pentahoot-deploy-staging</code>. Berkas tanpa <code>.pub</code> masuk ke secret ini; isi berkas <code>.pub</code> ditambahkan ke <code>~/.ssh/authorized_keys</code> user deploy di VM. Hapus berkas kunci dari laptop setelah tersimpan.</td></tr>
+            <tr><td><code>SSH_KNOWN_HOSTS</code></td><td>Sama</td><td>Secret</td><td>Baris sidik jari host VM</td><td><code>ssh-keyscan -t ed25519 [IP VM]</code>. Cocokkan dengan sidik jari yang dibaca di VM sendiri (<code>ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub</code>) supaya bukan server palsu.</td></tr>
+            <tr><td><code>DEPLOY_PATH</code></td><td>Sama</td><td>Secret</td><td>Folder deploy di VM, misalnya <code>/srv/pentahoot-staging</code></td><td>Folder berisi <code>.env</code> yang dibuat user deploy (Staging langkah 6). Perintah deploy menyalin <code>compose.yaml</code> dan script ke sini.</td></tr>
+            <tr><td><code>GITHUB_TOKEN</code></td><td>Otomatis</td><td>Secret bawaan</td><td>—</td><td>Dibuat GitHub di setiap run untuk push image ke GHCR. Tidak perlu diisi.</td></tr>
+            <tr><td>Token registry di VM</td><td>VM, lewat <code>docker login</code></td><td>Token classic</td><td>Personal access token (classic) dengan scope <code>read:packages</code> saja</td><td>github.com → foto profil → Settings → Developer settings → Personal access tokens → <b>Tokens (classic)</b> → Generate new token, centang hanya <code>read:packages</code>, beri masa berlaku. GHCR belum menerima token fine-grained. Dipakai sekali di VM: Staging langkah 5. Pemilik token harus bisa membaca package <code>devivace-groups/pentahoot</code>.</td></tr>
+            <tr><td><code>GATE_REPO</code>, <code>GATE_TOKEN</code></td><td>Origin</td><td>Variable, secret</td><td>—</td><td><b>Belum dipakai.</b> Disediakan untuk pengecekan run gerbang lewat API kalau suatu saat admin org bisa memasang token baca lintas repo (W18); <code>ci.yml</code> belum membacanya.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><b><code>.env</code> di server, dan cara mendapatkan isinya.</b> Dibuat langsung di folder deploy VM, satu per lingkungan, tidak pernah masuk repo (O3). Mulai dari salinan <code>.env.example</code>, lalu ubah baris berikut. Nilai lain biarkan seperti contoh.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Baris</th><th>Staging</th><th>Production</th><th>Cara mendapatkan</th></tr></thead>
+          <tbody>
+            <tr><td><code>APP_ENV</code></td><td><code>staging</code></td><td><code>production</code></td><td>Ditulis apa adanya. Seeder demo menolak jalan di <code>production</code> (O10).</td></tr>
+            <tr><td><code>APP_KEY</code></td><td colspan="2">Berbeda per lingkungan</td><td><code>echo "base64:$(openssl rand -base64 32)"</code>. Jangan diganti setelah ada data: sesi dan data terenkripsi bergantung padanya.</td></tr>
+            <tr><td><code>APP_DEBUG</code></td><td colspan="2"><code>false</code></td><td>Wajib; aplikasi menolak start di production kalau <code>true</code> (K6).</td></tr>
+            <tr><td><code>APP_URL</code></td><td><code>https://[DOMAIN STAGING]</code></td><td><code>https://[DOMAIN PRODUCTION]</code></td><td>Domain yang diarahkan ke VM (Staging langkah 2).</td></tr>
+            <tr><td><code>TRUSTED_PROXIES</code></td><td colspan="2">Jaringan Docker reverse proxy, misalnya <code>172.16.0.0/12</code></td><td><code>docker network inspect [JARINGAN PROXY]</code> di VM, bagian <i>Subnet</i>. Salah isi berarti semua HP berbagi satu rate limit.</td></tr>
+            <tr><td><code>LOG_LEVEL</code></td><td colspan="2"><code>warning</code></td><td>K5.</td></tr>
+            <tr><td><code>DB_HOST</code>, <code>DB_PORT</code></td><td colspan="2">Alamat server MySQL dari dalam container, biasanya <code>host.docker.internal</code> dan <code>3306</code></td><td>Dari yang mengelola server MySQL (A9).</td></tr>
+            <tr><td><code>DB_DATABASE</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code></td><td><code>pentahoot_staging</code></td><td><code>pentahoot</code></td><td>Dibuat di Staging langkah 3. Password: <code>openssl rand -base64 24</code>.</td></tr>
+            <tr><td><code>SESSION_SECURE_COOKIE</code></td><td colspan="2"><code>true</code></td><td>Wajib di production (K6), juga di staging karena lewat https.</td></tr>
+            <tr><td><code>REVERB_APP_ID</code>, <code>REVERB_APP_KEY</code>, <code>REVERB_APP_SECRET</code></td><td colspan="2">Berbeda per lingkungan</td><td>Masing-masing <code>openssl rand -hex 16</code>. Aplikasi menolak request web selama salah satunya kosong (K6).</td></tr>
+            <tr><td><code>REVERB_CLIENT_HOST</code>, <code>REVERB_CLIENT_PORT</code>, <code>REVERB_CLIENT_SCHEME</code></td><td><code>[DOMAIN STAGING]</code>, <code>443</code>, <code>https</code></td><td><code>[DOMAIN PRODUCTION]</code>, <code>443</code>, <code>https</code></td><td>Alamat yang dipakai browser untuk WebSocket, lewat reverse proxy (Staging langkah 2).</td></tr>
+            <tr><td><code>MEDIA_ACCEL</code></td><td colspan="2"><code>true</code></td><td>Container <code>web</code> (nginx) punya lokasi internal <code>/_media/</code> untuk gambar privat (F16).</td></tr>
+            <tr><td><code>WEB_PORT</code>, <code>REVERB_HOST_PORT</code></td><td colspan="2">Port di VM yang dituju reverse proxy, bawaan <code>8000</code> dan <code>8080</code></td><td>Diubah hanya kalau port itu sudah dipakai aplikasi lain di VM yang sama.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Mulai dari nol: kerja harian sampai staging</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Kerjakan fitur di branch sendiri</b><p>Ikuti bab 16 langkah 1–10: branch dari <code>develop</code>, test dulu, commit, changelog, rebase, push. Push ke origin tidak menjalankan CI apa pun.</p></div></li>
+        <li><span class="n">2</span><div><b>Gerbang dan merge, satu perintah</b><p>Script membuat hasil merge tanpa mengubah folder kerjamu, menjalankan pemeriksaan lokal (sekitar 15 menit; lewati dengan <code>--no-local</code> kalau baru saja dijalankan), menjalankan gerbang di repo gerbang (sekitar 10–15 menit), lalu mendorong merge ke <code>develop</code>. Berhasil kalau baris terakhirnya <code>Merged ... (gate run ...)</code>. Pesan error dan artinya ada di tabel "Kalau ada yang gagal".</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">scripts/gate-and-merge.sh feature/nama-fitur
+git branch -d feature/nama-fitur &amp;&amp; git push origin --delete feature/nama-fitur</pre></div></li>
+        <li><span class="n">3a</span><div><b>Staging sesuai permintaan (bawaan)</b><p>Kalau <code>STAGING_AUTO</code> tidak dipasang, merge tidak mengubah staging. Saat staging perlu terbaru (sebelum PM mencoba, uji HP, atau gladi), jalankan deploy dari <code>develop</code>. Satu deploy membawa semua merge sejak deploy sebelumnya. Bisa juga dari web: tab <i>Actions</i> → <i>CI</i> → <i>Run workflow</i> → branch <code>develop</code>, <i>deploy</i> = <code>staging</code>. Berhasil kalau job <i>Deploy staging</i> hijau dan <code>/up</code> menjawab.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gh workflow run ci.yml --ref develop -f deploy=staging --repo devivace-groups/pentahoot
+gh run watch --repo devivace-groups/pentahoot      # pilih run terbaru
+curl -fsS https://[DOMAIN STAGING]/up</pre></div></li>
+        <li><span class="n">3b</span><div><b>Staging otomatis (pilihan)</b><p>Nyalakan saklarnya sekali; sejak itu setiap merge ke <code>develop</code> membangun image dan men-deploy staging. Lebih nyaman, tetapi memakan sekitar 6 menit jatah org per merge (O2). Mematikannya mengembalikan jalur sesuai permintaan.</p><pre style="margin: 8px 0 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 13px;">gh variable set STAGING_AUTO --body on --repo devivace-groups/pentahoot   # nyalakan
+gh variable delete STAGING_AUTO --repo devivace-groups/pentahoot          # matikan
+gh run list --branch develop --repo devivace-groups/pentahoot             # deploy setelah merge</pre></div></li>
+      </ol>
+
+      <h3>Mulai dari nol: production</h3>
+      <ol class="phases">
+        <li><span class="n">1</span><div><b>Rilis biasa</b><p>Persetujuan pemilik proyek dan nomor versi dulu, lalu ikuti "Production: setiap rilis versi" di bawah: branch <code>release/x.y.z</code>, <code>scripts/gate-and-merge.sh release/x.y.z main</code>, tag, back-merge. Push tag memicu build image dan deploy production.</p></div></li>
+        <li><span class="n">2</span><div><b>Setujui deploy</b><p>Deploy production menunggu persetujuan (P5). Buka run-nya: tab <i>Actions</i> → run tag itu → <i>Review deployments</i> → centang <code>production</code> → <i>Approve and deploy</i>. Jangan menyetujui saat event berlangsung (O2). Berhasil kalau job <i>Deploy production</i> hijau dan <code>/up</code> production menjawab.</p></div></li>
+        <li><span class="n">3</span><div><b>Calon rilis (rc) dan hotfix</b><p>Uji beban dan gladi: <code>scripts/gate-and-merge.sh --tag v1.1.0-rc.1 release/1.1.0</code>. Perbaikan darurat: "Hotfix production" di bawah.</p></div></li>
+      </ol>
+
+      <h3>Mulai dari nol: kalau ada yang gagal</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Yang terlihat</th><th>Artinya</th><th>Yang dilakukan</th></tr></thead>
+          <tbody>
+            <tr><td><code>the local checks are red</code></td><td>Pemeriksaan di laptop gagal; belum ada menit CI yang terpakai.</td><td>Buka log di <code>storage/logs/ci-local/</code>, perbaiki di branch yang sama, jalankan lagi.</td></tr>
+            <tr><td><code>the gate failed: https://github.com/...</code></td><td>Gerbang di repo gerbang merah.</td><td>Buka tautannya, lihat job yang merah. Kalau penyebabnya infrastruktur (registry 502, timeout jaringan), jalankan script lagi; kalau kode, perbaiki dulu.</td></tr>
+            <tr><td><code>conflicts with develop: rebase it</code></td><td>Branch bentrok dengan <code>develop</code> terbaru.</td><td><code>git fetch origin &amp;&amp; git rebase origin/develop</code>, selesaikan konflik, push, jalankan lagi.</td></tr>
+            <tr><td><code>develop moved during the gate</code></td><td>Ada merge lain masuk saat gerbangmu berjalan.</td><td>Rebase, lalu jalankan lagi. Merge satu per satu supaya ini jarang terjadi.</td></tr>
+            <tr><td><code>did not pass every gate job (is GATE_ROLE=gate set?)</code></td><td>Run "hijau" tapi job gerbang tidak jalan.</td><td>Cek variabel <code>GATE_ROLE</code> di repo gerbang (setup langkah 2).</td></tr>
+            <tr><td><code>set the gate remote once</code> / <code>does not exist</code></td><td>Laptop belum disetup.</td><td>Setup langkah 3.</td></tr>
+            <tr><td>Job image di origin: <code>No gate trailer for this tree</code></td><td>Commit yang mau di-deploy tidak lewat script, atau ada commit tambahan setelah gerbang.</td><td>Jalankan gerbang di origin untuk ref itu (memakai jatah org): <code>gh workflow run ci.yml --ref [tag atau develop] -f gate=true [-f deploy=staging]</code>.</td></tr>
+            <tr><td>Job image di origin: Trivy merah</td><td>Ada celah CRITICAL yang sudah punya perbaikan di image.</td><td>Biasanya selesai dengan memperbarui base image atau paket; perbaiki lewat branch <code>fix/*</code>, jangan dilewati.</td></tr>
+            <tr><td>Job deploy: <code>Deploys are frozen</code></td><td>Berkas <code>FREEZE</code> ada di folder deploy VM (event).</td><td>Tunggu event selesai dan backup sesudah event, lalu hapus <code>FREEZE</code> (O2, O4).</td></tr>
+            <tr><td>Job deploy: smoke test gagal</td><td><code>/up</code> atau WebSocket tidak menjawab setelah deploy; script sudah mengembalikan versi sebelumnya otomatis.</td><td>Lihat log container di VM (<code>docker compose logs app</code> di folder deploy), perbaiki, deploy lagi. Rollback manual: "Production: setiap rilis versi" langkah 5.</td></tr>
+            <tr><td>Deploy tidak jalan sama sekali</td><td>Saklar <code>STAGING_DEPLOY</code>/<code>PRODUCTION_DEPLOY</code> belum <code>on</code>, atau secret environment belum lengkap.</td><td><code>gh variable list</code> dan <code>gh secret list --env ...</code> (setup langkah 6–7).</td></tr>
+            <tr><td>Repo gerbang tidak bisa dipakai</td><td>Akun pemiliknya tidak tersedia, atau jatahnya habis.</td><td><code>scripts/ci-local.sh</code>, merge biasa, dan deploy dengan <code>-f gate=true</code> di origin. Hapus <code>pentahoot.gateRemote</code> di laptop supaya tidak ada yang mencoba script.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Pemakaian menit 30 hari terakhir: <code>scripts/ci-report.sh</code>. Perkiraan per bulan setelah 9 Oktober 2026 ada di P6 dan O2.</p>
 
       <h3>Server di Google Cloud (Compute Engine), disiapkan sekali per lingkungan</h3>
       <p>Pelengkap langkah 1–2 dan 6 staging di bawah, untuk VM di Google Cloud (A7). Dikerjakan oleh orang yang punya akses ke project GCP. Perintah <code>gcloud</code> dicocokkan dengan referensi resmi Google Cloud; instalasi Docker dan Caddy dari dokumentasi resmi masing-masing (bab 19). Ganti <code>staging</code> dengan <code>production</code> untuk lingkungan kedua; kedua lingkungan memakai VM, IP, <code>.env</code>, dan kunci yang berbeda.</p>
