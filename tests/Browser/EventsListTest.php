@@ -19,9 +19,8 @@ it('filters events by a range picked in the calendar, quickly and from the keybo
 
     // The button opens a modal; a retried click would hit it behind the modal
     // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md).
-    $page = visit('/host');
+    $page = visit('/host')->assertScript(pageReady());
     $page->script('document.querySelector("[aria-label=\'Filter by created date\']").click()');
-    $page->wait(0.3);
 
     // Opening puts the keyboard on a day of the grid (W3C APG).
     $page->assertScript('document.activeElement?.dataset.day?.length === 10');

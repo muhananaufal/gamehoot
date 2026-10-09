@@ -21,7 +21,7 @@ it('moves a question two places with two quick arrow clicks and saves the order 
         post("/host/packs/{$pack->id}/questions", ['prompt' => $prompt, 'duration_seconds' => 20]);
     }
 
-    $page = visit("/host/packs/{$pack->id}")->wait(0.5);
+    $page = visit("/host/packs/{$pack->id}")->assertScript(pageReady());
     // Every script returns at once (the plugin retries slow ones); the page counts the saves.
     $page->script(<<<'JS'
         (() => {
@@ -39,6 +39,7 @@ it('moves a question two places with two quick arrow clicks and saves the order 
         ->and($page->script("[...document.querySelectorAll('li[data-id] [data-number]')].map((n) => n.textContent.trim())"))->toBe(['1', '2', '3'])
         ->and($page->script('window.__saves'))->toBe(0);
 
+    // Proves that the two moves are saved once, so it gives a second save time to happen.
     $page->wait(2);
 
     expect($page->script('window.__saves'))->toBe(1)

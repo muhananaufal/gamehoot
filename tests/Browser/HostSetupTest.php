@@ -84,7 +84,7 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
 
     // A name already in the event is caught while typing; the button stays off.
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add names").click()');
-    $page->wait(0.3);
+    $page->assertScript('!! document.querySelector("dialog[open] #add-names")');
     $page->script($type(['budi  SANTOSO']));
     $page->assertSee('Line 1: Same as “Budi Santoso” already in this event');
     expect($page->script('[...document.querySelectorAll("dialog[open] button[type=submit]")].pop().disabled'))->toBeTrue();
@@ -144,15 +144,15 @@ it('fills the link from the event name and stops an empty name before sending (U
     $host = User::factory()->create();
     actingAs($host);
 
-    $page = visit('/host')->wait(0.5);
+    $page = visit('/host')->assertScript(pageReady());
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
-    $page->wait(0.3);
     $page->type('name', 'Year End Party');
 
     expect($page->script('document.querySelector("dialog[open] input[name=slug]").value'))->toBe('year-end-party');
 
     // An empty name: Next stays on step 1, sends nothing and says why under the field (U26).
     $page->script('(() => { const d = document.querySelector("dialog[open]"); d.querySelector("input[name=name]").value = ""; window.__sent = false; window.addEventListener("up:request:load", () => (window.__sent = true)); [...d.querySelectorAll("[data-test=wizard-next]")].find((b) => b.offsetParent !== null).click(); })()');
+    // Proves that nothing is sent, so it gives a request time to start instead of a condition.
     $page->wait(0.4);
 
     expect($page->script('window.__sent'))->toBeFalse()
@@ -170,9 +170,8 @@ it('sets up a new event with names and games in four steps, saved at the last on
     }
     actingAs($host);
 
-    $page = visit('/host')->wait(0.5);
+    $page = visit('/host')->assertScript(pageReady());
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
-    $page->wait(0.3);
     $page->type('name', 'Year End Party');
     $click = fn (string $selector): string => '[...document.querySelectorAll("dialog[open] '.$selector.'")].find((b) => b.offsetParent !== null).click()';
     $page->script($click('[data-test=wizard-next]'));
@@ -205,26 +204,23 @@ it('sets up a new event with names and games in four steps, saved at the last on
 it('asks before New event drops what was entered (U24, U26)', function (): void {
     actingAs(User::factory()->create());
 
-    $page = visit('/host')->wait(0.5);
+    $page = visit('/host')->assertScript(pageReady());
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
-    $page->wait(0.3);
     $page->type('name', 'Year End Party');
     $page->keys('name', 'Escape');
-    $page->wait(0.3);
-
-    expect($page->script('[...document.querySelectorAll("dialog[open] h2")].map((h) => h.innerText.trim())'))->toContain('Discard this event?');
+    $asking = '[...document.querySelectorAll("dialog[open] h2")].some((h) => h.innerText.trim() === "Discard this event?")';
+    $page->assertScript($asking, true);
 
     $page->script('[...document.querySelectorAll("dialog[open] button")].find((b) => b.innerText.trim() === "Keep editing").click()');
-    $page->wait(0.3);
+    $page->assertScript($asking, false);
     expect($page->script('document.querySelector("dialog[open] input[name=name]").value'))->toBe('Year End Party');
 
     $page->script('[...document.querySelectorAll("dialog[open] button")].find((b) => b.innerText.trim() === "Cancel" && b.offsetParent !== null).click()');
-    $page->wait(0.3);
+    $page->assertScript($asking, true);
     $page->script('[...document.querySelectorAll("dialog[open] button")].find((b) => b.innerText.trim() === "Discard").click()');
-    $page->wait(0.3);
 
-    expect($page->script('document.querySelectorAll("dialog[open]").length'))->toBe(0);
-    $page->assertNoJavaScriptErrors();
+    $page->assertScript('document.querySelectorAll("dialog[open]").length === 0')
+        ->assertNoJavaScriptErrors();
 });
 
 it('goes to a typed page of a long list, with first, last and neighbours numbered (U4)', function (): void {
@@ -233,15 +229,14 @@ it('goes to a typed page of a long list, with first, last and neighbours numbere
     Person::factory()->for($event)->count(100)->create();
     actingAs($host);
 
-    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $page = visit("/host/{$event->id}/people")->assertScript(pageReady());
     // 10 rows per page: 10 pages, so the page number field shows.
     $page->script('Alpine.$data(document.querySelector("[x-data^=tableView]")).size = 10');
-    $page->wait(0.3);
+    $page->assertScript('!! document.querySelector("input[type=number][placeholder]")');
     $page->script('(() => { const field = document.querySelector("input[type=number][placeholder]"); field.value = "6"; field.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); })()');
-    $page->wait(0.3);
+    $page->assertScript('[...document.querySelector("nav[aria-label=Pages]").querySelectorAll("[aria-label^=Page], span[aria-hidden]")].map((e) => e.innerText).join(" ")', '1 … 5 6 7 … 10');
 
-    expect($page->script('[...document.querySelector("nav[aria-label=Pages]").querySelectorAll("[aria-label^=Page], span[aria-hidden]")].map((e) => e.innerText).join(" ")'))->toBe('1 … 5 6 7 … 10')
-        ->and($page->script('document.querySelector("nav[aria-label=Pages] [aria-current=page]").innerText'))->toBe('6')
+    expect($page->script('document.querySelector("nav[aria-label=Pages] [aria-current=page]").innerText'))->toBe('6')
         ->and($page->script('[...document.querySelectorAll("p[aria-live=polite]")].map((p) => p.innerText).find((t) => t.startsWith("Showing"))'))->toBe('Showing 51–60 of 100');
     $page->assertNoJavaScriptErrors();
 });
@@ -249,17 +244,18 @@ it('goes to a typed page of a long list, with first, last and neighbours numbere
 it('keeps every field of New event while the host changes others and moves between steps (U26, U19)', function (): void {
     actingAs(User::factory()->create());
 
-    $page = visit('/host')->wait(0.5);
+    $page = visit('/host')->assertScript(pageReady());
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
-    $page->wait(0.3);
     $page->type('name', 'Year End Party');
     // Another field changes: the live check of the server draws the fields again (U19).
     $page->script('(() => { const d = document.querySelector("dialog[open]"); const slug = d.querySelector("input[name=slug]"); slug.value = "year-end-2026"; slug.dispatchEvent(new Event("input", { bubbles: true })); slug.dispatchEvent(new Event("change", { bubbles: true })); d.querySelector("input[name=name]").dispatchEvent(new Event("change", { bubbles: true })); })()');
+    // The live check answers from the server and draws the fields again; nothing on the page
+    // marks the end of that redraw, so this stays a fixed wait.
     $page->wait(3);
     $page->script('[...document.querySelectorAll("dialog[open] label")].find((l) => l.innerText.trim() === "Light")?.click()');
     $page->script('[...document.querySelectorAll("dialog[open] [data-test=wizard-next]")].find((b) => b.offsetParent !== null).click()');
     $page->script('[...document.querySelectorAll("dialog[open] [data-step=details]")][0].click()');
-    $page->wait(0.3);
+    $page->assertScript('document.querySelector("dialog[open] [data-step=details]").getAttribute("aria-current")', 'step');
 
     expect($page->script('document.querySelector("dialog[open] input[name=name]").value'))->toBe('Year End Party')
         ->and($page->script('document.querySelector("dialog[open] input[name=slug]").value'))->toBe('year-end-2026');
