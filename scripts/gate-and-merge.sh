@@ -174,7 +174,7 @@ if [ -z "$run_id" ]; then
         [ "$SECONDS" -lt "$deadline" ] || die "no gate run appeared for $gate_commit in $wait_limit s"
         sleep "$poll"
     done
-    gh run watch "$started" --repo "$gate_repo" --exit-status || die "the gate failed: https://github.com/$gate_repo/actions/runs/$started"
+    gh run watch "$started" --repo "$gate_repo" --exit-status --compact --interval 30 || die "the gate failed: https://github.com/$gate_repo/actions/runs/$started"
     run_id="$(green_run "$gate_commit")" || die "run $started did not pass every gate job (is GATE_ROLE=gate set in $gate_repo?)"
 fi
 
