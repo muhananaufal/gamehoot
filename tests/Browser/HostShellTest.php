@@ -65,7 +65,9 @@ it('closes a dialog on a click outside its box and opens it again afterwards (U1
 
     // The press and the click land on the <dialog> itself, i.e. its backdrop.
     $page->script("(() => { const d = {$dialog}; d.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); d.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()");
-    $page->assertScript("{$dialog}.open", false);
+    // close() clears .open at once, but the close event that resets the store comes later; a
+    // dialog opened before it would be closed by it (seen in Safari).
+    $page->assertScript("! {$dialog}.open && ! Alpine.store('confirm').open", true);
 
     $page->script($ask);
     $page->assertScript("{$dialog}.open", true)
