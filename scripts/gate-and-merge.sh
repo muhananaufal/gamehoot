@@ -144,6 +144,10 @@ if [ -n "$existing" ] && git fetch -q "$gate_remote" "$gate_ref" 2> /dev/null; t
         if run_id="$(green_run "$existing")"; then
             gated_tree="$existing_tree"
             echo "Reusing the green gate run $run_id of the same code."
+        elif [ "$existing_tree" = "$tree" ] && [ -n "$(gh run list --repo "$gate_repo" --workflow ci.yml --commit "$existing" --json databaseId,status --jq '.[] | select(.status != "completed") | .databaseId')" ]; then
+            # Run again after Ctrl+C: a new merge commit would start a second run, which cancels this one.
+            gate_commit="$existing"
+            echo "Following the gate run already in progress for the same code."
         fi
     fi
 fi
@@ -198,8 +202,10 @@ git push -q "$gate_remote" "$final:refs/heads/$target" || echo "Warning: the gat
 git push -q "$gate_remote" --delete "$gate_ref" 2> /dev/null || true
 git fetch -q "$origin"
 
-# Move a local TARGET branch along when that is a plain fast-forward and it is not checked out.
-if old="$(git rev-parse --verify --quiet "refs/heads/$target")" && [ "$(git symbolic-ref -q --short HEAD)" != "$target" ] && git merge-base --is-ancestor "$old" "$final"; then
+# Move a local TARGET branch along when that is a plain fast-forward and no worktree has it checked
+# out: moving it under a checkout leaves that folder's files behind (git status shows the merge
+# undone and staged).
+if old="$(git rev-parse --verify --quiet "refs/heads/$target")" && ! git worktree list --porcelain | grep -qxF "branch refs/heads/$target" && git merge-base --is-ancestor "$old" "$final"; then
     git update-ref "refs/heads/$target" "$final" "$old"
 fi
 echo "Merged $branch into $target as $final (gate run $run_id)."
