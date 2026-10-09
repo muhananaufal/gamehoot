@@ -47,7 +47,7 @@ it('closes a dialog on a click outside its box and opens it again afterwards (U1
     User::factory()->create(['name' => 'Dina Host']);
     actingAs($admin);
 
-    $page = visit('/admin/users')->wait(0.5);
+    $page = visit('/admin/users')->assertScript(pageReady());
 
     // Every script returns at once: the browser plugin retries slow ones (see MotionTest).
     // Disable sits in the row menu of the other account (C-7).
@@ -61,19 +61,15 @@ it('closes a dialog on a click outside its box and opens it again afterwards (U1
     $dialog = 'document.querySelector(\'dialog[aria-labelledby="confirm-title"]\')';
 
     $page->script($ask);
-    $page->wait(0.4);
-    $opened = $page->script("{$dialog}.open");
+    $page->assertScript("{$dialog}.open", true);
 
     // The press and the click land on the <dialog> itself, i.e. its backdrop.
     $page->script("(() => { const d = {$dialog}; d.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); d.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()");
-    $page->wait(0.4);
-    $closed = ! $page->script("{$dialog}.open");
+    $page->assertScript("{$dialog}.open", false);
 
     $page->script($ask);
-    $page->wait(0.4);
-
-    expect([$opened, $closed, $page->script("{$dialog}.open")])->toBe([true, true, true]);
-    $page->assertNoJavaScriptErrors();
+    $page->assertScript("{$dialog}.open", true)
+        ->assertNoJavaScriptErrors();
 });
 
 it('opens a dropdown inside the scrolling pack list without cutting it off (U22)', function (): void {
@@ -84,8 +80,9 @@ it('opens a dropdown inside the scrolling pack list without cutting it off (U22)
     }
     actingAs($host);
 
-    $page = visit('/host/packs')->wait(0.5);
+    $page = visit('/host/packs')->assertScript(pageReady());
     $page->script("document.querySelector('#pack-list [role=combobox][aria-label=Order]').click()");
+    // The list slides open; its position is measured once the motion has ended.
     $page->wait(0.5);
 
     $box = $page->script(<<<'JS'
@@ -115,19 +112,22 @@ it('centres modals on the screen and puts dialogs and modals behind the same bac
     User::factory()->create(['name' => 'Dina Host']);
     actingAs($admin);
 
-    $page = visit('/admin/users')->wait(0.5);
-    // A native dialog: the shared confirmation.
+    $page = visit('/admin/users')->assertScript(pageReady());
+    // A native dialog: the shared confirmation. Its backdrop fades in, so the colour is read
+    // once the fade has ended.
     $page->script("Alpine.store('confirm').askFor('disable', 'Dina Host', '/admin/users/x/status', 'x')");
     $page->wait(0.4);
     $dialogBackdrop = $page->script("getComputedStyle(document.querySelector('dialog[open]'), '::backdrop').backgroundColor");
     $page->script("Alpine.store('confirm').close()");
-    $page->wait(0.4);
+    $page->assertScript("!! document.querySelector('dialog[open]')", false);
 
     // An Unpoly modal: Edit of an account, opened through the row menu.
     $page->script("Alpine.store('rowMenu').openFrom([...document.querySelectorAll('[data-menu]')].find((b) => b.dataset.name === 'Dina Host'))");
-    $page->wait(0.4);
+    $page->assertScript("[...document.querySelectorAll('[role=menu] a')].some((a) => a.innerText.trim() === 'Edit')", true);
     $page->script("[...document.querySelectorAll('[role=menu] a')].find((a) => a.innerText.trim() === 'Edit').click()");
-    $page->wait(1.5);
+    // The modal and its backdrop fade in; both are measured once the motion has ended.
+    $page->assertScript("!! document.querySelector('up-modal-box')", true);
+    $page->wait(0.5);
 
     $modal = (array) $page->script(<<<'JS'
         (() => {
@@ -149,15 +149,14 @@ it('expands a recent event in place and stays on the page (U23)', function (): v
     Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
     actingAs($host);
 
-    $page = visit('/host/packs')->wait(0.5);
+    $page = visit('/host/packs')->assertScript(pageReady());
     $settings = '[...document.querySelectorAll("#host-nav a")].find((a) => a.innerText.trim() === "Settings")';
 
     expect($page->script("{$settings}?.offsetParent === null"))->toBeTrue();
     $page->script('document.querySelector("#host-nav button[title=\'Gathering 2026\']").click()');
-    $page->wait(0.3);
+    $page->assertScript("{$settings}?.offsetParent !== null", true);
 
-    expect($page->script("{$settings}?.offsetParent !== null"))->toBeTrue()
-        ->and($page->script('location.pathname'))->toBe('/host/packs');
+    expect($page->script('location.pathname'))->toBe('/host/packs');
     $page->assertNoJavaScriptErrors();
 });
 
@@ -170,19 +169,18 @@ it('adds several games from the Add games dialog, in the order picked (D-9)', fu
     }
     actingAs($host);
 
-    $page = visit("/host/{$event->id}/games")->wait(0.5);
+    $page = visit("/host/{$event->id}/games")->assertScript(pageReady());
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Add game").click()');
-    $page->wait(0.3);
+    $page->assertScript('document.querySelectorAll("dialog[open] [data-pack]").length === 2');
     // Team Trivia first, then Office Awards: the games follow the order picked.
     $page->script('(() => { const packs = [...document.querySelectorAll("dialog[open] [data-pack]")]; packs.find((p) => p.dataset.title === "Team Trivia").click(); packs.find((p) => p.dataset.title === "Office Awards").click(); })()');
-    $page->wait(0.3);
-
-    expect($page->script('document.querySelector("[data-test=add-games]").innerText.trim()'))->toBe('Add 2 games');
+    $page->assertScript('document.querySelector("[data-test=add-games]").innerText.trim()', 'Add 2 games');
 
     $page->script('document.querySelector("[data-test=add-games]").click()');
-    $page->wait(3);
+    $titles = fn (): array => $event->games()->orderBy('position')->pluck('title')->all();
+    until($page, fn (): bool => $titles() === ['Team Trivia', 'Office Awards']);
 
-    expect($event->games()->orderBy('position')->pluck('title')->all())->toBe(['Team Trivia', 'Office Awards']);
+    expect($titles())->toBe(['Team Trivia', 'Office Awards']);
     $page->assertNoJavaScriptErrors();
 });
 
@@ -196,8 +194,8 @@ it('lines the Games page up with Question packs on a wide phone (D-9)', function
 
     // Both lists fill their column; nothing in a flex column shrinks them to their content.
     $width = fn (string $selector): string => 'Math.round(document.querySelector("'.$selector.'").getBoundingClientRect().width)';
-    $games = visit("/host/{$event->id}/games")->resize(700, 900)->wait(0.5)->script($width('#games-list'));
-    $packs = visit('/host/packs')->resize(700, 900)->wait(0.5)->script($width('#pack-list'));
+    $games = visit("/host/{$event->id}/games")->resize(700, 900)->assertScript(pageReady())->script($width('#games-list'));
+    $packs = visit('/host/packs')->resize(700, 900)->assertScript(pageReady())->script($width('#pack-list'));
 
     expect($games)->toBe($packs);
 });
@@ -208,11 +206,12 @@ it('moves a question of a game with the arrows and saves the order once (D-9)', 
     $game = Pentahoot::game($event, ['First?', 'Second?']);
     actingAs($host);
 
-    $page = visit("/host/{$event->id}/games/{$game->id}")->wait(0.5);
+    $page = visit("/host/{$event->id}/games/{$game->id}")->assertScript(pageReady());
     $page->script('document.querySelector("#game-panel [data-move=down]").click()');
-    $page->wait(3);
+    $prompts = fn (): array => $game->questions()->orderBy('position')->with('pentahoot')->get()->map(fn ($question) => $question->pentahoot?->prompt)->all();
+    until($page, fn (): bool => $prompts() === ['Second?', 'First?']);
 
-    expect($game->questions()->orderBy('position')->with('pentahoot')->get()->map(fn ($question) => $question->pentahoot?->prompt)->all())->toBe(['Second?', 'First?']);
+    expect($prompts())->toBe(['Second?', 'First?']);
     $page->assertNoJavaScriptErrors();
 });
 
@@ -221,7 +220,7 @@ it('follows a link whose query ends in .csv inside the page, and leaves real dow
     $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
     actingAs($host);
 
-    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $page = visit("/host/{$event->id}/people")->assertScript(pageReady());
     $followable = fn (string $attributes): mixed => $page->script('(() => { const a = document.createElement("a"); '.$attributes.' document.querySelector("[data-host-shell] main").appendChild(a); const followed = window.up.link.isFollowable(a); a.remove(); return followed; })()');
 
     // Back from the import review names the last file, e.g. ?last=staff.csv: it stays in the modal.
@@ -235,12 +234,14 @@ it('keeps a refused upload in the Import modal, with its error under the file fi
     $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
     actingAs($host);
 
-    $page = visit("/host/{$event->id}/people")->wait(0.5);
+    $page = visit("/host/{$event->id}/people")->assertScript(pageReady());
     $page->script('[...document.querySelectorAll("a")].find((a) => a.innerText.trim() === "Import CSV").click()');
     $page->assertScript('!! document.querySelector("up-modal #import-file")');
     // Nothing picked: the server refuses, and the modal shows the Upload step again.
     $page->script('[...document.querySelectorAll("up-modal button[type=submit]")].pop().click()');
     $page->assertScript('document.querySelector("up-modal")?.innerText.includes("Pick a CSV file first.")');
+    // What follows checks that nothing extra appears (a second layer or page), so it waits a
+    // moment for anything late instead of a condition.
     $page->wait(1);
 
     expect($page->script('window.up.layer.count'))->toBe(2)
@@ -254,7 +255,7 @@ it('keeps a refused upload in the Import modal, with its error under the file fi
 it('keeps the name and role of the signed-in host readable in the sidebar (U1)', function (): void {
     actingAs(User::factory()->create(['name' => 'Rita Wulandari']));
 
-    $page = visit('/host')->wait(1);
+    $page = visit('/host');
 
     $page->assertScript("document.querySelector('[data-test=account-name]').getBoundingClientRect().width > 100", true)
         ->assertScript("document.querySelector('[data-test=account-name]').scrollWidth <= document.querySelector('[data-test=account-name]').clientWidth", true)
@@ -264,7 +265,7 @@ it('keeps the name and role of the signed-in host readable in the sidebar (U1)',
 it('shows the tooltip when the pointer crosses onto the icon or slides to the next button (U33)', function (): void {
     actingAs(User::factory()->create());
 
-    $page = visit('/host')->wait(1);
+    $page = visit('/host')->assertScript(pageReady());
     // The real pointer path: over the button's edge, onto its icon, then on to the next button.
     $page->script(<<<'JS'
         (() => {
@@ -279,8 +280,8 @@ it('shows the tooltip when the pointer crosses onto the icon or slides to the ne
             setTimeout(() => { window.__second = document.getElementById('host-tip')?.hidden === false ? document.getElementById('host-tip').textContent : null; }, 1300);
         })()
         JS);
-    $page->wait(1.8);
 
+    // The page records both tooltips on its own timers; each assertion waits for its value.
     $page->assertScript('window.__first', 'Switch theme')
         ->assertScript('window.__second', 'Reduce motion')
         ->assertNoJavaScriptErrors();

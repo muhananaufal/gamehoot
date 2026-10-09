@@ -62,9 +62,10 @@ it('follows a rename and a release made by the host without a reload (B-6)', fun
 
     // Without a socket server in tests the phone polls (T2), which brings its own state too.
     app(EditNameList::class)->rename($event, $rita, 'Rita W.');
-    $page->wait(8)->assertSee('You’re in, Rita W.!')->assertPathIs('/year-end-party/play');
+    // The next poll brings the new name; assertSee waits for it.
+    $page->assertSee('You’re in, Rita W.!')->assertPathIs('/year-end-party/play');
 
     app(ReleaseClaim::class)->handle($event, $rita->refresh(), $owner);
-    $page->wait(8)->assertSee('Pick your name to join the game')->assertPathIs('/year-end-party');
+    $page->assertSee('Pick your name to join the game')->assertPathIs('/year-end-party');
     $page->assertNoJavaScriptErrors();
 });

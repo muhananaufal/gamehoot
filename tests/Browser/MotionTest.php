@@ -12,7 +12,8 @@ uses(RefreshDatabase::class);
 
 // Every script() returns at once: the browser plugin retries a script that takes over a second
 // (docs/debugging/2026-10-02-browser-click-timeout-after-navigation.md). A recorder in the page
-// samples the motion while PHP waits.
+// samples the motion while PHP waits; those waits measure the motion and stay. Waits before an
+// assertion that retries by itself are gone (tests/Pest.php).
 
 it('slides table rows to their new place when the list is sorted, then settles (U8)', function (): void {
     $host = User::factory()->create();
@@ -21,7 +22,7 @@ it('slides table rows to their new place when the list is sorted, then settles (
     }
     actingAs($host);
 
-    $page = visit('/host')->wait(1);
+    $page = visit('/host')->assertScript(pageReady());
     // Sort by name, then by name again (Z-A): every row changes place.
     $page->script("document.querySelector('thead th:first-child button').click()");
     $page->wait(1);
@@ -51,9 +52,9 @@ it('pops a modal in, fully visible once it settles (U8)', function (): void {
     actingAs($admin);
 
     // Edit of an account is a modal (C-7, U13): open it through the row menu.
-    $page = visit('/admin/users')->wait(1);
+    $page = visit('/admin/users')->assertScript(pageReady());
     $page->script("Alpine.store('rowMenu').openFrom([...document.querySelectorAll('[data-menu]')].find((b) => b.dataset.name === 'Dina Host'))");
-    $page->wait(0.4);
+    $page->assertScript("[...document.querySelectorAll('[role=menu] a')].some((a) => a.innerText.trim() === 'Edit')", true);
     $page->script(<<<'JS'
         (() => {
             window.__opacities = [];
@@ -78,14 +79,14 @@ it('pops a modal in, fully visible once it settles (U8)', function (): void {
 it('names an icon button in a Pentahoot tooltip on hover, and Escape closes it in place (U33)', function (): void {
     actingAs(User::factory()->create());
 
-    $page = visit('/host')->wait(1);
-    $page->hover('[aria-label="Switch theme"]')->wait(0.8);
+    $page = visit('/host')->assertScript(pageReady());
+    $page->hover('[aria-label="Switch theme"]');
 
     $page->assertScript("document.getElementById('host-tip')?.hidden === false && document.getElementById('host-tip').textContent", 'Switch theme')
         // The browser's own title no longer shows beside it.
         ->assertScript("document.querySelector('[aria-label=\"Switch theme\"]').hasAttribute('title')", false);
 
-    $page->keys('[aria-label="Switch theme"]', 'Escape')->wait(0.3);
+    $page->keys('[aria-label="Switch theme"]', 'Escape');
 
     $page->assertScript("document.getElementById('host-tip').hidden", true)
         ->assertScript("document.activeElement?.getAttribute('aria-label')", 'Switch theme')
@@ -93,12 +94,12 @@ it('names an icon button in a Pentahoot tooltip on hover, and Escape closes it i
 });
 
 it('lets Penta cover its eyes for the password and peek when it is shown (U32)', function (): void {
-    $page = visit('/login')->wait(1);
+    $page = visit('/login')->assertScript(pageReady());
 
-    $page->type('password', 'abc')->wait(0.4);
+    $page->type('password', 'abc');
     $page->assertScript("document.querySelector('[data-mood]').dataset.mood", 'shy');
 
-    $page->click('[aria-label="Show password"]')->wait(0.4);
+    $page->click('[aria-label="Show password"]');
     $page->assertScript("document.querySelector('[data-mood]').dataset.mood", 'peek')
         ->assertNoJavaScriptErrors();
 });
@@ -106,15 +107,14 @@ it('lets Penta cover its eyes for the password and peek when it is shown (U32)',
 it('greets the lobby with Penta and celebrates on a canvas that clears itself (U30, U31)', function (): void {
     Event::factory()->open()->create(['slug' => 'gathering-2026']);
 
-    $page = visit('/gathering-2026/screen')->wait(1.5);
+    $page = visit('/gathering-2026/screen');
     $page->assertScript("getComputedStyle(document.querySelector('.scene-stack')).display", 'grid')
         ->assertScript("document.querySelector('.scene-stack [data-mood]')?.dataset.mood", 'wave');
 
     $page->script("window.dispatchEvent(new CustomEvent('celebrate', { detail: { key: 'browser-test' } }))");
-    $page->wait(0.5);
     $page->assertScript("!!document.querySelector('[x-ref=confetti] canvas')", true);
 
-    $page->wait(3.5);
+    // The canvas removes itself after the burst; the assertion waits for that.
     $page->assertScript("!!document.querySelector('[x-ref=confetti] canvas')", false)
         ->assertNoJavaScriptErrors();
 });
