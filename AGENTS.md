@@ -152,7 +152,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 ## 6b. Operasional (O1–O10)
 
 - **CI (O1):** gerbang kualitas + `composer audit` berjalan di repo gerbang lewat `scripts/gate-and-merge.sh`, bukan di setiap push. Origin tidak menjalankan CI saat push; hanya tag versi, deploy staging yang diminta, dan PR yang siap.
-- **Deploy (O2):** staging di-deploy **saat diminta** dari `develop` (`gh workflow run ci.yml --ref develop -f deploy=staging`), tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
+- **Deploy (O2):** staging di-deploy **saat diminta** dari `develop` (`gh workflow run ci.yml --ref develop -f deploy=staging`), atau otomatis di setiap push ke `develop` kalau variabel `STAGING_AUTO=on`; tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
 - **Rahasia (O3):** hanya di `.env` tiap lingkungan dan GitHub Secrets. `.env.example` selalu lengkap.
 - **Seeder (O10):**
   - Super-admin dibuat dengan `php artisan pentahoot:create-super-admin`; email dan password ditanyakan saat perintah dijalankan, **tidak pernah** di seeder atau di kode.

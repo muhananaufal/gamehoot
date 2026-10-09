@@ -5,12 +5,14 @@
 # job; the full gate then runs on origin by hand:
 #   gh workflow run ci.yml --ref <tag or develop> -f gate=true [-f deploy=staging]
 # Pull requests (W2) run the full gate on origin when opened ready, marked ready, or labelled
-# "gate". PHP comes from the project image (6a), MySQL is 8.4 (A9, W13).
+# "gate". O2: with the repository variable STAGING_AUTO=on, every push to develop deploys staging
+# too; while it is off, a develop push runs no job. PHP comes from the project image (6a), MySQL
+# is 8.4 (A9, W13).
 name: CI
 
 on:
   push:
-    branches: ['gate/**']
+    branches: ['gate/**', develop]
     tags: ['v*']
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize, labeled]
@@ -29,7 +31,7 @@ on:
 concurrency:
   # A newer push or pull request update cancels the older gate; tags and deploys never.
   group: ci-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && inputs.deploy != 'staging' }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/develop' && inputs.deploy != 'staging' }}
 
 permissions:
   contents: read
@@ -244,7 +246,7 @@ jobs:
     # or after the full gate ran in this same run.
     name: Production images
     needs: [php, browser, checks]
-    if: ${{ !cancelled() && vars.GATE_ROLE != 'gate' && ((startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on') || (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging' && github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on')) && needs.php.result != 'failure' && needs.browser.result != 'failure' && needs.checks.result != 'failure' }}
+    if: ${{ !cancelled() && vars.GATE_ROLE != 'gate' && ((startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on') || (github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && ((github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && vars.STAGING_AUTO == 'on')))) && needs.php.result != 'failure' && needs.browser.result != 'failure' && needs.checks.result != 'failure' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -337,10 +339,11 @@ jobs:
           done
 
   deploy-staging:
-    # O2, P4: staging deploys on request from develop, once the image job is green.
+    # O2, P4: staging deploys from develop on request, or on every push with STAGING_AUTO=on,
+    # once the image job is green.
     name: Deploy staging
     needs: image
-    if: ${{ !cancelled() && needs.image.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging' && github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' }}
+    if: ${{ !cancelled() && needs.image.result == 'success' && github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && ((github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && vars.STAGING_AUTO == 'on')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: staging
