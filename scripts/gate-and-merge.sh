@@ -144,6 +144,10 @@ if [ -n "$existing" ] && git fetch -q "$gate_remote" "$gate_ref" 2> /dev/null; t
         if run_id="$(green_run "$existing")"; then
             gated_tree="$existing_tree"
             echo "Reusing the green gate run $run_id of the same code."
+        elif [ "$existing_tree" = "$tree" ] && [ -n "$(gh run list --repo "$gate_repo" --workflow ci.yml --commit "$existing" --json databaseId,status --jq '.[] | select(.status != "completed") | .databaseId')" ]; then
+            # Run again after Ctrl+C: a new merge commit would start a second run, which cancels this one.
+            gate_commit="$existing"
+            echo "Following the gate run already in progress for the same code."
         fi
     fi
 fi

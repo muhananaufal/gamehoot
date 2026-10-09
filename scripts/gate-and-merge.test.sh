@@ -53,6 +53,8 @@ case "$1 $2" in
         id="$(grep -o '"databaseId":[0-9]*' "$state/runs/$sha" | cut -d: -f2)"
         if [[ "$jq" == *success* ]]; then
             grep -q '"conclusion":"success"' "$state/runs/$sha" && echo "$id"
+        elif [[ "$jq" == *'!= "completed"'* ]]; then
+            grep -q '"status":"completed"' "$state/runs/$sha" || echo "$id"
         else
             echo "$id"
         fi
@@ -227,6 +229,20 @@ echo "late fix" >> app/Game.php
 git commit -qam "fix(games): late fix"
 run_script --no-local release/1.1.0 main; code=$?
 check "a release with code changes runs a new gate" test "$code" = 0 -a "$(pushes)" = 2
+cleanup
+
+# 13. Running again while the gate of the same code still runs (after Ctrl+C) follows that run:
+#     a new merge commit would start a second run and cancel the first one.
+setup
+before="$(origin_develop)"
+merge_tree="$(git merge-tree --write-tree "$before" feature/x)"
+running="$(git commit-tree "$merge_tree" -p "$before" -p feature/x -m "Merge branch 'feature/x' into develop")"
+git push -q gate "$running:refs/heads/gate/feature/x" 2> /dev/null
+printf '[{"databaseId":1,"status":"in_progress","conclusion":""}]\n' > "$state/runs/$running"
+printf '%s\n' "printf '[{\"databaseId\":1,\"status\":\"completed\",\"conclusion\":\"success\"}]\n' > '$state/runs/$running'" > "$state/on-watch"
+run_script feature/x; code=$?
+check "a running gate of the same code is followed" test "$code" = 0 -a "$(pushes)" = 1
+check "the followed gate yields valid trailers" gated
 cleanup
 
 # 10. A red local check stops before the gate repository is used.
