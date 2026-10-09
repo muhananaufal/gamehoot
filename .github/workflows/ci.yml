@@ -170,6 +170,7 @@ jobs:
         run: |
           bash .github/scripts/repo-rules.test.sh
           bash .github/scripts/gate-trailer.test.sh
+          bash .github/scripts/promote-staging.test.sh
           bash scripts/gate-and-merge.test.sh
           bash deploy/deploy.test.sh
           bash scripts/ci-report.test.sh
@@ -257,8 +258,8 @@ jobs:
       FULL_GATE: ${{ needs.php.result == 'success' && needs.browser.result == 'success' && needs.checks.result == 'success' }}
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
-      app_digest: ${{ steps.app.outputs.digest }}
-      web_digest: ${{ steps.web.outputs.digest }}
+      app_digest: ${{ steps.promote.outputs.app_digest || steps.app.outputs.digest }}
+      web_digest: ${{ steps.promote.outputs.web_digest || steps.web.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -289,6 +290,7 @@ jobs:
         id: tag
         run: |
           tag="${GITHUB_SHA::12}"
+          week="$(date -u +%G-W%V)"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           for name in app web; do
             repo="$REPO"
@@ -296,15 +298,24 @@ jobs:
             {
               echo "$name<<TAGS"
               echo "$repo:$tag"
-              if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "$repo:$GITHUB_REF_NAME"; fi
+              # P1: a version tag, or the weekly tag that lets a version reuse this staging image.
+              if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "$repo:$GITHUB_REF_NAME"; else echo "$repo:$tag-$week"; fi
               echo "TAGS"
             } >> "$GITHUB_OUTPUT"
           done
-          # P1: a version gets the newest OS patches; a staging build reuses the cached layers.
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then refresh="$GITHUB_RUN_ID"; else refresh=staging; fi
+          # P1: a version gets the newest OS patches; a staging build refreshes them once a week
+          # and otherwise reuses the cached layers.
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then refresh="$GITHUB_RUN_ID"; else refresh="$week"; fi
           echo "refresh=$refresh" >> "$GITHUB_OUTPUT"
+      - name: Reuse the staging image of this code (P1)
+        id: promote
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: bash .github/scripts/promote-staging.sh >> "$GITHUB_OUTPUT"
       - name: Publish app image with provenance and SBOM
         id: app
+        if: steps.promote.outputs.promoted != 'true'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
@@ -318,6 +329,7 @@ jobs:
           build-args: APT_REFRESH=${{ steps.tag.outputs.refresh }}
       - name: Publish web image with provenance and SBOM
         id: web
+        if: steps.promote.outputs.promoted != 'true'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
@@ -330,8 +342,8 @@ jobs:
           build-args: APT_REFRESH=${{ steps.tag.outputs.refresh }}
       - name: Scan the published images by digest (Trivy)
         env:
-          APP_DIGEST: ${{ steps.app.outputs.digest }}
-          WEB_DIGEST: ${{ steps.web.outputs.digest }}
+          APP_DIGEST: ${{ steps.promote.outputs.app_digest || steps.app.outputs.digest }}
+          WEB_DIGEST: ${{ steps.promote.outputs.web_digest || steps.web.outputs.digest }}
         run: |
           for image in "$REPO@$APP_DIGEST" "$REPO-web@$WEB_DIGEST"; do
             docker pull --quiet "$image"
