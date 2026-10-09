@@ -7,12 +7,24 @@
 # builds the images itself. Staging images refresh their OS packages weekly, so a promoted image
 # is at most about seven days behind on Debian security fixes.
 #
-# Needs REPO (ghcr.io/<owner>/pentahoot) and VERSION (the tag name); WEEK overrides the ISO week.
+# Staging deploys use it too: a deploy whose code did not change reuses the image (VERSION = the
+# commit's sha tag, ALSO_TAG = its <sha12>-<week> tag for the next lookup).
+#
+# Needs REPO (ghcr.io/<owner>/pentahoot) and VERSION (the tag to create); ALSO_TAG adds a second
+# tag; WEEK overrides the ISO week.
 set -uo pipefail
 
 repo="${REPO:?}"
 version="${VERSION:?}"
+also="${ALSO_TAG:-}"
 week="${WEEK:-$(date -u +%G-W%V)}"
+
+# copy SOURCE NAME: SOURCE under NAME:VERSION and, with ALSO_TAG, NAME:ALSO_TAG.
+copy() {
+    local tags=(-t "$2:$version")
+    if [ -n "$also" ]; then tags+=(-t "$2:$also"); fi
+    docker buildx imagetools create "${tags[@]}" "$1" > /dev/null
+}
 
 not_promoted() {
     echo "promoted=false"
@@ -43,8 +55,8 @@ for commit in $(git rev-list --max-count=50 HEAD); do
     [ -n "$(digest_of "$app")" ] || continue
     [ -n "$(digest_of "$web")" ] || continue
 
-    docker buildx imagetools create -t "$repo:$version" "$app" > /dev/null || not_promoted "cannot copy $app"
-    docker buildx imagetools create -t "$repo-web:$version" "$web" > /dev/null || not_promoted "cannot copy $web"
+    copy "$app" "$repo" || not_promoted "cannot copy $app"
+    copy "$web" "$repo-web" || not_promoted "cannot copy $web"
     app_digest="$(digest_of "$repo:$version")"
     web_digest="$(digest_of "$repo-web:$version")"
     [[ "$app_digest" =~ ^sha256:[0-9a-f]{64}$ && "$web_digest" =~ ^sha256:[0-9a-f]{64}$ ]] || not_promoted "no digest after the copy"

@@ -292,6 +292,7 @@ jobs:
           tag="${GITHUB_SHA::12}"
           week="$(date -u +%G-W%V)"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "week=$week" >> "$GITHUB_OUTPUT"
           for name in app web; do
             repo="$REPO"
             if [ "$name" = web ]; then repo="$REPO-web"; fi
@@ -308,10 +309,12 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then refresh="$GITHUB_RUN_ID"; else refresh="$week"; fi
           echo "refresh=$refresh" >> "$GITHUB_OUTPUT"
       - name: Reuse the staging image of this code (P1)
+        # A version tag, or a staging deploy whose code did not change, takes this week's staging
+        # image of the same code instead of building one.
         id: promote
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.tag.outputs.tag }}
+          ALSO_TAG: ${{ !startsWith(github.ref, 'refs/tags/v') && format('{0}-{1}', steps.tag.outputs.tag, steps.tag.outputs.week) || '' }}
         run: bash .github/scripts/promote-staging.sh >> "$GITHUB_OUTPUT"
       - name: Publish app image with provenance and SBOM
         id: app

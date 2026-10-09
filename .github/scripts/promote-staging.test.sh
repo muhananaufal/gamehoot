@@ -101,5 +101,21 @@ expect false "a failed copy falls back to a build"
 setup
 expect false "no staging image means a build"
 
+# Staging (J2): a new docs-only commit on develop reuses the image, under its own SHA and week
+# tags, so the deploy finds repo:<sha> and the next promote finds <sha>-<week>.
+setup; stage "$(git rev-parse HEAD)"; echo "- Docs" >> CHANGELOG.md; git commit -qam "docs(changelog): note"
+head12="$(git rev-parse --short=12 HEAD)"
+total=$((total + 1))
+output="$(PATH="$dir/bin:$PATH" PROMOTE_TEST_REGISTRY="$dir/registry" REPO="$repo" VERSION="$head12" ALSO_TAG="$head12-$week" WEEK="$week" bash "$script" 2> /dev/null)"
+if grep -qx "promoted=true" <<< "$output" && grep -q "^$repo:$head12 " "$dir/registry" && grep -q "^$repo:$head12-$week " "$dir/registry" && grep -q "^$repo-web:$head12-$week " "$dir/registry"; then
+    echo "ok   a staging deploy reuses the image under its SHA and week tags"
+else
+    failures=$((failures + 1))
+    echo "FAIL a staging deploy reuses the image under its SHA and week tags"
+    printf '%s\n' "$output" | sed 's/^/     out: /'
+    sed 's/^/     reg: /' "$dir/registry"
+fi
+cd / && rm -rf "$dir"
+
 echo "$((total - failures))/$total passed"
 [ "$failures" = 0 ]
