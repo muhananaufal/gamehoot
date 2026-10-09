@@ -137,7 +137,7 @@ job_images() {
     docker build -q --target production -t pentahoot-app:ci-local ../pentahoot-ci-local-build > "$logs/image-app.txt" 2>&1 || code=1
     docker build -q --target web -t pentahoot-web:ci-local ../pentahoot-ci-local-build > "$logs/image-web.txt" 2>&1 || code=1
     for image in pentahoot-app:ci-local pentahoot-web:ci-local; do
-        detached "$logs/trivy-${image%%:*}.txt" -v /var/run/docker.sock:/var/run/docker.sock "$trivy_image" image --no-progress --skip-java-db-update --severity CRITICAL --ignore-unfixed --exit-code 1 "$image" || code=1
+        detached "$logs/trivy-${image%%:*}.txt" -v /var/run/docker.sock:/var/run/docker.sock "$trivy_image" image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image" || code=1
     done
     return "$code"
 }

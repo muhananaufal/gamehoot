@@ -185,7 +185,7 @@ jobs:
         if: env.PROOF == 'true'
         run: |
           for image in pentahoot-app:proof pentahoot-web:proof; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --skip-java-db-update --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
       - name: ESLint, Prettier, Vitest, build
         if: ${{ !cancelled() }}
@@ -348,7 +348,7 @@ jobs:
         run: |
           for image in "$REPO@$APP_DIGEST" "$REPO-web@$WEB_DIGEST"; do
             docker pull --quiet "$image"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --skip-java-db-update --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
 
   deploy-staging:
