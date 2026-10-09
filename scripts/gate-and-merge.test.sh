@@ -58,6 +58,7 @@ case "$1 $2" in
         fi
         exit 0 ;;
     "run watch")
+        echo "$*" >> "$state/watch-args"
         [ -f "$state/on-watch" ] && bash "$state/on-watch"
         id="$3"; grep -l "\"databaseId\":$id," "$state"/runs/* | xargs cat | grep -q '"conclusion":"success"' ;;
     "run view")
@@ -122,6 +123,8 @@ check "the merge tree is the tree of the merged code" test "$(git --git-dir="$ro
 check "one gate run was started" test "$(pushes)" = 1
 check "the temporary gate ref is removed" test "$(pushes)" = 1 -a -z "$(git --git-dir="$root/gate.git" for-each-ref refs/heads/gate)"
 check "the gate repository gets the merged develop too" test "$(origin_develop)" != "$before" -a "$(git --git-dir="$root/gate.git" rev-parse develop)" = "$(origin_develop)"
+# A watch refreshing every 3 s floods the terminal for the ten minutes of a gate.
+check "the gate is watched quietly" grep -qE -- '--compact.*--interval 30|--interval 30.*--compact' "$state/watch-args"
 cleanup
 
 # 2. Red gate: nothing reaches origin.
