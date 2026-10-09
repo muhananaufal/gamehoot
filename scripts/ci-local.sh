@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# W18, P6: the full CI gate of .github/workflows/ci.yml on this machine, with the same images
-# and versions, for when GitHub Actions cannot run. Prints one line per job and exits 1 when
-# any job fails. Logs go to storage/logs/ci-local/.
+# W18, P6: the full gate of .github/workflows/ci.yml on this machine, with the same images and
+# versions. scripts/gate-and-merge.sh runs it before the gate repository does (so a red gate is
+# caught for free), and it stands in when GitHub Actions cannot run. Prints one line per job and
+# exits 1 when any job fails. Logs go to storage/logs/ci-local/.
 #
 #   scripts/ci-local.sh                       every job
 #   CI_LOCAL_JOBS="php frontend" scripts/ci-local.sh
 #
-# Jobs: php frontend rules test80 browser images. Exit 0 green, 1 failed, 2 when the Docker
+# Jobs: php frontend rules browser images. Exit 0 green, 1 failed, 2 when the Docker
 # engine was missing or dropped out (the results are then not evidence). Containers run
 # detached and are read with docker logs, which also works where attached output gets lost
 # (Docker in WSL behind a proxy).
@@ -19,7 +20,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 root="$PWD"
 mount="${CI_LOCAL_MOUNT:-$root}"
-jobs="${CI_LOCAL_JOBS:-php frontend rules test80 browser images}"
+jobs="${CI_LOCAL_JOBS:-php frontend rules browser images}"
 logs=storage/logs/ci-local
 net=pentahoot-ci-local
 export MSYS_NO_PATHCONV=1
@@ -83,7 +84,7 @@ php_in() {
 }
 
 cleanup() {
-    docker rm -f pentahoot-ci-local-mysql84 pentahoot-ci-local-mysql80 > /dev/null 2>&1
+    docker rm -f pentahoot-ci-local-mysql84 > /dev/null 2>&1
     docker network rm "$net" > /dev/null 2>&1
     git worktree remove --force ../pentahoot-ci-local-build > /dev/null 2>&1
 }
@@ -93,7 +94,7 @@ wants() { [[ " $jobs " == *" $1 "* ]]; }
 
 job_php() {
     start_mysql pentahoot-ci-local-mysql84 8.4 || return 1
-    php_in "$logs/php.txt" pentahoot-php:dev pentahoot-ci-local-mysql84 "vendor/bin/pint --test && vendor/bin/phpstan analyse --no-progress --memory-limit=1G && composer audit && php artisan test --display-warnings"
+    php_in "$logs/php.txt" pentahoot-php:dev pentahoot-ci-local-mysql84 "vendor/bin/pint --test && vendor/bin/phpstan analyse --no-progress --memory-limit=1G && composer audit && php artisan test --display-warnings && php -d pcov.enabled=1 vendor/bin/pest tests/Unit/Games --mutate --everything --covered-only --parallel --min=85 --class='$mutate_classes'"
 }
 
 job_frontend() {
@@ -107,16 +108,12 @@ job_rules() {
     detached "$logs/zizmor.txt" -e GH_TOKEN="$(gh auth token 2>/dev/null || true)" -v "$mount:/repo" -w /repo "$zizmor_image" --config .github/zizmor.yml --min-severity=low .github || code=1
     {
         bash .github/scripts/repo-rules.test.sh
+        bash .github/scripts/gate-trailer.test.sh
         bash deploy/deploy.test.sh
         bash scripts/ci-report.test.sh
         bash .github/scripts/repo-rules.sh "$(git merge-base origin/develop HEAD)" HEAD
     } > "$logs/rules.txt" 2>&1 || code=1
     return "$code"
-}
-
-job_test80() {
-    start_mysql pentahoot-ci-local-mysql80 8.0 || return 1
-    php_in "$logs/test80.txt" pentahoot-php:dev pentahoot-ci-local-mysql80 "php artisan test --display-warnings && php -d pcov.enabled=1 vendor/bin/pest tests/Unit/Games --mutate --everything --covered-only --parallel --min=85 --class='$mutate_classes'"
 }
 
 job_browser() {
@@ -153,7 +150,7 @@ docker image inspect pentahoot-php:dev > /dev/null 2>&1 || docker build -q --tar
 if wants browser; then
     docker image inspect pentahoot-php:browser > /dev/null 2>&1 || docker build -q --target browser -t pentahoot-php:browser . > "$logs/build-browser.txt" 2>&1
 fi
-if wants php || wants test80 || wants browser; then
+if wants php || wants browser; then
     detached "$logs/composer.txt" -v "$mount:/var/www/html" -w /var/www/html pentahoot-php:dev composer install --no-interaction --no-progress --prefer-dist
 fi
 
