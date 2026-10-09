@@ -80,6 +80,7 @@ GH
     echo "# Changelog" > CHANGELOG.md
     git add . && git commit -q -m "feat(games): add a game"
     git push -q origin develop 2> /dev/null
+    git push -q origin develop:main 2> /dev/null
     git push -q gate develop 2> /dev/null
     git checkout -q -b feature/x
     echo "more" >> app/Game.php
@@ -196,6 +197,34 @@ run_script --tag v1.1.0-rc.1 feature/x; code=$?
 check "tag mode succeeds" test "$code" = 0
 check "the tag reaches origin with valid trailers" gated v1.1.0-rc.1 v1.1.0-rc.1
 check "tag mode does not touch develop" test "$code" = 0 -a "$(git --git-dir="$root/origin.git" log -1 --format=%s develop)" = "feat(games): add a game"
+cleanup
+
+# 11. A release that only adds the changelog reuses the gate recorded on develop, for the merge
+#     to main and for the back-merge (W18).
+setup
+run_script feature/x; first=$?
+git fetch -q origin
+git checkout -q -b release/1.1.0 origin/develop
+echo "- Added a game" >> CHANGELOG.md
+git commit -qam "docs(changelog): release 1.1.0"
+run_script --no-local release/1.1.0 main; to_main=$?
+check "a changelog-only release reaches main" test "$first" = 0 -a "$to_main" = 0
+check "the merge to main starts no new gate" test "$(pushes)" = 1
+check "main carries valid trailers" gated "" main
+run_script --no-local release/1.1.0 develop; back=$?
+check "the back-merge starts no new gate either" test "$back" = 0 -a "$(pushes)" = 1
+check "the back-merge carries valid trailers" gated
+cleanup
+
+# 12. A release with a code change is gated again.
+setup
+run_script feature/x
+git fetch -q origin
+git checkout -q -b release/1.1.0 origin/develop
+echo "late fix" >> app/Game.php
+git commit -qam "fix(games): late fix"
+run_script --no-local release/1.1.0 main; code=$?
+check "a release with code changes runs a new gate" test "$code" = 0 -a "$(pushes)" = 2
 cleanup
 
 # 10. A red local check stops before the gate repository is used.

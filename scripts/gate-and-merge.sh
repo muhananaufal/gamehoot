@@ -105,21 +105,34 @@ if [ "$run_local" = 1 ]; then
     fi
 fi
 
+# Whether every gate job of run ID passed (a run whose gate jobs were skipped is no gate).
+jobs_ok() {
+    local names job
+    names="$(gh run view "$1" --repo "$gate_repo" --json jobs --jq '.jobs[] | select(.conclusion == "success") | .name')" || return 1
+    for job in "${required_jobs[@]}"; do
+        grep -qxF "$job" <<< "$names" || return 1
+    done
+}
+
 # The run id of a green gate on COMMIT, where every gate job passed.
 green_run() {
-    local id names job ok
+    local id
     for id in $(gh run list --repo "$gate_repo" --workflow ci.yml --commit "$1" --json databaseId,status,conclusion --jq '.[] | select(.status == "completed" and .conclusion == "success") | .databaseId'); do
-        names="$(gh run view "$id" --repo "$gate_repo" --json jobs --jq '.jobs[] | select(.conclusion == "success") | .name')" || continue
-        ok=1
-        for job in "${required_jobs[@]}"; do
-            grep -qxF "$job" <<< "$names" || ok=0
-        done
-        if [ "$ok" = 1 ]; then
+        if jobs_ok "$id"; then
             echo "$id"
             return 0
         fi
     done
     return 1
+}
+
+# The single value of trailer $1 in the final trailer block of commit $2.
+trailer() {
+    local values
+    values="$(git log -1 --format=%B "$2" | git interpret-trailers --parse | sed -n "s/^$1: //p")"
+    if [ -n "$values" ] && [ "$(wc -l <<< "$values")" = 1 ]; then
+        printf '%s' "$values"
+    fi
 }
 
 gate_ref="refs/heads/gate/$branch"
@@ -134,6 +147,24 @@ if [ -n "$existing" ] && git fetch -q "$gate_remote" "$gate_ref" 2> /dev/null; t
             echo "Reusing the green gate run $run_id of the same code."
         fi
     fi
+fi
+
+# W18: the gate recorded on the newest develop or main, e.g. for a release that only adds the
+# changelog, its merge to main and its back-merge.
+if [ -z "$run_id" ]; then
+    for recorded in "refs/remotes/$origin/develop" "refs/remotes/$origin/main"; do
+        git rev-parse --verify --quiet "$recorded" > /dev/null || continue
+        recorded_run="$(trailer Gate-Run "$recorded")"
+        recorded_tree="$(trailer Gate-Tree "$recorded")"
+        [[ "$recorded_run" =~ ^[0-9]+$ ]] || continue
+        [ "$(git cat-file -t "$recorded_tree" 2> /dev/null)" = tree ] || continue
+        if { [ "$recorded_tree" = "$tree" ] || docs_only "$recorded_tree" "$tree"; } && jobs_ok "$recorded_run"; then
+            run_id="$recorded_run"
+            gated_tree="$recorded_tree"
+            echo "Reusing the green gate run $run_id recorded on ${recorded#refs/remotes/}."
+            break
+        fi
+    done
 fi
 
 if [ -z "$run_id" ]; then
