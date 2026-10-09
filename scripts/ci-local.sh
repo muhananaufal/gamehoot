@@ -109,6 +109,7 @@ job_rules() {
     {
         bash .github/scripts/repo-rules.test.sh
         bash .github/scripts/gate-trailer.test.sh
+        bash scripts/gate-and-merge.test.sh
         bash deploy/deploy.test.sh
         bash scripts/ci-report.test.sh
         bash .github/scripts/repo-rules.sh "$(git merge-base origin/develop HEAD)" HEAD
