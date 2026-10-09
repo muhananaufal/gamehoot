@@ -91,9 +91,12 @@ it('lets a host create an event and add names (B-4, F10)', function (): void {
 
     // Escape closes the dialog. The CSV upload itself is covered by feature tests: the browser
     // plugin's test server does not forward multipart bodies (W11).
-    $page->keys('add-names', 'Escape')
-        ->click('Import CSV')
-        ->assertSee('CSV file')
+    // Import CSV loads a modal from the server (U18): a plugin click that is retried after it worked
+    // lands on that modal and times out (Safari, gate run 37895969265), so it goes through a script.
+    $page->keys('add-names', 'Escape');
+    $page->assertScript('! document.querySelector("dialog[open]")');
+    $page->script('[...document.querySelectorAll("a")].find((a) => a.innerText.trim() === "Import CSV" && a.offsetParent !== null).click()');
+    $page->assertSee('CSV file')
         ->assertNoJavaScriptErrors();
 
     expect(Event::query()->where('owner_id', $host->id)->value('slug'))->toBe('gathering-2026-2');
