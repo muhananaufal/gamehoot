@@ -208,7 +208,8 @@ it('asks before New event drops what was entered (U24, U26)', function (): void 
     $page->script('[...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "New event").click()');
     $page->type('name', 'Year End Party');
     $page->keys('name', 'Escape');
-    $asking = '[...document.querySelectorAll("dialog[open] h2")].some((h) => h.innerText.trim() === "Discard this event?")';
+    // The question is its own <dialog> inside the wizard dialog, so its own open state counts.
+    $asking = '[...document.querySelectorAll("h2")].some((h) => h.textContent.trim() === "Discard this event?" && h.closest("dialog").open)';
     $page->assertScript($asking, true);
 
     $page->script('[...document.querySelectorAll("dialog[open] button")].find((b) => b.innerText.trim() === "Keep editing").click()');
