@@ -45,23 +45,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-    services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_ROOT_PASSWORD: ci-only-root
-          MYSQL_DATABASE: pentahoot_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Start MySQL in the background
+        run: bash .github/scripts/ci-mysql.sh start
       - uses: ./.github/actions/php-image
         with:
           push: ${{ vars.GATE_ROLE == 'gate' }}
@@ -71,6 +60,8 @@ jobs:
         run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - name: Audit dependencies
         run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci composer audit
+      - name: Wait for MySQL
+        run: bash .github/scripts/ci-mysql.sh wait
       - name: Run test suite (MySQL 8.4)
         run: |
           cp .env.example .env
@@ -93,23 +84,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-    services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_ROOT_PASSWORD: ci-only-root
-          MYSQL_DATABASE: pentahoot_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-root"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Start MySQL in the background
+        run: bash .github/scripts/ci-mysql.sh start
       - uses: ./.github/actions/php-image
         with:
           target: browser
@@ -118,6 +98,8 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c 'npm ci --no-audit --no-fund && npm run build'
           cp .env.example .env
+      - name: Wait for MySQL
+        run: bash .github/scripts/ci-mysql.sh wait
       - name: Run browser tests in Chrome (W11)
         # storage:link serves the public question images under /media (F16).
         run: |
@@ -203,7 +185,7 @@ jobs:
         if: env.PROOF == 'true'
         run: |
           for image in pentahoot-app:proof pentahoot-web:proof; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --skip-java-db-update --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
       - name: ESLint, Prettier, Vitest, build
         if: ${{ !cancelled() }}
@@ -366,7 +348,7 @@ jobs:
         run: |
           for image in "$REPO@$APP_DIGEST" "$REPO-web@$WEB_DIGEST"; do
             docker pull --quiet "$image"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --skip-java-db-update --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
 
   deploy-staging:
