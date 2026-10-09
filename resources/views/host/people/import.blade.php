@@ -22,7 +22,7 @@
             })"
         @endif>
         <div class="flex flex-col gap-3">
-            <h2 class="font-display text-[22px] font-bold">{{ __('people.import_title') }}</h2>
+            <h2 class="font-display text-title-s font-bold">{{ __('people.import_title') }}</h2>
             <ol class="flex flex-wrap items-center gap-2 text-sm font-semibold" aria-label="{{ __('people.import_steps') }}">
                 <li>
                     @if ($reviewing)
@@ -63,7 +63,7 @@
                 <div class="flex flex-col gap-1.5">
                     <label for="import-file" class="text-sm font-semibold">{{ __('people.file') }}</label>
                     <input id="import-file" type="file" name="file" accept=".csv,text/csv,text/plain" aria-describedby="import-file-hint"
-                        class="min-h-11 rounded-control border border-line-strong bg-field p-2 text-[15px] file:mr-3 file:rounded-[8px] file:border-0 file:bg-subtle file:px-3 file:py-2 file:font-semibold file:text-ink">
+                        class="min-h-11 rounded-control border border-line-strong bg-field p-2 text-body file:mr-3 file:rounded-[8px] file:border-0 file:bg-subtle file:px-3 file:py-2 file:font-semibold file:text-ink">
                     <p id="import-file-hint" class="text-sm text-muted">
                         {{ $last !== null ? __('people.last_file', ['name' => $last]) : __('people.file_hint') }}
                     </p>
@@ -112,13 +112,13 @@
                     <label class="relative flex w-full items-center sm:w-64">
                         <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
                         <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('people.search_review') }}" placeholder="{{ __('people.search_review') }}" autocomplete="off"
-                            class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
+                            class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-body text-ink">
                     </label>
                 </div>
 
                 {{-- The list scrolls inside the modal; the buttons stay in view below it. --}}
                 <div class="max-h-[50dvh] overflow-auto rounded-control border border-line-soft">
-                    <table class="w-full min-w-[560px] text-left text-[15px]">
+                    <table class="w-full min-w-[560px] text-left text-body">
                         <thead class="sticky top-0 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase">
                             <tr>
                                 <th scope="col" class="w-16 px-3 py-2">{{ __('people.row') }}</th>
@@ -191,7 +191,7 @@
 
                 {{-- U24: leaving after a change asks first (import-guard.js). --}}
                 <x-confirm-dialog :title="__('people.discard_title')" :trigger="__('people.discard')" hide-trigger dialog-id="discard-import">
-                    <p class="text-[15px] text-muted">{{ __('people.discard_body') }}</p>
+                    <p class="text-body text-muted">{{ __('people.discard_body') }}</p>
                     <div class="flex justify-end gap-2.5 pt-1.5">
                         <x-button variant="secondary" type="button" @click="$el.closest('dialog').close(); pending = null">{{ __('people.keep_editing') }}</x-button>
                         <x-button variant="destructive" type="button" @click="$el.closest('dialog').close(); leave()">{{ __('people.discard') }}</x-button>

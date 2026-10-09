@@ -74,3 +74,47 @@ it('pops a modal in, fully visible once it settles (U8)', function (): void {
         ->and($opacities === [] ? 0.0 : $opacities[count($opacities) - 1])->toBe(1.0);
     $page->assertNoJavaScriptErrors();
 });
+
+it('names an icon button in a Pentahoot tooltip on hover, and Escape closes it in place (U33)', function (): void {
+    actingAs(User::factory()->create());
+
+    $page = visit('/host')->wait(1);
+    $page->hover('[aria-label="Switch theme"]')->wait(0.8);
+
+    $page->assertScript("document.getElementById('host-tip')?.hidden === false && document.getElementById('host-tip').textContent", 'Switch theme')
+        // The browser's own title no longer shows beside it.
+        ->assertScript("document.querySelector('[aria-label=\"Switch theme\"]').hasAttribute('title')", false);
+
+    $page->keys('[aria-label="Switch theme"]', 'Escape')->wait(0.3);
+
+    $page->assertScript("document.getElementById('host-tip').hidden", true)
+        ->assertScript("document.activeElement?.getAttribute('aria-label')", 'Switch theme')
+        ->assertNoJavaScriptErrors();
+});
+
+it('lets Penta cover its eyes for the password and peek when it is shown (U32)', function (): void {
+    $page = visit('/login')->wait(1);
+
+    $page->type('password', 'abc')->wait(0.4);
+    $page->assertScript("document.querySelector('[data-mood]').dataset.mood", 'shy');
+
+    $page->click('[aria-label="Show password"]')->wait(0.4);
+    $page->assertScript("document.querySelector('[data-mood]').dataset.mood", 'peek')
+        ->assertNoJavaScriptErrors();
+});
+
+it('greets the lobby with Penta and celebrates on a canvas that clears itself (U30, U31)', function (): void {
+    Event::factory()->open()->create(['slug' => 'gathering-2026']);
+
+    $page = visit('/gathering-2026/screen')->wait(1.5);
+    $page->assertScript("getComputedStyle(document.querySelector('.scene-stack')).display", 'grid')
+        ->assertScript("document.querySelector('.scene-stack [data-mood]')?.dataset.mood", 'wave');
+
+    $page->script("window.dispatchEvent(new CustomEvent('celebrate', { detail: { key: 'browser-test' } }))");
+    $page->wait(0.5);
+    $page->assertScript("!!document.querySelector('[x-ref=confetti] canvas')", true);
+
+    $page->wait(3.5);
+    $page->assertScript("!!document.querySelector('[x-ref=confetti] canvas')", false)
+        ->assertNoJavaScriptErrors();
+});

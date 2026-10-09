@@ -2,7 +2,7 @@
      form is sent only from the dialog. $trigger, $title, $body, $action, $confirm, optional
      $variant (trigger), $tone (confirm button), $fields (hidden name => value). --}}
 <x-confirm-dialog :title="$title" :trigger="$trigger" :trigger-variant="$variant ?? 'primary'">
-    <p class="text-[15px] text-muted">{{ $body }}</p>
+    <p class="text-body text-muted">{{ $body }}</p>
     <form method="POST" action="{{ $action }}" class="flex justify-end gap-2.5 pt-1.5">
         @csrf
         @foreach ($fields ?? [] as $name => $value)

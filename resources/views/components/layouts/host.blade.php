@@ -28,10 +28,10 @@
         <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-nav/70 lg:hidden" @click="menuOpen = false"></div>
         {{-- U1: the sidebar scrolls on its own, so theme and sign out stay in view on long pages. --}}
         <aside id="host-sidebar" :data-collapsed="collapsed"
-            class="group fixed inset-y-0 left-0 z-40 flex h-dvh w-64 -translate-x-full flex-col bg-nav text-[15px] text-nav-ink transition-[transform,width] duration-200 ease-out lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0 lg:data-[collapsed=true]:w-[4.75rem]"
+            class="group fixed inset-y-0 left-0 z-40 flex h-dvh w-64 -translate-x-full flex-col bg-nav text-body text-nav-ink drawer lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0 lg:data-[collapsed=true]:w-[4.75rem]"
             :class="{ 'translate-x-0': menuOpen }">
             <div class="flex shrink-0 items-center justify-between px-5.5 pt-4 pb-4 lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0">
-                <span class="lg:group-data-[collapsed=true]:hidden"><x-logo :size="32" class="text-[22px]" /></span>
+                <span class="lg:group-data-[collapsed=true]:hidden"><x-logo :size="32" class="text-title-s" /></span>
                 <span class="hidden lg:group-data-[collapsed=true]:block"><x-logo :size="32" :wordmark="false" /></span>
                 <button type="button" class="flex size-11 items-center justify-center rounded-control text-nav-icon lg:hidden"
                     @click="menuOpen = false" aria-label="{{ __('host.nav.close_menu') }}">
@@ -94,20 +94,27 @@
                 @endcan
             </nav>
 
-            <div class="flex shrink-0 items-center gap-2.5 border-t border-nav-active px-5.5 py-3 lg:group-data-[collapsed=true]:flex-col lg:group-data-[collapsed=true]:px-2">
-                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
-                <div class="flex min-w-0 grow flex-col lg:group-data-[collapsed=true]:sr-only">
-                    <span class="truncate text-sm font-bold">{{ $user->name }}</span>
-                    <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+            {{-- U1: theme, motion and log out spread evenly over the full width, the account on its own
+                 row below, so the name and role stay readable beside the avatar. Narrowed, both stack as icons. --}}
+            <div class="flex shrink-0 flex-col gap-1 border-t border-nav-active px-5.5 py-3 lg:group-data-[collapsed=true]:items-center lg:group-data-[collapsed=true]:px-2">
+                <div class="flex items-center justify-evenly lg:group-data-[collapsed=true]:flex-col">
+                    <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
+                    <x-motion-toggle class="text-nav-icon hover:bg-nav-active" />
+                    <form method="POST" action="{{ route('logout') }}" up-submit="false">
+                        @csrf
+                        <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
+                            class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
+                            <x-icon name="logout" />
+                        </button>
+                    </form>
                 </div>
-                <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
-                <form method="POST" action="{{ route('logout') }}" up-submit="false">
-                    @csrf
-                    <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
-                        class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
-                        <x-icon name="logout" />
-                    </button>
-                </form>
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
+                    <div class="flex min-w-0 grow flex-col lg:group-data-[collapsed=true]:sr-only">
+                        <span class="truncate text-sm font-bold" data-test="account-name">{{ $user->name }}</span>
+                        <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+                    </div>
+                </div>
             </div>
         </aside>
         {{-- U1: apply a remembered narrow sidebar before the first paint, so it does not flash wide. --}}
@@ -129,7 +136,7 @@
                     aria-label="{{ __('host.nav.collapse') }}" :title="collapsed ? @js(__('host.nav.expand')) : @js(__('host.nav.collapse'))">
                     <x-icon name="sidebar" />
                 </button>
-                <nav id="breadcrumbs" aria-label="{{ __('host.nav.breadcrumb') }}" class="flex min-w-0 grow items-center gap-2 text-[15px]">
+                <nav id="breadcrumbs" aria-label="{{ __('host.nav.breadcrumb') }}" class="flex min-w-0 grow items-center gap-2 text-body">
                     @foreach ($breadcrumbs as [$label, $url])
                         @if ($loop->last)
                             <span class="truncate font-bold" aria-current="page">{{ $label }}</span>

@@ -97,7 +97,14 @@ it('offers the theme switch and a show-password button on the sign in page (U17)
     get('/login')
         ->assertOk()
         ->assertSee('x-data="themeToggle"', false)
-        ->assertSee('aria-label="Show password"', false);
+        ->assertSee('aria-label="Show password"', false)
+        // U32: Penta follows the caret, covers its eyes for the password and is sad after a failure.
+        ->assertSee('x-data="loginPenta"', false)
+        ->assertSee('name: '."'login'", false)
+        ->assertSee('mood: '."'idle'", false);
+
+    post('/login', ['login' => 'nobody@company.test', 'password' => 'wrong-password-1']);
+    get('/login')->assertSee('mood: '."'sad'", false);
 });
 
 describe('signing in with a username (C-6)', function (): void {

@@ -7,6 +7,7 @@ use App\Enums\GameStatus;
 use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\Pentahoot;
+use Tests\Support\TebakKata;
 
 use function Pest\Laravel\actingAs;
 
@@ -171,5 +172,34 @@ describe('Live control in three columns (D-10)', function (): void {
         // All games played: Close event first (left), Add a game after it (right).
         expect(strpos($html, '>Close event'))->toBeLessThan((int) strpos($html, '>Add a game'))
             ->and($html)->not->toContain('>Names</a>');
+    });
+});
+
+describe('motion (U32)', function (): void {
+    it('moves the Pentahoot card: the main action fades, the count beats, a refusal shakes', function (): void {
+        $event = Pentahoot::event();
+        Pentahoot::running($event);
+
+        $html = liveHtml($event);
+
+        expect($html)->toContain('x-nudge.fade="mainAction?.action"')
+            ->and($html)->toContain('x-nudge.pop="answered"')
+            ->and($html)->toContain('x-nudge.shake="error"')
+            // The steps: the line fills as a step is done and the new step beats once.
+            ->and($html)->toContain('timeline-fill')
+            ->and($html)->toContain('x-nudge.pulse=')
+            // The links of the Public View: the copy icon turns into a check.
+            ->and($html)->toContain(':data-icon="copied ? '."'check' : 'copy'".'"');
+    });
+
+    it('stamps the Tebak winner with a little confetti in the card', function (): void {
+        $event = Pentahoot::event();
+        TebakKata::running($event);
+
+        $html = liveHtml($event);
+
+        expect($html)->toContain('stamp-in')
+            ->and($html)->toContain('x-ref="winnerConfetti"')
+            ->and($html)->toContain('x-nudge.shake="error"');
     });
 });

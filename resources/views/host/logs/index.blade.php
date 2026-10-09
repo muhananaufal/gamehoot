@@ -21,7 +21,7 @@
                 </x-table.toolbar>
 
                 <div class="rounded-card bg-surface max-lg:overflow-x-auto">
-                    <table class="w-full min-w-[640px] text-left text-[15px]">
+                    <table class="w-full min-w-[640px] text-left text-body">
                         <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                             <tr>
                                 <x-table.th sort="at">{{ __('logs.when') }}</x-table.th>

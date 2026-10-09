@@ -67,6 +67,49 @@ describe('Public View (F23)', function (): void {
             ->toHaveKey('initial.lobby.joined', 1);
     });
 
+    it('follows the device motion setting only, never a choice made in the panel on the same browser (U27, U31)', function (): void {
+        screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('data-motion-device-only', false)
+            ->assertSee('document.documentElement.dataset.motion', false)
+            ->assertDontSee('pentahoot-motion', false);
+    });
+
+    it('changes its scenes with motion and keeps every live number moving (U30)', function (): void {
+        screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('class="scene-stack', false)
+            ->assertSee('x-transition:enter="scene-in"', false)
+            // The countdown ring and the last five seconds.
+            ->assertSee('pathLength="100"', false)
+            ->assertSee(':stroke-dashoffset="ring"', false)
+            ->assertSee('x-nudge.pulse=', false)
+            // Penta greets the lobby, and the player count pops when someone joins.
+            ->assertSee('name: '."'lobby'", false)
+            ->assertSee('x-nudge.pop=', false)
+            // T2: the banner says so when the connection comes back.
+            ->assertSee('Back online', false);
+    });
+
+    it('celebrates on a canvas and follows the host Screen animations setting (U31)', function (): void {
+        $event = screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('data-screen-animations="on"', false)
+            ->assertSee('x-data="celebration({ projector: true })"', false)
+            ->assertSee('@celebrate.window="play($event.detail)"', false)
+            ->assertSee('name: '."'celebration'", false);
+
+        $event->forceFill(['screen_animations' => false])->save();
+
+        get('/gathering-2026/screen')->assertSee('data-screen-animations="off"', false);
+    });
+
     it('answers unknown events with the not found screen', function (): void {
         get('/no-such-event/screen')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
     });

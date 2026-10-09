@@ -3,7 +3,8 @@
 // Opt out per element with up-follow="false" / up-submit="false" (e.g. sign out).
 
 import { animate as motionAnimate } from 'motion';
-import { markPageEntered, SPRING } from './flip.js';
+import { markPageEntered } from './flip.js';
+import { SPRING } from './motion.js';
 import { busyPreview } from './form-busy.js';
 
 /** U8: leaving is quicker than arriving (NN/g). */
@@ -71,7 +72,8 @@ export function configureNavigation(up, { animate = motionAnimate, onPageEnter =
 
     // U8: the old page fades out quickly while the new one fades in and its <main> rises with
     // the app's spring. Only <main> moves: a transform on the whole content column would carry
-    // its fixed toasts along. Unpoly turns motion off for prefers-reduced-motion, so does this.
+    // its fixed toasts along. Without motion (U27: the motion store sets up.motion.config.enabled),
+    // pages swap at once.
     up.transition('page', async (oldElement, newElement) => {
         // U13: the old page stays in the document while it fades; a native dialog left open in it
         // (the one whose form was just sent) sits on top of everything, so it closes at once.

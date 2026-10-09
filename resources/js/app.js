@@ -32,6 +32,11 @@ import { sortableList } from './sortable-list.js';
 import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
 import { themeToggle } from './theme.js';
+import { motionStore } from './motion.js';
+import { mascot } from './mascot.js';
+import { connectionBanner, lobbyPenta, loginPenta, nudgeDirective } from './scene.js';
+import { celebration } from './celebrate.js';
+import { tooltips } from './tooltip.js';
 
 // U8: the first page just opened, so its rows may come in one by one.
 markPageEntered();
@@ -46,6 +51,18 @@ window.up.compiler('form', (form) => {
 });
 configureNavigation(window.up);
 
+// U27: full or reduced motion for this device. Unpoly's own animations follow the same mode. The
+// Public View follows the device setting only (data-motion-device-only, U31).
+Alpine.store(
+    'motion',
+    motionStore({
+        storage: document.documentElement.hasAttribute('data-motion-device-only') ? null : globalThis.localStorage,
+        onChange: (mode) => {
+            window.up.motion.config.enabled = mode === 'full';
+        },
+    }),
+);
+
 // U3: one toast area per page, used by session messages and by page actions (Copy link).
 Alpine.store('toasts', toastStore());
 Alpine.store('confirm', confirmStore());
@@ -53,6 +70,17 @@ Alpine.store('rowMenu', rowMenuStore());
 // D-11: the game picked in the Replay card of Live control; it outlives the card's refreshes.
 Alpine.store('replayPick', { game: null });
 Alpine.data('tableView', tableView);
+// U29: Penta.
+Alpine.data('mascot', mascot);
+// U30: x-nudge.pop / .pulse / .flip / .shake: a small move when a shown value changes.
+Alpine.directive('nudge', nudgeDirective(Alpine));
+Alpine.data('connectionBanner', connectionBanner);
+Alpine.data('lobbyPenta', lobbyPenta);
+Alpine.data('loginPenta', loginPenta);
+// U31: confetti and a cheering Penta for the key moments.
+Alpine.data('celebration', celebration);
+// U33: the tooltips of the host panel.
+tooltips();
 // U8: lists drawn by Alpine (rank lists) slide rows to their new place. x-flip.moves leaves the
 // rows that appear to their own CSS enter animation.
 Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {

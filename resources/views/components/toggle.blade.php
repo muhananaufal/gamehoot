@@ -17,6 +17,6 @@
     <label for="{{ $id }}" class="relative inline-flex h-11 shrink-0 cursor-pointer items-center">
         <input id="{{ $id }}" type="checkbox" name="{{ $name }}" value="1" role="switch" class="peer sr-only" @checked(old($name, $checked))>
         <span class="h-7 w-12 rounded-full bg-line-strong transition-colors peer-checked:bg-accent peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" aria-hidden="true"></span>
-        <span class="absolute left-1 size-5 rounded-full bg-surface transition-transform peer-checked:translate-x-5" aria-hidden="true"></span>
+        <span class="toggle-knob absolute left-1 size-5 rounded-full bg-surface peer-checked:translate-x-5" aria-hidden="true"></span>
     </label>
 </div>

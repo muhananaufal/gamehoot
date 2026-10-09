@@ -30,4 +30,10 @@ return [
     'back' => 'Back',
     'edit' => 'Edit',
     'close' => 'Close',
+    // U27: the motion switch of this device.
+    'reduce_motion' => 'Reduce motion',
+    'allow_motion' => 'Allow motion',
+    // U29: what holding Penta did.
+    'penta_rest' => 'Penta can rest',
+    'penta_awake' => 'Penta is back',
 ];

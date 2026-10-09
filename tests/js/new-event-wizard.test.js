@@ -8,6 +8,21 @@ const texts = {
 };
 const wizard = (options = {}) => newEventWizard({ texts, parseUrl: '/parse', ...options });
 
+describe('U32 the steps slide the way the host moves', () => {
+    it('slides forward on Next or a later step, and back on Back or an earlier step', () => {
+        const steps = wizard({ start: 2, detailsValid: true });
+
+        steps.next();
+        expect(steps.direction).toBe('forward');
+        steps.back();
+        expect(steps.direction).toBe('back');
+        steps.go(4);
+        expect(steps.direction).toBe('forward');
+        steps.go(1);
+        expect(steps.direction).toBe('back');
+    });
+});
+
 describe('U26 the steps of New event', () => {
     it('starts at Name and link, and opens the other steps only once it is valid', () => {
         const steps = wizard();

@@ -17,7 +17,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
  * asking at once cost one computation. server_now (F4) and the game counters that change
  * without a version bump (F24) are added fresh on every call.
  *
- * @phpstan-type EventPart array{name: string, status: string, link: string, claims_locked: bool, screen_theme: string, show_on_devices: bool, roster: int}
+ * @phpstan-type EventPart array{name: string, status: string, link: string, claims_locked: bool, screen_theme: string, show_on_devices: bool, screen_animations: bool, roster: int}
  *
  * @phpstan-import-type Payload from ReplayMoments
  *
@@ -74,6 +74,8 @@ final readonly class EventSnapshot
                 'screen_theme' => $event->screen_theme->value,
                 // E14: phones mirror the Tebak screens only when the host turned this on.
                 'show_on_devices' => $event->show_on_devices,
+                // U31: the Public View plays idle bursts and confetti only when this is on.
+                'screen_animations' => $event->screen_animations,
                 // B-6: moves when the host changes the name list (not on claims).
                 'roster' => $event->roster_version,
             ],

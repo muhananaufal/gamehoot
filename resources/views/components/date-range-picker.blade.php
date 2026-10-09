@@ -17,7 +17,7 @@
         class="m-auto w-[min(660px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-ink shadow-2xl">
         <div class="flex flex-col gap-4 p-5.5">
             <div class="flex items-center justify-between gap-3">
-                <h2 id="date-range-title" class="font-display text-[22px] font-bold">{{ $label }}</h2>
+                <h2 id="date-range-title" class="font-display text-title-s font-bold">{{ $label }}</h2>
                 <div class="flex items-center gap-1">
                     <button type="button" @click="shift(-1)" aria-label="{{ __('ui.previous_month') }}" title="{{ __('ui.previous_month') }}"
                         class="flex size-11 items-center justify-center rounded-control hover:bg-subtle"><x-icon name="chevron-left" /></button>

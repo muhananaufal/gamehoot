@@ -32,6 +32,12 @@ describe('U1 host sidebar', function (): void {
             ->assertDontSee('Someone else party');
     });
 
+    it('keeps the Reduce motion switch beside the theme switch at the foot of the sidebar (U27)', function (): void {
+        actingAs(User::factory()->create())->get('/host/packs')
+            ->assertOk()
+            ->assertSeeInOrder(['aria-label="Switch theme"', '$store.motion.toggle()', 'aria-label="Log out"'], false);
+    });
+
     it('opens the pages of the event being worked on under its name', function (): void {
         $host = User::factory()->create();
         $event = Event::factory()->for($host, 'owner')->create(['name' => 'Gathering 2026']);
@@ -87,7 +93,10 @@ describe('U1 host sidebar', function (): void {
         $html = (string) actingAs($host)->get('/host')->getContent();
 
         expect($html)->toMatch('/<aside id="host-sidebar"[^>]*lg:sticky[^>]*lg:h-dvh/')
-            ->and($html)->toMatch('/<nav [^>]*class="[^"]*overflow-y-auto[^"]*" aria-label="Main"/');
+            ->and($html)->toMatch('/<nav [^>]*class="[^"]*overflow-y-auto[^"]*" aria-label="Main"/')
+            // U32: the phone drawer slides in with the motion tokens, not a fixed 200 ms.
+            ->and($html)->toMatch('/<aside id="host-sidebar"[^>]*class="[^"]* drawer /')
+            ->and($html)->not->toMatch('/<aside id="host-sidebar"[^>]*duration-200/');
     });
 
     it('can be narrowed to icons on wide screens, with a labelled button', function (): void {
@@ -95,6 +104,8 @@ describe('U1 host sidebar', function (): void {
 
         actingAs($host)->get('/host')
             ->assertSee('aria-label="Collapse sidebar"', false)
+            // U33: a narrowed sidebar names its links in a Pentahoot tooltip to their right.
+            ->assertSee('data-tip-collapsed data-tip-side="right"', false)
             ->assertSee('aria-controls="host-sidebar"', false);
     });
 });

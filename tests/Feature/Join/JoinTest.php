@@ -122,7 +122,16 @@ describe('claiming a name (B-1, G3)', function (): void {
 
         withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')
             ->assertOk()
-            ->assertSee('You’re in, Budi Santoso!', false);
+            ->assertSee('You’re in, Budi Santoso!', false)
+            // U31: the light confetti of phones, with its own cheering Penta.
+            ->assertSee('x-data="celebration({ projector: false })"', false)
+            // U30: phone scenes, the pick that beats, the Sent stamp, Penta's moods and "you" on the podium.
+            ->assertSee('class="scene-stack phone-scenes', false)
+            ->assertSee('x-nudge.pulse=', false)
+            ->assertSee('stamp-in', false)
+            ->assertSee('mood: '."'happy'", false)
+            ->assertSee('mood: '."'sad'", false)
+            ->assertSee('ring-accent', false);
     });
 
     it('refuses a name that another phone already claimed (NAME_TAKEN)', function (): void {

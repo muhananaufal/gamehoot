@@ -24,6 +24,7 @@
 {{-- U26: New event in four steps; nothing is saved before Create event. Every step stays in the
      form (only hidden), so Create event sends them all; the server checks them all again. --}}
 <form method="POST" action="{{ route('host.events.store') }}" novalidate x-ref="wizardForm"
+    :style="'--step-dir: ' + (direction === 'back' ? -1 : 1)"
     x-data="newEventWizard({
         texts: {{ Js::from($texts) }},
         parseUrl: {{ Js::from(route('host.events.names.parse')) }},
@@ -58,14 +59,14 @@
 
     {{-- ① Name and link: the fields New event had before. --}}
     {{-- A field the host changes drops its old server error; the server checks it again (live check, Create). --}}
-    <div x-show="step === 1" x-ref="details" @input="$event.target.removeAttribute('aria-invalid'); refreshDetails(quietlyValid($refs.details))" class="flex flex-col gap-4">
+    <div x-show="step === 1" x-transition:enter="step-in" x-transition:enter-start="step-from" x-ref="details" @input="$event.target.removeAttribute('aria-invalid'); refreshDetails(quietlyValid($refs.details))" class="flex flex-col gap-4">
         {{-- U19: every send of this form keeps what was typed, the live checks too; with $sent (errors only) a
              field the server drew again after a check came back empty. --}}
         <x-forms.new-event-fields :submitted="old('form') === 'create-event'" />
     </div>
 
     {{-- ② Names: typed one per line, and the names of a CSV file added under them. --}}
-    <div x-show="step === 2" x-cloak class="flex flex-col gap-2">
+    <div x-show="step === 2" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-2">
         <div class="flex flex-wrap items-end justify-between gap-2">
             <label for="new-event-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
             <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-4 text-sm font-bold text-ink hover:bg-subtle"
@@ -77,7 +78,7 @@
         </div>
         <textarea id="new-event-names" name="names" rows="8" x-model="text" autocomplete="off" placeholder="{{ __('examples.names') }}"
             aria-describedby="new-event-names-hint new-event-names-check"
-            class="max-h-[40dvh] rounded-control border border-line-strong bg-field px-3 py-2.5 text-[15px] text-ink"></textarea>
+            class="max-h-[40dvh] rounded-control border border-line-strong bg-field px-3 py-2.5 text-body text-ink"></textarea>
         <p id="new-event-names-hint" class="text-sm text-muted">{{ __('events.names_step_hint') }}</p>
         <p x-show="importError !== ''" x-cloak x-text="importError" role="alert" class="text-sm font-semibold text-on-danger"></p>
         <p x-show="importNote !== ''" x-cloak class="flex flex-wrap items-center gap-2 text-sm text-on-success">
@@ -99,9 +100,9 @@
     </div>
 
     {{-- ③ Games: the pack list of Add games, picked in order. --}}
-    <div x-show="step === 3" x-cloak class="flex flex-col gap-3">
+    <div x-show="step === 3" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-3">
         @if ($packs->isEmpty())
-            <p class="text-[15px] text-muted">{{ __('games.no_packs') }}</p>
+            <p class="text-body text-muted">{{ __('games.no_packs') }}</p>
         @else
             <x-pack-list :packs="$packs" :types="$types" pick />
             @include('host.partials.pack-picks')
@@ -113,11 +114,11 @@
     </div>
 
     {{-- ④ Review: what Create event saves, each part with the way back to its step. --}}
-    <div x-show="step === 4" x-cloak class="flex flex-col gap-1">
+    <div x-show="step === 4" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-1">
         <dl class="flex flex-col divide-y divide-line-soft">
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_event') }}</dt>
-                <dd class="flex min-w-0 grow flex-col gap-0.5 text-[15px]">
+                <dd class="flex min-w-0 grow flex-col gap-0.5 text-body">
                     <span class="font-semibold" x-text="step === 4 ? details().name : ''"></span>
                     <span class="text-sm text-muted" x-text="step === 4 ? @js(parse_url(config('app.url'), PHP_URL_HOST) . '/') + details().slug : ''"></span>
                     <span class="text-sm text-muted" x-text="step === 4 ? details().summary : ''"></span>
@@ -126,7 +127,7 @@
             </div>
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_names') }}</dt>
-                <dd class="flex min-w-0 grow flex-col gap-0.5 text-[15px]">
+                <dd class="flex min-w-0 grow flex-col gap-0.5 text-body">
                     <span x-text="nameCheck.names.length > 0 ? nameCount : @js(__('events.no_names_yet'))"></span>
                     <span x-show="! namesOk" class="text-sm font-semibold text-on-danger">{{ __('events.names_to_fix') }}</span>
                 </dd>
@@ -134,7 +135,7 @@
             </div>
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
                 <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_games') }}</dt>
-                <dd class="min-w-0 grow text-[15px]" x-text="picked.length > 0 ? chips().map((chip) => chip.number + '. ' + chip.title).join(' · ') : @js(__('events.no_games_yet'))"></dd>
+                <dd class="min-w-0 grow text-body" x-text="picked.length > 0 ? chips().map((chip) => chip.number + '. ' + chip.title).join(' · ') : @js(__('events.no_games_yet'))"></dd>
                 <button type="button" @click="go(3)" class="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
             </div>
         </dl>
@@ -159,8 +160,8 @@
     {{-- U24: leaving after typing asks first. --}}
     <dialog x-ref="discard" class="m-auto w-[min(400px,calc(100vw-2rem))] rounded-panel bg-surface p-0 text-left text-ink shadow-2xl">
         <div class="flex flex-col gap-3 p-5.5">
-            <h2 class="font-display text-[22px] font-bold">{{ __('events.discard_title') }}</h2>
-            <p class="text-[15px] text-muted">{{ __('events.discard_body') }}</p>
+            <h2 class="font-display text-title-s font-bold">{{ __('events.discard_title') }}</h2>
+            <p class="text-body text-muted">{{ __('events.discard_body') }}</p>
             <div class="flex justify-end gap-2.5 pt-1.5">
                 <x-button variant="secondary" type="button" @click="$refs.discard.close()">{{ __('people.keep_editing') }}</x-button>
                 <x-button variant="destructive" type="button" @click="$refs.discard.close(); discard()">{{ __('people.discard') }}</x-button>

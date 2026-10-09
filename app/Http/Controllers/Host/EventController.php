@@ -65,6 +65,7 @@ final class EventController
             $request->string('slug')->toString(),
             $request->theme(),
             $request->boolean('show_on_devices'),
+            $request->boolean('screen_animations'),
             $user,
         );
 

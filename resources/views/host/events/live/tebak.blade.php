@@ -28,9 +28,11 @@ tebakHost({
         </section>
         @break
     @case('control')
-        <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
+        <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error" x-nudge.shake="error"></p>
         {{-- The question on screen, with the answer only hosts see. --}}
-        <section class="flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
+        <section class="relative flex flex-col gap-5 rounded-card bg-surface p-6" aria-live="polite">
+            {{-- U32: a little confetti over the card when the winner is set. --}}
+            <div x-ref="winnerConfetti" class="pointer-events-none absolute inset-0 overflow-hidden rounded-card" aria-hidden="true"></div>
             <p x-show="!question && !allResolved" class="text-muted">{{ __('tebak.no_question') }}</p>
             {{-- D-10: the first question starts from the middle; after that, Next question or the list. --}}
             <div x-show="!question && firstToOpen" class="flex justify-end">
@@ -50,7 +52,7 @@ tebakHost({
                         <span class="text-sm font-semibold" x-text="count('points', question.points)"></span>
                     </div>
                     @include('host.events.live.tebak.' . $game->type->value)
-                    <p x-show="question.status === 'won'" class="rounded-card bg-rank-1 px-4 py-3 font-display text-lg font-bold text-on-rank-1">
+                    <p x-show="question.status === 'won'" class="stamp-in rounded-card bg-rank-1 px-4 py-3 font-display text-lg font-bold text-on-rank-1">
                         <span>{{ __('tebak.winner') }}:</span> <span x-text="question.winner"></span>
                     </p>
                     <p x-show="question.status === 'surrendered'" class="font-semibold text-muted">{{ __('tebak.no_winner') }}</p>
@@ -87,14 +89,14 @@ tebakHost({
                 </div>
                 {{-- Outside the row: their empty wrappers would add gaps and push the buttons left. --}}
                     <x-confirm-dialog :title="__('tebak.skip_title')" :trigger="__('tebak.skip')" hide-trigger dialog-id="skip-question">
-                        <p class="text-[15px] text-muted">{{ __('tebak.skip_help') }}</p>
+                        <p class="text-body text-muted">{{ __('tebak.skip_help') }}</p>
                         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
                             <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>
                             <x-button type="button" data-test="confirm-skip" x-bind:disabled="busy" @click="$el.closest('dialog').close(); act('skip')">{{ __('tebak.skip') }}</x-button>
                         </form>
                     </x-confirm-dialog>
                     <x-confirm-dialog :title="__('tebak.confirm_winner_title')" :trigger="__('tebak.pick_winner')" hide-trigger dialog-id="pick-winner">
-                        <p class="text-[15px] text-muted" x-text="chosen ? @js(__('tebak.confirm_winner', ['name' => '__NAME__'])).replace('__NAME__', chosen.name) : ''"></p>
+                        <p class="text-body text-muted" x-text="chosen ? @js(__('tebak.confirm_winner', ['name' => '__NAME__'])).replace('__NAME__', chosen.name) : ''"></p>
                         {{-- The confirm button closes the dialog itself: once act() sets busy, Alpine disables
                              it before the click's default action, so the dialog form would never submit. --}}
                         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
@@ -104,7 +106,7 @@ tebakHost({
                     </x-confirm-dialog>
                     {{-- D-10: Surrender is rare; it opens from the game card menu. --}}
                     <x-confirm-dialog :title="__('tebak.surrender_title')" :trigger="__('tebak.surrender')" hide-trigger dialog-id="give-up">
-                        <p class="text-[15px] text-muted">{{ __('tebak.surrender_help') }}</p>
+                        <p class="text-body text-muted">{{ __('tebak.surrender_help') }}</p>
                         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
                             <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>
                             <x-button type="submit" variant="destructive" @click="act('surrender')">{{ __('tebak.surrender') }}</x-button>

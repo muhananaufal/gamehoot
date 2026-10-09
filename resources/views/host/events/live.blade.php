@@ -82,9 +82,9 @@
                             {{-- D-10: a later game, started from its step, out of order. --}}
                             @foreach ($games->filter(fn ($game) => $game->status !== \App\Enums\GameStatus::Finished && $game->id !== $event->active_game_id && ! $game->is($next)) as $later)
                                 <x-confirm-dialog :title="__('live.start_out_of_order', ['title' => $later->title])" :trigger="__('games.start')" hide-trigger dialog-id="start-{{ $later->id }}">
-                                    <p class="text-[15px] text-muted">{{ __('live.start_out_of_order_help', ['title' => $later->title, 'next' => $next->title]) }}</p>
+                                    <p class="text-body text-muted">{{ __('live.start_out_of_order_help', ['title' => $later->title, 'next' => $next->title]) }}</p>
                                     @if ($event->names_locked_at === null)
-                                        <p class="text-[15px] text-muted">{{ __('games.start_locks_names') }}</p>
+                                        <p class="text-body text-muted">{{ __('games.start_locks_names') }}</p>
                                     @endif
                                     <form method="POST" action="{{ route('host.events.games.start', [$event, $later]) }}" class="flex justify-end gap-2.5 pt-1.5">
                                         @csrf
@@ -176,7 +176,7 @@
                             <dd class="flex items-center gap-2">
                                 <a href="{{ $url }}" class="min-w-0 truncate text-link underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ $url }}</a>
                                 <button type="button" class="row-action shrink-0" :aria-label="copied ? @js(__('live.copied')) : @js(__('live.copy') . ' ' . $label)" :title="copied ? @js(__('live.copied')) : @js(__('live.copy'))"
-                                    @click="navigator.clipboard?.writeText(@js($url)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"><i data-icon="copy"></i></button>
+                                    @click="navigator.clipboard?.writeText(@js($url)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"><i data-icon="copy" :data-icon="copied ? 'check' : 'copy'" x-nudge.pulse="copied ? 'copied' : null"></i></button>
                             </dd>
                         </div>
                     @endforeach

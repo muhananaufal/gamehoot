@@ -11,7 +11,9 @@ it('makes the whole switch of a toggle clickable, not only its text (E14)', func
     $html = Blade::render('<x-toggle name="show_on_devices" label="Show questions" />');
 
     // The drawn switch is a label for the hidden checkbox, so a tap on it toggles.
-    expect($html)->toMatch('/<label for="toggle-show_on_devices" class="[^"]*cursor-pointer[^"]*">\s*<input id="toggle-show_on_devices"/');
+    expect($html)->toMatch('/<label for="toggle-show_on_devices" class="[^"]*cursor-pointer[^"]*">\s*<input id="toggle-show_on_devices"/')
+        // U32: the knob moves with a spring.
+        ->and($html)->toContain('toggle-knob');
 });
 
 it('writes the score under each podium name with its unit (E17)', function (): void {
@@ -64,6 +66,50 @@ it('shows where the theme switch goes: sun while dark, moon while light (U17)', 
         ->and($html)->toMatch('/<span x-show="dark"[^>]*>\s*<svg/')
         ->and($html)->toMatch('/<span x-show="! dark"[^>]*>\s*<svg/')
         ->and($html)->toContain('aria-label="Switch theme"');
+});
+
+it('switches motion for this device and says which way it goes (U27)', function (): void {
+    $html = Blade::render('<x-motion-toggle />');
+
+    expect($html)->toContain('x-data')
+        ->and($html)->toContain('@click="$store.motion.toggle()"')
+        ->and($html)->toContain(':aria-pressed="$store.motion.reduced.toString()"')
+        ->and($html)->toContain('aria-label="Reduce motion"')
+        ->and($html)->toContain('Allow motion')
+        // U5: icons drawn once in CSS, so the 500-name join page stays light (A3).
+        ->and($html)->toContain('<span x-show="! $store.motion.reduced" data-icon="sparkles"')
+        ->and($html)->toContain('<span x-show="$store.motion.reduced" x-cloak data-icon="sparkles-off"')
+        ->and($html)->not->toContain('<svg');
+});
+
+it('draws Penta from the logo with parts that move, as decoration (U29)', function (): void {
+    $html = Blade::render('<x-mascot :size="96" mood="wave" />');
+
+    expect($html)->toContain('x-data="mascot({ mood: '."'wave'")
+        ->and(substr_count($html, 'data-part="segment"'))->toBe(5)
+        ->and(substr_count($html, 'data-part="eye"'))->toBe(2)
+        ->and(substr_count($html, 'data-part="pupil"'))->toBe(2)
+        ->and($html)->toContain('data-part="happy"')
+        ->and($html)->toContain('data-part="smile"')
+        ->and($html)->toContain('data-part="oh"')
+        ->and($html)->toContain('data-part="zz"')
+        ->and($html)->toContain('data-mood="wave"')
+        ->and($html)->toContain('aria-hidden="true"')
+        ->and($html)->toContain('@mascot-react.window="react($event.detail)"');
+});
+
+it('changes a scene with the motion tokens: the new one comes in while the old one leaves (U30)', function (): void {
+    $html = Blade::render('<x-scene show="phase === 1" class="grow">Question</x-scene>');
+
+    expect($html)->toContain('<main x-cloak x-show="phase === 1"')
+        ->and($html)->toContain('x-transition:enter="scene-in"')
+        ->and($html)->toContain('x-transition:enter-start="scene-from"')
+        ->and($html)->toContain('x-transition:leave="scene-out"')
+        ->and($html)->toContain('x-transition:leave-end="scene-gone"')
+        ->and($html)->toContain('class="grow"')
+        ->and($html)->toContain('Question');
+
+    expect(Blade::render('<x-scene show="open" as="div" :cloak="false">Lobby</x-scene>'))->toStartWith('<div x-show="open"');
 });
 
 it('lets every password field be shown and hidden (U17)', function (): void {

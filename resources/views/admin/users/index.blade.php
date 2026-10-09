@@ -56,7 +56,7 @@
         </x-table.toolbar>
 
         <div class="rounded-card bg-surface max-lg:overflow-x-auto">
-            <table class="w-full min-w-[820px] text-left text-[15px]" @click="onRowClick($event)">
+            <table class="w-full min-w-[820px] text-left text-body" @click="onRowClick($event)">
                 <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                     <tr>
                         <x-table.th sort="name">{{ __('accounts.name') }}</x-table.th>

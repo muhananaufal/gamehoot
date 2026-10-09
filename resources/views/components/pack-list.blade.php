@@ -17,11 +17,11 @@
      marks the open pack, also on its question pages (up-alias). On Games they add the pack. --}}
 <nav id="pack-list" x-data="packList" aria-label="{{ __('packs.title') }}"
     {{-- In the Add games dialog the list fills the dialog and scrolls inside it; on a page it keeps beside the content. --}}
-    class="{{ $pick ? 'w-full max-h-[50dvh] overflow-y-auto' : 'self-start rounded-card bg-surface p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto' }} flex flex-col gap-3 [&_[data-items]]:flex [&_[data-items]]:flex-col [&_[data-items]]:gap-0.5 [&_[data-pack]]:flex [&_[data-pack]]:w-full [&_[data-pack]]:min-h-11 [&_[data-pack]]:text-left [&_[data-pack]]:items-center [&_[data-pack]]:justify-between [&_[data-pack]]:gap-2 [&_[data-pack]]:rounded-control [&_[data-pack]]:px-3 [&_[data-pack]]:text-[15px] [&_[data-pack]:hover]:bg-subtle [&_[data-pack][aria-current]]:bg-subtle [&_[data-pack][aria-current]]:font-bold [&_[data-pack]>span:first-child]:truncate [&_[data-pack]>span:last-child]:text-sm [&_[data-pack]>span:last-child]:text-muted [&_[data-pack]>span:last-child]:tabular-nums">
+    class="{{ $pick ? 'w-full max-h-[50dvh] overflow-y-auto' : 'self-start rounded-card bg-surface p-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto' }} flex flex-col gap-3 [&_[data-items]]:flex [&_[data-items]]:flex-col [&_[data-items]]:gap-0.5 [&_[data-pack]]:flex [&_[data-pack]]:w-full [&_[data-pack]]:min-h-11 [&_[data-pack]]:text-left [&_[data-pack]]:items-center [&_[data-pack]]:justify-between [&_[data-pack]]:gap-2 [&_[data-pack]]:rounded-control [&_[data-pack]]:px-3 [&_[data-pack]]:text-body [&_[data-pack]:hover]:bg-subtle [&_[data-pack][aria-current]]:bg-subtle [&_[data-pack][aria-current]]:font-bold [&_[data-pack]>span:first-child]:truncate [&_[data-pack]>span:last-child]:text-sm [&_[data-pack]>span:last-child]:text-muted [&_[data-pack]>span:last-child]:tabular-nums">
     <label class="relative flex items-center">
         <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
         <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('packs.search') }}" placeholder="{{ __('packs.search') }}" autocomplete="off"
-            class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
+            class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-body text-ink">
     </label>
     <div class="grid grid-cols-2 gap-2">
         <x-select :options="[

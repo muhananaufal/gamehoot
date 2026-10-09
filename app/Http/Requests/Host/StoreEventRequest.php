@@ -52,6 +52,7 @@ final class StoreEventRequest extends FormRequest
             'slug' => ['required', 'string', new EventSlug, $unique, $keepLink],
             'screen_theme' => ['required', Rule::enum(ScreenTheme::class)],
             'show_on_devices' => ['sometimes', 'boolean'],
+            'screen_animations' => ['sometimes', 'boolean'],
         ];
 
         if ($event instanceof Event) {

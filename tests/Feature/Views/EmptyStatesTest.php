@@ -19,7 +19,8 @@ it('guides the host on empty event pages', function (string $page, string $title
     $html = (string) actingAs($host)->get(str_replace('{event}', $event->id, $page))->assertOk()->getContent();
     $main = Str::after($html, '<main');
 
-    expect($main)->toContain('mascot-idle')
+    // U29: Penta peeks in on an empty page.
+    expect($main)->toContain('x-data="mascot({ mood: '."'peek'")
         ->and($main)->toContain($title)
         ->and($main)->toContain($next);
 })->with([

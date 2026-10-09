@@ -30,6 +30,8 @@ export function newEventWizard({
 
     return {
         step: start,
+        // U32: the steps slide the way the host moves.
+        direction: 'forward',
         detailsValid,
         // Step 1 was passed with Next once (or the server sent the form back past it).
         detailsChecked: detailsValid,
@@ -75,6 +77,7 @@ export function newEventWizard({
 
         go(step) {
             if (this.canGo(step)) {
+                this.direction = step < this.step ? 'back' : 'forward';
                 this.step = step;
             }
         },
@@ -84,10 +87,12 @@ export function newEventWizard({
                 return;
             }
 
+            this.direction = 'forward';
             this.step = Math.min(STEPS, this.step + 1);
         },
 
         back() {
+            this.direction = 'back';
             this.step = Math.max(1, this.step - 1);
         },
 
@@ -111,6 +116,7 @@ export function newEventWizard({
 
             this.detailsValid = true;
             this.detailsChecked = true;
+            this.direction = 'forward';
             this.step = 2;
         },
 

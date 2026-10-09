@@ -38,7 +38,7 @@
         'w-[min(1000px,calc(100vw-2rem))]' => $size === 'lg',
     ])>
         <div class="flex flex-col gap-3 p-5.5">
-            <h2 class="font-display text-[22px] font-bold">{{ $title }}</h2>
+            <h2 class="font-display text-title-s font-bold">{{ $title }}</h2>
             {{ $slot }}
         </div>
     </dialog>

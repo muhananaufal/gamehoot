@@ -35,7 +35,7 @@
     <x-slot:actions>
         <x-confirm-dialog :title="__('games.add_games')" :trigger="__('games.add_game')" trigger-icon="plus" :trigger-variant="$editable ? 'secondary' : 'primary'" size="md">
             @if ($packs->isEmpty())
-                <p class="text-[15px] text-muted">{{ __('games.no_packs') }}</p>
+                <p class="text-body text-muted">{{ __('games.no_packs') }}</p>
                 <div class="flex justify-end gap-2.5 pt-1.5">
                     <x-button :href="route('host.packs.index')" variant="secondary">{{ __('host.nav.question_packs') }}</x-button>
                 </div>

@@ -115,3 +115,10 @@ describe('reading a name file for the new event, without saving it (U26, T4)', f
             ->assertJsonPath('errors.file.0', 'This is not a CSV file. Save the list from Excel as CSV, or use the template.');
     });
 });
+
+it('slides the steps of New event the way the host moves (U32)', function (): void {
+    actingAs(User::factory()->create())->get('/host')
+        ->assertOk()
+        ->assertSee('--step-dir', false)
+        ->assertSee('x-transition:enter-start="step-from"', false);
+});

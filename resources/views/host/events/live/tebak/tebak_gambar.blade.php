@@ -13,7 +13,7 @@
 {{-- D-10: Reveal belongs to the images, so it sits right under them, on the right. --}}
 <div x-show="canReveal" class="flex justify-end">
     <x-confirm-dialog :title="__('tebak.reveal_title')" :trigger="__('tebak.reveal')" trigger-variant="secondary">
-        <p class="text-[15px] text-muted">{{ __('tebak.reveal_help') }}</p>
+        <p class="text-body text-muted">{{ __('tebak.reveal_help') }}</p>
         {{-- Closes the dialog itself, like the winner confirmation: see live/tebak.blade.php. --}}
         <form method="dialog" class="flex justify-end gap-2.5 pt-1.5">
             <x-button variant="secondary" type="submit">{{ __('ui.cancel') }}</x-button>

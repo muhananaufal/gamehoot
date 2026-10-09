@@ -3,6 +3,8 @@
     'stand',
     // Plural forms of the score under each name, e.g. "5 votes" or "2 points" (E17).
     'score',
+    // U30: a JavaScript expression for the viewer's own name, ringed on the podium (phones).
+    'self' => null,
 ])
 {{-- F20, E17: the final podium, 2 - 1 - 3, with ranks 4 and 5 as small rows below. A tie can
      put several names on one step or leave a step empty. --}}
@@ -14,6 +16,7 @@
                 <template x-for="row in {{ $stand }}.{{ $step }}" :key="row.summary ? 'summary' : row.name">
                     <div class="podium-name flex max-w-full flex-col items-center gap-1 text-center" :class="{{ $stand }}.{{ $step }}.length > 2 ? 'text-[0.7em]' : ''">
                         <span class="flex size-[2.6em] items-center justify-center rounded-full bg-surface font-display font-bold"
+                            @if ($self) :class="!row.summary && row.name === {{ $self }} && 'ring-4 ring-accent'" @endif
                             x-text="row.summary ? row.count : $store.realtime.initials(row.name)"></span>
                         {{-- E20: a step with more than three names shows one summary. --}}
                         <span class="max-w-full truncate font-semibold"

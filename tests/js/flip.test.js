@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { flipList } from '../../resources/js/flip.js';
+import { flipList, prefersReducedMotion } from '../../resources/js/flip.js';
 
 /** A fake list: rows with a position and a key, inside a container at (0, 100). */
 const list = (rows) => {
@@ -126,5 +126,22 @@ describe('U8 rows that move, appear and stay (FLIP)', () => {
             entering: () => false,
         });
         expect(animate).not.toHaveBeenCalled();
+    });
+});
+
+describe('U27 reduced motion for FLIP', () => {
+    const win = (motion, deviceReduced) => ({
+        document: { documentElement: { dataset: motion === undefined ? {} : { motion } } },
+        matchMedia: () => ({ matches: deviceReduced }),
+    });
+
+    it('follows the mode on the page, which includes the Reduce motion switch', () => {
+        expect(prefersReducedMotion(win('reduced', false))).toBe(true);
+        expect(prefersReducedMotion(win('full', true))).toBe(false);
+    });
+
+    it('falls back to the device setting when the page has no mode', () => {
+        expect(prefersReducedMotion(win(undefined, true))).toBe(true);
+        expect(prefersReducedMotion(win(undefined, false))).toBe(false);
     });
 });

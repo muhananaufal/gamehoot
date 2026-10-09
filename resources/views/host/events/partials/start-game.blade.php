@@ -2,9 +2,9 @@
      name list locks for good. A game without questions, or while another one runs, cannot start. --}}
 @php $blocked = ($game->questions_count ?? 0) === 0 || ($gameRunning ?? false); @endphp
 <x-confirm-dialog :title="__('games.start_named', ['title' => $game->title])" :trigger="__('games.start')" trigger-variant="primary" :trigger-disabled="$blocked">
-    <p class="text-[15px] text-muted">{{ __('games.start_confirm') }}</p>
+    <p class="text-body text-muted">{{ __('games.start_confirm') }}</p>
     @if ($event->names_locked_at === null)
-        <p class="text-[15px] text-muted">{{ __('games.start_locks_names') }}</p>
+        <p class="text-body text-muted">{{ __('games.start_locks_names') }}</p>
     @endif
     <form method="POST" action="{{ route('host.events.games.start', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
         @csrf

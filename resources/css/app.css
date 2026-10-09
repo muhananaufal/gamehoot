@@ -15,6 +15,15 @@
     --font-sans: var(--font-figtree);
     --font-display: var(--font-fredoka);
 
+    /* U28: the named type sizes of the panel and the phones (text-caption ... text-display). */
+    --text-caption: 13px;
+    --text-body-s: 14px;
+    --text-body: 15px;
+    --text-body-l: 18px;
+    --text-title-s: 22px;
+    --text-title: 28px;
+    --text-display: 32px;
+
     --radius-control: 10px;
     --radius-card: 16px;
     --radius-panel: 20px;
@@ -82,6 +91,36 @@
     --color-brand-pupil: #1a1433;
 }
 
+/*
+ * U27: motion tokens, the one source for durations and easings (resources/js/motion.js holds the
+ * same durations). Outside any layer, so they win over Tailwind's own --ease-in/--ease-out and the
+ * ease-* utilities in views move the same way. Reduced motion is decided by <html data-motion>
+ * (components/motion-script.blade.php), never by a media query here.
+ */
+:root {
+    --motion-instant: 100ms;
+    --motion-quick: 160ms;
+    --motion-base: 240ms;
+    --motion-slow: 360ms;
+    /* The podium rises one step every 250 ms (E17); the busy spinner loops. */
+    --motion-podium-step: 250ms;
+    /* U30: a projector scene comes in slowly over a long way; .phone-scenes overrides both. */
+    --scene-duration: var(--motion-slow);
+    --scene-rise: 3vh;
+    /* TICK_MS of resources/js/pentahoot-screens.js. */
+    --motion-countdown-tick: 250ms;
+    --motion-spin: 700ms;
+
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    /* The small overshoot of dialogs and toasts. */
+    --ease-overshoot: cubic-bezier(0.34, 1.4, 0.64, 1);
+    /* U8's spring (visualDuration 0.3, bounce 0.2) sampled for CSS. */
+    --ease-spring: linear(0, 0.029 2.2%, 0.118 4.7%, 0.625 14.4%, 0.826 19%, 0.978 24.2%, 1.072 29.4%, 1.112 33.7%, 1.117 38.4%, 1.083 46.1%, 1.008 59.3%, 0.986 66.4%, 0.988 81.2%, 1);
+    /* A bigger bounce, for Penta and celebrations only (U29, U31). */
+    --ease-bounce: linear(0, 0.2 8%, 0.75 20%, 1.2 32%, 1.32 38%, 1.2 46%, 0.95 60%, 0.92 66%, 1.03 80%, 1);
+}
+
 @layer base {
     [data-theme='dark'] {
         --color-canvas: #15102b;
@@ -134,6 +173,17 @@
         background-color: var(--color-canvas);
         color: var(--color-ink);
         font-family: var(--font-sans);
+    }
+
+    /* U28: headings break into even lines, paragraphs avoid a lonely last word. */
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+
+    p {
+        text-wrap: pretty;
     }
 
     [x-cloak] {
@@ -293,6 +343,15 @@
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M5.6 5.6l12.8 12.8'/></svg>");
     }
 
+    /* U27: the Reduce motion switch: sparkles, crossed out while reduced. */
+    [data-icon='sparkles'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 3l1.7 4.3L17 9l-4.3 1.7L11 15l-1.7-4.3L5 9l4.3-1.7z'/><path d='M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z'/></svg>");
+    }
+
+    [data-icon='sparkles-off'] {
+        --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 3l1.7 4.3L17 9l-4.3 1.7L11 15l-1.7-4.3L5 9l4.3-1.7z'/><path d='M3 3l18 18'/></svg>");
+    }
+
     [data-icon='check'] {
         --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12l5 5 9-10'/></svg>");
     }
@@ -300,14 +359,14 @@
     /* U8: toasts arrive with the app's small overshoot. */
     .toast-enter {
         transition:
-            opacity 200ms ease-out,
-            transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+            opacity var(--motion-quick) var(--ease-out),
+            transform var(--motion-base) var(--ease-overshoot);
     }
 
     .toast-leave {
         transition:
-            opacity 150ms ease-in,
-            transform 150ms ease-in;
+            opacity var(--motion-quick) var(--ease-in),
+            transform var(--motion-quick) var(--ease-in);
     }
 
     .toast-from {
@@ -322,8 +381,8 @@
 
     .menu-enter {
         transition:
-            opacity 120ms ease-out,
-            transform 120ms ease-out;
+            opacity var(--motion-instant) var(--ease-out),
+            transform var(--motion-instant) var(--ease-out);
     }
 
     .menu-from {
@@ -336,41 +395,209 @@
         transform: none;
     }
 
-    /* U8, U10: the mascot of empty pages and the phone's waiting room floats slowly. */
-    .mascot-idle {
-        animation: mascot-float 3.2s ease-in-out infinite;
+    /* U30: scenes of the Public View and the phones (components/scene.blade.php) share one grid
+       cell, so the old scene leaves while the new one comes in. Phones move less and faster. */
+    .scene-stack {
+        display: grid;
+        grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    }
+
+    .scene-stack > *,
+    .scene-stack > .contents > * {
+        grid-area: 1 / 1;
+        min-height: 0;
+    }
+
+    .scene-in {
+        transition:
+            opacity var(--scene-duration) var(--ease-out),
+            transform var(--scene-duration) var(--ease-out);
+    }
+
+    .scene-out {
+        transition:
+            opacity var(--motion-quick) var(--ease-in),
+            transform var(--motion-quick) var(--ease-in);
+    }
+
+    .scene-from {
+        opacity: 0;
+        transform: translateY(var(--scene-rise)) scale(0.98);
+    }
+
+    .scene-gone {
+        opacity: 0;
+        transform: translateY(calc(var(--scene-rise) * -0.5));
+    }
+
+    .scene-at {
+        opacity: 1;
+        transform: none;
+    }
+
+    /* U32: the host drawer slides in at the base pace and leaves faster. */
+    .drawer {
+        transition:
+            transform var(--motion-quick) var(--ease-in),
+            width var(--motion-base) var(--ease-out);
+    }
+
+    .drawer.translate-x-0 {
+        transition:
+            transform var(--motion-base) var(--ease-out),
+            width var(--motion-base) var(--ease-out);
+    }
+
+    /* U32: a toggle knob moves with a spring. */
+    .toggle-knob {
+        transition: transform var(--motion-base) var(--ease-spring);
+    }
+
+    /* U32: the line of a live timeline fills once its step is done. */
+    .timeline-fill {
+        transform: scaleY(0);
+        transform-origin: top;
+        transition: transform var(--motion-slow) var(--ease-out);
+    }
+
+    .timeline-fill.is-filled {
+        transform: none;
+    }
+
+    /* U32: the steps of New event slide the way the host moves (--step-dir is 1 or -1). */
+    .step-in {
+        transition:
+            opacity var(--motion-base) var(--ease-out),
+            transform var(--motion-base) var(--ease-out);
+    }
+
+    .step-from {
+        opacity: 0;
+        transform: translateX(calc(var(--step-dir, 1) * 24px));
+    }
+
+    /* U33: the tooltip of the host panel (resources/js/tooltip.js), inverted in both themes. */
+    .host-tip {
+        position: fixed;
+        z-index: 60;
+        max-width: 16rem;
+        padding: 0.375rem 0.625rem;
+        border-radius: var(--radius-control);
+        background: var(--color-ink);
+        color: var(--color-canvas);
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.3;
+        box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
+        animation: tip-in var(--motion-instant) var(--ease-out);
+    }
+
+    .host-tip[hidden] {
+        display: none;
+    }
+
+    @keyframes tip-in {
+        from {
+            opacity: 0;
+        }
+    }
+
+    /* U30: a word that lands like a stamp (Sent on the phone). */
+    .stamp-in {
+        animation: stamp-in var(--motion-slow) var(--ease-overshoot) both;
+    }
+
+    @keyframes stamp-in {
+        from {
+            opacity: 0;
+            transform: scale(1.6) rotate(-6deg);
+        }
+    }
+
+    /* U31: one DOM piece of the phone confetti (the projector draws on a canvas). */
+    .confetti-piece {
+        position: absolute;
+        top: 0;
+        border-radius: 1px;
+        will-change: transform;
+    }
+
+    /* U30: the countdown ring follows the 250 ms tick of the screen. */
+    .countdown-ring {
+        transition: stroke-dashoffset var(--motion-countdown-tick) linear;
+    }
+
+    .phone-scenes {
+        --scene-duration: var(--motion-base);
+        --scene-rise: 10px;
+    }
+
+    /* U30: images fade in once loaded, never half drawn; the answer image opens like a curtain (E9). */
+    .fade-load {
+        opacity: 0;
+        transition: opacity var(--motion-slow) var(--ease-out);
+    }
+
+    .curtain-load {
+        clip-path: inset(0 50% 0 50%);
+        transition: clip-path var(--motion-slow) var(--ease-out);
+    }
+
+    .fade-load.is-loaded {
+        opacity: 1;
+    }
+
+    .curtain-load.is-loaded {
+        clip-path: inset(0);
+    }
+
+    /* U29: Penta's parts turn and shrink around their own middle; the body squashes from its base. */
+    .penta [data-part] {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .penta [data-part='body'] {
+        transform-origin: 50% 100%;
+    }
+
+    .penta-line {
+        fill: none;
+        stroke: var(--color-brand-pupil);
+        stroke-width: 7;
+        stroke-linecap: round;
     }
 
     /* U8: joining succeeded on the phone. */
     .pop-in {
-        animation: pop-in 240ms ease-out both;
+        animation: pop-in var(--motion-base) var(--ease-out) both;
     }
 
     /* U8: a ranking or reveal row appears. */
     .row-enter {
-        animation: row-enter 200ms ease-out both;
+        animation: row-enter var(--motion-base) var(--ease-out) both;
     }
 
     /* U8: the final podium rises 3, 2, 1, then the names appear. */
     .podium-step {
         transform-origin: bottom;
-        animation: podium-rise 300ms ease-out both;
+        animation: podium-rise var(--motion-base) var(--ease-out) both;
     }
 
     .podium-step-3 {
-        animation-delay: 0ms;
+        animation-delay: 0s;
     }
 
     .podium-step-2 {
-        animation-delay: 250ms;
+        animation-delay: var(--motion-podium-step);
     }
 
     .podium-step-1 {
-        animation-delay: 500ms;
+        animation-delay: calc(var(--motion-podium-step) * 2);
     }
 
     .podium-name {
-        animation: pop-in 240ms ease-out 800ms both;
+        animation: pop-in var(--motion-base) var(--ease-out) calc(var(--motion-podium-step) * 3.2) both;
     }
 }
 
@@ -379,10 +606,10 @@
    also plays when Escape or a click outside closes the dialog. */
 dialog {
     transition:
-        opacity 120ms ease-in,
-        scale 120ms ease-in,
-        overlay 120ms ease-in allow-discrete,
-        display 120ms ease-in allow-discrete;
+        opacity var(--motion-instant) var(--ease-in),
+        scale var(--motion-instant) var(--ease-in),
+        overlay var(--motion-instant) var(--ease-in) allow-discrete,
+        display var(--motion-instant) var(--ease-in) allow-discrete;
 }
 
 dialog:not([open]) {
@@ -392,9 +619,9 @@ dialog:not([open]) {
 
 dialog::backdrop {
     transition:
-        opacity 120ms ease-in,
-        overlay 120ms ease-in allow-discrete,
-        display 120ms ease-in allow-discrete;
+        opacity var(--motion-instant) var(--ease-in),
+        overlay var(--motion-instant) var(--ease-in) allow-discrete,
+        display var(--motion-instant) var(--ease-in) allow-discrete;
 }
 
 dialog:not([open])::backdrop {
@@ -402,11 +629,11 @@ dialog:not([open])::backdrop {
 }
 
 dialog[open] {
-    animation: dialog-in 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+    animation: dialog-in var(--motion-base) var(--ease-overshoot);
 }
 
 dialog[open]::backdrop {
-    animation: backdrop-in 180ms ease-out;
+    animation: backdrop-in var(--motion-quick) var(--ease-out);
 }
 
 @keyframes dialog-in {
@@ -419,7 +646,7 @@ dialog[open]::backdrop {
 /* U8: buttons give a little under the finger. */
 :is(button, a[class*='rounded-control']):active:not(:disabled) {
     scale: 0.97;
-    transition: scale 80ms ease-out;
+    transition: scale var(--motion-instant) var(--ease-out);
 }
 
 @keyframes backdrop-in {
@@ -471,7 +698,7 @@ button[aria-busy='true']::after {
     border-radius: 9999px;
     border: 2px solid var(--busy-ink, var(--color-ink));
     border-right-color: transparent;
-    animation: busy-spin 700ms linear infinite;
+    animation: busy-spin var(--motion-spin) linear infinite;
 }
 
 @keyframes busy-spin {
@@ -500,21 +727,40 @@ button[aria-busy='true']::after {
     }
 }
 
-@keyframes mascot-float {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
 
-    50% {
-        transform: translateY(-4px);
-    }
-}
+/* U27: the reduced mode, from the device setting or the Reduce motion switch. */
+:root[data-motion='reduced'] {
+    --scene-duration: var(--motion-quick);
 
-@media (prefers-reduced-motion: reduce) {
     .toast-from,
-    .menu-from {
+    .menu-from,
+    .scene-from,
+    .scene-gone {
         transform: none;
+    }
+
+    .phone-scenes {
+        --scene-duration: var(--motion-quick);
+    }
+
+    .curtain-load {
+        clip-path: none;
+    }
+
+    .stamp-in {
+        animation: none;
+    }
+
+    .step-from {
+        transform: none;
+    }
+
+    .host-tip {
+        animation: none;
+    }
+
+    .toggle-knob {
+        transition-timing-function: var(--ease-out);
     }
 
     dialog,
@@ -526,7 +772,6 @@ button[aria-busy='true']::after {
         scale: none;
     }
 
-    .mascot-idle,
     dialog[open],
     dialog[open]::backdrop,
     .pop-in,

@@ -40,7 +40,7 @@ pentahootHost({
                     </div>
                     <p class="font-display text-2xl leading-tight font-semibold" x-text="question.prompt"></p>
                     <p x-show="phase === 'live' || phase === 'closed'" class="font-display text-xl font-semibold tabular-nums"
-                        x-text="label('answered_of', { N: answered, TOTAL: total })"></p>
+                        x-text="label('answered_of', { N: answered, TOTAL: total })" x-nudge.pop="answered"></p>
                     {{-- E15: the question does not close by itself when everyone answered. --}}
                     <p x-show="allAnswered" class="rounded-card bg-success px-4 py-3 text-sm font-semibold text-on-success"
                         x-text="label('all_answered', { N: answered, TOTAL: total })"></p>
@@ -49,7 +49,8 @@ pentahootHost({
                 </div>
             </template>
             {{-- The one main action. Busy keeps a quick double click from running the next step. --}}
-            <div x-show="mainAction && mainAction.action !== 'finish'" class="flex justify-end">
+            {{-- U32: the action fades in when it changes. --}}
+            <div x-show="mainAction && mainAction.action !== 'finish'" class="flex justify-end" x-nudge.fade="mainAction?.action">
                 <x-button type="button" data-test="main-action" x-bind:disabled="busy || (mainAction?.action === 'stop' && !can('stop'))" @click="act(mainAction.action, mainAction.id)">
                     <span x-text="mainAction ? label(mainAction.label, { N: mainAction.number ?? '' }) : ''"></span>
                 </x-button>
@@ -58,7 +59,8 @@ pentahootHost({
             <div x-cloak x-show="mainAction?.action === 'finish'" class="flex justify-end">
                 @include('host.events.live.finish', ['label' => __('games.finish'), 'direct' => true])
             </div>
-            <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error"></p>
+            {{-- U32, C-3: a refused action (STALE_ACTION) shakes the message once. --}}
+            <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error" x-nudge.shake="error"></p>
         </section>
         @include('host.events.live.game-card', ['menu' => [['label' => __('pentahoot.reset'), 'click' => "document.getElementById('reset-question').showModal()", 'show' => "can('reset')"]], 'dialogs' => 'host.events.live.reset-dialog'])
         @break

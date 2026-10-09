@@ -13,6 +13,7 @@ import {
     searchPeople,
     secondsLeft,
 } from './pentahoot.js';
+import { ringOffset, urgencyOf } from './scene.js';
 
 /** Redraw rate of countdowns and the closed phase (F4). */
 const TICK_MS = 250;
@@ -95,7 +96,16 @@ export function pentahootPhone({
             );
             this.$watch(
                 () => this.view,
-                (view) => view === 'vote' && this.loadPeople(),
+                (view) => {
+                    if (view === 'vote') {
+                        this.loadPeople();
+                    }
+
+                    // U31: a phone celebrates the results it was waiting for, not a reload.
+                    if (view === 'results' && this.results.length > 0) {
+                        this.$dispatch('celebrate', { key: `reveal:${this.question.id}:${this.question.attempt}` });
+                    }
+                },
             );
 
             if (this.view === 'vote') {
@@ -298,6 +308,17 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
 
             return secondsLeft(this.store, this.question);
         },
+        /** U30: the countdown ring, as a stroke offset of a circle with pathLength 100. */
+        get ring() {
+            void this.tick;
+            const endsAt = this.question?.ends_at;
+
+            return ringOffset(endsAt ? this.store.msUntil(endsAt) : 0, this.question?.duration, 100);
+        },
+        /** U30: pulsing from five seconds, red-orange from three. */
+        get urgency() {
+            return urgencyOf(this.seconds);
+        },
         get results() {
             return this.question?.results ?? [];
         },
@@ -357,7 +378,13 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
                 this.timers.push(setTimeout(() => (this.shown = step), delay));
             }
 
-            this.timers.push(setTimeout(() => (this.final = true), delay + STEP_MS));
+            this.timers.push(
+                setTimeout(() => {
+                    this.final = true;
+                    // U31: rank 1 is out; a screen that opened on a past reveal stays quiet.
+                    this.$dispatch('celebrate', { key: `reveal:${key}` });
+                }, delay + STEP_MS),
+            );
         },
     };
 }

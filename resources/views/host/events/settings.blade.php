@@ -29,6 +29,8 @@
             <h2 class="pt-2 font-display text-xl font-semibold">{{ __('events.screens') }}</h2>
             <x-theme-choice :value="$event->screen_theme->value" :themes="$themes" :hint="__('events.screen_theme_hint')" />
             <x-toggle name="show_on_devices" :label="__('events.show_on_devices')" :hint="__('events.show_on_devices_hint')" :checked="$event->show_on_devices" />
+            {{-- U31: the room cannot press Reduce motion, so the host decides for the Public View. --}}
+            <x-toggle name="screen_animations" :label="__('events.screen_animations')" :hint="__('events.screen_animations_hint')" :checked="$event->screen_animations" />
             <div class="flex justify-end pt-2">
                 <x-button type="submit">{{ __('events.save') }}</x-button>
             </div>
@@ -132,7 +134,7 @@
                         <p class="text-sm font-semibold">{{ __('events.transfer') }}</p>
                         <p class="text-sm text-muted">{{ __('events.transfer_help') }}</p>
                         <x-confirm-dialog :title="__('events.transfer') . '?'" :trigger="__('events.transfer')" trigger-variant="destructive" :open="$errors->has('new_owner_email')">
-                            <p class="text-[15px] text-muted">{{ __('events.transfer_confirm', ['name' => $event->name]) }}</p>
+                            <p class="text-body text-muted">{{ __('events.transfer_confirm', ['name' => $event->name]) }}</p>
                             <form method="POST" action="{{ route('host.events.transfer', $event) }}" class="flex flex-col gap-3" novalidate>
                                 @csrf
                                 <x-field name="new_owner_email" :placeholder="__('examples.username_or_email')" :label="__('events.new_owner_email')" autocomplete="off" autocapitalize="none" spellcheck="false" required />
@@ -148,7 +150,7 @@
                         <p class="text-sm font-semibold">{{ __('events.delete') }}</p>
                         <p class="text-sm text-muted">{{ __('events.delete_help') }}</p>
                         <x-confirm-dialog :title="__('events.delete') . '?'" :trigger="__('events.delete')" trigger-variant="destructive" :open="$errors->has('confirm_name')">
-                            <p class="text-[15px] text-muted">{{ __('events.delete_help') }}</p>
+                            <p class="text-body text-muted">{{ __('events.delete_help') }}</p>
                             <form x-data="{ typed: '' }" method="POST" action="{{ route('host.events.destroy', $event) }}" class="flex flex-col gap-3" novalidate>
                                 @csrf
                                 @method('DELETE')

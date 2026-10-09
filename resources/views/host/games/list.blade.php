@@ -10,7 +10,7 @@
         <label class="relative flex items-center">
             <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
             <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('games.search') }}" placeholder="{{ __('games.search') }}" autocomplete="off"
-                class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
+                class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-body text-ink">
         </label>
     @endif
     @if ($count > 0)
@@ -50,7 +50,7 @@
                                 <span class="flex h-11 w-5 shrink-0 cursor-grab items-center justify-center text-muted active:cursor-grabbing" title="{{ __('games.drag') }}" aria-hidden="true"><x-icon name="grip" class="size-4" /></span>
                             @endif
                             <a href="{{ route('host.events.games.show', [$event, $item]) }}" @if ($game?->is($item)) aria-current="page" @endif
-                                class="flex min-h-11 min-w-0 grow items-center gap-2 rounded-control px-2 text-[15px] hover:bg-subtle aria-[current=page]:bg-subtle aria-[current=page]:font-bold">
+                                class="flex min-h-11 min-w-0 grow items-center gap-2 rounded-control px-2 text-body hover:bg-subtle aria-[current=page]:bg-subtle aria-[current=page]:font-bold">
                                 <span class="size-2 shrink-0 rounded-full {{ $statusTone[$status] }}" aria-hidden="true"></span>
                                 <span class="truncate">{{ $item->title }}</span>
                             </a>

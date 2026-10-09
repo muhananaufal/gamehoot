@@ -68,6 +68,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `php artisan db:seed --class=DemoSeeder` builds a demo event with 50 names and one game of each type; `LoadTestSeeder` builds an open event with 500 names for load tests. Neither runs in production.
 - The specification gains a day-to-day guide with every command from branch to release, a debugging chapter with a note format (`docs/debugging/`), and execution lessons in the project blueprint.
 - Friendly error pages (page not found, no access, expired page, too many tries, server error, maintenance) with a way to reload or go back.
+- Penta, the Pentahoot logo, comes alive: it blinks, looks around and reacts with a mood on the phones, the Public View lobby, empty pages, status screens, error pages and sign in, where it follows the typing, covers its eyes for the password and peeks when it is shown.
+- A Reduce motion switch beside the theme switch (and in the phone header) calms every animation on that device; holding Penta for a moment does the same. Devices that ask for less motion start calm.
+- The Public View changes scenes smoothly: a countdown ring that beats in the last five seconds and turns red-orange in the last three, letter boxes that turn as they open, pictures that fade in, an answer picture that opens like a curtain, and a short "Back online" after a dropped connection.
+- Rank 1 of a question, a Word or Picture Guess winner and a final podium are celebrated with confetti and a cheering Penta, on the projector and on phones, once per moment.
+- Settings, Screens has a Screen animations switch that stops Penta's idle moves and the confetti on the Public View, for a formal event or a slow projector laptop.
+- Phones slide between screens, mark the chosen name, stamp "Sent!" and ring the player's own name on the podium.
+- Live control moves with the game: the main action fades in when it changes, the answered count beats, finished steps fill the timeline, a winner gets a little confetti and an outdated action shakes its message. New event slides between its steps, a field that fails its check shakes once, switches move with a spring and copied links show a check.
+- Icon buttons in the host panel show a Pentahoot tooltip on hover and keyboard focus, which Escape closes.
 
 ### Security
 
@@ -83,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The theme, motion and log out buttons sit in an evenly spaced row above the account at the foot of the sidebar, so the host's name and role always fit beside the avatar.
 - The sidebar follows the light and dark theme, lists your five most recent events with the open event's pages under its name, scrolls on its own so theme and sign out stay in view, and can be narrowed to icons on wide screens.
 - Confirmations such as "Settings saved" appear as short toasts instead of a box at the top of the page; copying a personal link confirms the same way.
 - Links are easier to read in the dark theme, link-style buttons are easier to tap, and everything clickable shows the hand cursor.

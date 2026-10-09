@@ -19,7 +19,7 @@
         <label class="relative flex w-full items-center sm:w-72">
             <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
             <input type="search" x-model.debounce.150ms="q" aria-label="{{ $search }}" placeholder="{{ $search }}" autocomplete="off"
-                class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-[15px] text-ink">
+                class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-body text-ink">
         </label>
     </div>
 </div>
