@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The theme, motion and log out buttons sit in an evenly spaced row above the account at the foot of the sidebar, so the host's name and role always fit beside the avatar.
 - The sidebar follows the light and dark theme, lists your five most recent events with the open event's pages under its name, scrolls on its own so theme and sign out stay in view, and can be narrowed to icons on wide screens.
 - Confirmations such as "Settings saved" appear as short toasts instead of a box at the top of the page; copying a personal link confirms the same way.
 - Links are easier to read in the dark theme, link-style buttons are easier to tap, and everything clickable shows the hand cursor.
