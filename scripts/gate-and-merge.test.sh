@@ -245,6 +245,22 @@ check "a running gate of the same code is followed" test "$code" = 0 -a "$(pushe
 check "the followed gate yields valid trailers" gated
 cleanup
 
+# 14. The local develop moves along only when no worktree has it checked out: moving the ref under
+#     a checkout leaves its files behind, so git status there shows the merge undone and staged.
+setup
+before="$(git rev-parse develop)"
+git worktree add -q "$root/main-folder" develop 2> /dev/null
+run_script feature/x; code=$?
+check "a develop checked out in another worktree is not moved" test "$code" = 0 -a "$(git rev-parse develop)" = "$before"
+check "that worktree stays clean" test -z "$(git -C "$root/main-folder" status --porcelain)"
+git worktree remove --force "$root/main-folder"
+git checkout -q feature/x
+echo "again" >> app/Game.php
+git commit -qam "feat(games): again"
+run_script feature/x; code=$?
+check "a develop checked out nowhere follows the merge" test "$code" = 0 -a "$(git rev-parse develop)" = "$(origin_develop)"
+cleanup
+
 # 10. A red local check stops before the gate repository is used.
 setup
 PATH="$root/bin:$PATH" GATE_TEST_STATE="$state" GATE_REPO=test/gate GATE_LOCAL_CMD=false GATE_POLL=0 bash "$script" feature/x > "$root/out.txt" 2>&1; code=$?

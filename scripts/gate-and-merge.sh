@@ -202,8 +202,10 @@ git push -q "$gate_remote" "$final:refs/heads/$target" || echo "Warning: the gat
 git push -q "$gate_remote" --delete "$gate_ref" 2> /dev/null || true
 git fetch -q "$origin"
 
-# Move a local TARGET branch along when that is a plain fast-forward and it is not checked out.
-if old="$(git rev-parse --verify --quiet "refs/heads/$target")" && [ "$(git symbolic-ref -q --short HEAD)" != "$target" ] && git merge-base --is-ancestor "$old" "$final"; then
+# Move a local TARGET branch along when that is a plain fast-forward and no worktree has it checked
+# out: moving it under a checkout leaves that folder's files behind (git status shows the merge
+# undone and staged).
+if old="$(git rev-parse --verify --quiet "refs/heads/$target")" && ! git worktree list --porcelain | grep -qxF "branch refs/heads/$target" && git merge-base --is-ancestor "$old" "$final"; then
     git update-ref "refs/heads/$target" "$final" "$old"
 fi
 echo "Merged $branch into $target as $final (gate run $run_id)."
