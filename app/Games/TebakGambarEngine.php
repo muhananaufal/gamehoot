@@ -134,7 +134,7 @@ final readonly class TebakGambarEngine implements LiveGameEngine
         return $snapshot;
     }
 
-    public function liveCounters(Game $game, Audience $audience): array
+    public function liveCounters(LiveState $live, Audience $audience): array
     {
         return [];
     }

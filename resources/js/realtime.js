@@ -76,6 +76,19 @@ export function realtimeStore({ now = () => Date.now() } = {}) {
             return true;
         },
 
+        /**
+         * F23, F25: the lobby count after a claim; claims send no snapshot.
+         */
+        joined({ joined }) {
+            if (this.snapshot === null || !Number.isInteger(joined)) {
+                return false;
+            }
+
+            this.snapshot.lobby = { ...this.snapshot.lobby, joined };
+
+            return true;
+        },
+
         /** Milliseconds left until a server timestamp, never negative. */
         msUntil(serverTime) {
             return Math.max(0, serverTime - this.serverNow());
@@ -108,9 +121,10 @@ export async function fetchSnapshot(url) {
  * @param {{
  *   store: ReturnType<typeof realtimeStore>,
  *   echo: { channel: Function, private: Function, connector: { onConnectionChange: Function } },
- *   channels: Array<{ name: string, private: boolean }>,
+ *   channels: Array<{ name: string, private: boolean, counters?: boolean }>,
  *   fetchState: () => Promise<object|null>,
  *   onAnswered?: () => void,
+ *   onJoined?: () => void,
  *   onNameLost?: () => void,
  *   random?: () => number,
  *   doc?: { visibilityState: string, addEventListener: Function },
@@ -122,6 +136,7 @@ export function connectRealtime({
     channels,
     fetchState,
     onAnswered = () => {},
+    onJoined = () => {},
     onNameLost = () => {},
     random = Math.random,
     doc = document,
@@ -208,7 +223,8 @@ export function connectRealtime({
             }
         });
 
-        if (!channel.private) {
+        // F25: the counters come on their own channel, which phones do not follow.
+        if (channel.counters === true) {
             subscription.listen('.answered', (counter) => {
                 if (stopped) {
                     return;
@@ -216,6 +232,15 @@ export function connectRealtime({
 
                 store.answered(counter);
                 onAnswered();
+            });
+
+            subscription.listen('.joined', (counter) => {
+                if (stopped) {
+                    return;
+                }
+
+                store.joined(counter);
+                onJoined();
             });
         }
     }

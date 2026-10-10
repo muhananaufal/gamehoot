@@ -21,16 +21,23 @@ final readonly class ClientConfig
      * E4: a phone page passes its own name and vote ($me, as /state adds it), so the first
      * render already knows whether this phone voted.
      *
+     * F25: the Public View passes $counters and host pages always follow the counter channel
+     * (answered, joined); phones never do, so a vote or a claim does not reach every phone.
+     *
      * @param  array{name: string, vote: array{question_id: string, attempt: int, target: string}|null}|null  $me
      *                                                                                                             B-6: a phone page also gets the join page, to pick a name again once its own is gone.
-     * @return array{socket: array{key: string, host: string, port: int, scheme: string}|null, stateUrl: string, channels: list<array{name: string, private: bool}>, initial: array<string, mixed>, joinUrl: string|null}
+     * @return array{socket: array{key: string, host: string, port: int, scheme: string}|null, stateUrl: string, channels: list<array{name: string, private: bool, counters: bool}>, initial: array<string, mixed>, joinUrl: string|null}
      */
-    public function for(Event $event, Audience $audience, ?array $me = null): array
+    public function for(Event $event, Audience $audience, ?array $me = null, bool $counters = false): array
     {
-        $channels = [['name' => Audience::Public->channelName($event), 'private' => false]];
+        $channels = [['name' => Audience::Public->channelName($event), 'private' => false, 'counters' => false]];
 
         if ($audience === Audience::Host) {
-            $channels[] = ['name' => Audience::Host->channelName($event), 'private' => true];
+            $channels[] = ['name' => Audience::Host->channelName($event), 'private' => true, 'counters' => false];
+        }
+
+        if ($audience === Audience::Host || $counters) {
+            $channels[] = ['name' => Audience::counterChannelName($event), 'private' => false, 'counters' => true];
         }
 
         return [

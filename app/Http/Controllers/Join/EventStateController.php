@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Join;
 
 use App\Enums\Audience;
+use App\Games\LiveState;
 use App\Models\Event;
 use App\People\ClaimCookie;
 use App\Realtime\EventSnapshot;
@@ -21,10 +22,12 @@ final class EventStateController
 {
     public function __invoke(Request $request, Event $event, EventSnapshot $snapshots): JsonResponse
     {
+        // Audit PERF-3: the game and question on screen are read once for both parts.
+        $live = LiveState::of($event);
         // E4: the phone's own name and vote, never part of the cached or broadcast snapshot.
-        $me = PhoneState::for(ClaimCookie::person($request, $event), $event);
+        $me = PhoneState::for(ClaimCookie::person($request, $event), $event, $live);
 
-        return response()->json([...$snapshots->for($event, Audience::Public), 'me' => $me])
+        return response()->json([...$snapshots->for($event, Audience::Public, $live), 'me' => $me])
             ->header('Cache-Control', 'no-store, private');
     }
 }

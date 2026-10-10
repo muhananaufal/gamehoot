@@ -149,15 +149,15 @@ final class PentahootEngine implements LiveGameEngine
         return $question->status !== QuestionStatus::Ready || ($question->pentahoot->attempt ?? 1) > 1;
     }
 
-    public function liveCounters(Game $game, Audience $audience): array
+    public function liveCounters(LiveState $live, Audience $audience): array
     {
-        $current = $game->currentQuestion()->with('pentahoot')->first();
+        $current = $live->question;
 
-        if ($current === null || $current->status !== QuestionStatus::Live) {
+        if ($current === null || $current->status !== QuestionStatus::Live || $current->pentahoot === null) {
             return [];
         }
 
-        $attempt = $current->pentahoot()->firstOrFail()->attempt;
+        $attempt = $current->pentahoot->attempt;
         $counters = ['answered' => $current->votes()->where('attempt', $attempt)->count()];
 
         if ($audience === Audience::Host) {

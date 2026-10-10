@@ -5,7 +5,7 @@
      game runs; the Pentahoot question, reveal and podium (E2, E15, E17, E20) or the Tebak Kata
      boxes, leaderboard and final podium (E5, E11, E12) while one does. --}}
 <x-layouts.screen :title="__('realtime.screen.title') . ' · ' . $event->name" :event="$event">
-    <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" />
+    <x-realtime :event="$event" :audience="\App\Enums\Audience::Public" counters />
     <x-celebration projector />
     <div x-data="pentahootScreen({
             labels: @js(__('pentahoot')),

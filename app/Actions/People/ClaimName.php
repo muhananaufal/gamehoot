@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * B-1: the first phone to claim a name gets it. The update only matches an unclaimed row,
  * so two phones racing for one name cannot both win (F6). The event row stays locked until
- * the claim is written, which keeps the open and join-lock checks valid (B-7) and lets the
- * claim bump state_version for the lobby count (F15, F23).
+ * the claim is written, which keeps the open and join-lock checks valid (B-7). F25: a claim
+ * does not bump state_version; the lobby count goes out as one counter (F23).
  */
 final readonly class ClaimName
 {
@@ -52,9 +52,7 @@ final readonly class ClaimName
                 throw ClaimRefused::nameTaken();
             }
 
-            $current->bumpStateVersion();
-            $current->save();
-            $this->publisher->publish($current);
+            $this->publisher->publishJoined($current);
 
             return $token;
         });

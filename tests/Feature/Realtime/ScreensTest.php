@@ -62,7 +62,11 @@ describe('Public View (F23)', function (): void {
         expect($config)->not->toHaveKey('initial.host');
         expect($config)
             ->toHaveKey('stateUrl', url('/gathering-2026/state'))
-            ->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false]])
+            ->toHaveKey('channels', [
+                ['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false],
+                // F25: the Public View follows the counters; phones do not.
+                ['name' => "event.{$event->id}.screen", 'private' => false, 'counters' => true],
+            ])
             ->toHaveKey('initial.version', 9)
             ->toHaveKey('initial.lobby.joined', 1);
     });
@@ -124,7 +128,7 @@ describe('player screen', function (): void {
 
         $response = withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk();
 
-        expect(realtimeConfigOf($response))->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false]]);
+        expect(realtimeConfigOf($response))->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false]]);
     });
 
     it('puts the phone\'s own name and vote into the first snapshot, so a reload never flashes "Time is up" (E4)', function (): void {
@@ -164,8 +168,9 @@ describe('Live control (F2, C-2)', function (): void {
         expect(realtimeConfigOf($response))
             ->toHaveKey('stateUrl', url("/host/{$event->id}/state"))
             ->toHaveKey('channels', [
-                ['name' => "event.{$event->id}.public", 'private' => false],
-                ['name' => "event.{$event->id}.host", 'private' => true],
+                ['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false],
+                ['name' => "event.{$event->id}.host", 'private' => true, 'counters' => false],
+                ['name' => "event.{$event->id}.screen", 'private' => false, 'counters' => true],
             ])
             ->toHaveKey('initial.host.names', 0);
     });

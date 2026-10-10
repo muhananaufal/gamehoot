@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Phones no longer receive a message for every vote and every name claimed by other players, so a full room keeps the venue WiFi and the realtime server much quieter; the projector and Live control still count live.
+- Closing an event while a game runs updates the screens once instead of twice.
+- The Names page stops refreshing itself in the background after the host moves to another page.
+
 - Every host page shows its title, also Settings, Games, Activity log and Deleted events.
 - Delete game uses the red style of other destructive actions.
 - The name buttons on the phone join page match the search box.
