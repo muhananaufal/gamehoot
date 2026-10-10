@@ -200,7 +200,7 @@ describe('leaderboard and final results (E11, E12, E17, G10)', function (): void
         actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish")->assertRedirect();
 
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
-            ->and(GameResult::query()->orderBy('rank')->get()->map(fn (GameResult $row): string => "{$row->rank} {$row->person?->name} {$row->points}")->all())
+            ->and(GameResult::query()->with('person')->orderBy('rank')->get()->map(fn (GameResult $row): string => "{$row->rank} {$row->person?->name} {$row->points}")->all())
             ->toBe(['1 Rita Wulandari 1', '2 Budi Santoso 1']);
         // E17: the final podium stays on screen (G7).
         expect(publicSnapshot($event))->toHaveKey('game.status', 'finished')
