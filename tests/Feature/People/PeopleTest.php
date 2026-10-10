@@ -327,6 +327,18 @@ describe('claims and personal links (B-1, B-6, T5)', function (): void {
         expect($csv)->not->toContain("\n\"=HYPERLINK");
     });
 
+    it('also neutralises the full-width signs that Excel reads as formulas (audit SEC-5)', function (): void {
+        $event = eventWithOwner();
+
+        foreach (['＝SUM(A1)', '＋1', '－1', '＠cell'] as $name) {
+            Person::factory()->for($event)->create(['name' => $name, 'name_normalized' => mb_strtolower($name)]);
+        }
+
+        $csv = actingAs(hostOf($event))->get("/host/{$event->id}/people/links.csv")->streamedContent();
+
+        expect($csv)->toContain("'＝SUM(A1)")->toContain("'＋1")->toContain("'－1")->toContain("'＠cell");
+    });
+
     it('does not reach a person through another event', function (): void {
         $event = eventWithOwner();
         $other = Event::factory()->for(hostOf($event), 'owner')->create();
