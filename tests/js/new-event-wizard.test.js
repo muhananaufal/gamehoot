@@ -145,3 +145,23 @@ describe('U26 a change on step 1 keeps the other steps open while it stays valid
         expect(steps.canGo(2)).toBe(false);
     });
 });
+
+describe('audit FE-11: an import that never got an answer', () => {
+    it('says so instead of failing silently, and keeps the list as it was', async () => {
+        const steps = newEventWizard({
+            texts: { ...texts, import_failed: 'The file could not be sent.' },
+            parseUrl: '/parse',
+            fetch: vi.fn(async () => {
+                throw new TypeError('Failed to fetch');
+            }),
+            csrf: 't',
+        });
+        steps.text = 'Rita Wulandari';
+
+        await steps.importFile({ name: 'staff.csv' });
+
+        expect(steps.text).toBe('Rita Wulandari');
+        expect(steps.importError).toBe('The file could not be sent.');
+        expect(steps.importing).toBe(false);
+    });
+});

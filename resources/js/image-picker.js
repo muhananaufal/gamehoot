@@ -42,6 +42,7 @@ export function imagePicker({ current = null, labels = {} } = {}) {
                 } else {
                     this.put(this.$refs.large, large);
                     this.put(this.$refs.small, small);
+                    this.release();
                     this.preview = URL.createObjectURL(small);
                     this.fileName = file.name;
                 }
@@ -59,9 +60,21 @@ export function imagePicker({ current = null, labels = {} } = {}) {
             input.files = files.files;
         },
 
+        /** Audit FE-11: a preview made here holds the image in memory until it is released. */
+        release() {
+            if (this.preview?.startsWith('blob:')) {
+                URL.revokeObjectURL(this.preview);
+            }
+        },
+
+        destroy() {
+            this.release();
+        },
+
         /** A failed pick goes back to the stored image, so nothing looks attached that is not. */
         fail(message) {
             this.error = message;
+            this.release();
             this.preview = current;
             this.fileName = '';
             this.$refs.large.value = '';

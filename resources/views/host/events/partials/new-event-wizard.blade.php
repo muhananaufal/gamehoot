@@ -11,6 +11,7 @@
     $texts = [
         'imported' => ['one' => trans_choice('events.imported_names', 1, ['count' => '__N__', 'file' => '__F__']), 'other' => trans_choice('events.imported_names', 2, ['count' => '__N__', 'file' => '__F__'])],
         'count' => ['one' => trans_choice('people.names_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.names_count', 2, ['count' => '__N__'])],
+        'import_failed' => __('events.import_failed'),
         // The Add names checks (name-batch.js), in the words of the server.
         'line' => __('people.on_line', ['line' => '__L__', 'problem' => '__P__']),
         'existing' => __('people.duplicate_existing', ['name' => '__N__']),

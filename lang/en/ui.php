@@ -26,6 +26,7 @@ return [
     'clear' => 'Clear',
     'apply' => 'Apply',
     'cancel' => 'Cancel',
+    'copy_failed' => 'Copy did not work. Select the link and copy it.',
     'save' => 'Save',
     'back' => 'Back',
     'skip_to_content' => 'Skip to content',

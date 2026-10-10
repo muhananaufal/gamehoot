@@ -30,7 +30,7 @@ const pickEvent = (name) => ({ target: { files: [{ name, type: 'image/jpeg', siz
 
 beforeEach(() => {
     vi.stubGlobal('DataTransfer', FakeDataTransfer);
-    vi.stubGlobal('URL', { createObjectURL: () => 'blob:preview' });
+    vi.stubGlobal('URL', { createObjectURL: () => 'blob:preview', revokeObjectURL: () => {} });
 });
 
 afterEach(() => {
@@ -60,5 +60,26 @@ describe('E8 image picker', () => {
         expect(component.error).toBe('Too big');
         expect(component.preview).toBe('/media/stored-w720.jpg');
         expect(component.fileName).toBe('');
+    });
+});
+
+describe('audit FE-11: the preview of an earlier pick', () => {
+    it('is released when another image is picked or a pick fails', async () => {
+        const revoked = [];
+        let made = 0;
+        vi.stubGlobal('URL', {
+            createObjectURL: () => `blob:preview-${++made}`,
+            revokeObjectURL: (url) => revoked.push(url),
+        });
+        resize.mockResolvedValue(new Blob(['x']));
+        const component = picker();
+
+        await component.pick(pickEvent('first.jpg'));
+        await component.pick(pickEvent('second.jpg'));
+        expect(revoked).toEqual(['blob:preview-1']);
+
+        resize.mockResolvedValue(null);
+        await component.pick(pickEvent('huge.jpg'));
+        expect(revoked).toEqual(['blob:preview-1', 'blob:preview-2']);
     });
 });
