@@ -83,10 +83,10 @@ function summaryOf(group) {
  * The class names are written out in full so Tailwind finds them.
  */
 const PROMPT_SIZES = [
-    { upTo: 80, live: 'text-[clamp(36px,4.6vw,88px)]', reveal: 'text-[1.4em]', tebak: 'text-[1.8em]' },
-    { upTo: 160, live: 'text-[clamp(28px,3.4vw,64px)]', reveal: 'text-[1.15em]', tebak: 'text-[1.4em]' },
-    { upTo: 300, live: 'text-[clamp(22px,2.6vw,48px)]', reveal: 'text-[0.95em]', tebak: 'text-[1.15em]' },
-    { upTo: Infinity, live: 'text-[clamp(18px,2vw,38px)]', reveal: 'text-[0.95em]', tebak: 'text-[0.95em]' },
+    { upTo: 80, live: 'text-screen-prompt-l', reveal: 'text-[1.4em]', tebak: 'text-[1.8em]' },
+    { upTo: 160, live: 'text-screen-prompt-m', reveal: 'text-[1.15em]', tebak: 'text-[1.4em]' },
+    { upTo: 300, live: 'text-screen-prompt-s', reveal: 'text-[1em]', tebak: 'text-[1.15em]' },
+    { upTo: Infinity, live: 'text-screen-body', reveal: 'text-[1em]', tebak: 'text-[1em]' },
 ];
 
 export function promptSize(prompt) {

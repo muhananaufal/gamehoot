@@ -35,7 +35,7 @@ it('finds raw colors in a view', function (string $contents, int $count): void {
     'hex in a class' => ['<div class="bg-[#120D26]">', 2],
     'hex in style' => ['<div style="color: #fff">', 1],
     'default palette' => ['<p class="text-gray-900 bg-white border-red-500">', 3],
-    'tokens only' => ['<div class="bg-surface text-ink border-line-strong fill-brand-yellow">', 0],
+    'tokens only' => ['<div class="bg-surface text-ink border-field-line fill-brand-yellow">', 0],
 ]);
 
 it('uses semantic color tokens only', function (string $path): void {
@@ -46,40 +46,37 @@ it('uses semantic color tokens only', function (string $path): void {
 })->with(bladeViews());
 
 /**
- * U28: px sizes and clamp() still written by hand in a view, while the old views move to the
- * named sizes (text-caption ... text-display) step by step. A count may only go down; a new
- * hand-written size in any view fails, like a raw color (F21).
+ * U28, U34 (audit UI-3, CODE-6): type sizes come from the named scale only (text-caption ...
+ * text-display for the panel and phones, text-screen-* for the Public View). A size written by
+ * hand (px, clamp) or one of Tailwind's own sizes (text-sm, text-xl, ...) fails, like a raw
+ * color (F21). Sizes relative to the parent (text-[1.4em]) stay allowed.
  */
-const TYPE_SIZES_LEFT = [
-    'auth/login.blade.php' => 2,
-    'components/layouts/host.blade.php' => 4,
-    'components/pack-list.blade.php' => 1,
-    'host/events/live/tebak/tebak_kata.blade.php' => 1,
-    'host/games/list.blade.php' => 1,
-    'join/index.blade.php' => 1,
-    'join/play.blade.php' => 5,
-    'join/tebak/tebak_gambar.blade.php' => 1,
-    'join/tebak/tebak_kata.blade.php' => 2,
-    'screen/show.blade.php' => 28,
-    'screen/tebak/tebak_kata.blade.php' => 1,
-];
-
 function handWrittenSizes(string $contents): int
 {
-    return (int) preg_match_all('/text-\[(?:[0-9.]+px|clamp\()/', $contents);
+    return (int) preg_match_all('/(?<![\w-])text-(?:\[(?:[0-9.]+px|clamp\(|min\(|max\()|(?:xs|sm|base|lg|xl|[2-9]xl)(?![\w-]))/', $contents);
 }
 
-it('finds hand-written type sizes in a view (U28)', function (string $contents, int $count): void {
+it('finds hand-written and default type sizes (U28, U34)', function (string $contents, int $count): void {
     expect(handWrittenSizes($contents))->toBe($count);
 })->with([
     'px size' => ['<h1 class="text-[26px] lg:text-[30px]">', 2],
     'clamp' => ['<p class="text-[clamp(18px,2vw,34px)]">', 1],
-    'named sizes and em' => ['<p class="text-body text-title-s text-[1.4em]">', 0],
+    'default sizes' => ['<p class="text-sm md:text-xl text-2xl">', 3],
+    'named sizes and em' => ['<p class="text-body text-title-s text-screen-meta text-[1.4em] text-small-caps">', 0],
 ]);
 
-it('writes no new type size by hand (U28)', function (string $path): void {
-    $root = dirname(__DIR__, 2).'/resources/views/';
-    $view = strtr(substr($path, strlen($root)), DIRECTORY_SEPARATOR, '/');
-
-    expect(handWrittenSizes((string) file_get_contents($path)))->toBeLessThanOrEqual(TYPE_SIZES_LEFT[$view] ?? 0);
+it('writes every type size from the named scale (U28, U34)', function (string $path): void {
+    expect(handWrittenSizes((string) file_get_contents($path)))->toBe(0);
 })->with(bladeViews());
+
+it('writes no hand-written type size in the class names of the scripts (U34)', function (): void {
+    $found = 0;
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(dirname(__DIR__, 2).'/resources/js', FilesystemIterator::SKIP_DOTS)) as $file) {
+        if ($file instanceof SplFileInfo && $file->getExtension() === 'js') {
+            $found += handWrittenSizes((string) file_get_contents($file->getPathname()));
+        }
+    }
+
+    expect($found)->toBe(0);
+});
