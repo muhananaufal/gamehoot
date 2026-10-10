@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Games;
 
-use App\Enums\GameStatus;
-use App\Enums\QuestionStatus;
 use App\Enums\ReplayKind;
 use App\Exceptions\ActionRefused;
+use App\Games\LiveState;
 use App\Games\Replay\ReplayMoments;
 use App\Models\Event;
 use App\Models\Game;
@@ -69,14 +68,6 @@ final readonly class ReplayOnScreen
      */
     public static function questionOnScreen(Event $event): bool
     {
-        $game = $event->activeGame()->first();
-
-        if (! $game instanceof Game || $game->status === GameStatus::Finished || $game->current_question_id === null) {
-            return false;
-        }
-
-        $status = Question::query()->whereKey($game->current_question_id)->value('status');
-
-        return in_array($status, [QuestionStatus::Live, QuestionStatus::Shown], true);
+        return LiveState::of($event)->questionOnScreen();
     }
 }

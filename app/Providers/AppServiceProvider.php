@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Event;
 use App\People\ClaimCookie;
+use App\Realtime\StatePublisher;
 use App\Support\RequiredConfig;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,12 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register(): void {}
+    public function register(): void
+    {
+        // F22: nested actions in one request share the publisher, so one commit sends one set
+        // of snapshots per event (audit PERF-4).
+        $this->app->scoped(StatePublisher::class);
+    }
 
     /**
      * Bootstrap any application services.

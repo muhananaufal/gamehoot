@@ -97,8 +97,9 @@
     @if ($renameRetry)
         <script type="application/json" id="rename-retry">@json($renameRetry)</script>
     @endif
-    {{-- U12: join status, the lock banner and the list refresh when the event's version moves on. --}}
-    <div id="names-live" x-data="liveRegion" class="flex flex-col gap-5">
+    {{-- U12: join status, the lock banner and the list refresh when the event's version moves on,
+         and at most every 10 s while names are being claimed (F25). --}}
+    <div id="names-live" x-data="liveRegion({ claims: true })" class="flex flex-col gap-5">
     @if ($locked)
         {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
         <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">

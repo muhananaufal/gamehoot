@@ -86,6 +86,22 @@ it('computes the body once per version, but the server clock on every call (F4, 
     expect(snapshotOf($bumped))->toHaveKey('event.name', 'Renamed without a version bump');
 });
 
+it('keeps one cache entry per event and audience, holding the latest version (audit PERF-1)', function (): void {
+    $event = snapshotEvent();
+    snapshotOf($event);
+
+    foreach ([8, 9, 10] as $version) {
+        $event->bumpStateVersion();
+        $event->save();
+        snapshotOf($event);
+        expect(cache()->get(EventSnapshot::cacheKey($event, Audience::Public)))->toHaveKey('version', $version);
+    }
+
+    // The old per-version keys of the database cache store were never read again, so they
+    // never expired; nothing is written under such a key any more.
+    expect(cache()->has("state:{$event->id}:9:public"))->toBeFalse();
+});
+
 it('tells open screens that a deleted event is gone (D-3)', function (): void {
     $event = snapshotEvent();
     $event->delete();

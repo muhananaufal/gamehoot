@@ -29,11 +29,12 @@ interface LiveGameEngine extends GameEngine
     public function snapshot(Game $game, Audience $audience): array;
 
     /**
-     * F24: counters read fresh on every /state call, merged into the game part.
+     * F24: counters read fresh on every /state call, merged into the game part. The live
+     * state (audit PERF-3) carries the game and its current question, already read.
      *
      * @return array<string, mixed>
      */
-    public function liveCounters(Game $game, Audience $audience): array;
+    public function liveCounters(LiveState $live, Audience $audience): array;
 
     /**
      * The host actions this game type accepts on a question (POST /host/{event}/questions/{question}/{action}).

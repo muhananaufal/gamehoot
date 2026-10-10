@@ -12,7 +12,8 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 /**
  * F14: the only message a vote sends: how many phones answered this attempt. Hosts fetch
- * the per-name tally from GET /host/{event}/state.
+ * the per-name tally from GET /host/{event}/state. F25: on the counter channel, so the
+ * phones that vote never receive each other's votes.
  */
 final readonly class AnswerCounted implements ShouldBroadcastNow
 {
@@ -25,7 +26,7 @@ final readonly class AnswerCounted implements ShouldBroadcastNow
 
     public function broadcastOn(): Channel
     {
-        return new Channel(Audience::Public->channelName($this->event));
+        return new Channel(Audience::counterChannelName($this->event));
     }
 
     public function broadcastAs(): string

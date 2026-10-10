@@ -382,16 +382,55 @@ describe('F14, F24 small messages', () => {
         connectRealtime({
             store,
             echo,
-            channels: [{ name: 'event.abc.public', private: false }],
+            channels: [
+                { name: 'event.abc.public', private: false },
+                { name: 'event.abc.screen', private: false, counters: true },
+            ],
             fetchState: async () => null,
             onAnswered,
             doc: fakeDocument(),
         });
 
-        echo.listeners['event.abc.public.answered']({ question_id: 'q1', attempt: 1, answered: 3 });
+        echo.listeners['event.abc.screen.answered']({ question_id: 'q1', attempt: 1, answered: 3 });
 
         expect(onAnswered).toHaveBeenCalledOnce();
         expect(store.snapshot.game.answered).toBe(3);
+    });
+
+    it('never listens for counters on a phone, which follows the public channel only (F25)', () => {
+        const echo = fakeEcho();
+        connectRealtime({
+            store: realtimeStore(),
+            echo,
+            channels: [{ name: 'event.abc.public', private: false }],
+            fetchState: async () => null,
+            doc: fakeDocument(),
+        });
+
+        expect(echo.listeners['event.abc.public.answered']).toBeUndefined();
+        expect(echo.listeners['event.abc.public.joined']).toBeUndefined();
+    });
+
+    it('updates the lobby count from the joined counter, since claims send no snapshot (F23, F25)', () => {
+        const echo = fakeEcho();
+        const store = realtimeStore();
+        store.accept({ ...snapshot(4), lobby: { joined: 2 } });
+        const onJoined = vi.fn();
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.abc.screen', private: false, counters: true }],
+            fetchState: async () => null,
+            onJoined,
+            doc: fakeDocument(),
+        });
+
+        echo.listeners['event.abc.screen.joined']({ joined: 5 });
+
+        expect(store.snapshot.lobby.joined).toBe(5);
+        expect(store.version).toBe(4);
+        expect(onJoined).toHaveBeenCalledOnce();
+        expect(store.joined({ joined: 'many' })).toBe(false);
     });
 });
 

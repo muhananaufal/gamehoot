@@ -9,7 +9,6 @@ use App\Actions\Events\ReopenEvent;
 use App\Actions\Events\RestoreEvent;
 use App\Actions\Events\SetJoinLock;
 use App\Actions\Events\UpdateEventSettings;
-use App\Actions\People\ClaimName;
 use App\Actions\People\EditNameList;
 use App\Actions\People\ReleaseClaim;
 use App\Enums\Audience;
@@ -55,7 +54,7 @@ it('broadcasts the new version after each state change', function (Closure $chan
     'rename' => [fn (Event $e, Person $p) => app(EditNameList::class)->rename($e, $p, 'Rita'), 'open', 1],
     'delete name' => [fn (Event $e, Person $p) => app(EditNameList::class)->delete($e, $p, $e->owner()->firstOrFail()), 'open', 1],
     'import' => [fn (Event $e, Person $p, $h) => app(EditNameList::class)->import($e, ['Ana', 'Budi'], $h), 'open', 1],
-    'claim (F23)' => [fn (Event $e, Person $p) => app(ClaimName::class)->handle($e, $p), 'open', 2],
+    // A claim sends only the joined counter (F25), see MessageBudgetTest.
     'release claim (F23)' => [fn (Event $e, Person $p, $h) => app(ReleaseClaim::class)->handle($e, $e->people()->whereNotNull('claimed_at')->firstOrFail(), $h), 'open', 0],
 ]);
 
