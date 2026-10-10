@@ -98,7 +98,7 @@ job_php() {
 }
 
 job_frontend() {
-    detached "$logs/frontend.txt" -v "$mount:/app" -w /app "$node_image" sh -c 'npm ci --no-audit --no-fund && npx eslint . && npx prettier --check resources/js tests/js "*.config.js" && npx vitest run && npm run build'
+    detached "$logs/frontend.txt" -v "$mount:/app" -w /app "$node_image" sh -c 'npm ci --no-audit --no-fund && npx eslint . && npx prettier --check resources/js tests/js "*.config.js" && npx vitest run && npm run build && node scripts/bundle-budget.mjs'
 }
 
 job_rules() {

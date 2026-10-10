@@ -3,11 +3,16 @@
 // rows that appear fade and rise in. A row is known by data-flip-key when it has one (rank lists
 // rebuild a row when its rank changes) or else by the element itself (tables reorder rows).
 // Positions are taken against the list, so scrolling the page never moves rows.
-import { animate as motionAnimate } from 'motion';
+// F27: motion/mini (WAAPI only) keeps the phone entry small. It animates CSS properties, so rows
+// move with transform, and it takes the spring as its generator function, not the string type.
+import { spring } from 'motion';
+import { animate as motionAnimate } from 'motion/mini';
 import { SPRING } from './motion.js';
 
 // U27: the spring now lives with the other motion tokens; kept here for the modules that import it.
 export { SPRING };
+
+const ROW_SPRING = { ...SPRING, type: spring };
 
 /** At most this many rows wait for their turn when a page opens; the rest come in together. */
 const STAGGER_ROWS = 12;
@@ -93,7 +98,11 @@ export function flipList(
             } else if (before.left !== left || before.top !== top) {
                 // A rank list rebuilds the row: it moves instead of entering again.
                 el.style.animation = 'none';
-                animate(el, { x: [before.left - left, 0], y: [before.top - top, 0] }, SPRING);
+                animate(
+                    el,
+                    { transform: [`translate(${before.left - left}px, ${before.top - top}px)`, 'translate(0px, 0px)'] },
+                    ROW_SPRING,
+                );
             }
         }
 
@@ -107,8 +116,8 @@ export function flipList(
         if (!still && enter && appeared.length > 0 && (!first || entering())) {
             animate(
                 appeared,
-                { opacity: [0, 1], y: [8, 0] },
-                { ...SPRING, delay: (index) => Math.min(index, STAGGER_ROWS) * STAGGER_SECONDS },
+                { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] },
+                { ...ROW_SPRING, delay: (index) => Math.min(index, STAGGER_ROWS) * STAGGER_SECONDS },
             );
         }
     };

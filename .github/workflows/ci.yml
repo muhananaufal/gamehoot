@@ -187,7 +187,7 @@ jobs:
           for image in pentahoot-app:proof pentahoot-web:proof; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
-      - name: ESLint, Prettier, Vitest, build
+      - name: ESLint, Prettier, Vitest, build, phone bundle budget (F27)
         if: ${{ !cancelled() }}
         run: |
           docker run --rm -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c '
@@ -195,7 +195,8 @@ jobs:
             npx eslint . &&
             npx prettier --check resources/js tests/js scripts/load "*.config.js" &&
             npx vitest run &&
-            npm run build
+            npm run build &&
+            node scripts/bundle-budget.mjs
           '
       - name: Scan history for secrets
         if: ${{ !cancelled() }}

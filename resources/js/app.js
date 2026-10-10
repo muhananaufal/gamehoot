@@ -2,8 +2,6 @@ import Alpine from 'alpinejs';
 import 'unpoly';
 import 'unpoly/unpoly.css';
 import { configureNavigation } from './navigation.js';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
 import { trackClicks } from './action-busy.js';
 import { closeDialogsOnBackdrop } from './dialogs.js';
 import { checkFormsBeforeSubmit } from './form-check.js';
@@ -26,9 +24,8 @@ import { packPicker } from './pack-picker.js';
 import { replayScreen } from './replay-screen.js';
 import { selectBox } from './select-box.js';
 import { sessionGuard } from './session-guard.js';
-import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
-import { connectRealtime, countLabel, fetchSnapshot, offlineEcho, realtimeStore, screenFor } from './realtime.js';
+import { followEvent, registerRealtimeStore } from './realtime-boot.js';
 import { sortableList } from './sortable-list.js';
 import { tableView } from './table-view.js';
 import { tebakHost, tebakScreen } from './tebak-screens.js';
@@ -114,97 +111,12 @@ Alpine.data('pentahootHost', pentahootHost);
 Alpine.data('tebakScreen', tebakScreen);
 Alpine.data('tebakHost', tebakHost);
 
-/** F14: hosts reload the per-name tally at most once a second while votes come in. */
-const TALLY_RELOAD_MS = 1_000;
-
-// F20: one realtime store for every page. It always exists, so views never read a missing
-// store; a page with live content (x-realtime component) fills it below.
-Alpine.store('realtime', {
-    ...realtimeStore(),
-    refresh() {},
-    screen() {
-        return screenFor(this);
-    },
-    count(labels, value) {
-        return countLabel(labels, value);
-    },
-    initials(name) {
-        return initialsOf(name);
-    },
-});
-
-let echo = null;
-
-/** P1: the socket settings come from the page, not from the build; one socket for the tab. */
-function echoFor(socket) {
-    if (socket === null) {
-        return offlineEcho();
-    }
-
-    echo ??= new Echo({
-        broadcaster: 'reverb',
-        key: socket.key,
-        wsHost: socket.host,
-        wsPort: socket.port,
-        wssPort: socket.port,
-        forceTLS: socket.scheme === 'https',
-        enabledTransports: ['ws', 'wss'],
-        Pusher,
-    });
-
-    return echo;
-}
-
-/**
- * Follows the event of #realtime-config. U18: the host panel replaces pages without reloading,
- * so this runs for every page that brings a config and returns how to leave it again.
- */
-function followEvent(element) {
-    const config = JSON.parse(element.textContent);
-    const store = Alpine.store('realtime');
-    Object.assign(store, { snapshot: null, version: -1, connection: 'connecting', missing: false, me: null });
-    store.accept(config.initial);
-
-    // The host page follows the private channel and reloads its tally as votes come in.
-    const isHost = config.channels.some((channel) => channel.private);
-    let tallyTimer = null;
-    const onAnswered = () => {
-        if (isHost && tallyTimer === null) {
-            tallyTimer = setTimeout(() => {
-                tallyTimer = null;
-                store.refresh();
-            }, TALLY_RELOAD_MS);
-        }
-    };
-
-    const connection = connectRealtime({
-        store,
-        echo: echoFor(config.socket),
-        channels: config.channels,
-        fetchState: () => fetchSnapshot(config.stateUrl),
-        onAnswered,
-        // F26: someone lost access to this event; load the page again with the new host key.
-        onRotated: () => window.location.reload(),
-        // B-6: the host released or deleted this phone's name; pick a name again.
-        onNameLost: () => {
-            if (config.joinUrl) {
-                window.location.assign(config.joinUrl);
-            }
-        },
-    });
-    store.refresh = connection.refresh;
-
-    return () => {
-        clearTimeout(tallyTimer);
-        connection.stop();
-        // The next page starts empty instead of showing this event's state.
-        Object.assign(store, { snapshot: null, version: -1, connection: 'connecting', me: null, refresh: () => {} });
-    };
-}
+// F20: one realtime store for every page; a page with live content fills it.
+registerRealtimeStore(Alpine);
 
 // U18: Unpoly runs compilers on the first page and on every fragment it inserts; the returned
 // function runs when that fragment is replaced.
-window.up.compiler('#realtime-config', followEvent);
+window.up.compiler('#realtime-config', (element) => followEvent(Alpine, element));
 
 window.Alpine = Alpine;
 Alpine.start();

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Searching for a name on the phone also ignores accents, letter case and letter width, so "jose" finds José.
 - Row menus open and move with the keyboard, and games in Up next can be reordered with Move up and Move down buttons instead of dragging only.
 - Form fields and the focus ring are clearly visible in both themes, buttons and links are easy to tap, and the live countdown no longer talks over screen readers every second.
 - Host pages start with a Skip to content link for keyboard users.
@@ -111,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Phones load less than half the JavaScript they used to, so the game opens faster on a busy venue WiFi.
 - Text on the projector is large enough to read from the back of the room, and every screen still fits a 16:9 or 4:3 projector without scrolling.
 - The lobby on the projector shows the join link and QR code beside the names, so both stay readable with a long list.
 - Host panel and phone text is a little larger, with captions no smaller than 13 px on the panel and 15 px on phones.
