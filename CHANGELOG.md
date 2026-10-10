@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Phones waiting in the lobby no longer run a countdown clock four times a second, which saves battery during a long event.
 - Searching for a name on the phone also ignores accents, letter case and letter width, so "jose" finds José.
 - Row menus open and move with the keyboard, and games in Up next can be reordered with Move up and Move down buttons instead of dragging only.
 - Form fields and the focus ring are clearly visible in both themes, buttons and links are easy to tap, and the live countdown no longer talks over screen readers every second.
@@ -97,6 +98,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Wrong passwords typed on one device no longer lock the host out on another; failed sign ins count per account and per device address.
+- Images much taller than the projector are refused before the server opens them, so one upload cannot exhaust its memory.
+- Exported CSV files also neutralise the full-width = + - @ signs that Excel reads as formulas.
 - A co-host who is removed, or an account that is disabled or deleted, stops receiving the host's live data (including Word Guess answers) on a Live control page that is still open.
 - A host session ends 8 hours after signing in, even while it is in use.
 - The database seeder no longer creates a test account with a known password.
