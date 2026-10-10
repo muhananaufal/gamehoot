@@ -1,11 +1,6 @@
 <x-layouts.phone :title="$event->name" :event="$event">
     {{-- F9: the whole list is sent once and searched on the phone, without a request per keystroke. --}}
-    <div x-data="{
-        query: '',
-        names: @js($names->map(fn ($p) => mb_strtolower($p->name))->values()),
-        shows(index) { const q = this.query.trim().toLowerCase(); return q === '' || this.names[index].includes(q); },
-        get noMatch() { return this.query.trim() !== '' && ! this.names.some((_, i) => this.shows(i)); },
-    }" class="flex flex-col gap-4">
+    <div x-data="nameSearch({ names: @js($names->pluck('name')->values()) })" class="flex flex-col gap-4">
         <div class="flex flex-col items-center gap-2 text-center">
             <x-mascot :size="64" mood="idle" />
             <h1 class="font-display text-title leading-tight font-bold">{{ __('join.pick_title') }}</h1>

@@ -9,6 +9,7 @@ import { checkFormsBeforeSubmit } from './form-check.js';
 import { watchFormSubmits } from './form-busy.js';
 import { mascot } from './mascot.js';
 import { motionStore } from './motion.js';
+import { nameSearch } from './name-search.js';
 import { pentahootPhone } from './pentahoot-screens.js';
 import { followEvent, registerRealtimeStore } from './realtime-boot.js';
 import { connectionBanner, nudgeDirective } from './scene.js';
@@ -31,6 +32,7 @@ Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {
 Alpine.data('mascot', mascot);
 Alpine.data('connectionBanner', connectionBanner);
 Alpine.data('celebration', celebration);
+Alpine.data('nameSearch', nameSearch);
 Alpine.data('pentahootPhone', pentahootPhone);
 Alpine.data('tebakScreen', tebakScreen);
 
