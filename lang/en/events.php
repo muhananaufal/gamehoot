@@ -37,6 +37,7 @@ return [
     'skip' => 'Skip',
     'import_csv' => 'Import CSV',
     'imported_names' => '{1} :count name added from :file|[2,*] :count names added from :file',
+    'import_failed' => 'The file could not be read. Check the connection and try again.',
     'undo_import' => 'Undo',
     'names_step_hint' => 'One name per line, as players and the screen should show them. You can also add names later on the Names page.',
     'games_refused' => 'Some packs can no longer be used. Pick the games again.',
@@ -125,6 +126,8 @@ return [
     'join_unlocked' => 'New name claims are unlocked.',
     'cohost_added' => ':name is now a co-host.',
     'cohost_removed' => ':name is no longer a co-host.',
+    'remove_cohost_title' => 'Remove :name as co-host?',
+    'remove_cohost_confirm' => ':name loses access to this event at once, including any Live control open now.',
     'transferred' => ':name now owns this event. You are a co-host.',
 
     'slug_format' => 'The link may use lowercase letters, digits and single hyphens, 3 to 60 characters.',

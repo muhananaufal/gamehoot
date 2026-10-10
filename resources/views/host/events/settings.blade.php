@@ -85,11 +85,14 @@
                             @endif
                         </span>
                         @if ($isOwner)
-                            <form method="POST" action="{{ route('host.events.cohosts.destroy', [$event, $cohost]) }}">
-                                @csrf
-                                @method('DELETE')
-                                <x-button type="submit" variant="link-destructive">{{ __('events.remove') }}</x-button>
-                            </form>
+                            {{-- U24 (audit FE-11): removing access asks first, as the other changes here. --}}
+                            @include('host.partials.confirm-action', [
+                                'trigger' => __('events.remove'), 'variant' => 'link-destructive', 'tone' => 'destructive',
+                                'title' => __('events.remove_cohost_title', ['name' => $cohost->name]),
+                                'body' => __('events.remove_cohost_confirm', ['name' => $cohost->name]),
+                                'action' => route('host.events.cohosts.destroy', [$event, $cohost]), 'method' => 'DELETE',
+                                'confirm' => __('events.remove'),
+                            ])
                         @endif
                     </div>
                 @empty

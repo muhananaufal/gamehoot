@@ -215,6 +215,19 @@ describe('co-hosts (C-2)', function (): void {
         expect($event->cohosts()->count())->toBe(0);
     });
 
+    it('asks before removing a co-host, like the other changes on the page (U24, audit FE-11)', function (): void {
+        $event = ownedEvent();
+        $arif = User::factory()->create(['name' => 'Arif Rahman']);
+        $event->cohosts()->attach($arif);
+
+        $page = actingAs(ownerOf($event))->get("/host/{$event->id}/settings")->assertOk()->getContent();
+        $form = (string) strstr((string) strstr((string) $page, 'Remove Arif Rahman as co-host?'), '</dialog>', true);
+
+        expect($form)->toContain("/host/{$event->id}/cohosts/{$arif->id}")
+            ->toContain('name="_method" value="DELETE"')
+            ->toContain('Arif Rahman loses access to this event at once');
+    });
+
     it('rejects unknown, disabled, duplicate co-hosts and the owner', function (): void {
         $event = ownedEvent();
         $existing = cohostOf($event);
