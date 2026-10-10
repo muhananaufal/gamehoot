@@ -8,6 +8,11 @@ COPY --from=mlocati/php-extension-installer:2.12.0 /usr/bin/install-php-extensio
 # GD encodes every uploaded image again on the server, dropping camera metadata (E8, O7).
 RUN install-php-extensions pdo_mysql bcmath intl zip pcntl opcache gd
 
+# P9 (audit OPS-1): libuv for Reverb's event loop, which ReactPHP picks by itself when the
+# extension is there; the default stream_select loop stops at 1,024 open files. PECL uv has only
+# beta releases for PHP 8, so the version is pinned and proven by the F19 load test.
+RUN install-php-extensions uv-0.3.1
+
 COPY docker/php/conf.d/pentahoot.ini /usr/local/etc/php/conf.d/pentahoot.ini
 
 WORKDIR /var/www/html

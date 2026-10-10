@@ -45,6 +45,12 @@ services:
     command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
     ports:
       - "127.0.0.1:${REVERB_HOST_PORT:-8080}:8080"
+    # P9 (audit OPS-1): every phone, projector and host tab is one open socket; the default
+    # limit of 1,024 open files would refuse new connections in a full venue.
+    ulimits:
+      nofile:
+        soft: 10000
+        hard: 10000
     healthcheck:
       test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8080) ? 0 : 1);"]
       interval: 15s
