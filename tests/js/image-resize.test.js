@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fileNameFor, fitWidth, imageProblem, outputTypes } from '../../resources/js/image-resize.js';
+import { fileNameFor, fitWithin, imageProblem, outputTypes } from '../../resources/js/image-resize.js';
 
 describe('E8 image checks before upload', () => {
     it('refuses HEIC by type or by name, and anything that is not JPG or PNG', () => {
@@ -12,13 +12,18 @@ describe('E8 image checks before upload', () => {
     });
 
     it('makes images at most the given width and keeps their shape (E8, E14)', () => {
-        expect(fitWidth(4032, 3024, 1920)).toEqual({ width: 1920, height: 1440 });
-        expect(fitWidth(4032, 3024, 720)).toEqual({ width: 720, height: 540 });
-        expect(fitWidth(3000, 1, 720)).toEqual({ width: 720, height: 1 });
+        expect(fitWithin(4032, 3024, 1920)).toEqual({ width: 1920, height: 1440 });
+        expect(fitWithin(4032, 3024, 720)).toEqual({ width: 720, height: 540 });
+        expect(fitWithin(3000, 1, 720)).toEqual({ width: 720, height: 1 });
+    });
+
+    it('also fits a tall photo within the height the server takes (K7, audit SEC-4)', () => {
+        expect(fitWithin(3024, 4032, 1920)).toEqual({ width: 1440, height: 1920 });
+        expect(fitWithin(1080, 20000, 720)).toEqual({ width: 39, height: 720 });
     });
 
     it('never makes a small image bigger', () => {
-        expect(fitWidth(640, 480, 1920)).toEqual({ width: 640, height: 480 });
+        expect(fitWithin(640, 480, 1920)).toEqual({ width: 640, height: 480 });
     });
 
     it('keeps PNG as PNG and falls back to JPEG only when it stays over 2 MB', () => {

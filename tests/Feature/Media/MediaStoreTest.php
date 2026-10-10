@@ -158,3 +158,15 @@ it('prunes stray files that no row points to, once they are an hour old (G11)', 
     $disk->assertMissing('private/old-orphan.jpg');
     $disk->assertExists(['private/fresh-orphan.jpg', $tracked->path]);
 });
+
+it('refuses to decode an image with more pixels than the browser ever sends (K7, audit SEC-4)', function (): void {
+    $user = User::factory()->create();
+    $tall = UploadedFile::fake()->image('tall.png', 1000, 6000);
+    $small = UploadedFile::fake()->image('tall.png', 120, 720);
+
+    expect(fn () => app(MediaStore::class)->store($tall, $small, MediaVisibility::Public, $user))
+        ->toThrow(LogicException::class, 'Refusing to decode');
+
+    expect(Storage::disk('media')->allFiles())->toBe([])
+        ->and(MediaFile::query()->count())->toBe(0);
+});

@@ -1,4 +1,4 @@
-import { imageProblem, LARGE_WIDTH, resizeImage, SMALL_WIDTH } from './image-resize.js';
+import { imageProblem, LARGE_SIZE, resizeImage, SMALL_SIZE } from './image-resize.js';
 
 // E8, E14: one image field of a question form. The picked file never leaves the browser as is:
 // it is drawn at 1920 and 720 px and the two results are put into the named file inputs, so the
@@ -33,8 +33,8 @@ export function imagePicker({ current = null, labels = {} } = {}) {
 
             try {
                 const [large, small] = await Promise.all([
-                    resizeImage(file, LARGE_WIDTH),
-                    resizeImage(file, SMALL_WIDTH),
+                    resizeImage(file, LARGE_SIZE),
+                    resizeImage(file, SMALL_SIZE),
                 ]);
 
                 if (large === null || small === null) {

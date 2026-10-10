@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const resize = vi.fn();
 
 vi.mock('../../resources/js/image-resize.js', () => ({
-    LARGE_WIDTH: 1920,
-    SMALL_WIDTH: 720,
+    LARGE_SIZE: 1920,
+    SMALL_SIZE: 720,
     imageProblem: () => null,
     resizeImage: (...args) => resize(...args),
 }));

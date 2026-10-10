@@ -192,6 +192,18 @@ describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
             ->assertSessionHasErrors('answer_image');
     });
 
+    it('refuses images taller than the browser makes them (K7, audit SEC-4)', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", gambarForm([
+            'question_image' => UploadedFile::fake()->image('tall.png', 1000, 4000),
+            'question_image_small' => UploadedFile::fake()->image('tall.png', 300, 1200),
+        ]))->assertSessionHasErrors(['question_image', 'question_image_small']);
+
+        expect(MediaFile::query()->count())->toBe(0);
+    });
+
     it('keeps the stored images when an edit leaves the fields empty, and stores new files otherwise (D-9)', function (): void {
         $host = User::factory()->create();
         $pack = gambarPack($host);
