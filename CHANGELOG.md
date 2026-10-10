@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Phones no longer receive a message for every vote and every name claimed by other players, so a full room keeps the venue WiFi and the realtime server much quieter; the projector and Live control still count live.
 - Closing an event while a game runs updates the screens once instead of twice.
+- Reset votes, Pick winner, Surrender, Finish game and Close event are refused when another host changed the screen a moment before, so nobody wipes or decides a result they have not seen.
+- A host whose account is disabled sees why on the sign in page.
 - The Names page stops refreshing itself in the background after the host moves to another page.
 
 - Every host page shows its title, also Settings, Games, Activity log and Deleted events.
@@ -83,6 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- A co-host who is removed, or an account that is disabled or deleted, stops receiving the host's live data (including Word Guess answers) on a Live control page that is still open.
+- A host session ends 8 hours after signing in, even while it is in use.
 - The database seeder no longer creates a test account with a known password.
 - Every page now sends security headers, including a Content Security Policy, and cannot be embedded in other sites.
 - Behind a reverse proxy, each phone is rate limited by its own address and links use HTTPS.
