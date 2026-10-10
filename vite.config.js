@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
     return {
         plugins: [
             laravel({
-                input: ['resources/css/app.css', 'resources/js/app.js'],
+                // F27: the phone pages have their own, smaller entry.
+                input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/phone.js'],
                 refresh: true,
                 // Self-hosted from the locked npm packages: the venue network may be poor.
                 fonts: [

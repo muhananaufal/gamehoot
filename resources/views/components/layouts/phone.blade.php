@@ -4,7 +4,7 @@
     'person' => null,
 ])
 {{-- Participant phone: follows the system theme with the same switch rules as the host (F21). --}}
-<x-layouts.base :title="$title" class="flex flex-col bg-canvas">
+<x-layouts.base :title="$title" script="resources/js/phone.js" class="flex flex-col bg-canvas">
     <header class="flex items-center justify-between gap-3 rounded-b-[28px] bg-nav px-5 py-5 text-nav-ink">
         @if ($event)
             <span class="truncate font-display text-title-s font-bold">{{ $event->name }}</span>

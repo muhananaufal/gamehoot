@@ -6,6 +6,8 @@
     'rememberMotion' => true,
     // U31: the host's Screen animations setting of the Public View; null elsewhere.
     'screenAnimations' => null,
+    // F27: the participant pages load the phone entry, everything else the full one.
+    'script' => 'resources/js/app.js',
 ])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($theme) data-theme="{{ $theme }}" @endif @unless ($rememberMotion) data-motion-device-only @endunless @if ($screenAnimations !== null) data-screen-animations="{{ $screenAnimations ? 'on' : 'off' }}" @endif>
@@ -24,7 +26,7 @@
     @endif
     <x-motion-script :remember="$rememberMotion" />
     @fonts
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', $script])
 </head>
 <body {{ $attributes->merge(['class' => 'min-h-dvh antialiased']) }}>
     {{ $slot }}

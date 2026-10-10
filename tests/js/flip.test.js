@@ -34,9 +34,13 @@ describe('U8 rows that move, appear and stay (FLIP)', () => {
         [els[0].top, els[1].top] = [140, 100];
         flip.play();
 
-        const moves = animate.mock.calls.filter(([, frames]) => 'y' in frames && !('opacity' in frames));
+        // F27: motion/mini animates through WAAPI, so moves are CSS transforms, and its spring is
+        // the generator function (a string type is refused by mini).
+        const moves = animate.mock.calls.filter(([, frames]) => 'transform' in frames && !('opacity' in frames));
         expect(moves).toHaveLength(2);
-        expect(moves.find(([el]) => el === els[0])[1].y).toEqual([-40, 0]);
+        const [, frames, options] = moves.find(([el]) => el === els[0]);
+        expect(frames.transform).toEqual(['translate(0px, -40px)', 'translate(0px, 0px)']);
+        expect(typeof options.type).toBe('function');
     });
 
     it('fades in rows it has not seen, and leaves still rows alone', () => {
