@@ -9,6 +9,19 @@ use Tests\Support\Pentahoot;
 
 uses(RefreshDatabase::class);
 
+/**
+ * The measurements a page script returned, by name; anything that is not a number or a flag is null.
+ *
+ * @return array<string, bool|float|null>
+ */
+function measured(mixed $values): array
+{
+    return array_map(
+        fn (mixed $value): bool|float|null => is_bool($value) ? $value : (is_numeric($value) ? (float) $value : null),
+        is_array($values) ? $values : [],
+    );
+}
+
 /*
 | U34, U35 (audit FE-1, UI-1): the Public View cannot scroll, so what players need must fit the
 | screen. Measured in the browser, like the audit did: the drawn size, not the class names.
@@ -20,7 +33,7 @@ it('keeps the QR code and the joined count on screen with a long link at common 
 
     $page = visit("/{$event->slug}/screen")->resize($width, $height)->assertSee('Join at')->wait(1);
 
-    $fit = $page->script(<<<'JS'
+    $fit = measured($page->script(<<<'JS'
         (() => {
             const qr = document.querySelector('[data-test=join-qr]').getBoundingClientRect();
             const footer = document.querySelector('footer').getBoundingClientRect();
@@ -32,7 +45,7 @@ it('keeps the QR code and the joined count on screen with a long link at common 
                 linkPx: parseFloat(getComputedStyle(link).fontSize),
             };
         })()
-        JS);
+        JS));
 
     expect($fit['qr'])->toBeTrue()
         ->and($fit['footer'])->toBeTrue()
@@ -53,7 +66,7 @@ it('draws the countdown digits at about half of their ring, far bigger than its 
 
     $page = visit("/{$event->slug}/screen")->resize(1920, 1080)->assertSee('Who is the most punctual?');
 
-    $sizes = $page->script(<<<'JS'
+    $sizes = measured($page->script(<<<'JS'
         (() => {
             const timer = document.querySelector('[role=timer]');
             const digits = timer.querySelector('[data-test=countdown-digits]');
@@ -64,10 +77,10 @@ it('draws the countdown digits at about half of their ring, far bigger than its 
                 label: parseFloat(getComputedStyle(label).fontSize),
             };
         })()
-        JS);
+        JS));
 
     // The audit measured 30 px digits in a 389 px ring, as small as the label.
-    expect($sizes['digits'])->toBeGreaterThanOrEqual($sizes['ring'] * 0.4)
+    expect($sizes['digits'])->toBeGreaterThanOrEqual((float) $sizes['ring'] * 0.4)
         ->and($sizes['digits'])->toBeGreaterThanOrEqual(120.0)
         ->and($sizes['label'])->toBeGreaterThanOrEqual(36.0);
     $page->assertNoJavaScriptErrors();

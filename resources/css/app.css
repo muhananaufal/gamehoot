@@ -26,19 +26,20 @@
 
     /*
      * U34 (audit UI-1, UI-2): the Public View sizes, from the screen's height and width, so the
-     * same share of the screen holds on every projector. At 1920 x 1080: meta 36, body 44, title
-     * 72, hero 120 px, as AVIXA DISCAS asks for readers at the back of a large room. The prompt
-     * steps down with its length (promptSize in resources/js/pentahoot.js) but never below body.
-     * The countdown digits fill about 45% of their ring (components/countdown.blade.php).
+     * same share of the screen holds on every projector. Each size is written as its pixels at
+     * 1920 x 1080 (meta 36, body 44, title 72, hero 120), so 1080p gets exactly those and no
+     * rounding drops one below the U34 minimum. The prompt steps down with its length
+     * (promptSize in resources/js/pentahoot.js) but never below body. The countdown digits fill
+     * about 45% of their ring (components/countdown.blade.php).
      */
-    --text-screen-meta: min(1.875vw, 3.333vh);
-    --text-screen-body: min(2.3vw, 4.1vh);
-    --text-screen-title: min(3.75vw, 6.667vh);
-    --text-screen-hero: min(6.25vw, 11.111vh);
-    --text-screen-prompt-l: min(4.6vw, 8.15vh);
-    --text-screen-prompt-m: min(3.4vw, 6.05vh);
-    --text-screen-prompt-s: min(2.6vw, 4.63vh);
-    --text-screen-countdown: min(9.9vw, 16.2vh);
+    --text-screen-meta: min(calc(36 * 100vw / 1920), calc(36 * 100vh / 1080));
+    --text-screen-body: min(calc(44 * 100vw / 1920), calc(44 * 100vh / 1080));
+    --text-screen-title: min(calc(72 * 100vw / 1920), calc(72 * 100vh / 1080));
+    --text-screen-hero: min(calc(120 * 100vw / 1920), calc(120 * 100vh / 1080));
+    --text-screen-prompt-l: min(calc(88 * 100vw / 1920), calc(88 * 100vh / 1080));
+    --text-screen-prompt-m: min(calc(65 * 100vw / 1920), calc(65 * 100vh / 1080));
+    --text-screen-prompt-s: min(calc(50 * 100vw / 1920), calc(50 * 100vh / 1080));
+    --text-screen-countdown: min(calc(190 * 100vw / 1920), calc(175 * 100vh / 1080));
 
     --radius-control: 10px;
     --radius-card: 16px;
