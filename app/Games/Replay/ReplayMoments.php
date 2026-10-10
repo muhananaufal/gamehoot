@@ -12,6 +12,7 @@ use App\Models\Event;
 use App\Models\Game;
 use App\Models\Question;
 use App\Models\QuestionResult;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * D-11: the past moments of an event that the Public View can replay, and what it draws for
@@ -116,8 +117,26 @@ final readonly class ReplayMoments
         $questions = $game->questions()->with(['pentahoot', 'kata', 'gambar', 'winner:id,name'])->orderBy('position')->get();
 
         if ($game->type === GameType::Pentahoot) {
-            return array_values(array_filter($questions->map(function (Question $question) use ($game): ?Moment {
-                $winners = array_map(fn (array $row): string => $row['name'], array_filter($this->ranking($question), fn (array $row): bool => $row['rank'] === 1));
+            // Audit PERF-5: the frozen rank 1 rows of every category in one query (G10).
+            $firsts = QuestionResult::query()
+                ->whereIn('question_id', $questions->modelKeys())
+                ->where('rank', 1)
+                ->with('person:id,name')
+                ->get()
+                ->groupBy('question_id');
+
+            return array_values(array_filter($questions->map(function (Question $question) use ($game, $firsts): ?Moment {
+                $attempt = $question->pentahoot->attempt ?? null;
+
+                if (! in_array($question->status, [QuestionStatus::Revealed, QuestionStatus::Done], true) || $attempt === null) {
+                    return null;
+                }
+
+                $winners = $firsts->get($question->id, new Collection)
+                    ->where('attempt', $attempt)
+                    ->map(fn (QuestionResult $row): string => $row->person->name ?? '')
+                    ->values()
+                    ->all();
 
                 return $winners === [] ? null : new Moment(ReplayKind::Result, $game->id, $question->id, $question->position, $this->answer($question), array_values($winners));
             })->all()));

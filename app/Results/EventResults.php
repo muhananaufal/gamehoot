@@ -11,6 +11,7 @@ use App\Models\Game;
 use App\Models\Question;
 use App\Models\QuestionResult;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * D-3, G10: the results of an event, read only from what is frozen, so a later change to the
@@ -64,14 +65,17 @@ final class EventResults
     private static function pentahoot(Game $game, array &$changes): array
     {
         $questions = [];
+        // Audit PERF-5: the frozen rows of every question of the game in one query.
+        $frozenRows = QuestionResult::query()
+            ->whereIn('question_id', $game->questions->modelKeys())
+            ->with('person:id,name')
+            ->get()
+            ->groupBy('question_id');
 
         foreach ($game->questions->sortBy('position') as $question) {
             $attempt = $question->pentahoot->attempt ?? 1;
-            $frozen = QuestionResult::query()
-                ->where('question_id', $question->id)
+            $frozen = $frozenRows->get($question->id, new Collection)
                 ->where('attempt', $attempt)
-                ->with('person:id,name')
-                ->get()
                 ->sortBy(fn (QuestionResult $row): string => sprintf('%05d %s', $row->rank, mb_strtolower($row->person->name ?? '')));
 
             foreach ($frozen as $row) {
