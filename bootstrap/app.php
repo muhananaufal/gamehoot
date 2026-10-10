@@ -9,10 +9,13 @@ use App\Http\ApiError;
 use App\Http\Middleware\AddLogContext;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\QueryErrorLog;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -39,6 +42,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // K5: a refused action is normal play (late vote, double click), not an error to log.
         $exceptions->dontReport([ActionRefused::class, ClaimRefused::class, NameListLocked::class]);
+
+        // K5 (audit SEC-9): a failed query is logged without the values it carried.
+        $exceptions->report(function (QueryException $exception): void {
+            Log::error('Database query failed.', QueryErrorLog::context($exception));
+        })->stop();
 
         // K4: {code, message} for framework errors too.
         $exceptions->render(
