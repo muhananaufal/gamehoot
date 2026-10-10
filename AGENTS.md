@@ -38,6 +38,8 @@ Aturan:
 - **Engine game tidak mem-publish.** Aksi soal berjalan lewat `RunQuestionAction` (transaksi, kunci event, naikkan versi, publish); engine hanya mengubah state game (F13). Dicek oleh arch test "game engines do not publish realtime state".
 - **Setiap aksi yang menaikkan `state_version` wajib memanggil `StatePublisher::publish()`** di dalam transaksinya; snapshot dikirim setelah commit dan broadcast yang gagal hanya dicatat, tidak menggagalkan aksi (F22). Dicek oleh `tests/Architecture/StatePublishingTest.php`.
 - **Broadcast pakai `ShouldBroadcastNow`** dan dijaga jauh di bawah batas 10.000 byte Reverb (F14). Per vote hanya `{answered: n}`; rincian suara lewat `GET /host/{event}/state`.
+- **Pesan hanya ke audiens yang membacanya (F25).** Penghitung yang sering berubah (`answered`, `joined`) lewat channel `event.{uuid}.screen` (proyektor dan Live control), tidak ke HP, dan tidak menaikkan `state_version`. Klaim nama oleh peserta tidak menaikkan versi.
+- **Channel host berkunci (F26):** `event.{uuid}.host.{kunci}`; kunci diputar saat hak akses dicabut. Aksi yang mencabut hak akses wajib memutar kunci.
 - **Aksi peserta lewat HTTP POST**, bukan pesan WebSocket (F3). Rate limit per token klaim, bukan per IP (F11).
 - **Aksi host** dijalankan dalam transaksi dengan `lockForUpdate` dan update bersyarat terhadap state (F6, G12).
 - **Waktu dari server.** `ends_at` + `server_now`, tanpa job terjadwal (F4). Suara diterima sampai `ends_at` + 1 detik (E3).
@@ -171,6 +173,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 - **Konfigurasi (K6):** variabel wajib yang hilang membuat aplikasi gagal start dengan pesan jelas.
 - **Upload (K7):** batas yang sama di validasi Laravel, PHP (`upload_max_filesize`, `post_max_size`), dan nginx (`client_max_body_size`).
 - **Dependency (K8):** paket baru wajib disertai alasan di pesan commit.
+- **Otorisasi satu lapis (K9):** hak akses hanya lewat `->can()` di berkas rute; FormRequest hanya memvalidasi, controller tidak memakai `abort_if` untuk hak akses. Dicek arch test.
 
 ## 6d. Pipeline (P1–P7)
 
