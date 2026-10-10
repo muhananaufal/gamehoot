@@ -69,7 +69,7 @@ describe('creating an event', function (): void {
         actingAs(User::factory()->create())
             ->post('/host/events', ['name' => 'Anything', 'slug' => $slug, 'screen_theme' => 'dark'])
             ->assertSessionHasErrors('slug');
-    })->with(['host', 'admin', 'login', 'logout', 'media', 'broadcasting', 'storage', 'build', 'up']);
+    })->with(['host', 'admin', 'login', 'logout', 'media', 'broadcasting', 'storage', 'build', 'up', 'app', 'apps']);
 
     it('picks a free link when the one made from the name is taken', function (): void {
         ownedEvent(attributes: ['slug' => 'gathering-2026']);
