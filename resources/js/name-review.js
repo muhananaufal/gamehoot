@@ -1,4 +1,5 @@
 import { guardLeaving } from './import-guard.js';
+import { foldText } from './text-fold.js';
 
 // B-4: live duplicate check on the import preview. Mirrors App\People\PersonName and
 // App\People\DuplicateNames; the server checks the list again when it is saved.
@@ -6,8 +7,9 @@ export function displayName(name) {
     return name.normalize('NFC').replace(/\s+/gu, ' ').trim();
 }
 
+/** B-8: also without accents, letter width and ß/ss, like the database's unique index. */
 export function normalizeName(name) {
-    return displayName(name).toLowerCase();
+    return foldText(displayName(name)).replace(/\s+/gu, ' ').trim();
 }
 
 /** The longest name the server stores (people.name is 100 characters). */
@@ -44,6 +46,9 @@ export function findDuplicates(names, existing) {
  * room: how many more names fit in the event (B-3), or null when the page does not say.
  */
 export function nameReview({ names = [], existing = {}, labels = {}, room = null } = {}) {
+    // Outside the reactive data: reading it must not make every row depend on every name.
+    let memo = { revision: -1, problems: {} };
+
     return {
         rows: names.map((name, i) => ({ id: i, name })),
         existing,
@@ -108,11 +113,29 @@ export function nameReview({ names = [], existing = {}, labels = {}, room = null
             return (count === 1 ? forms.one : forms.other).replace('__N__', count);
         },
 
+        /**
+         * Audit FE-4: every row reads its problem several times per render. The list is checked
+         * once per change of the names (revision, raised by typing and by Remove), not once per
+         * read: 400 rows took over a second per keystroke before.
+         */
+        revision: 0,
+
+        changed() {
+            this.revision++;
+        },
+
         get problems() {
-            return findDuplicates(
-                this.rows.map((row) => row.name),
-                this.existing,
-            );
+            if (memo.revision !== this.revision) {
+                memo = {
+                    revision: this.revision,
+                    problems: findDuplicates(
+                        this.rows.map((row) => row.name),
+                        this.existing,
+                    ),
+                };
+            }
+
+            return memo.problems;
         },
 
         get problemCount() {
@@ -152,6 +175,7 @@ export function nameReview({ names = [], existing = {}, labels = {}, room = null
 
         remove(id) {
             this.rows = this.rows.filter((row) => row.id !== id);
+            this.changed();
         },
     };
 }

@@ -14,7 +14,6 @@ use App\Models\User;
 use App\People\DuplicateNames;
 use App\People\NameCsv;
 use Illuminate\Container\Attributes\CurrentUser;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -67,12 +66,11 @@ final class PersonImportController
 
     public function update(ConfirmImportRequest $request, Event $event, EditNameList $names, #[CurrentUser] User $user): RedirectResponse
     {
+        // B-8: a clash only the unique index finds comes back as a ValidationException for its row.
         try {
             $names->import($event, $request->names(), $user);
         } catch (NameListLocked) {
             return redirect()->route('host.events.people.index', $event)->withErrors(['names' => __('people.locked')]);
-        } catch (UniqueConstraintViolationException) {
-            return back()->withInput()->withErrors(['names' => __('people.duplicate_race')]);
         }
 
         return redirect()->route('host.events.people.index', $event)

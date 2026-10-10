@@ -48,8 +48,9 @@ final class AppServiceProvider extends ServiceProvider
         // account are limited more strictly in LoginRequest.
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip() ?? 'unknown'));
 
-        // F11: a whole venue may share one address, so the per-IP claim limit is generous.
-        RateLimiter::for('claim', fn (Request $request): Limit => Limit::perMinute(300)->by($request->ip() ?? 'unknown'));
+        // F11 (audit RATE-1): a whole venue may share one address and scan the QR code in the same
+        // minute; a claim is still guarded by the conditional update (F6) and 16-character tokens.
+        RateLimiter::for('claim', fn (Request $request): Limit => Limit::perMinute(1000)->by($request->ip() ?? 'unknown'));
 
         // F11: votes are limited per phone (claim token), so a venue behind one IP keeps voting.
         // Throttling runs before route model binding, so the event is still its link here.

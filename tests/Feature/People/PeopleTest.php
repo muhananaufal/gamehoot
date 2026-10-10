@@ -91,7 +91,7 @@ describe('name list (B-3, B-4)', function (): void {
         Person::factory()->for($event)->create(['name' => 'Budi Santoso', 'name_normalized' => 'budi santoso']);
 
         actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Rita Wulandari', 'BUDI  santoso'])])
-            ->assertSessionHasErrors(['names' => 'Line 2: Same as “Budi Santoso” already in this event (upper/lower case is ignored).']);
+            ->assertSessionHasErrors(['names' => 'Line 2: Same as “Budi Santoso” already in this event (upper/lower case and accents are ignored).']);
         actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Ana Putri', 'ana  PUTRI'])])
             ->assertSessionHasErrors(['names' => 'Line 2: Same as line 1. Add something to tell them apart, e.g. “ana PUTRI (IT)”.']);
 
@@ -104,7 +104,7 @@ describe('name list (B-3, B-4)', function (): void {
 
         actingAs(hostOf($event))->post("/host/{$event->id}/people", ['names' => implode(PHP_EOL, ['Ana Putri', '', 'ana  PUTRI', '', 'budi santoso'])])
             ->assertSessionHasErrors(['names' => 'Line 3: Same as line 1. Add something to tell them apart, e.g. “ana PUTRI (IT)”.'])
-            ->assertSessionHasErrors(['names' => 'Line 5: Same as “Budi Santoso” already in this event (upper/lower case is ignored).']);
+            ->assertSessionHasErrors(['names' => 'Line 5: Same as “Budi Santoso” already in this event (upper/lower case and accents are ignored).']);
     });
 
     it('rejects an empty list and a name longer than 100 characters', function (): void {

@@ -22,9 +22,10 @@ final class DuplicateNames
         $existing = [];
 
         // U26: a new event has no names yet.
-        foreach ($event?->people()->get(['name', 'name_normalized']) ?? [] as $person) {
+        foreach ($event?->people()->get(['name']) ?? [] as $person) {
             /** @var Person $person */
-            $existing[$person->name_normalized] = $person->name;
+            // B-8: folded again from the name, since rows saved before B-8 kept their accents.
+            $existing[PersonName::normalize($person->name)] = $person->name;
         }
 
         $seen = [];

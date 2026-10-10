@@ -4,6 +4,7 @@
 // view survives a refresh and a live update (U12).
 
 import { flipList } from './flip.js';
+import { foldText } from './text-fold.js';
 
 const DIRECTIONS = ['asc', 'desc'];
 export const PAGE_SIZES = [10, 25, 50, 100];
@@ -83,8 +84,9 @@ export function filtersActive(state) {
 }
 
 export function matchesRow(row, { q, filter, who = 'all', kind = 'all', from = '', to = '' }) {
-    const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const text = row.search.toLowerCase();
+    // B-8: "jose" finds José, like the name list's own comparison.
+    const words = foldText(q.trim()).split(/\s+/).filter(Boolean);
+    const text = foldText(row.search);
     const date = row.date ?? '';
     const inRange =
         (from === '' && to === '') || (date !== '' && (from === '' || date >= from) && (to === '' || date <= to));

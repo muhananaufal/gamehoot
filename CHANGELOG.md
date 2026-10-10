@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Names that differ only in accents, letter case or letter width (José and Jose) are treated as the same name everywhere: they are marked before saving, and New event no longer fails with an error when both are typed. Searching for "jose" also finds José.
+- Reviewing a long imported name list stays smooth while typing; with hundreds of rows each keystroke used to freeze the page for about a second.
+- The event links /app and /apps are refused, since the realtime server answers them before the event could.
+- A whole venue sharing one internet connection can claim names in the same minute without being told to wait.
 - Phones no longer receive a message for every vote and every name claimed by other players, so a full room keeps the venue WiFi and the realtime server much quieter; the projector and Live control still count live.
 - Closing an event while a game runs updates the screens once instead of twice.
 - Reset votes, Pick winner, Surrender, Finish game and Close event are refused when another host changed the screen a moment before, so nobody wipes or decides a result they have not seen.

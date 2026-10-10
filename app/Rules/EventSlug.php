@@ -12,8 +12,11 @@ use Illuminate\Contracts\Validation\ValidationRule;
  */
 final class EventSlug implements ValidationRule
 {
-    /** F10: first path segments used by the app itself. */
-    public const array RESERVED = ['host', 'admin', 'login', 'logout', 'media', 'broadcasting', 'storage', 'build', 'up'];
+    /**
+     * F10: first path segments used by the app itself, and those the proxy hands to Reverb before
+     * Laravel sees them (WebSocket /app, API /apps; audit FLOW-2).
+     */
+    public const array RESERVED = ['host', 'admin', 'login', 'logout', 'media', 'broadcasting', 'storage', 'build', 'up', 'app', 'apps'];
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
