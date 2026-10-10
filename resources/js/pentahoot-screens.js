@@ -47,10 +47,27 @@ function base(labels) {
         tick: 0,
         clock: null,
 
+        /**
+         * Audit PERF-6: the clock ticks only while a countdown is on screen, so a phone waiting
+         * in the lobby for an hour is not woken four times a second. The phase reads the tick,
+         * so the clock stops itself once the question closes.
+         */
         startClock() {
-            this.clock = setInterval(() => {
-                this.tick = Date.now();
-            }, TICK_MS);
+            const follow = (phase) => {
+                if (phase === 'live' && this.question?.ends_at) {
+                    this.clock ??= setInterval(() => {
+                        this.tick = Date.now();
+                    }, TICK_MS);
+
+                    return;
+                }
+
+                clearInterval(this.clock);
+                this.clock = null;
+            };
+
+            this.$watch(() => this.phase, follow);
+            follow(this.phase);
         },
 
         destroy() {

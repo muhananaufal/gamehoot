@@ -504,3 +504,57 @@ describe('U32 Live control stamps a Tebak winner', () => {
         expect(pieces).toHaveLength(0);
     });
 });
+
+describe('audit PERF-6: the 250 ms clock runs only while a countdown is on screen', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => answer(200, { people: [] })),
+        );
+    });
+    afterEach(() => vi.useRealTimers());
+
+    function started(component, store) {
+        const watchers = [];
+        component.$store = { realtime: store };
+        component.$dispatch = () => {};
+        component.$watch = (read, fn) => {
+            let last = read();
+            watchers.push(() => {
+                const next = read();
+
+                if (next !== last) {
+                    last = next;
+                    fn(next);
+                }
+            });
+        };
+        component.init();
+
+        return () => watchers.forEach((run) => run());
+    }
+
+    const waiting = { version: 2, server_now: 0, event: { status: 'open' }, game: null };
+
+    it.each([
+        ['phone', () => pentahootPhone({ peopleUrl: '/p', voteUrl: '/v/__QUESTION__', labels: {} })],
+        ['Public View', () => pentahootScreen({ labels: {} })],
+        ['Live control', () => pentahootHost({ actionUrl: '/a', labels: {} })],
+    ])('the %s stays still in the lobby, ticks while live and stops once the question closes', (_, make) => {
+        let now = 0;
+        const store = realtimeStore({ now: () => now });
+        store.accept(waiting);
+        const flush = started(make(), store);
+        expect(vi.getTimerCount()).toBe(0);
+
+        store.accept(live);
+        flush();
+        expect(vi.getTimerCount()).toBe(1);
+
+        now = 40_000;
+        vi.advanceTimersByTime(250);
+        flush();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+});
