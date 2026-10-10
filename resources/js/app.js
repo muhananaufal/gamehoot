@@ -10,7 +10,7 @@ import { checkFormsBeforeSubmit } from './form-check.js';
 import { watchFormSubmits } from './form-busy.js';
 import { confirmStore } from './confirm-store.js';
 import { hostShell } from './host-shell.js';
-import { rowMenuStore } from './row-actions.js';
+import { rowMenuHost, rowMenuStore } from './row-actions.js';
 import { imagePicker } from './image-picker.js';
 import { toastStore } from './toasts.js';
 import { dateRangePicker } from './date-range.js';
@@ -68,6 +68,8 @@ Alpine.store(
 Alpine.store('toasts', toastStore());
 Alpine.store('confirm', confirmStore());
 Alpine.store('rowMenu', rowMenuStore());
+// Audit FE-3: the shared row menu follows the APG menu keys.
+Alpine.data('rowMenuHost', rowMenuHost);
 // D-11: the game picked in the Replay card of Live control; it outlives the card's refreshes.
 Alpine.store('replayPick', { game: null });
 Alpine.data('tableView', tableView);
