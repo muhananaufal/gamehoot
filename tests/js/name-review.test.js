@@ -35,6 +35,21 @@ describe('B-4 name review', () => {
         expect(review.label('save', review.rows.length)).toBe('Save 1 name');
     });
 
+    it('checks the list once per change, not once per read (audit FE-4)', () => {
+        const review = nameReview({ names: Array.from({ length: 400 }, (_, i) => `Peserta ${i}`) });
+        review.rows[5].name = 'Peserta 6';
+        review.changed();
+
+        const started = performance.now();
+        for (let i = 0; i < 400 * 7; i++) {
+            review.problemAt(i % 400);
+        }
+
+        expect(review.problemAt(6)).toEqual({ row: 6 });
+        // 2,800 reads, as one render of 400 rows does; the old getter needed about a second.
+        expect(performance.now() - started).toBeLessThan(200);
+    });
+
     it('flags a name longer than the server takes, instead of calling it ready', () => {
         expect(findDuplicates(['Budi', 'x'.repeat(101), 'y'.repeat(100)], {})).toEqual({ 1: { tooLong: true } });
     });

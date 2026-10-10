@@ -3,6 +3,8 @@
     $problemCount = $reviewing ? count(array_filter($rows, fn (array $row): bool => $row['problem'] !== null)) : 0;
     // B-4: Back (and step 1) return to Upload, naming the last file; the file is picked again.
     $backUrl = route('host.events.people.import.create', array_filter(['event' => $event, 'last' => $fileName]));
+    // B-8: keyed the way the browser folds names now; rows saved earlier kept their accents.
+    $existingNames = $event->people()->pluck('name')->mapWithKeys(fn (string $name): array => [\App\People\PersonName::normalize($name) => $name]);
 @endphp
 <x-layouts.host :heading="false" :title="__('people.import_title') . ' · ' . $event->name" :event="$event"
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [$event->name, route('host.events.edit', $event)], [__('people.title'), route('host.events.people.index', $event)], [__('people.import'), null]]">
@@ -12,7 +14,7 @@
         @if ($reviewing && $rows !== [])
             x-data="nameReview({
                 names: @js(array_column($rows, 'name')),
-                existing: @js($event->people()->pluck('name', 'name_normalized')),
+                existing: @js($existingNames),
                 room: @js($room),
                 labels: @js(collect(['review' => 'people.review', 'ready' => 'people.ready', 'duplicates' => 'people.duplicates', 'save' => 'people.save_names'])
                     ->map(fn (string $key): array => [
@@ -118,7 +120,8 @@
 
                 {{-- The list scrolls inside the modal; the buttons stay in view below it. --}}
                 <div class="max-h-[50dvh] overflow-auto rounded-control border border-line-soft">
-                    <table class="w-full min-w-[560px] text-left text-body">
+                    {{-- Audit FE-4: typing in a row raises the revision, so the list is checked once per change. --}}
+                    <table class="w-full min-w-[560px] text-left text-body" @input="changed()">
                         <thead class="sticky top-0 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase">
                             <tr>
                                 <th scope="col" class="w-16 px-3 py-2">{{ __('people.row') }}</th>

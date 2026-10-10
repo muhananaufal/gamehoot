@@ -14,7 +14,9 @@ use App\People\PersonName;
 use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
 use Closure;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * B-3, B-4: changes to the master name list. The event row is locked first so the check
@@ -36,13 +38,36 @@ final readonly class EditNameList
     }
 
     /**
+     * B-8 (audit DATA-1): each row is saved in its own savepoint, so a clash only the unique
+     * index finds (another host saving the same name, a comparison the folding misses) becomes a
+     * message for its line (a ValidationException) instead of an error 500, and nothing of the
+     * list is saved.
+     *
      * @param  list<string>  $names
      */
     public function import(Event $event, array $names, User $actor): void
     {
         $this->locked($event, function (Event $locked) use ($names, $actor): void {
-            foreach ($names as $name) {
-                $this->newPerson($name)->event()->associate($locked)->save();
+            $clashes = [];
+
+            foreach ($names as $index => $name) {
+                try {
+                    DB::transaction(fn () => $this->newPerson($name)->event()->associate($locked)->save());
+                } catch (UniqueConstraintViolationException) {
+                    $clashes[] = $index;
+                }
+            }
+
+            if ($clashes !== []) {
+                $problem = __('people.duplicate_saved');
+                $messages = ['names' => array_map(fn (int $index): string => __('people.on_line', ['line' => $index + 1, 'problem' => $problem]), $clashes)];
+
+                // The import review marks the rows themselves (names.{index}).
+                foreach ($clashes as $index) {
+                    $messages["names.{$index}"] = [$problem];
+                }
+
+                throw ValidationException::withMessages($messages);
             }
 
             // E13: who added names, and how many; the names themselves are in the list.

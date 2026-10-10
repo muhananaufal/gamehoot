@@ -93,8 +93,10 @@ return [
 
     'duplicate_row' => 'Same as row :row. Add something to tell them apart, e.g. “:name (IT)”.',
     'duplicate_line' => 'Same as line :line. Add something to tell them apart, e.g. “:name (IT)”.',
-    'duplicate_existing' => 'Same as “:name” already in this event (upper/lower case is ignored).',
+    'duplicate_existing' => 'Same as “:name” already in this event (upper/lower case and accents are ignored).',
     'duplicate_race' => 'Another host saved the same name a moment ago. Check the list and try again.',
+    // B-8: a clash only the database found (another host saving at the same time, or two names it sees as one).
+    'duplicate_saved' => 'Same as a name in this list or already in this event (upper/lower case and accents are ignored). Add something to tell them apart.',
     'too_many' => 'An event can have at most :max names.',
     'locked' => 'The name list is locked because a game has started.',
 
