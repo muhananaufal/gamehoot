@@ -20,6 +20,10 @@ final class CohostRequest extends FormRequest
 {
     use LiveValidation;
 
+    private ?User $foundAccount = null;
+
+    private bool $accountLookedUp = false;
+
     /**
      * @return array<string, list<mixed>>
      */
@@ -42,9 +46,17 @@ final class CohostRequest extends FormRequest
         ];
     }
 
+    /**
+     * Audit CODE-2: looked up once; the rule and the controller share the account.
+     */
     public function account(): ?User
     {
-        return FindAccount::byLogin($this->string($this->field())->toString());
+        if (! $this->accountLookedUp) {
+            $this->foundAccount = FindAccount::byLogin($this->string($this->field())->toString());
+            $this->accountLookedUp = true;
+        }
+
+        return $this->foundAccount;
     }
 
     public function event(): Event

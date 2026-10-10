@@ -23,7 +23,7 @@ final class QuestionActionController
 {
     public function __invoke(QuestionActionRequest $request, Event $event, Question $question, string $action, GameEngines $engines, RunQuestionAction $run, #[CurrentUser] User $user): Response
     {
-        $game = $question->game()->where('event_id', $event->id)->first();
+        $game = $question->gameIn($event);
         abort_if($game === null, 404);
 
         $engine = $engines->live($game->type);

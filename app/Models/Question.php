@@ -47,6 +47,15 @@ final class Question extends Model
     }
 
     /**
+     * Audit CODE-2: the game of this question when it belongs to the given event, the one
+     * check every route with an {event} and a {question} makes.
+     */
+    public function gameIn(Event $event): ?Game
+    {
+        return $this->game()->where('event_id', $event->id)->first();
+    }
+
+    /**
      * G9: trace of the copied pack question, never used to compute results.
      *
      * @return BelongsTo<PackQuestion, $this>
