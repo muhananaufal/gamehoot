@@ -130,7 +130,7 @@
         @endif
     @else
         {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
-        <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyBase: @js($linkBase), labels: @js($labels) })"
+        <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyFailed: @js(__('ui.copy_failed')), copyBase: @js($linkBase), labels: @js($labels) })"
             x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($menu); const retry = document.getElementById('rename-retry'); if (retry) { const r = JSON.parse(retry.textContent); $store.confirm.askRow({ dataset: r.row }, r.previous) }"
             class="flex flex-col gap-4">
             <x-table.toolbar :search="__('people.search')">

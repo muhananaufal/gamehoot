@@ -327,6 +327,18 @@ describe('claims and personal links (B-1, B-6, T5)', function (): void {
         expect($csv)->not->toContain("\n\"=HYPERLINK");
     });
 
+    it('also neutralises the full-width signs that Excel reads as formulas (audit SEC-5)', function (): void {
+        $event = eventWithOwner();
+
+        foreach (['＝SUM(A1)', '＋1', '－1', '＠cell'] as $name) {
+            Person::factory()->for($event)->create(['name' => $name, 'name_normalized' => mb_strtolower($name)]);
+        }
+
+        $csv = actingAs(hostOf($event))->get("/host/{$event->id}/people/links.csv")->streamedContent();
+
+        expect($csv)->toContain("'＝SUM(A1)")->toContain("'＋1")->toContain("'－1")->toContain("'＠cell");
+    });
+
     it('does not reach a person through another event', function (): void {
         $event = eventWithOwner();
         $other = Event::factory()->for(hostOf($event), 'owner')->create();
@@ -440,7 +452,7 @@ describe('the empty list follows the state of the event (U25)', function (): voi
         $event->forceFill(['status' => EventStatus::Draft])->save();
 
         actingAs(hostOf($event))->get("/host/{$event->id}/people")
-            ->assertSee('Add the people who can play one by one with Add name')
+            ->assertSee('Add the people who can play with Add names')
             ->assertSee(route('host.events.people.import.create', $event), false);
     });
 
@@ -459,7 +471,7 @@ describe('the empty list follows the state of the event (U25)', function (): voi
 
         actingAs(hostOf($event))->get("/host/{$event->id}/people")
             ->assertSee('The list locked when the first game started, so names can no longer be added.')
-            ->assertDontSee('one by one with Add name')
+            ->assertDontSee('Add the people who can play with Add names')
             ->assertDontSee(route('host.events.people.import.create', $event), false)
             ->assertDontSee('Add name');
     });

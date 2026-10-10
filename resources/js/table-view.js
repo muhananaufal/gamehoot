@@ -199,6 +199,7 @@ export function tableView({
     sort,
     dir = 'asc',
     copied = '',
+    copyFailed = '',
     copyBase = '',
     labels = {},
     storage = globalThis.localStorage,
@@ -252,7 +253,9 @@ export function tableView({
                         this.$store.toasts.push(
                             copied.replace('__N__', copy.closest('[data-row]')?.dataset.name ?? ''),
                         ),
-                    );
+                    )
+                    // Audit FE-11: a refused clipboard (permission, an insecure page) says so.
+                    .catch(() => this.$store.toasts.push(copyFailed));
             }
         },
 

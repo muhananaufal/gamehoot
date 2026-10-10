@@ -18,6 +18,8 @@ final class CsvCell
 
     public static function safe(string $value): string
     {
-        return in_array(substr($value, 0, 1), ['=', '+', '-', '@'], true) ? "'".$value : $value;
+        // Audit SEC-5: Excel also reads the full-width signs as formula starts. Tab and line
+        // breaks never reach here: PersonName::display removes them.
+        return in_array(mb_substr($value, 0, 1), ['=', '+', '-', '@', '＝', '＋', '－', '＠'], true) ? "'".$value : $value;
     }
 }

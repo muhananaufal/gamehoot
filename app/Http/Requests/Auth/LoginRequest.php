@@ -72,10 +72,14 @@ final class LoginRequest extends FormRequest
 
     /**
      * C-6, F11: attempts count per account when it exists, so switching between its email and
-     * username gives no extra tries; otherwise per typed text.
+     * username gives no extra tries; otherwise per typed text. Audit SEC-6: and per address, so a
+     * player who knows the host's username cannot lock the host out from their phone; the
+     * 'login' limiter caps each address over all accounts.
      */
     private function throttleKey(?User $user): string
     {
-        return 'login:'.($user !== null ? $user->id : Str::lower($this->string('login')->trim()->toString()));
+        $account = $user !== null ? $user->id : Str::lower($this->string('login')->trim()->toString());
+
+        return 'login:'.$account.'|'.($this->ip() ?? 'unknown');
     }
 }

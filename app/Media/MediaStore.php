@@ -26,6 +26,9 @@ final readonly class MediaStore
 
     private const array EXTENSIONS = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
 
+    /** K7 (audit SEC-4): the largest image the browser sends, 1920 x 1920. */
+    private const int MAX_PIXELS = 1920 * 1920;
+
     public function store(UploadedFile $large, UploadedFile $small, MediaVisibility $visibility, User $uploader): MediaFile
     {
         $originalName = $large->getClientOriginalName();
@@ -66,6 +69,10 @@ final readonly class MediaStore
         // O7: the type comes from the file's content, never from its name.
         $source = (string) $file->getRealPath();
         $size = getimagesize($source) ?: throw new LogicException('Not an image.');
+        // K7 (audit SEC-4): read from the file header; GD would need memory for every pixel.
+        if ($size[0] * $size[1] > self::MAX_PIXELS) {
+            throw new LogicException("Refusing to decode a {$size[0]} x {$size[1]} image.");
+        }
         $mime = $size['mime'];
         $extension = self::EXTENSIONS[$mime] ?? throw new LogicException("Unexpected image type {$mime}.");
         $path = "{$base}.{$extension}";

@@ -119,9 +119,6 @@ final readonly class TebakActions
      */
     private function skip(Event $event, Game $game, Question $question, User $actor): void
     {
-        // E13: the one skip of the question is used.
-        $this->auditLog->record(LoggedAction::QuestionSkipped, $actor, $event, ['question_id' => $question->id]);
-
         $this->expectCurrent($game, $question, QuestionStatus::Shown);
 
         $othersQueued = $game->questions()->where('status', QuestionStatus::Queued)->whereKeyNot($question->id)->exists();
@@ -130,6 +127,7 @@ final readonly class TebakActions
             throw ActionRefused::unavailable();
         }
 
+        // E13: the one skip of the question is used.
         $last = $game->questions()->max('position');
         $question->forceFill([
             'status' => QuestionStatus::Queued,
@@ -137,6 +135,9 @@ final readonly class TebakActions
             'position' => (is_numeric($last) ? (int) $last : 0) + 1,
         ])->save();
         $game->forceFill(['current_question_id' => null])->save();
+
+        // Audit CODE-3: logged once the skip is allowed and done, like every other action.
+        $this->auditLog->record(LoggedAction::QuestionSkipped, $actor, $event, ['question_id' => $question->id]);
     }
 
     /**

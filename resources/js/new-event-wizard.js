@@ -150,6 +150,9 @@ export function newEventWizard({
                 const kept = this.text.replace(/\s+$/u, '');
                 this.text = [kept, ...answer.names].filter((line) => line !== '').join(NEWLINE);
                 this.importNote = countText(texts.imported, answer.names.length).replace('__F__', answer.file);
+            } catch {
+                // Audit FE-11: no answer, or not JSON (a lost connection, a proxy page).
+                this.importError = texts.import_failed ?? '';
             } finally {
                 this.importing = false;
             }

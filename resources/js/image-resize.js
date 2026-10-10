@@ -1,9 +1,9 @@
-// E8, E14: images are made smaller in the host's browser before upload: 1920 px wide for the
-// projector and 720 px for phones. Only then is the 2 MB limit checked, and the server checks
+// E8, E14: images are made smaller in the host's browser before upload: to fit 1920 x 1920 px for
+// the projector and 720 x 720 px for phones (K7, audit SEC-4: the server refuses taller ones too). Only then is the 2 MB limit checked, and the server checks
 // every rule again. Drawing on a canvas also drops the photo's metadata, such as GPS.
 
-export const LARGE_WIDTH = 1920;
-export const SMALL_WIDTH = 720;
+export const LARGE_SIZE = 1920;
+export const SMALL_SIZE = 720;
 export const MAX_BYTES = 2 * 1024 * 1024;
 
 const HEIC_TYPES = ['image/heic', 'image/heif'];
@@ -22,13 +22,15 @@ export function imageProblem(file) {
     return type in EXTENSIONS ? null : 'type';
 }
 
-/** The size of an image at most `max` pixels wide, in the same shape. Never enlarges. */
-export function fitWidth(width, height, max) {
-    if (width <= max) {
+/** The size of an image at most `max` pixels wide and high, in the same shape. Never enlarges. */
+export function fitWithin(width, height, max) {
+    const scale = Math.min(1, max / width, max / height);
+
+    if (scale === 1) {
         return { width, height };
     }
 
-    return { width: max, height: Math.max(1, Math.round((height * max) / width)) };
+    return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
 /** PNG stays PNG unless it is still over 2 MB, then JPEG (photos rarely need transparency). */
@@ -44,12 +46,12 @@ export function fileNameFor(name, type) {
 }
 
 /**
- * Draws the image at most `maxWidth` wide and returns it as a File, or null when it stays over
+ * Draws the image at most `max` pixels wide and high and returns it as a File, or null when it stays over
  * 2 MB. Throws when the browser cannot read the image.
  */
-export async function resizeImage(file, maxWidth) {
+export async function resizeImage(file, max) {
     const bitmap = await createImageBitmap(file);
-    const size = fitWidth(bitmap.width, bitmap.height, maxWidth);
+    const size = fitWithin(bitmap.width, bitmap.height, max);
     const canvas = document.createElement('canvas');
     canvas.width = size.width;
     canvas.height = size.height;

@@ -25,7 +25,7 @@ it('guides the host on empty event pages', function (string $page, string $title
         ->and($main)->toContain($next);
 })->with([
     'names' => ['/host/{event}/people', 'No names yet.', 'Import CSV'],
-    'games' => ['/host/{event}/games', 'No games yet.', 'Pick a question pack'],
+    'games' => ['/host/{event}/games', 'No games yet.', 'Add the first game with Add games'],
     'results' => ['/host/{event}/results', 'No results yet.', 'Live control'],
     'deleted events' => ['/host/trash', 'No deleted events.', 'restored'],
 ]);

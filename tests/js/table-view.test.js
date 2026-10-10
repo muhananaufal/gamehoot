@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     compareRows,
     filtersActive,
@@ -10,6 +10,7 @@ import {
     rangeText,
     pageOf,
     saveState,
+    tableView,
 } from '../../resources/js/table-view.js';
 
 const row = (values) => ({
@@ -290,5 +291,33 @@ describe('U4 long lists: going to a page and the range summary', () => {
 
     it('writes the range with thousands separators', () => {
         expect(rangeText('Showing __S__–__E__ of __T__', 50, 75, 1243)).toBe('Showing 51–75 of 1,243');
+    });
+});
+
+describe('audit FE-11: copying a personal link when the browser refuses', () => {
+    it('says that the copy did not work instead of failing silently', async () => {
+        vi.stubGlobal('navigator', {
+            clipboard: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) },
+        });
+        const toasts = [];
+        const view = tableView({
+            key: 'names:copy',
+            sort: 'name',
+            copied: '__N__ copied',
+            copyFailed: 'Copy did not work. Select the link and copy it.',
+            copyBase: 'https://p.test/',
+            storage: null,
+        });
+        view.$store = { toasts: { push: (text) => toasts.push(text) } };
+        const button = {
+            dataset: { copy: 'tok' },
+            closest: (selector) => (selector === '[data-copy]' ? button : null),
+        };
+
+        view.onRowClick({ target: button });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(toasts).toEqual(['Copy did not work. Select the link and copy it.']);
+        vi.unstubAllGlobals();
     });
 });
