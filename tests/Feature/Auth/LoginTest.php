@@ -14,6 +14,7 @@ use function Pest\Laravel\get;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\post;
 use function Pest\Laravel\travelTo;
+use function Pest\Laravel\withServerVariables;
 
 uses(RefreshDatabase::class);
 
@@ -130,6 +131,25 @@ it('limits sign in attempts per account (F11)', function (): void {
         ->assertSessionHasErrors('login');
 
     assertGuest();
+});
+
+it('locks failed sign ins per account and address, so a phone cannot lock the host out (F11, audit SEC-6)', function (): void {
+    $host = hostWithPassword();
+
+    foreach (range(1, 5) as $attempt) {
+        withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])
+            ->post('/login', ['login' => 'arifrahman', 'password' => "wrong-password-{$attempt}"]);
+    }
+
+    withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])
+        ->post('/login', ['login' => 'arifrahman', 'password' => 'correct-horse-42'])
+        ->assertSessionHasErrors('login');
+    assertGuest();
+
+    withServerVariables(['REMOTE_ADDR' => '198.51.100.4'])
+        ->post('/login', ['login' => 'arifrahman', 'password' => 'correct-horse-42'])
+        ->assertSessionHasNoErrors();
+    assertAuthenticatedAs($host);
 });
 
 it('signs a host out', function (): void {
