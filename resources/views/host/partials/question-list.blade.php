@@ -20,7 +20,7 @@
                 <span class="flex h-11 w-6 shrink-0 cursor-grab items-center justify-center text-muted active:cursor-grabbing" title="{{ __('packs.drag') }}" aria-hidden="true">
                     <x-icon name="grip" />
                 </span>
-                <span data-number class="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-sm font-bold">{{ $number }}</span>
+                <span data-number class="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-body-s font-bold">{{ $number }}</span>
                 <div class="flex min-w-0 grow flex-col">
                     @include('host.packs.summary.' . $type->value, ['question' => $question])
                 </div>

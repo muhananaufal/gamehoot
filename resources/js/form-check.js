@@ -73,11 +73,11 @@ export function fieldProblem(field, label, messages, valueOf = () => '') {
     return null;
 }
 
-const ERROR_CLASS = 'text-sm font-semibold text-on-danger';
+const ERROR_CLASS = 'text-body-s font-semibold text-on-danger';
 
 function showProblem(field, message) {
     const group = field.closest('[up-form-group]') ?? field.parentElement;
-    const box = field.closest('.border-line-strong, .border-on-danger');
+    const box = field.closest('.border-field-line, .border-on-danger');
     let error = group.querySelector('[data-check-error]') ?? group.querySelector(`#${CSS.escape(field.id)}-error`);
 
     if (!error) {
@@ -91,7 +91,7 @@ function showProblem(field, message) {
     error.textContent = message;
     field.setAttribute('aria-invalid', 'true');
     field.setAttribute('aria-describedby', error.id);
-    box?.classList.replace('border-line-strong', 'border-on-danger');
+    box?.classList.replace('border-field-line', 'border-on-danger');
     // U32: one short shake points at the field (none in the reduced mode, U27).
     nudge(box ?? field, 'shake', { reduced: document.documentElement.dataset.motion === 'reduced' });
 }
@@ -100,7 +100,7 @@ function clearProblem(field) {
     const group = field.closest('[up-form-group]') ?? field.parentElement;
     group.querySelector('[data-check-error]')?.remove();
     field.removeAttribute('aria-invalid');
-    field.closest('.border-on-danger')?.classList.replace('border-on-danger', 'border-line-strong');
+    field.closest('.border-on-danger')?.classList.replace('border-on-danger', 'border-field-line');
 }
 
 function labelOf(field) {

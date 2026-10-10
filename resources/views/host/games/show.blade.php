@@ -59,10 +59,10 @@
     </x-slot:actions>
 
     @error('action')
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger">{{ $message }}</div>
     @enderror
     @error('pack_ids.*')
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger">{{ $message }}</div>
     @enderror
 
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
@@ -81,9 +81,9 @@
                     {{-- D-9: the title heads the card, type, questions and markers below; the menu while it can change. --}}
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex min-w-0 flex-col gap-1">
-                            <h2 class="font-display text-2xl font-bold break-words">{{ $game->title }}</h2>
+                            <h2 class="font-display text-title-s font-bold break-words">{{ $game->title }}</h2>
                             {{-- U6: when it was added, or when it started (from the activity log), in WIB (T10). --}}
-                            <span class="text-sm text-muted">{{ __('games.types.' . $game->type->value) }} · {{ trans_choice('games.questions', $questions->count()) }} ·
+                            <span class="text-body-s text-muted">{{ __('games.types.' . $game->type->value) }} · {{ trans_choice('games.questions', $questions->count()) }} ·
                                 @if (isset($startedAt[$game->id]))
                                     {{ __('games.started_at', ['time' => $startedAt[$game->id]->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}
                                 @else
@@ -113,7 +113,7 @@
 
                     @if (! $editable)
                         {{-- D-2: a game that has started can only be looked at. --}}
-                        <p class="rounded-control bg-subtle px-4 py-3 text-sm text-on-subtle">{{ __('games.started_locked') }}</p>
+                        <p class="rounded-control bg-subtle px-4 py-3 text-body-s text-on-subtle">{{ __('games.started_locked') }}</p>
                     @endif
 
                     @if ($questions->isEmpty())
@@ -129,7 +129,7 @@
                         <ol class="flex flex-col gap-2">
                             @foreach ($questions as $question)
                                 <li class="flex items-center gap-2 rounded-control border border-line-soft px-3 py-2">
-                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-sm font-bold">{{ $loop->iteration }}</span>
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-body-s font-bold">{{ $loop->iteration }}</span>
                                     <div class="flex min-w-0 grow flex-col">
                                         @include('host.packs.summary.' . $game->type->value, ['question' => $question])
                                     </div>

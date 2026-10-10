@@ -36,7 +36,7 @@
     </x-slot:actions>
 
     @error('account')
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger">{{ $message }}</div>
     @enderror
 
     {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
@@ -57,7 +57,7 @@
 
         <div class="rounded-card bg-surface max-lg:overflow-x-auto">
             <table class="w-full min-w-[820px] text-left text-body" @click="onRowClick($event)">
-                <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
+                <thead class="z-10 border-b border-line-soft bg-surface text-caption font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                     <tr>
                         <x-table.th sort="name">{{ __('accounts.name') }}</x-table.th>
                         <x-table.th sort="username">{{ __('accounts.username') }}</x-table.th>
@@ -87,11 +87,11 @@
                             <td class="py-3.5 pr-4 pl-6">
                                 <span class="flex items-center gap-2"><span class="font-bold">{{ $account->name }}</span>
                                 @if ($self)
-                                    <span class="rounded-full bg-subtle px-2 py-0.5 text-xs font-semibold text-on-subtle">{{ __('accounts.you') }}</span>
+                                    <span class="rounded-full bg-subtle px-2 py-0.5 text-caption font-semibold text-on-subtle">{{ __('accounts.you') }}</span>
                                 @endif
                                 </span>
                             </td>
-                            <td class="px-4 py-3.5 font-mono text-sm">{{ $account->username }}</td>
+                            <td class="px-4 py-3.5 font-mono text-body-s">{{ $account->username }}</td>
                             <td class="px-4 py-3.5 text-muted">{{ $account->email }}</td>
                             <td class="px-4 py-3.5">{{ $account->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</td>
                             <td class="px-4 py-3.5">
@@ -102,7 +102,7 @@
                                 @endif
                             </td>
                             {{-- U6: when the account was made, in WIB (T10). --}}
-                            <td class="px-4 py-3.5 text-sm text-muted tabular-nums">{{ $account->created_at?->timezone($tz)->format('j M Y') }}</td>
+                            <td class="px-4 py-3.5 text-body-s text-muted tabular-nums">{{ $account->created_at?->timezone($tz)->format('j M Y') }}</td>
                             {{-- U5: more than two actions, so they sit in the row menu. --}}
                             <td class="px-4 py-2 text-center">
                                 <button type="button" class="row-action" data-menu data-id="{{ $account->id }}" data-name="{{ $account->name }}" @foreach ($flags as $attribute => $value) {{ $attribute }}="{{ $value }}" @endforeach

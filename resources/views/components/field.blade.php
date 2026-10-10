@@ -18,16 +18,16 @@
     $id ??= 'field-' . str_replace(['.', '[', ']'], '-', $name);
     $error = $submitted ? $errors->first($name) : null;
     $describedBy = trim(($hint ? "{$id}-hint " : '') . ($error ? "{$id}-error" : ''));
-    $border = $error ? 'border-on-danger' : 'border-line-strong';
+    $border = $error ? 'border-on-danger' : 'border-field-line';
     $live = $live && $type !== 'password';
 @endphp
 <div class="flex flex-col gap-1.5" up-form-group>
-    <label for="{{ $id }}" class="text-sm font-semibold">{{ $label }}</label>
+    <label for="{{ $id }}" class="text-body-s font-semibold">{{ $label }}</label>
     {{-- U17: a password can be shown and hidden again; the input type follows the button. --}}
     {{-- U20: a field that cannot change now (e.g. the link of an open event) looks switched off. --}}
-    <div @class(['flex h-11 overflow-hidden rounded-control border bg-field has-[input:read-only]:bg-subtle', $border]) @if ($type === 'password') x-data="{ shown: false }" @endif>
+    <div @class(['flex h-[46px] overflow-hidden rounded-control border bg-field has-[input:read-only]:bg-subtle', $border]) @if ($type === 'password') x-data="{ shown: false }" @endif>
         @if ($prefix)
-            <span class="flex items-center border-r border-line-strong bg-subtle px-3 text-body text-muted" aria-hidden="true">{{ $prefix }}</span>
+            <span class="flex items-center border-r border-field-line bg-subtle px-3 text-body text-muted" aria-hidden="true">{{ $prefix }}</span>
         @endif
         <input id="{{ $id }}" name="{{ $name }}" type="{{ $type }}"
             @if ($type !== 'password') value="{{ $submitted ? old($name, $value) : $value }}" @endif
@@ -45,9 +45,9 @@
         @endif
     </div>
     @if ($hint)
-        <p id="{{ $id }}-hint" class="text-sm text-muted">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-body-s text-muted">{{ $hint }}</p>
     @endif
     @if ($error)
-        <p id="{{ $id }}-error" class="text-sm font-semibold text-on-danger">{{ $error }}</p>
+        <p id="{{ $id }}-error" class="text-body-s font-semibold text-on-danger">{{ $error }}</p>
     @endif
 </div>

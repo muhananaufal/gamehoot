@@ -6,7 +6,7 @@
     @endif
     <span class="flex min-w-0 flex-col">
         <span class="truncate font-semibold">{{ $question->gambar?->title }}</span>
-        <span class="text-sm text-muted">
+        <span class="text-body-s text-muted">
             <span class="font-semibold text-ink">{{ $question->gambar?->answer_text }}</span>
             · {{ trans_choice('packs.points_count', $question->points) }}
         </span>

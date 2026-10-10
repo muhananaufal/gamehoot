@@ -10,7 +10,7 @@
             x-transition:leave="toast-leave" x-transition:leave-start="toast-to" x-transition:leave-end="toast-from"
             @mouseenter="$store.toasts.hold(toast.id)" @mouseleave="$store.toasts.release(toast.id)"
             @focusin="$store.toasts.hold(toast.id)" @focusout="$store.toasts.release(toast.id)"
-            class="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-card bg-inverse py-2 pr-2 pl-4 text-sm font-semibold text-on-inverse shadow-xl">
+            class="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-card bg-inverse py-2 pr-2 pl-4 text-body-s font-semibold text-on-inverse shadow-xl">
             <x-icon name="check" class="shrink-0" />
             <span class="grow" x-text="toast.message"></span>
             <button type="button" class="flex size-11 shrink-0 items-center justify-center rounded-control hover:opacity-80"

@@ -41,7 +41,7 @@
     <input type="hidden" name="form" value="create-event">
 
     {{-- The steps; any of them opens once step 1 is valid. --}}
-    <ol class="flex flex-wrap items-center gap-2 text-sm font-semibold" aria-label="{{ __('events.steps') }}">
+    <ol class="flex flex-wrap items-center gap-2 text-body-s font-semibold" aria-label="{{ __('events.steps') }}">
         @foreach ($steps as $key => $label)
             @php $number = $loop->iteration; @endphp
             @unless ($loop->first)
@@ -51,7 +51,7 @@
                 <button type="button" @click="go({{ $number }})" :disabled="! canGo({{ $number }})" :aria-current="step === {{ $number }} ? 'step' : null"
                     data-step="{{ $key }}" class="inline-flex min-h-11 items-center gap-2 rounded-control px-1 disabled:cursor-not-allowed disabled:opacity-50"
                     :class="step === {{ $number }} ? 'text-ink' : 'text-muted hover:text-ink'">
-                    <span class="flex size-6 items-center justify-center rounded-full text-xs" :class="step === {{ $number }} ? 'bg-accent text-on-accent' : 'bg-subtle'" aria-hidden="true">{{ $number }}</span>{{ $label }}
+                    <span class="flex size-6 items-center justify-center rounded-full text-caption" :class="step === {{ $number }} ? 'bg-accent text-on-accent' : 'bg-subtle'" aria-hidden="true">{{ $number }}</span>{{ $label }}
                 </button>
             </li>
         @endforeach
@@ -68,8 +68,8 @@
     {{-- ② Names: typed one per line, and the names of a CSV file added under them. --}}
     <div x-show="step === 2" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-2">
         <div class="flex flex-wrap items-end justify-between gap-2">
-            <label for="new-event-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
-            <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-4 text-sm font-bold text-ink hover:bg-subtle"
+            <label for="new-event-names" class="text-body-s font-semibold">{{ __('people.names_label') }}</label>
+            <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-field-line bg-surface px-4 text-body-s font-bold text-ink hover:bg-subtle"
                 :aria-busy="importing.toString()">
                 <x-icon name="upload" /> {{ __('events.import_csv') }}
                 <input type="file" accept=".csv,text/csv,text/plain" class="sr-only" data-test="new-event-file"
@@ -78,14 +78,14 @@
         </div>
         <textarea id="new-event-names" name="names" rows="8" x-model="text" autocomplete="off" placeholder="{{ __('examples.names') }}"
             aria-describedby="new-event-names-hint new-event-names-check"
-            class="max-h-[40dvh] rounded-control border border-line-strong bg-field px-3 py-2.5 text-body text-ink"></textarea>
-        <p id="new-event-names-hint" class="text-sm text-muted">{{ __('events.names_step_hint') }}</p>
-        <p x-show="importError !== ''" x-cloak x-text="importError" role="alert" class="text-sm font-semibold text-on-danger"></p>
-        <p x-show="importNote !== ''" x-cloak class="flex flex-wrap items-center gap-2 text-sm text-on-success">
+            class="max-h-[40dvh] rounded-control border border-field-line bg-field px-3 py-2.5 text-body text-ink"></textarea>
+        <p id="new-event-names-hint" class="text-body-s text-muted">{{ __('events.names_step_hint') }}</p>
+        <p x-show="importError !== ''" x-cloak x-text="importError" role="alert" class="text-body-s font-semibold text-on-danger"></p>
+        <p x-show="importNote !== ''" x-cloak class="flex flex-wrap items-center gap-2 text-body-s text-on-success">
             <span x-text="importNote"></span>
             <button type="button" @click="undoImport()" class="min-h-11 font-semibold text-link underline-offset-4 hover:underline">{{ __('events.undo_import') }}</button>
         </p>
-        <div id="new-event-names-check" aria-live="polite" class="flex flex-col gap-1 text-sm">
+        <div id="new-event-names-check" aria-live="polite" class="flex flex-col gap-1 text-body-s">
             <p x-show="nameCheck.names.length > 0" x-text="nameCount" class="text-muted"></p>
             <template x-for="problem in nameCheck.problems" :key="problem.line">
                 <p class="font-semibold text-on-danger" x-text="lineProblem(problem)"></p>
@@ -94,7 +94,7 @@
         </div>
         @error('names')
             @foreach ($errors->get('names') as $message)
-                <p class="text-sm font-semibold text-on-danger">{{ $message }}</p>
+                <p class="text-body-s font-semibold text-on-danger">{{ $message }}</p>
             @endforeach
         @enderror
     </div>
@@ -109,7 +109,7 @@
         @endif
         <template x-for="id in picked" :key="id"><input type="hidden" name="pack_ids[]" :value="id"></template>
         @if ($packErrors)
-            <p class="text-sm font-semibold text-on-danger">{{ __('events.games_refused') }}</p>
+            <p class="text-body-s font-semibold text-on-danger">{{ __('events.games_refused') }}</p>
         @endif
     </div>
 
@@ -117,29 +117,29 @@
     <div x-show="step === 4" x-transition:enter="step-in" x-transition:enter-start="step-from" x-cloak class="flex flex-col gap-1">
         <dl class="flex flex-col divide-y divide-line-soft">
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-                <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_event') }}</dt>
+                <dt class="w-24 text-body-s font-semibold text-muted">{{ __('events.review_event') }}</dt>
                 <dd class="flex min-w-0 grow flex-col gap-0.5 text-body">
                     <span class="font-semibold" x-text="step === 4 ? details().name : ''"></span>
-                    <span class="text-sm text-muted" x-text="step === 4 ? @js(parse_url(config('app.url'), PHP_URL_HOST) . '/') + details().slug : ''"></span>
-                    <span class="text-sm text-muted" x-text="step === 4 ? details().summary : ''"></span>
+                    <span class="text-body-s text-muted" x-text="step === 4 ? @js(parse_url(config('app.url'), PHP_URL_HOST) . '/') + details().slug : ''"></span>
+                    <span class="text-body-s text-muted" x-text="step === 4 ? details().summary : ''"></span>
                 </dd>
-                <button type="button" @click="go(1)" class="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
+                <button type="button" @click="go(1)" class="min-h-11 text-body-s font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
             </div>
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-                <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_names') }}</dt>
+                <dt class="w-24 text-body-s font-semibold text-muted">{{ __('events.review_names') }}</dt>
                 <dd class="flex min-w-0 grow flex-col gap-0.5 text-body">
                     <span x-text="nameCheck.names.length > 0 ? nameCount : @js(__('events.no_names_yet'))"></span>
-                    <span x-show="! namesOk" class="text-sm font-semibold text-on-danger">{{ __('events.names_to_fix') }}</span>
+                    <span x-show="! namesOk" class="text-body-s font-semibold text-on-danger">{{ __('events.names_to_fix') }}</span>
                 </dd>
-                <button type="button" @click="go(2)" class="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
+                <button type="button" @click="go(2)" class="min-h-11 text-body-s font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
             </div>
             <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-                <dt class="w-24 text-sm font-semibold text-muted">{{ __('events.review_games') }}</dt>
+                <dt class="w-24 text-body-s font-semibold text-muted">{{ __('events.review_games') }}</dt>
                 <dd class="min-w-0 grow text-body" x-text="picked.length > 0 ? chips().map((chip) => chip.number + '. ' + chip.title).join(' · ') : @js(__('events.no_games_yet'))"></dd>
-                <button type="button" @click="go(3)" class="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
+                <button type="button" @click="go(3)" class="min-h-11 text-body-s font-semibold text-link underline-offset-4 hover:underline">{{ __('events.edit_step') }}</button>
             </div>
         </dl>
-        <p class="text-sm text-muted">{{ __('events.review_note') }}</p>
+        <p class="text-body-s text-muted">{{ __('events.review_note') }}</p>
     </div>
 
     {{-- U2: Back on the left, the way on at the right. --}}

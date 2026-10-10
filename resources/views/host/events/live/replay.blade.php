@@ -28,13 +28,13 @@
         <section aria-labelledby="replay-heading" x-init="$store.replayPick.game = @js($replay['current']['game'] ?? null) ?? ($store.replayPick.game && @js(array_map(fn ($group) => $group['game']->id, $replay['groups'])).includes($store.replayPick.game) ? $store.replayPick.game : @js($replay['pick']))"
             class="flex flex-col gap-3 rounded-card bg-surface p-5">
             <div class="flex flex-col gap-1">
-                <h2 id="replay-heading" class="text-sm font-bold text-muted">{{ __('replay.card_title') }}</h2>
-                <p class="text-xs text-muted">{{ __('replay.card_help') }}</p>
+                <h2 id="replay-heading" class="text-body-s font-bold text-muted">{{ __('replay.card_title') }}</h2>
+                <p class="text-caption text-muted">{{ __('replay.card_help') }}</p>
             </div>
 
             @if ($currentLabel !== null)
                 <div class="flex flex-col gap-2 rounded-control bg-subtle p-3">
-                    <p class="text-sm font-semibold" data-test="replay-showing">{{ __('replay.showing', ['moment' => $currentLabel]) }}</p>
+                    <p class="text-body-s font-semibold" data-test="replay-showing">{{ __('replay.showing', ['moment' => $currentLabel]) }}</p>
                     <form method="POST" action="{{ route('host.events.replay.destroy', $event) }}" class="flex justify-end">
                         @csrf
                         @method('DELETE')
@@ -44,7 +44,7 @@
             @endif
 
             @if ($replay['busy'])
-                <p class="text-sm text-muted">{{ __('replay.between_questions') }}</p>
+                <p class="text-body-s text-muted">{{ __('replay.between_questions') }}</p>
             @endif
 
             <x-select :options="array_map(fn ($group) => ['value' => $group['game']->id, 'label' => $gameLabel($group['game'])], $replay['groups'])"
@@ -56,9 +56,9 @@
                         @php $current = $isCurrent($moment); @endphp
                         <li @class(['flex min-h-11 items-center gap-2 rounded-control px-2', 'bg-subtle font-bold' => $current]) @if ($current) aria-current="true" @endif>
                             <span class="flex min-w-0 grow flex-col">
-                                <span class="truncate text-sm">{{ $label($moment) }}</span>
+                                <span class="truncate text-body-s">{{ $label($moment) }}</span>
                                 @if ($moment->kind === ReplayKind::Result)
-                                    <span class="truncate text-xs text-muted">{{ $moment->names === [] ? __('replay.no_winner') : implode(', ', $moment->names) }}</span>
+                                    <span class="truncate text-caption text-muted">{{ $moment->names === [] ? __('replay.no_winner') : implode(', ', $moment->names) }}</span>
                                 @endif
                             </span>
                             <form method="POST" action="{{ route('host.events.replay.store', $event) }}">

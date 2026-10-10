@@ -8,9 +8,9 @@
     $classes = [
         'done' => 'bg-success-dot text-on-accent',
         'current' => 'bg-accent text-on-accent',
-        'todo' => 'border-2 border-line-strong bg-surface text-muted',
+        'todo' => 'border-2 border-field-line bg-surface text-muted',
         'surrendered' => 'bg-subtle text-muted',
-        'skipped' => 'border-2 border-dashed border-line-strong bg-surface text-muted',
+        'skipped' => 'border-2 border-dashed border-field-line bg-surface text-muted',
     ];
 @endphp
 {{-- F20: the one progress timeline, always vertical. --}}
@@ -30,13 +30,13 @@
                 @endif
             @endunless
             @if ($live)
-                <span class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                <span class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-body-s font-bold"
                     :class="@js($classes)[{{ $live }}]" aria-hidden="true" x-nudge.pulse="({{ $live }}) === 'current' ? 'current' : null">
                     <svg x-show="({{ $live }}) === 'done'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
                     <span x-show="({{ $live }}) !== 'done'">{{ $loop->iteration }}</span>
                 </span>
             @else
-                <span class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold {{ $classes[$state] }}" aria-hidden="true">
+                <span class="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-body-s font-bold {{ $classes[$state] }}" aria-hidden="true">
                     @if ($state === 'done')
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
                     @elseif ($state === 'surrendered')
@@ -54,7 +54,7 @@
                     <span @class(['font-bold', 'text-muted' => $state === 'todo' && ! $live])>{{ $step['label'] }}</span>
                 @endif
                 @if ($step['hint'] ?? null)
-                    <span class="text-sm text-muted" @if ($step['hintExpr'] ?? null) x-text="{{ $step['hintExpr'] }}" @endif>{{ $step['hint'] }}</span>
+                    <span class="text-body-s text-muted" @if ($step['hintExpr'] ?? null) x-text="{{ $step['hintExpr'] }}" @endif>{{ $step['hint'] }}</span>
                 @endif
             </span>
         </li>

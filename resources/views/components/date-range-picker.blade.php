@@ -7,8 +7,8 @@
      (resources/js/date-range.js). Keyboard: arrows, Page Up/Down, Home/End, Enter, Escape. --}}
 <div x-data="dateRangePicker({ today: '{{ $today }}' })" class="flex">
     <button type="button" @click="openPicker()" aria-label="{{ $label }}" title="{{ $label }}" aria-haspopup="dialog"
-        class="inline-flex h-11 items-center gap-2 rounded-control border px-3.5 text-sm font-semibold"
-        :class="from || to ? 'border-transparent bg-inverse text-on-inverse' : 'border-line-strong bg-surface text-ink hover:bg-subtle'">
+        class="inline-flex h-11 items-center gap-2 rounded-control border px-3.5 text-body-s font-semibold"
+        :class="from || to ? 'border-transparent bg-inverse text-on-inverse' : 'border-field-line bg-surface text-ink hover:bg-subtle'">
         <x-icon name="calendar" class="size-4" />
         <span x-text="label || @js(__('ui.date'))"></span>
     </button>
@@ -29,7 +29,7 @@
             <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('ui.quick_ranges') }}">
                 @foreach (['today', 'last7', 'last30', 'month'] as $preset)
                     <button type="button" @click="preset(@js($preset))"
-                        class="inline-flex h-9 items-center rounded-control border border-line-strong px-3 text-sm font-semibold hover:bg-subtle">{{ __('ui.range_' . $preset) }}</button>
+                        class="inline-flex h-11 items-center rounded-control border border-field-line px-3 text-body-s font-semibold hover:bg-subtle">{{ __('ui.range_' . $preset) }}</button>
                 @endforeach
             </div>
 
@@ -37,11 +37,11 @@
                 <template x-for="month in grid" :key="month.key">
                     <div class="flex flex-col gap-2">
                         <p class="text-center font-semibold" x-text="month.name"></p>
-                        <table role="grid" class="w-full table-fixed border-collapse text-center text-sm" :aria-label="month.name">
+                        <table role="grid" class="w-full table-fixed border-collapse text-center text-body-s" :aria-label="month.name">
                             <thead>
                                 <tr>
                                     @foreach (__('ui.weekdays') as $weekday)
-                                        <th scope="col" class="pb-1 text-xs font-bold text-muted">{{ $weekday }}</th>
+                                        <th scope="col" class="pb-1 text-caption font-bold text-muted">{{ $weekday }}</th>
                                     @endforeach
                                 </tr>
                             </thead>
@@ -52,7 +52,7 @@
                                             <td role="gridcell" class="p-0">
                                                 <button type="button" x-show="day.inMonth" :data-day="day.inMonth ? day.date : null" @click="pick(day.date)"
                                                     :tabindex="day.date === focusDay ? 0 : -1" :aria-label="dayLabel(day.date)"
-                                                    class="flex h-10 w-full items-center justify-center tabular-nums transition-colors"
+                                                    class="flex h-11 w-full items-center justify-center tabular-nums transition-colors"
                                                     :class="cellClass(day.date)"
                                                     x-text="day.day"></button>
                                             </td>
@@ -66,7 +66,7 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2.5 border-t border-line-soft pt-4">
-                <button type="button" @click="clear()" class="inline-flex h-11 items-center px-1 text-sm font-semibold text-link hover:underline">{{ __('ui.clear') }}</button>
+                <button type="button" @click="clear()" class="inline-flex h-11 items-center px-1 text-body-s font-semibold text-link hover:underline">{{ __('ui.clear') }}</button>
                 <div class="flex gap-2.5">
                     <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
                     <x-button type="button" @click="apply()">{{ __('ui.apply') }}</x-button>

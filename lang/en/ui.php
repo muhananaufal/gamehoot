@@ -28,6 +28,7 @@ return [
     'cancel' => 'Cancel',
     'save' => 'Save',
     'back' => 'Back',
+    'skip_to_content' => 'Skip to content',
     'edit' => 'Edit',
     'close' => 'Close',
     // U27: the motion switch of this device.

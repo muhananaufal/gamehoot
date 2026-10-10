@@ -30,7 +30,7 @@
         <x-connection-status />
 
         @error('action')
-            <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
+            <div role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger">{{ $message }}</div>
         @enderror
 
     {{-- While a game runs, its Alpine component (F13) wraps the columns: its questions sit under
@@ -40,7 +40,7 @@
 
         {{-- Left: the steps. On phones they follow the control. --}}
         <section aria-label="{{ __('live.steps_title') }}" class="order-2 flex flex-col gap-4 self-start rounded-card bg-surface p-5 lg:order-1">
-            <h2 class="text-sm font-bold text-muted">{{ __('live.steps_title') }}</h2>
+            <h2 class="text-body-s font-bold text-muted">{{ __('live.steps_title') }}</h2>
             <x-timeline :steps="$steps" />
             @if ($running)
                 <div class="border-t border-line-soft pt-4 [&>section]:bg-transparent [&>section]:p-0">
@@ -54,10 +54,10 @@
             @switch($phase)
                 @case(EventPhase::Draft)
                     <div class="flex flex-col gap-4 rounded-card bg-surface p-6">
-                        <h2 class="font-display text-xl font-semibold">{{ __('live.get_ready') }}</h2>
+                        <h2 class="font-display text-title-s font-semibold">{{ __('live.get_ready') }}</h2>
                         {{-- D-10: the counts only; the pages are in the sidebar and the steps. --}}
                         <p>{{ trans_choice('live.names', $names, ['count' => $names]) }} · {{ trans_choice('live.games', $games->count(), ['count' => $games->count()]) }}</p>
-                        <p class="text-sm text-muted">{{ __('live.get_ready_help') }}</p>
+                        <p class="text-body-s text-muted">{{ __('live.get_ready_help') }}</p>
                         {{-- U24: changes of state ask first. --}}
                         <div class="flex justify-end">
                             @include('host.partials.confirm-action', [
@@ -72,9 +72,9 @@
                     <div class="flex flex-col gap-4 rounded-card bg-surface p-6">
                         @if ($next)
                             <div class="flex flex-col gap-1">
-                                <h2 class="text-sm font-bold text-muted">{{ __('live.next_game') }}</h2>
-                                <p class="font-display text-2xl font-semibold">{{ $next->position }}. {{ $next->title }}</p>
-                                <p class="text-sm text-muted">{{ __('games.types.' . $next->type->value) }} · {{ trans_choice('games.questions', $next->questions_count ?? 0) }}</p>
+                                <h2 class="text-body-s font-bold text-muted">{{ __('live.next_game') }}</h2>
+                                <p class="font-display text-title-s font-semibold">{{ $next->position }}. {{ $next->title }}</p>
+                                <p class="text-body-s text-muted">{{ __('games.types.' . $next->type->value) }} · {{ trans_choice('games.questions', $next->questions_count ?? 0) }}</p>
                             </div>
                             <div class="flex flex-wrap items-center justify-between gap-2.5">
                                 @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => null])
@@ -96,8 +96,8 @@
                             @endforeach
                         @else
                             <div class="flex flex-col gap-1">
-                                <h2 class="font-display text-xl font-semibold">{{ __('live.no_games') }}</h2>
-                                <p class="text-sm text-muted">{{ __('live.no_games_help') }}</p>
+                                <h2 class="font-display text-title-s font-semibold">{{ __('live.no_games') }}</h2>
+                                <p class="text-body-s text-muted">{{ __('live.no_games_help') }}</p>
                             </div>
                             <div class="flex flex-wrap items-center justify-between gap-2.5">
                                 @include('host.events.partials.close-event', ['event' => $event, 'runningGame' => null])
@@ -114,8 +114,8 @@
                 @case(EventPhase::AllPlayed)
                     <div class="flex flex-col gap-4 rounded-card bg-surface p-6">
                         <div class="flex flex-col gap-1">
-                            <h2 class="font-display text-xl font-semibold">{{ __('live.all_played') }}</h2>
-                            <p class="text-sm text-muted">{{ __('live.all_played_help', ['done' => $played, 'total' => $games->count()]) }}</p>
+                            <h2 class="font-display text-title-s font-semibold">{{ __('live.all_played') }}</h2>
+                            <p class="text-body-s text-muted">{{ __('live.all_played_help', ['done' => $played, 'total' => $games->count()]) }}</p>
                         </div>
                         {{-- D-10: destructive on the left, actions on the right. --}}
                         <div class="flex flex-wrap items-center justify-between gap-2.5">
@@ -128,8 +128,8 @@
                 @case(EventPhase::Finished)
                     <div class="flex flex-col gap-4 rounded-card bg-surface p-6">
                         <div class="flex flex-col gap-1">
-                            <h2 class="font-display text-xl font-semibold">{{ __('live.event_closed') }}</h2>
-                            <p class="text-sm text-muted">{{ __('live.event_closed_help') }}</p>
+                            <h2 class="font-display text-title-s font-semibold">{{ __('live.event_closed') }}</h2>
+                            <p class="text-body-s text-muted">{{ __('live.event_closed_help') }}</p>
                         </div>
                         <div class="flex flex-wrap items-center justify-end gap-2.5">
                             <x-button :href="route('host.events.results', $event)" variant="secondary">{{ __('live.results') }}</x-button>
@@ -148,7 +148,7 @@
         {{-- Right: what the projector shows, who joined, and the links. Below the rest on narrower screens. --}}
         <section aria-label="{{ __('live.monitor_title') }}" class="order-3 flex flex-col gap-4 self-start lg:col-span-2 xl:col-span-1">
             <div class="flex flex-col gap-2 rounded-card bg-surface p-5">
-                <h2 class="text-sm font-bold text-muted">{{ __('live.preview') }}</h2>
+                <h2 class="text-body-s font-bold text-muted">{{ __('live.preview') }}</h2>
                 {{-- D-10: the real Public View, scaled down from 1280 × 720 to the column. --}}
                 <div x-data="{ scale: 0.25 }" x-init="new ResizeObserver(([entry]) => scale = entry.contentRect.width / 1280).observe($el)"
                     class="relative aspect-video overflow-hidden rounded-control border border-line-soft bg-canvas">
@@ -156,7 +156,7 @@
                         class="pointer-events-none absolute top-0 left-0 h-[720px] w-[1280px] origin-top-left border-0"
                         :style="`transform: scale(${scale})`"></iframe>
                 </div>
-                <p class="text-xs text-muted">{{ __('live.preview_note') }}</p>
+                <p class="text-caption text-muted">{{ __('live.preview_note') }}</p>
             </div>
             @include('host.events.live.replay', ['event' => $event, 'replay' => $replay])
             @if ($running)
@@ -164,18 +164,18 @@
             @endif
             <div class="flex flex-col gap-3 rounded-card bg-surface p-5">
                 <div class="flex items-baseline justify-between gap-3">
-                    <h2 class="text-sm font-bold text-muted">{{ __('realtime.live.joined') }}</h2>
+                    <h2 class="text-body-s font-bold text-muted">{{ __('realtime.live.joined') }}</h2>
                     <p class="flex items-baseline gap-2">
-                        <span data-test="joined-count" class="font-display text-3xl font-semibold tabular-nums" x-data x-text="$store.realtime.snapshot?.lobby.joined ?? 0"></span>
-                        <span class="text-sm text-muted" x-data x-text="$store.realtime.count(@js(__('realtime.live.names_count')), $store.realtime.snapshot?.host?.names ?? 0)"></span>
+                        <span data-test="joined-count" class="font-display text-title font-semibold tabular-nums" x-data x-text="$store.realtime.snapshot?.lobby.joined ?? 0"></span>
+                        <span class="text-body-s text-muted" x-data x-text="$store.realtime.count(@js(__('realtime.live.names_count')), $store.realtime.snapshot?.host?.names ?? 0)"></span>
                     </p>
                 </div>
-                <dl class="flex flex-col gap-3 border-t border-line-soft pt-3 text-sm">
+                <dl class="flex flex-col gap-3 border-t border-line-soft pt-3 text-body-s">
                     @foreach ([[__('realtime.live.join_link'), route('join.index', $event)], [__('realtime.live.screen_link'), route('join.screen', $event)]] as [$label, $url])
                         <div class="flex min-w-0 flex-col gap-1" x-data="{ copied: false }">
                             <dt class="font-bold text-muted">{{ $label }}</dt>
                             <dd class="flex items-center gap-2">
-                                <a href="{{ $url }}" class="min-w-0 truncate text-link underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ $url }}</a>
+                                <a href="{{ $url }}" class="block min-h-11 min-w-0 truncate leading-11 text-link underline-offset-4 hover:underline" target="_blank" rel="noopener">{{ $url }}</a>
                                 <button type="button" class="row-action shrink-0" :aria-label="copied ? @js(__('live.copied')) : @js(__('live.copy') . ' ' . $label)" :title="copied ? @js(__('live.copied')) : @js(__('live.copy'))"
                                     @click="navigator.clipboard?.writeText(@js($url)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"><i data-icon="copy" :data-icon="copied ? 'check' : 'copy'" x-nudge.pulse="copied ? 'copied' : null"></i></button>
                             </dd>

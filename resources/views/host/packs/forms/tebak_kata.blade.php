@@ -6,11 +6,11 @@
     $boxesError = $errors->first('initial_open_indexes');
 @endphp
 <div class="flex flex-col gap-1.5">
-    <label for="field-prompt" class="text-sm font-semibold">{{ __('packs.kata.prompt') }}</label>
+    <label for="field-prompt" class="text-body-s font-semibold">{{ __('packs.kata.prompt') }}</label>
     <textarea id="field-prompt" placeholder="{{ __('examples.kata_prompt') }}" name="prompt" rows="2" required maxlength="500" @if ($promptError) aria-describedby="prompt-error" @endif
-        @class(['rounded-control border bg-field px-3 py-2.5 text-body text-ink', 'border-on-danger' => $promptError, 'border-line-strong' => ! $promptError])>{{ old('prompt', $question?->kata?->prompt) }}</textarea>
+        @class(['rounded-control border bg-field px-3 py-2.5 text-body text-ink', 'border-on-danger' => $promptError, 'border-field-line' => ! $promptError])>{{ old('prompt', $question?->kata?->prompt) }}</textarea>
     @if ($promptError)
-        <p id="prompt-error" class="text-sm font-semibold text-on-danger">{{ $promptError }}</p>
+        <p id="prompt-error" class="text-body-s font-semibold text-on-danger">{{ $promptError }}</p>
     @endif
 </div>
 
@@ -21,7 +21,7 @@
         autocomplete="off" x-model="answer" @input="pruneOpen()" />
 
     <fieldset class="flex flex-col gap-2">
-        <legend class="mb-1 text-sm font-semibold">{{ __('packs.kata.boxes') }}</legend>
+        <legend class="mb-1 text-body-s font-semibold">{{ __('packs.kata.boxes') }}</legend>
         <template x-if="boxes">
             <div class="flex flex-col gap-2">
                 <template x-for="(word, w) in boxes.words" :key="w">
@@ -29,27 +29,27 @@
                         <template x-for="cell in word" :key="cell.box ?? ('p' + w + cell.char)">
                             <span>
                                 <template x-if="cell.box === null">
-                                    <span class="flex h-11 w-6 items-center justify-center font-display text-xl font-bold" x-text="cell.char"></span>
+                                    <span class="flex h-11 w-6 items-center justify-center font-display text-title-s font-bold" x-text="cell.char"></span>
                                 </template>
                                 <template x-if="cell.box !== null">
                                     <button type="button" @click="toggle(cell.box)" :aria-pressed="isOpen(cell.box).toString()"
                                         :aria-label="@js(__('packs.kata.box_label', ['number' => '__N__', 'char' => '__C__'])).replace('__N__', cell.box + 1).replace('__C__', cell.char)"
-                                        class="flex size-11 items-center justify-center rounded-control border-2 font-display text-xl font-bold"
-                                        :class="isOpen(cell.box) ? 'border-accent bg-accent text-on-accent' : 'border-line-strong bg-subtle text-muted'"
+                                        class="flex size-11 items-center justify-center rounded-control border-2 font-display text-title-s font-bold"
+                                        :class="isOpen(cell.box) ? 'border-accent bg-accent text-on-accent' : 'border-field-line bg-subtle text-muted'"
                                         x-text="cell.char"></button>
                                 </template>
                             </span>
                         </template>
                     </div>
                 </template>
-                <p class="text-sm text-muted">
+                <p class="text-body-s text-muted">
                     <span x-text="@js(__('packs.kata.boxes_count', ['open' => '__O__', 'total' => '__T__'])).replace('__O__', open.length).replace('__T__', boxes.count)"></span>.
                     {{ __('packs.kata.boxes_hint') }}
                 </p>
             </div>
         </template>
         <template x-if="! boxes">
-            <p class="text-sm text-muted">{{ __('packs.kata.boxes_invalid') }}</p>
+            <p class="text-body-s text-muted">{{ __('packs.kata.boxes_invalid') }}</p>
         </template>
         <template x-for="box in open" :key="box">
             <input type="hidden" name="initial_open_indexes[]" :value="box">
@@ -57,9 +57,9 @@
         {{-- U19, E5: at least one box stays closed; checked before sending (form-check.js). --}}
         <input type="hidden" id="kata-boxes-check" data-check-boxes :data-invalid="(boxes !== null && boxes.count > 0 && open.length >= boxes.count).toString()"
             data-invalid-message="{{ __('games.kata.all_boxes_open') }}">
-        <p id="kata-boxes-check-error" x-show="boxes !== null && boxes.count > 0 && open.length >= boxes.count" x-cloak class="text-sm font-semibold text-on-danger">{{ __('games.kata.all_boxes_open') }}</p>
+        <p id="kata-boxes-check-error" x-show="boxes !== null && boxes.count > 0 && open.length >= boxes.count" x-cloak class="text-body-s font-semibold text-on-danger">{{ __('games.kata.all_boxes_open') }}</p>
         @if ($boxesError)
-            <p class="text-sm font-semibold text-on-danger">{{ $boxesError }}</p>
+            <p class="text-body-s font-semibold text-on-danger">{{ $boxesError }}</p>
         @endif
     </fieldset>
 </div>

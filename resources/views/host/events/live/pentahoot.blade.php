@@ -12,7 +12,7 @@ pentahootHost({
     @case('questions')
         {{-- D-5: any question that is not done can be opened. --}}
         <section class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="questions-heading">
-            <h2 id="questions-heading" class="font-display text-xl font-semibold">{{ __('pentahoot.questions') }} ({{ $questions->count() }})</h2>
+            <h2 id="questions-heading" class="font-display text-title-s font-semibold">{{ __('pentahoot.questions') }} ({{ $questions->count() }})</h2>
             <x-timeline :steps="$questions->map(fn ($question) => [
                 'label' => $question->pentahoot?->prompt ?? '',
                 'hint' => __('pentahoot.status.' . $question->status->value),
@@ -34,15 +34,17 @@ pentahootHost({
             <template x-if="question && phase !== 'done'">
                 <div class="flex flex-col gap-5">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-sm font-bold text-muted uppercase"
+                        <span class="text-body-s font-bold text-muted uppercase"
                             x-text="label('question_of', { N: question.number, TOTAL: game.count }) + ' · ' + labels.status[phase]"></span>
-                        <span x-show="phase === 'live'" class="font-display text-3xl font-bold tabular-nums" x-text="seconds"></span>
+                        {{-- Audit FE-7, MDN timer role: the seconds and the answered count change all the time, so a
+                             screen reader is not told each one; it hears the status changes of this section. --}}
+                        <span x-show="phase === 'live'" role="timer" aria-live="off" class="font-display text-title font-bold tabular-nums" x-text="seconds"></span>
                     </div>
-                    <p class="font-display text-2xl leading-tight font-semibold" x-text="question.prompt"></p>
-                    <p x-show="phase === 'live' || phase === 'closed'" class="font-display text-xl font-semibold tabular-nums"
+                    <p class="font-display text-title-s leading-tight font-semibold" x-text="question.prompt"></p>
+                    <p x-show="phase === 'live' || phase === 'closed'" aria-live="off" class="font-display text-title-s font-semibold tabular-nums"
                         x-text="label('answered_of', { N: answered, TOTAL: total })" x-nudge.pop="answered"></p>
                     {{-- E15: the question does not close by itself when everyone answered. --}}
-                    <p x-show="allAnswered" class="rounded-card bg-success px-4 py-3 text-sm font-semibold text-on-success"
+                    <p x-show="allAnswered" class="rounded-card bg-success px-4 py-3 text-body-s font-semibold text-on-success"
                         x-text="label('all_answered', { N: answered, TOTAL: total })"></p>
                     <x-rank-list x-show="phase === 'revealed'" rows="results" />
                     <p x-show="phase === 'revealed' && results.length === 0" class="text-muted">{{ __('pentahoot.no_votes') }}</p>
@@ -60,7 +62,7 @@ pentahootHost({
                 @include('host.events.live.finish', ['label' => __('games.finish'), 'direct' => true])
             </div>
             {{-- U32, C-3: a refused action (STALE_ACTION) shakes the message once. --}}
-            <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger" x-text="error" x-nudge.shake="error"></p>
+            <p x-show="error" role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger" x-text="error" x-nudge.shake="error"></p>
         </section>
         @include('host.events.live.game-card', ['menu' => [['label' => __('pentahoot.reset'), 'click' => "document.getElementById('reset-question').showModal()", 'show' => "can('reset')"]], 'dialogs' => 'host.events.live.reset-dialog'])
         @break
@@ -68,10 +70,10 @@ pentahootHost({
         {{-- F2, F14: the running count per name, for hosts only. --}}
         <section class="flex flex-col gap-3 rounded-card bg-surface p-6" aria-labelledby="tally-heading">
             <div class="flex items-baseline justify-between gap-3">
-                <h2 id="tally-heading" class="font-display text-xl font-semibold">{{ __('pentahoot.tally') }}</h2>
-                <span class="text-xs text-muted">{{ __('pentahoot.tally_note') }}</span>
+                <h2 id="tally-heading" class="font-display text-title-s font-semibold">{{ __('pentahoot.tally') }}</h2>
+                <span class="text-caption text-muted">{{ __('pentahoot.tally_note') }}</span>
             </div>
-            <p x-show="tally.length === 0" class="text-sm text-muted">{{ __('pentahoot.tally_empty') }}</p>
+            <p x-show="tally.length === 0" class="text-body-s text-muted">{{ __('pentahoot.tally_empty') }}</p>
             <ol class="flex flex-col gap-1.5">
                 <template x-for="row in tally" :key="row.name">
                     <li class="flex justify-between gap-3 border-t border-line-soft pt-1.5">

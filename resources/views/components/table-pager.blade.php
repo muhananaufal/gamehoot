@@ -2,7 +2,7 @@
      (1 … 4 5 6 … 42) with Previous and Next. Rows per page sit above the table (x-table.toolbar).
      A long list (more than 7 pages) also takes a page number to go to.
      Hidden while nothing matches (the list shows its own "no match" line then). --}}
-<div {{ $attributes->merge(['class' => 'flex flex-wrap items-center justify-between gap-3 border-t border-line-soft px-6 py-3 text-sm text-muted']) }} x-show="shown > 0" x-cloak>
+<div {{ $attributes->merge(['class' => 'flex flex-wrap items-center justify-between gap-3 border-t border-line-soft px-6 py-3 text-body-s text-muted']) }} x-show="shown > 0" x-cloak>
     <p aria-live="polite" x-text="rangeText(@js(__('ui.showing')))"></p>
     <div class="flex flex-wrap items-center gap-3">
         <nav x-show="pages > 1" class="flex items-center gap-1" aria-label="{{ __('ui.pages') }}">
@@ -32,7 +32,7 @@
             <span>{{ __('ui.go_to_page') }}</span>
             <input type="number" min="1" :max="pages" inputmode="numeric" enterkeyhint="go" :placeholder="'1–' + pages"
                 @keydown.enter.prevent="goTo($el.value); $el.value = ''" @change="goTo($el.value); $el.value = ''"
-                class="h-11 w-20 rounded-control border border-line-strong bg-field px-3 text-ink tabular-nums">
+                class="h-11 w-20 rounded-control border border-field-line bg-field px-3 text-ink tabular-nums">
         </label>
     </div>
 </div>
