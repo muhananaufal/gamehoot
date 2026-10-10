@@ -173,13 +173,13 @@ Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class, Enforce
     Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/users', [UserController::class, 'index'])->name('users.index')->can('viewAny', User::class);
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create')->can('create', User::class);
-        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store')->can('create', User::class);
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit')->can('update', 'user');
-        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update')->can('update', 'user');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->can('delete', 'user');
         Route::get('/users/{user}/password/edit', [UserPasswordController::class, 'edit'])->name('users.password.edit')->can('resetPassword', 'user');
-        Route::put('/users/{user}/password', [UserPasswordController::class, 'update'])->name('users.password.update');
-        Route::put('/users/{user}/status', [UserStatusController::class, 'update'])->name('users.status.update');
+        Route::put('/users/{user}/password', [UserPasswordController::class, 'update'])->name('users.password.update')->can('resetPassword', 'user');
+        Route::put('/users/{user}/status', [UserStatusController::class, 'update'])->name('users.status.update')->can('changeStatus', 'user');
 
         Route::get('/trash', [AdminTrashController::class, 'index'])->name('trash.index')->can('viewAny', User::class);
         Route::post('/trash/{event}/restore', [AdminTrashController::class, 'update'])->name('trash.restore')

@@ -19,11 +19,6 @@ final class UpdateUserRequest extends FormRequest
 {
     use LiveValidation;
 
-    public function authorize(): bool
-    {
-        return $this->user()?->can('update', $this->account()) ?? false;
-    }
-
     /**
      * @return array<string, list<mixed>>
      */
