@@ -92,8 +92,10 @@ export function sortableList() {
             }
 
             // U14: a failed save reloads the panel from the server, back to the saved order.
+            // WCAG 2.4.3: focus 'keep' puts the focus back on the Move button that had it (found
+            // again by its up-id), instead of on <main>, so a keyboard user can press it again.
             if (window.up) {
-                window.up.submit(form).catch(() => {
+                window.up.submit(form, { focus: 'keep' }).catch(() => {
                     this.$store.toasts?.push(this.$el.dataset.saveFailed ?? '');
                     window.up.reload(reloadTarget(this.$el.dataset));
                 });

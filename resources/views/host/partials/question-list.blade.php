@@ -27,7 +27,8 @@
                 <div class="flex shrink-0 items-center">
                     {{-- U14: the arrows move the row at once; the order is saved once after the last click. --}}
                     @foreach ([['up', -1, ! $loop->first], ['down', 1, ! $loop->last]] as [$direction, $delta, $enabled])
-                        <button type="button" data-move="{{ $direction }}" @click="nudge($el, {{ $delta }})" @disabled(! $enabled) aria-label="{{ __('packs.move_' . $direction, ['number' => $number]) }}"
+                        {{-- up-id: the question's own id, since the number in the label changes with the move. --}}
+                        <button type="button" data-move="{{ $direction }}" @click="nudge($el, {{ $delta }})" @disabled(! $enabled) up-id="move-{{ $question->id }}-{{ $direction }}" aria-label="{{ __('packs.move_' . $direction, ['number' => $number]) }}"
                             class="flex size-11 items-center justify-center rounded-control text-muted hover:bg-subtle disabled:opacity-30">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="{{ $direction === 'up' ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6' }}"></path>

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Moving a game or a question with the keyboard keeps the focus on its Move button after the new order is saved, so it can be moved again right away.
 - The Activity log, the Results page and the replay cards of Live control stay quick for a long event; they no longer slow down with every entry or question.
 - A CSV import in New event that gets no answer, and a personal link copy the browser refuses, now say so instead of failing silently.
 - Help texts on the Names, Games and Tebak Live control pages name the buttons that are actually there.
