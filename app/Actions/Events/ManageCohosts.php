@@ -7,6 +7,7 @@ namespace App\Actions\Events;
 use App\Enums\LoggedAction;
 use App\Models\Event;
 use App\Models\User;
+use App\Realtime\HostChannelKeys;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -34,6 +35,8 @@ final readonly class ManageCohosts
         DB::transaction(function () use ($event, $account, $actor): void {
             if ($event->cohosts()->detach($account->id) > 0) {
                 $this->auditLog->record(LoggedAction::CohostRemoved, $actor, $event, ['account_id' => $account->id]);
+                // F26: a Live control the removed co-host still has open stops receiving host data.
+                HostChannelKeys::rotate($event);
             }
         });
     }

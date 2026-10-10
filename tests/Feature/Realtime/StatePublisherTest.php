@@ -78,7 +78,7 @@ it('names the channels by event UUID and sends the snapshot as the payload (F1, 
     $host = new StateChanged($event, Audience::Host, $snapshot);
 
     expect($public->broadcastOn())->toEqual(new Channel("event.{$event->id}.public"))
-        ->and($host->broadcastOn())->toEqual(new PrivateChannel("event.{$event->id}.host"))
+        ->and($host->broadcastOn())->toEqual(new PrivateChannel("event.{$event->id}.host.{$event->hostChannelKey()}"))
         ->and($public->broadcastAs())->toBe('state')
         ->and($public->broadcastWith())->toBe($snapshot);
 });

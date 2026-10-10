@@ -7,6 +7,7 @@ namespace App\Actions\Events;
 use App\Enums\LoggedAction;
 use App\Models\Event;
 use App\Models\User;
+use App\Realtime\HostChannelKeys;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +27,8 @@ final readonly class TransferOwnership
             $locked->cohosts()->detach($newOwner->id);
             $locked->owner()->associate($newOwner)->save();
             $locked->cohosts()->syncWithoutDetaching([$previousOwnerId]);
+            // F26: rights changed; every host page joins the channel again with the new key.
+            HostChannelKeys::rotate($locked);
 
             $this->auditLog->record(LoggedAction::OwnershipTransferred, $actor, $locked, [
                 'from_user_id' => $previousOwnerId,

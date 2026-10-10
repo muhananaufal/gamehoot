@@ -125,6 +125,7 @@ export async function fetchSnapshot(url) {
  *   fetchState: () => Promise<object|null>,
  *   onAnswered?: () => void,
  *   onJoined?: () => void,
+ *   onRotated?: () => void,
  *   onNameLost?: () => void,
  *   random?: () => number,
  *   doc?: { visibilityState: string, addEventListener: Function },
@@ -137,6 +138,7 @@ export function connectRealtime({
     fetchState,
     onAnswered = () => {},
     onJoined = () => {},
+    onRotated = () => {},
     onNameLost = () => {},
     random = Math.random,
     doc = document,
@@ -241,6 +243,16 @@ export function connectRealtime({
 
                 store.joined(counter);
                 onJoined();
+            });
+        }
+
+        // F26: the host channel got a new key because someone lost access; the page loads
+        // again and joins the new channel if this host still may.
+        if (channel.private) {
+            subscription.listen('.rotated', () => {
+                if (!stopped) {
+                    onRotated();
+                }
             });
         }
     }

@@ -178,6 +178,8 @@ function followEvent(element) {
         channels: config.channels,
         fetchState: () => fetchSnapshot(config.stateUrl),
         onAnswered,
+        // F26: someone lost access to this event; load the page again with the new host key.
+        onRotated: () => window.location.reload(),
         // B-6: the host released or deleted this phone's name; pick a name again.
         onNameLost: () => {
             if (config.joinUrl) {

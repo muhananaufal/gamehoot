@@ -9,6 +9,7 @@ use App\Enums\ReplayKind;
 use App\Enums\ScreenTheme;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,8 +17,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 #[Fillable(['name', 'slug', 'show_on_devices', 'screen_animations', 'screen_theme'])]
+#[Hidden(['host_channel_key'])]
 final class Event extends Model
 {
     /** @use HasFactory<EventFactory> */
@@ -143,6 +146,38 @@ final class Event extends Model
     public function bumpRosterVersion(): void
     {
         $this->roster_version++;
+    }
+
+    /**
+     * F26: the key in the host channel name. Events made before the key existed get one the
+     * first time it is needed.
+     */
+    public function hostChannelKey(): string
+    {
+        if ($this->host_channel_key === null) {
+            $this->forceFill(['host_channel_key' => Str::random(32)])->save();
+        }
+
+        return (string) $this->host_channel_key;
+    }
+
+    /**
+     * F26: a new key, so sockets that joined the host channel before someone lost access
+     * receive nothing more. Saved inside the caller's transaction; returns the old key.
+     */
+    public function rotateHostChannelKey(): string
+    {
+        $old = $this->hostChannelKey();
+        $this->forceFill(['host_channel_key' => Str::random(32)])->save();
+
+        return $old;
+    }
+
+    protected static function booted(): void
+    {
+        self::creating(function (self $event): void {
+            $event->host_channel_key ??= Str::random(32);
+        });
     }
 
     /**

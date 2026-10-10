@@ -169,7 +169,8 @@ describe('Live control (F2, C-2)', function (): void {
             ->toHaveKey('stateUrl', url("/host/{$event->id}/state"))
             ->toHaveKey('channels', [
                 ['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false],
-                ['name' => "event.{$event->id}.host", 'private' => true, 'counters' => false],
+                // F26: the host channel name carries the event's key.
+                ['name' => "event.{$event->id}.host.{$event->fresh()?->hostChannelKey()}", 'private' => true, 'counters' => false],
                 ['name' => "event.{$event->id}.screen", 'private' => false, 'counters' => true],
             ])
             ->toHaveKey('initial.host.names', 0);
