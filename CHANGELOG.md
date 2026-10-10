@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The Activity log, the Results page and the replay cards of Live control stay quick for a long event; they no longer slow down with every entry or question.
+- A CSV import in New event that gets no answer, and a personal link copy the browser refuses, now say so instead of failing silently.
+- Help texts on the Names, Games and Tebak Live control pages name the buttons that are actually there.
 - Phones waiting in the lobby no longer run a countdown clock four times a second, which saves battery during a long event.
 - Searching for a name on the phone also ignores accents, letter case and letter width, so "jose" finds José.
 - Row menus open and move with the keyboard, and games in Up next can be reordered with Move up and Move down buttons instead of dragging only.
@@ -116,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removing a co-host in Settings asks first, like the other changes on that page.
 - Phones load less than half the JavaScript they used to, so the game opens faster on a busy venue WiFi.
 - Text on the projector is large enough to read from the back of the room, and every screen still fits a 16:9 or 4:3 projector without scrolling.
 - The lobby on the projector shows the join link and QR code beside the names, so both stay readable with a long list.
