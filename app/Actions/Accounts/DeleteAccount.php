@@ -7,6 +7,7 @@ namespace App\Actions\Accounts;
 use App\Enums\LoggedAction;
 use App\Models\Event;
 use App\Models\User;
+use App\Realtime\HostChannelKeys;
 use App\Support\AuditLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +33,8 @@ final readonly class DeleteAccount
                 throw ValidationException::withMessages(['account' => __('accounts.delete_owns_events')]);
             }
 
+            // F26: the events it co-hosted get a new host channel key before it leaves them.
+            $locked->cohostedEvents()->lockForUpdate()->get()->each(fn (Event $event) => HostChannelKeys::rotate($event));
             $locked->cohostedEvents()->detach();
             $locked->delete();
 

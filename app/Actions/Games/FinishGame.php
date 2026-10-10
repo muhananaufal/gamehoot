@@ -14,6 +14,7 @@ use App\Models\Game;
 use App\Models\User;
 use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
+use App\Support\SeenVersion;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -27,12 +28,15 @@ final readonly class FinishGame
     public function __construct(private StatePublisher $publisher, private AuditLog $auditLog, private GameEngines $engines) {}
 
     /**
+     * @param  int|null  $seenVersion  G15: the version on the host's screen; null when Close event runs this
+     *
      * @throws ActionRefused
      */
-    public function handle(Event $event, Game $game, User $actor): void
+    public function handle(Event $event, Game $game, User $actor, ?int $seenVersion = null): void
     {
-        DB::transaction(function () use ($event, $game, $actor): void {
+        DB::transaction(function () use ($event, $game, $actor, $seenVersion): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
+            SeenVersion::check($locked, $seenVersion);
             $lockedGame = Game::query()->lockForUpdate()->findOrFail($game->id);
 
             if ($locked->active_game_id !== $lockedGame->id || $lockedGame->status === GameStatus::Finished) {

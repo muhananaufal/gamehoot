@@ -206,7 +206,7 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         $game = Pentahoot::running($event);
         Pentahoot::question($game, 1)->forceFill(['status' => QuestionStatus::Done])->save();
 
-        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish")
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version])
             ->assertRedirect("/host/{$event->id}");
 
         // G7, E12: the finished game stays on screen with its results until the next game starts.
@@ -232,7 +232,7 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         $game = Pentahoot::running($event);
         $game->forceFill(['status' => GameStatus::Finished])->save();
 
-        actingAs(gamesOwner($event))->from("/host/{$event->id}")->post("/host/{$event->id}/games/{$game->id}/finish")
+        actingAs(gamesOwner($event))->from("/host/{$event->id}")->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version])
             ->assertSessionHasErrors(['action' => 'The screen was out of date. It has been refreshed, try again.']);
     });
 
@@ -241,7 +241,7 @@ describe('starting and finishing a game (D-1, D-8, B-3)', function (): void {
         $game = Pentahoot::running($event);
         $game->questions()->update(['status' => QuestionStatus::Done]);
 
-        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish");
+        actingAs(gamesOwner($event))->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version]);
 
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
             ->and(ActionLog::query()->pluck('action')->all())->toBe([LoggedAction::GameFinished]);
@@ -283,7 +283,7 @@ describe('finishing after the last question (D-8, D-10)', function (): void {
         travelTo(now()->addSeconds(2));
         post("/host/{$event->id}/questions/{$only->id}/reveal");
 
-        post("/host/{$event->id}/games/{$game->id}/finish")->assertSessionHasNoErrors();
+        post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version])->assertSessionHasNoErrors();
 
         expect($only->refresh()->status)->toBe(QuestionStatus::Done)
             ->and($game->refresh()->status)->toBe(GameStatus::Finished)

@@ -4,6 +4,8 @@
 @if ($direct ?? false)
     <form method="POST" action="{{ route('host.events.games.finish', [$event, $game]) }}">
         @csrf
+        {{-- G15: the version this host is looking at; the store's when the page follows the event live. --}}
+        <input type="hidden" name="version" value="{{ $event->state_version }}" x-data x-bind:value="($store.realtime?.version ?? -1) >= 0 ? $store.realtime.version : {{ $event->state_version }}">
         <x-button type="submit">{{ $label }}</x-button>
     </form>
 @else
@@ -11,6 +13,8 @@
         <p class="text-body text-muted">{{ __('games.close_game_confirm', ['title' => $game->title]) }}</p>
         <form method="POST" action="{{ route('host.events.games.finish', [$event, $game]) }}" class="flex justify-end gap-2.5 pt-1.5">
             @csrf
+            {{-- G15: the version this host is looking at; the store's when the page follows the event live. --}}
+            <input type="hidden" name="version" value="{{ $event->state_version }}" x-data x-bind:value="($store.realtime?.version ?? -1) >= 0 ? $store.realtime.version : {{ $event->state_version }}">
             <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
             <x-button type="submit">{{ $label }}</x-button>
         </form>

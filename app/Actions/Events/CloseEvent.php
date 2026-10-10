@@ -8,11 +8,13 @@ use App\Actions\Games\FinishGame;
 use App\Enums\EventStatus;
 use App\Enums\GameStatus;
 use App\Enums\LoggedAction;
+use App\Exceptions\ActionRefused;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\User;
 use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
+use App\Support\SeenVersion;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -23,14 +25,21 @@ final readonly class CloseEvent
 {
     public function __construct(private AuditLog $auditLog, private StatePublisher $publisher, private FinishGame $finishGame) {}
 
-    public function handle(Event $event, User $actor): void
+    /**
+     * @param  int|null  $seenVersion  G15: the version on the host's screen
+     *
+     * @throws ActionRefused
+     */
+    public function handle(Event $event, User $actor, ?int $seenVersion = null): void
     {
-        DB::transaction(function () use ($event, $actor): void {
+        DB::transaction(function () use ($event, $actor, $seenVersion): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
 
             if ($locked->status === EventStatus::Finished) {
                 return;
             }
+
+            SeenVersion::check($locked, $seenVersion);
 
             // G7: a finished game on screen only shows its results; a running one is ended.
             $onScreen = $locked->active_game_id === null ? null : Game::query()->find($locked->active_game_id);

@@ -28,6 +28,9 @@ final readonly class PentahootActions
 {
     public const array ACTIONS = ['start', 'stop', 'reveal', 'next', 'advance', 'reset'];
 
+    /** G15: Reset deletes every vote of the question. */
+    public const array VERSIONED = ['reset'];
+
     public function __construct(private AuditLog $auditLog) {}
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Middleware\EnforceSessionLimit;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,8 @@ final class SessionController
     {
         $request->authenticate();
         $request->session()->regenerate();
+        // C-8: the absolute session limit counts from here.
+        $request->session()->put(EnforceSessionLimit::STARTED_AT, now()->getTimestamp());
 
         return redirect()->intended(route('host.dashboard'));
     }

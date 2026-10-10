@@ -60,7 +60,7 @@ it('shows a Tebak Kata question on the projector and mirrors it on phones only w
     $phone->assertSee('Watch the screen and answer out loud to the host.')->assertNoJavaScriptErrors();
 
     // E12, E17: the final podium, on the projector and (as text, whatever E14 says) on phones.
-    actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish");
+    actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version]);
     $screen->assertSee('Final results')->assertSee('Budi Santoso')->assertNoJavaScriptErrors();
     $phone->assertSee('Final results')->assertNoJavaScriptErrors();
 });

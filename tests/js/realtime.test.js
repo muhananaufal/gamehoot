@@ -397,6 +397,27 @@ describe('F14, F24 small messages', () => {
         expect(store.snapshot.game.answered).toBe(3);
     });
 
+    it('reloads a host page when its host channel gets a new key, on the private channel only (F26)', () => {
+        const echo = fakeEcho();
+        const onRotated = vi.fn();
+        connectRealtime({
+            store: realtimeStore(),
+            echo,
+            channels: [
+                { name: 'event.abc.public', private: false },
+                { name: 'event.abc.host.k1', private: true },
+            ],
+            fetchState: async () => null,
+            onRotated,
+            doc: fakeDocument(),
+        });
+
+        expect(echo.listeners['event.abc.public.rotated']).toBeUndefined();
+        echo.listeners['private-event.abc.host.k1.rotated']({});
+
+        expect(onRotated).toHaveBeenCalledOnce();
+    });
+
     it('never listens for counters on a phone, which follows the public channel only (F25)', () => {
         const echo = fakeEcho();
         connectRealtime({

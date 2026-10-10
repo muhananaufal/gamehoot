@@ -550,8 +550,10 @@ export function pentahootHost({ actionUrl, labels, questionIds = [] }) {
             // U16: the button that started the action shows the spinner until it ends.
             await withBusyButton(async () => {
                 try {
+                    // G15: every action carries the version on screen; Reset is refused when it moved.
                     const { status, body } = await postJson(
                         actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
+                        { version: this.store.version },
                     );
 
                     if (status !== 204) {

@@ -218,7 +218,7 @@ describe('E13: skips, reloads, deleted questions, finished games and added names
         $game = Pentahoot::running($event);
         $game->questions()->update(['status' => QuestionStatus::Done]);
 
-        actingAs(hostOfEvent($event))->post("/host/{$event->id}/games/{$game->id}/finish")->assertRedirect();
+        actingAs(hostOfEvent($event))->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version])->assertRedirect();
 
         expect(loggedOnce(LoggedAction::GameFinished)->payload)->toBe(['game_id' => $game->id])
             ->and(ActionLog::query()->where('action', LoggedAction::GameFinishedEarly)->exists())->toBeFalse();

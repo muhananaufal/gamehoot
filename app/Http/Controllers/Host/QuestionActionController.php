@@ -11,6 +11,7 @@ use App\Http\Requests\Host\QuestionActionRequest;
 use App\Models\Event;
 use App\Models\Question;
 use App\Models\User;
+use App\Support\SeenVersion;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\Response;
 
@@ -30,7 +31,10 @@ final class QuestionActionController
             throw ActionRefused::unavailable();
         }
 
-        $run->handle($engine, $action, $event, $question, $user, $request->validated());
+        // G15: actions that destroy or decide carry the version the host saw.
+        $seen = in_array($action, $engine->versionedActions(), true) ? SeenVersion::from($request) : null;
+
+        $run->handle($engine, $action, $event, $question, $user, $request->validated(), $seen);
 
         return response()->noContent();
     }

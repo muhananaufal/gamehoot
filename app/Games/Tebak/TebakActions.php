@@ -28,6 +28,9 @@ final readonly class TebakActions
 {
     public const array ACTIONS = ['show', 'skip', 'winner', 'surrender', 'leaderboard'];
 
+    /** G15: picking the winner and surrendering cannot be undone. */
+    public const array VERSIONED = ['winner', 'surrender'];
+
     public function __construct(private AuditLog $auditLog) {}
 
     /**
