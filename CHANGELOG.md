@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Host pages keep the session alive while they are open, so a Live control left untouched during a long break still works, and warn ten minutes before the 8 hour session ends.
 - Games whose pack changed since they were added are marked, and Reload from pack shows only for them and asks first, since it replaces edits made to the copied questions.
 - Phones follow the host's changes to the name list at once: a released or deleted name goes back to picking a name, a renamed one shows the new name.
 - The Games page adds games from the same pack list as Question packs, with search, type filter and folding groups.
