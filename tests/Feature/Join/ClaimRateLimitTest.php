@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 it('lets a whole venue behind one address claim names in the same minute (F11)', function (): void {
     $limiter = RateLimiter::limiter('claim');
-    expect($limiter)->not->toBeNull();
+    expect($limiter)->toBeInstanceOf(Closure::class);
 
-    $limit = $limiter(Request::create('/year-end-party/claim', 'POST', server: ['REMOTE_ADDR' => '203.0.113.7']));
+    $limit = $limiter instanceof Closure ? $limiter(Request::create('/year-end-party/claim', 'POST', server: ['REMOTE_ADDR' => '203.0.113.7'])) : null;
 
     expect($limit)->toBeInstanceOf(Limit::class)
         ->and($limit->maxAttempts)->toBe(1000)
