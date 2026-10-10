@@ -18,7 +18,8 @@ tebakHost({
         <section class="flex flex-col gap-4 rounded-card bg-surface p-6" aria-labelledby="tebak-questions-heading">
             <h2 id="tebak-questions-heading" class="font-display text-xl font-semibold">{{ __('tebak.questions') }} ({{ $questions->count() }})</h2>
             <x-timeline :steps="$questions->values()->map(fn ($question, $index) => [
-                'label' => $question->kata?->prompt ?? $question->gambar?->title ?? '',
+                /* Each engine loads only its own detail (liveQuestions); reading the other would query once per question. */
+                'label' => $question->relationLoaded('kata') ? ($question->kata?->prompt ?? '') : ($question->gambar?->title ?? ''),
                 'hint' => __('tebak.status.q'),
                 'hintExpr' => 'statusOf(' . $index . ')',
                 'stateExpr' => 'timelineState(' . $index . ')',
