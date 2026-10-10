@@ -22,9 +22,10 @@
     <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
 
     {{-- The page is drawn per event status and game on screen: when either changes (here, by a
-         co-host or on another tab), Unpoly reloads the content (U18) without reloading the page. --}}
+         co-host or on another tab), Unpoly reloads the content (U18) without reloading the page.
+         A newer reload aborts an older one; that rejection is expected (audit FE-9). --}}
     <div x-data="{ drawn: @js($event->status->value . '|' . ($game?->id ?? '') . '|' . ($game?->status->value ?? '')) }"
-        x-effect="const s = $store.realtime.snapshot; s && (s.event.status + '|' + (s.game?.id ?? '') + '|' + (s.game?.status ?? '')) !== drawn && window.up.reload()"
+        x-effect="const s = $store.realtime.snapshot; s && (s.event.status + '|' + (s.game?.id ?? '') + '|' + (s.game?.status ?? '')) !== drawn && window.up.reload().catch(() => {})"
         class="flex flex-col gap-5">
         <x-connection-status />
 
