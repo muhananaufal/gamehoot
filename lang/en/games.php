@@ -52,6 +52,8 @@ return [
     'reload_confirm' => 'The questions of “:title” are replaced with the pack as it is now.',
     'reload_edits_lost' => 'Edits made to this game’s questions are lost.',
     'drag' => 'Drag to change the order',
+    'move_up' => 'Move “:title” up',
+    'move_down' => 'Move “:title” down',
     'order_failed' => 'The game order could not be saved. The saved order is shown again.',
     'edited' => 'Edited in this event',
     'pack_deleted' => 'Pack deleted',

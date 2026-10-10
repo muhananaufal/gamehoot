@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { menuItems, rowMenuStore } from '../../resources/js/row-actions.js';
+import { menuItems, menuKeyTarget, rowMenuStore } from '../../resources/js/row-actions.js';
 
 const spec = [
     { key: 'rename', label: 'Rename', type: 'link' },
@@ -113,5 +113,42 @@ describe('U5 row menus on light rows', () => {
 
         expect(store.name).toBe('Budi');
         expect(store.items[0].url).toBe('/p/p1');
+    });
+});
+
+describe('audit FE-3 the row menu with the keyboard (W3C APG menu)', () => {
+    it('moves down and up through the items and wraps around', () => {
+        expect(menuKeyTarget('ArrowDown', 0, 3)).toBe(1);
+        expect(menuKeyTarget('ArrowDown', 2, 3)).toBe(0);
+        expect(menuKeyTarget('ArrowUp', 0, 3)).toBe(2);
+        expect(menuKeyTarget('ArrowDown', -1, 3)).toBe(0);
+    });
+
+    it('jumps to the first and the last item', () => {
+        expect(menuKeyTarget('Home', 2, 4)).toBe(0);
+        expect(menuKeyTarget('End', 0, 4)).toBe(3);
+    });
+
+    it('leaves other keys and an empty menu alone', () => {
+        expect(menuKeyTarget('a', 1, 3)).toBeNull();
+        expect(menuKeyTarget('ArrowDown', 0, 0)).toBeNull();
+    });
+
+    it('marks the row button as expanded while its menu is open', () => {
+        const attributes = {};
+        const button = {
+            getBoundingClientRect: () => ({ bottom: 10, right: 100 }),
+            dataset: { id: 'p1', name: 'Budi' },
+            setAttribute: (name, value) => {
+                attributes[name] = value;
+            },
+        };
+        const store = rowMenuStore();
+
+        store.openFrom(button, { innerWidth: 1000 });
+        expect(attributes['aria-expanded']).toBe('true');
+
+        store.close();
+        expect(attributes['aria-expanded']).toBe('false');
     });
 });

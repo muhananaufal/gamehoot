@@ -42,5 +42,5 @@
     </svg>
     {{-- U27: what holding Penta did, for a moment. --}}
     <span x-show="bubble" x-cloak x-text="bubble" role="status"
-        class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-inverse px-3 py-1 text-xs font-semibold whitespace-nowrap text-on-inverse"></span>
+        class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-inverse px-3 py-1 text-caption font-semibold whitespace-nowrap text-on-inverse"></span>
 </span>

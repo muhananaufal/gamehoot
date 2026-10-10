@@ -67,8 +67,8 @@ describe('general join page (B-1, F12)', function (): void {
 
         $html = (string) get('/gathering-2026')->assertOk()->getContent();
 
-        expect($html)->toContain('[&_button]:rounded-control [&_button]:border [&_button]:border-line-strong')
-            ->and($html)->toContain('h-12 rounded-control border border-line-strong');
+        expect($html)->toContain('[&_button]:rounded-control [&_button]:border [&_button]:border-field-line')
+            ->and($html)->toContain('h-12 rounded-control border border-field-line');
     });
 
     it('says the event cannot be found for unknown and deleted events', function (): void {

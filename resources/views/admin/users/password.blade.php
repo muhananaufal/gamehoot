@@ -4,7 +4,7 @@
     <div up-main="modal" class="flex flex-col gap-5 p-6">
         <div class="flex flex-col gap-1">
             <h2 class="font-display text-title-s font-bold">{{ __('accounts.reset_password_for', ['name' => $account->name]) }}</h2>
-            <p class="text-sm text-muted">{{ __('accounts.reset_password_help') }}</p>
+            <p class="text-body-s text-muted">{{ __('accounts.reset_password_help') }}</p>
         </div>
         <form method="POST" action="{{ route('admin.users.password.update', $account) }}" class="flex flex-col gap-4" novalidate>
             @csrf

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Row menus open and move with the keyboard, and games in Up next can be reordered with Move up and Move down buttons instead of dragging only.
+- Form fields and the focus ring are clearly visible in both themes, buttons and links are easy to tap, and the live countdown no longer talks over screen readers every second.
+- Host pages start with a Skip to content link for keyboard users.
 - The realtime server can hold thousands of phones, projectors and host tabs at once instead of refusing connections past about a thousand.
 - A deploy against a database that does not answer now fails its health check instead of going live.
 - Names that differ only in accents, letter case or letter width (José and Jose) are treated as the same name everywhere: they are marked before saving, and New event no longer fails with an error when both are typed. Searching for "jose" also finds José.
@@ -108,6 +111,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Text on the projector is large enough to read from the back of the room, and every screen still fits a 16:9 or 4:3 projector without scrolling.
+- The lobby on the projector shows the join link and QR code beside the names, so both stay readable with a long list.
+- Host panel and phone text is a little larger, with captions no smaller than 13 px on the panel and 15 px on phones.
 - The theme, motion and log out buttons sit in an evenly spaced row above the account at the foot of the sidebar, so the host's name and role always fit beside the avatar.
 - The sidebar follows the light and dark theme, lists your five most recent events with the open event's pages under its name, scrolls on its own so theme and sign out stay in view, and can be narrowed to icons on wide screens.
 - Confirmations such as "Settings saved" appear as short toasts instead of a box at the top of the page; copying a personal link confirms the same way.

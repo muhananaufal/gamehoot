@@ -24,6 +24,8 @@
 <x-layouts.base :title="$title">
     {{-- U18: links and forms inside data-host-shell move without reloading (resources/js/navigation.js). --}}
     <div x-data="hostShell" data-host-shell class="flex min-h-dvh" @keydown.escape.window="menuOpen = false">
+        {{-- U37 (audit FE-12): the first Tab stop jumps past the sidebar and the top bar to the content. --}}
+        <a href="#main-content" class="sr-only z-50 rounded-control bg-surface px-4 py-3 font-semibold text-ink shadow-xl focus:not-sr-only focus:fixed focus:top-3 focus:left-3">{{ __('ui.skip_to_content') }}</a>
         {{-- F20: one sidebar; on phones it becomes a drawer. --}}
         <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-nav/70 lg:hidden" @click="menuOpen = false"></div>
         {{-- U1: the sidebar scrolls on its own, so theme and sign out stay in view on long pages. --}}
@@ -40,7 +42,7 @@
             </div>
 
             <nav id="host-nav" up-hungry class="flex min-h-0 grow flex-col gap-0.5 overflow-y-auto px-3.5 pb-3" aria-label="{{ __('host.nav.main') }}">
-                <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.workspace') }}</span>
+                <span class="px-3 pt-3.5 pb-1.5 text-caption font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.workspace') }}</span>
                 <x-host-nav-link :href="route('host.dashboard')" icon="calendar" :active="request()->routeIs('host.dashboard')">
                     {{ __('host.nav.events') }}
                 </x-host-nav-link>
@@ -52,7 +54,7 @@
                 </x-host-nav-link>
 
                 @if ($recent->isNotEmpty())
-                    <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.recent') }}</span>
+                    <span class="px-3 pt-3.5 pb-1.5 text-caption font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.recent') }}</span>
                     @foreach ($recent as $item)
                         @php $current = $event?->is($item) ?? false; @endphp
                         {{-- U23: the name expands its pages in place instead of opening Live control, so
@@ -84,7 +86,7 @@
                 @endif
 
                 @can('viewAny', \App\Models\User::class)
-                    <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.admin') }}</span>
+                    <span class="px-3 pt-3.5 pb-1.5 text-caption font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.admin') }}</span>
                     <x-host-nav-link :href="route('admin.users.index')" icon="user" :active="request()->routeIs('admin.users.*')">
                         {{ __('host.nav.host_accounts') }}
                     </x-host-nav-link>
@@ -109,10 +111,10 @@
                     </form>
                 </div>
                 <div class="flex min-w-0 items-center gap-2.5">
-                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-body-s font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
                     <div class="flex min-w-0 grow flex-col lg:group-data-[collapsed=true]:sr-only">
-                        <span class="truncate text-sm font-bold" data-test="account-name">{{ $user->name }}</span>
-                        <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+                        <span class="truncate text-body-s font-bold" data-test="account-name">{{ $user->name }}</span>
+                        <span class="truncate text-caption whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
                     </div>
                 </div>
             </div>
@@ -160,12 +162,12 @@
                 </form>
             </div>
 
-            <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
+            <main id="main-content" tabindex="-1" class="flex grow flex-col gap-5 px-4 py-6 focus:outline-none lg:px-7">
                 {{-- U2: the page title and its actions head the content; the top bar only shows where you are. --}}
                 @if ($heading)
                     {{-- U14: an id, so a page can swap its title and actions alone. --}}
                     <div id="content-head" class="flex flex-wrap items-center justify-between gap-3">
-                        <h1 class="font-display text-[26px] font-bold">{{ last($breadcrumbs)[0] }}</h1>
+                        <h1 class="font-display text-title font-bold">{{ last($breadcrumbs)[0] }}</h1>
                         @isset($actions)
                             <div class="flex flex-wrap items-center gap-2.5">{{ $actions }}</div>
                         @endisset

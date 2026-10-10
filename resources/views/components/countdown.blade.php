@@ -6,6 +6,11 @@
     // urgency ('calm', 'soon', 'last'), from pentahootScreen.
     'ring' => null,
     'urgency' => null,
+    // U34 (audit UI-1, CODE-5): the size of the digits and of the label, named here instead of
+    // reached from outside with a child selector (the ring once became the first child, and the
+    // digits silently stayed as small as the label).
+    'digits' => 'text-[2.4em]',
+    'unit' => '',
 ])
 {{-- F20, U30: the countdown, drawn from the server clock by the enclosing Alpine component. A ring
      empties as time runs out; the last five seconds beat (x-nudge.pulse) and the last three turn
@@ -20,7 +25,7 @@
                 stroke-dasharray="100" :stroke-dashoffset="{{ $ring }}" class="countdown-ring"></circle>
         </svg>
     @endif
-    <span class="relative font-display leading-none font-bold tabular-nums" x-text="{{ $seconds }}"
+    <span data-test="countdown-digits" class="relative font-display leading-none font-bold tabular-nums {{ $digits }}" x-text="{{ $seconds }}"
         @if ($urgency) x-nudge.pulse="{{ $urgency }} === 'calm' ? null : {{ $seconds }}" @endif></span>
-    <span class="relative font-semibold">{{ $label }}</span>
+    <span class="relative font-semibold {{ $unit }}">{{ $label }}</span>
 </div>

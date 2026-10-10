@@ -66,12 +66,12 @@
                     @csrf
                     <input type="hidden" name="form" value="add-person">
                     <div class="flex flex-col gap-1.5">
-                        <label for="add-names" class="text-sm font-semibold">{{ __('people.names_label') }}</label>
+                        <label for="add-names" class="text-body-s font-semibold">{{ __('people.names_label') }}</label>
                         <textarea id="add-names" name="names" rows="6" x-model="text" autofocus autocomplete="off" placeholder="{{ __('examples.names') }}"
                             aria-describedby="add-names-hint add-names-check"
-                            class="rounded-control border border-line-strong bg-field px-3 py-2.5 text-body text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
-                        <p id="add-names-hint" class="text-sm text-muted">{{ __('people.add_names_hint') }}</p>
-                        <div id="add-names-check" aria-live="polite" class="flex flex-col gap-1 text-sm">
+                            class="rounded-control border border-field-line bg-field px-3 py-2.5 text-body text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
+                        <p id="add-names-hint" class="text-body-s text-muted">{{ __('people.add_names_hint') }}</p>
+                        <div id="add-names-check" aria-live="polite" class="flex flex-col gap-1 text-body-s">
                             <p x-show="check.names.length > 0" x-text="summary" class="text-muted"></p>
                             <template x-for="problem in check.problems" :key="problem.line">
                                 <p class="font-semibold text-on-danger" x-text="problemText(problem)"></p>
@@ -80,7 +80,7 @@
                         </div>
                         @if ($addFailed)
                             @foreach ($errors->get('names') as $message)
-                                <p class="text-sm font-semibold text-on-danger">{{ $message }}</p>
+                                <p class="text-body-s font-semibold text-on-danger">{{ $message }}</p>
                             @endforeach
                         @endif
                     </div>
@@ -102,7 +102,7 @@
     <div id="names-live" x-data="liveRegion({ claims: true })" class="flex flex-col gap-5">
     @if ($locked)
         {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
-        <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">
+        <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-body-s font-semibold text-on-warning">
             <p>{{ __('people.locked_banner') }} {{ $event->join_locked_at ? __('people.claims_closed') : __('people.claims_open') }}</p>
             {{-- U24: changes of state ask first. --}}
             @include('host.partials.confirm-action', [
@@ -116,7 +116,7 @@
     @endif
     {{-- Errors of Add names show in its dialog, which opens again. --}}
     @if ($errors->has('names') && ! $addFailed)
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $errors->first('names') }}</div>
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger">{{ $errors->first('names') }}</div>
     @endif
 
     @if ($people->isEmpty())
@@ -145,7 +145,7 @@
             {{-- Sideways scrolling only on narrow screens: a scrolling box would pin the header to the box, not the page. --}}
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left text-body" @click="onRowClick($event)">
-                    <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
+                    <thead class="z-10 border-b border-line-soft bg-surface text-caption font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                         <tr>
                             <x-table.th sort="name">{{ __('people.name') }}</x-table.th>
                             <x-table.th sort="joined">{{ __('people.status') }}</x-table.th>
@@ -154,7 +154,7 @@
                         </tr>
                     </thead>
                     {{-- A3, U5: cell styles live here once; each row carries only its data. --}}
-                    <tbody class="[&_b]:font-bold [&_small]:block [&_small]:pt-1 [&_small]:text-xs [&_small]:text-muted [&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&_td:last-child]:text-center [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_code]:font-mono [&_code]:text-sm [&_code]:text-muted [&_td>span]:inline-flex [&_td>span]:items-center [&_td>span]:gap-1">
+                    <tbody class="[&_b]:font-bold [&_small]:block [&_small]:pt-1 [&_small]:text-caption [&_small]:text-muted [&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&_td:last-child]:text-center [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_code]:font-mono [&_code]:text-body-s [&_code]:text-muted [&_td>span]:inline-flex [&_td>span]:items-center [&_td>span]:gap-1">
                         @foreach ($people as $person)
                             {{-- U5: the row carries its id and name once; its icon buttons only say what they do. --}}
                             {{-- One line per row (B-3: up to 500 rows). U6: when the name joined, in WIB (T10). B-6: a joined name is released right next to its status. --}}

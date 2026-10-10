@@ -34,7 +34,7 @@
                 <input type="hidden" name="form" value="create-pack">
                 <x-field name="title" :placeholder="__('examples.pack_title')" :label="__('packs.pack_title')" id="new-pack-title" :submitted="old('form') === 'create-pack'" required maxlength="100" autofocus />
                 <div class="flex flex-col gap-1.5">
-                    <span class="text-sm font-semibold">{{ __('packs.game_type') }}</span>
+                    <span class="text-body-s font-semibold">{{ __('packs.game_type') }}</span>
                     <x-select name="game_type" :options="array_map(fn (GameType $type): array => ['value' => $type->value, 'label' => __('games.types.' . $type->value)], $types)"
                         :value="old('game_type', GameType::Pentahoot->value)" :label="__('packs.game_type')" class="w-full" />
                 </div>
@@ -69,18 +69,18 @@
                         {{-- U14: the pack's title heads the card, its game type and last change below; Rename and Delete in the menu. --}}
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex min-w-0 flex-col gap-0.5">
-                                <h2 class="font-display text-2xl font-bold break-words">{{ $pack->title }}</h2>
+                                <h2 class="font-display text-title-s font-bold break-words">{{ $pack->title }}</h2>
                                 {{-- U6: when the pack last changed, in WIB (T10). --}}
-                                <span class="text-sm text-muted">{{ __('games.types.' . $pack->game_type->value) }} · {{ __('packs.changed', ['time' => $pack->updated_at?->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</span>
+                                <span class="text-body-s text-muted">{{ __('games.types.' . $pack->game_type->value) }} · {{ __('packs.changed', ['time' => $pack->updated_at?->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</span>
                             </div>
                             <div class="flex shrink-0 items-center gap-2">
-                                <span class="text-sm text-muted tabular-nums">{{ trans_choice('packs.question_count', $questions->count()) }}</span>
+                                <span class="text-body-s text-muted tabular-nums">{{ trans_choice('packs.question_count', $questions->count()) }}</span>
                                 <button type="button" class="row-action" data-menu data-id="{{ $pack->id }}" data-name="{{ $pack->title }}" data-rename="1" data-delete="1"
                                     @click="$store.rowMenu.openFrom($el)" aria-haspopup="menu" aria-label="{{ __('packs.pack_actions', ['title' => $pack->title]) }}" title="{{ __('ui.actions') }}"><i data-icon="more-vertical"></i></button>
                             </div>
                         </div>
 
-                        <p class="rounded-control bg-subtle px-4 py-3 text-sm text-on-subtle">{{ __('packs.copy_note') }}</p>
+                        <p class="rounded-control bg-subtle px-4 py-3 text-body-s text-on-subtle">{{ __('packs.copy_note') }}</p>
 
                         @if ($questions->isEmpty())
                             <x-empty-state :title="__('packs.no_questions')" :body="__('packs.no_questions_hint')" class="bg-subtle py-8">

@@ -5,6 +5,8 @@
     'shown' => 'true',
     // Optional expression for a short note after the name, such as a leaderboard move (E11).
     'note' => null,
+    // U34 (audit UI-4): the note's size; a phone passes a named size so it never drops below 15 px.
+    'noteSize' => 'text-[0.8em]',
 ])
 {{-- F20, E1, E17: the ranking list. Only rank 1 is filled; ranks 2-5 color their number. --}}
 {{-- U8: a name that changes rank slides to its new place (x-flip, keyed by name). --}}
@@ -18,7 +20,7 @@
             <span class="min-w-0 grow truncate font-semibold"
                 x-text="row.summary ? $store.realtime.count(@js(__('pentahoot.tied_names')), row.count) : row.name"></span>
             @if ($note)
-                <span class="shrink-0 text-[0.8em] opacity-80" x-text="{{ $note }}"></span>
+                <span class="shrink-0 {{ $noteSize }} opacity-80" x-text="{{ $note }}"></span>
             @endif
             <span class="shrink-0 font-display font-semibold tabular-nums" x-text="row.votes"></span>
         </li>

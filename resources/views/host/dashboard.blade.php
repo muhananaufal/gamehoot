@@ -41,7 +41,7 @@
 
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left">
-                    <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
+                    <thead class="z-10 border-b border-line-soft bg-surface text-caption font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                         <tr>
                             <x-table.th sort="name">{{ __('host.dashboard.event') }}</x-table.th>
                             <x-table.th sort="status">{{ __('host.dashboard.status') }}</x-table.th>
@@ -58,7 +58,7 @@
                                 <td class="px-6 py-3.5">
                                     {{-- U21: the host's role is a pill next to the name; the owner of a co-hosted event stays below. --}}
                                     <span class="flex flex-wrap items-center gap-2">
-                                        <a href="{{ route('host.events.live', $event) }}" class="text-base font-bold hover:text-link">{{ $event->name }}</a>
+                                        <a href="{{ route('host.events.live', $event) }}" class="inline-flex min-h-11 items-center text-body font-bold hover:text-link">{{ $event->name }}</a>
                                         <x-chip :tone="$event->owner_id === $user->id ? 'accent' : 'neutral'">{{ $event->owner_id === $user->id ? __('host.dashboard.owner') : __('host.dashboard.cohost') }}</x-chip>
                                     </span>
                                     {{-- U6: when it last changed, and whose it is when the host only co-hosts it. --}}
@@ -73,7 +73,7 @@
                                 <td @class(['px-4 py-3.5 text-body', 'font-semibold text-on-danger' => $event->games_count === 0])>
                                     {{ trans_choice('host.dashboard.games_count', $event->games_count) }}
                                 </td>
-                                <td class="px-4 py-3.5 text-sm text-muted tabular-nums">{{ $event->created_at?->timezone($tz)->format('j M Y') }}</td>
+                                <td class="px-4 py-3.5 text-body-s text-muted tabular-nums">{{ $event->created_at?->timezone($tz)->format('j M Y') }}</td>
                             </tr>
                         @endforeach
                     </tbody>

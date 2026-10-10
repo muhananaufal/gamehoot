@@ -21,19 +21,19 @@
                     <template x-if="$store.confirm.field.form">
                         <input type="hidden" name="form" :value="$store.confirm.field.form">
                     </template>
-                    <label for="confirm-field" class="text-sm font-semibold" x-text="$store.confirm.field.label"></label>
+                    <label for="confirm-field" class="text-body-s font-semibold" x-text="$store.confirm.field.label"></label>
                     <input id="confirm-field" :placeholder="$store.confirm.field.placeholder ?? ''" :name="$store.confirm.field.name" x-model="$store.confirm.field.value" :maxlength="$store.confirm.field.maxlength"
                         required autocomplete="off" x-init="$nextTick(() => $el.select())"
                         :aria-invalid="$store.confirm.field.error ? 'true' : null" :aria-describedby="$store.confirm.field.error ? 'confirm-field-error' : null"
                         class="h-11 rounded-control border bg-field px-3 text-body text-ink"
-                        :class="$store.confirm.field.error ? 'border-on-danger' : 'border-line-strong'">
-                    <p id="confirm-field-error" x-show="$store.confirm.field.error" class="text-sm font-semibold text-on-danger" x-text="$store.confirm.field.error"></p>
+                        :class="$store.confirm.field.error ? 'border-on-danger' : 'border-field-line'">
+                    <p id="confirm-field-error" x-show="$store.confirm.field.error" class="text-body-s font-semibold text-on-danger" x-text="$store.confirm.field.error"></p>
                 </div>
             </template>
             <div class="flex justify-end gap-2.5 pt-1.5">
             <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
             <button type="submit" x-text="$store.confirm.confirmLabel"
-                class="inline-flex h-11 items-center justify-center rounded-control px-4 text-sm font-bold whitespace-nowrap transition-colors"
+                class="inline-flex h-11 items-center justify-center rounded-control px-4 text-body-s font-bold whitespace-nowrap transition-colors"
                 :class="$store.confirm.tone === 'destructive' ? 'bg-destructive text-on-destructive hover:opacity-90 [--busy-ink:var(--color-on-destructive)]' : 'bg-accent text-on-accent hover:bg-accent-strong [--busy-ink:var(--color-on-accent)]'"></button>
             </div>
         </form>

@@ -13,7 +13,7 @@
         @endif
         <div class="flex min-w-0 items-center gap-1">
             @if ($person)
-                <span class="truncate text-sm text-nav-muted" x-data x-text="$store.realtime.me?.name ?? @js($person->name)">{{ $person->name }}</span>
+                <span class="truncate text-body-s text-nav-muted" x-data x-text="$store.realtime.me?.name ?? @js($person->name)">{{ $person->name }}</span>
             @endif
             {{-- U27: each player can calm the motion on their own phone. --}}
             <x-motion-toggle class="-mr-2 text-nav-icon hover:bg-nav-active" />

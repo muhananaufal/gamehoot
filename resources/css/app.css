@@ -24,6 +24,23 @@
     --text-title: 28px;
     --text-display: 32px;
 
+    /*
+     * U34 (audit UI-1, UI-2): the Public View sizes, from the screen's height and width, so the
+     * same share of the screen holds on every projector. Each size is written as its pixels at
+     * 1920 x 1080 (meta 36, body 44, title 72, hero 120), so 1080p gets exactly those and no
+     * rounding drops one below the U34 minimum. The prompt steps down with its length
+     * (promptSize in resources/js/pentahoot.js) but never below body. The countdown digits fill
+     * about 45% of their ring (components/countdown.blade.php).
+     */
+    --text-screen-meta: min(calc(36 * 100vw / 1920), calc(36 * 100vh / 1080));
+    --text-screen-body: min(calc(44 * 100vw / 1920), calc(44 * 100vh / 1080));
+    --text-screen-title: min(calc(72 * 100vw / 1920), calc(72 * 100vh / 1080));
+    --text-screen-hero: min(calc(120 * 100vw / 1920), calc(120 * 100vh / 1080));
+    --text-screen-prompt-l: min(calc(88 * 100vw / 1920), calc(88 * 100vh / 1080));
+    --text-screen-prompt-m: min(calc(65 * 100vw / 1920), calc(65 * 100vh / 1080));
+    --text-screen-prompt-s: min(calc(50 * 100vw / 1920), calc(50 * 100vh / 1080));
+    --text-screen-countdown: min(calc(190 * 100vw / 1920), calc(175 * 100vh / 1080));
+
     --radius-control: 10px;
     --radius-card: 16px;
     --radius-panel: 20px;
@@ -35,6 +52,9 @@
     --color-line: #e8e6f1;
     --color-line-soft: #eeecf6;
     --color-line-strong: #d5d0ea;
+    /* U36 (audit FE-6): the edge of a field, select, checkbox, radio or toggle track, at least
+       3:1 against the page (WCAG 1.4.11); line-strong stays for decorative lines. */
+    --color-field-line: #7d769e;
     --color-ink: #1a1433;
     --color-muted: #5e587a;
     --color-inverse: #1a1433;
@@ -63,6 +83,8 @@
 
     /* Links and link-style buttons: lighter than accent in the dark theme (U11, audit 63) */
     --color-link: #5b3fd9;
+    /* U36: the focus ring, at least 3:1 against every background of its theme. */
+    --color-focus: #5b3fd9;
 
     /* Sidebar (U1, U11): follows the theme, a shade darker than the page in light */
     --color-nav: #ebe8f7;
@@ -129,6 +151,7 @@
         --color-line: #2e2656;
         --color-line-soft: #2e2656;
         --color-line-strong: #3a3160;
+        --color-field-line: #7a71a6;
         --color-ink: #ece9fa;
         --color-muted: #b8b0e8;
         --color-inverse: #ece9fa;
@@ -147,6 +170,7 @@
         --color-on-danger: #ff9a6b;
 
         --color-link: #b3a6ff;
+        --color-focus: #b3a6ff;
 
         --color-nav: #1a1433;
         --color-nav-ink: #ffffff;
@@ -191,7 +215,7 @@
     }
 
     :focus-visible {
-        outline: 3px solid var(--color-accent);
+        outline: 3px solid var(--color-focus);
         outline-offset: 2px;
     }
 
@@ -204,7 +228,7 @@
         flex-shrink: 0;
         width: 1.25rem;
         height: 1.25rem;
-        border: 2px solid var(--color-line-strong);
+        border: 2px solid var(--color-field-line);
         background-color: var(--color-field);
     }
 
@@ -538,8 +562,10 @@
         transition: opacity var(--motion-slow) var(--ease-out);
     }
 
+    /* Audit FE-11: the clip is rounded like the image and leaves room for its ring, so no square
+       corner of the ring shows behind the rounded image. */
     .curtain-load {
-        clip-path: inset(0 50% 0 50%);
+        clip-path: inset(0 50% 0 50% round var(--radius-panel));
         transition: clip-path var(--motion-slow) var(--ease-out);
     }
 
@@ -548,7 +574,15 @@
     }
 
     .curtain-load.is-loaded {
-        clip-path: inset(0);
+        clip-path: inset(-1vw round var(--radius-panel));
+    }
+
+    /* U35 (audit FE-1): the lobby link. Its size follows its length (--chars) so it takes at most
+       about two lines beside the QR code, and never grows past the title size. */
+    .screen-link {
+        font-size: min(var(--text-screen-title), calc(220vw / max(var(--chars, 30), 1)));
+        overflow-wrap: normal;
+        word-break: normal;
     }
 
     /* U29: Penta's parts turn and shrink around their own middle; the body squashes from its base. */

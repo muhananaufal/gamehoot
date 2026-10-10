@@ -6,13 +6,13 @@
     <div class="flex min-w-0 flex-col">
         <span class="font-semibold">{{ $game->title }}</span>
         @if ($next ?? null)
-            <span class="text-sm text-muted">{{ __('live.up_next', ['title' => $next->position . '. ' . $next->title]) }}</span>
+            <span class="text-body-s text-muted">{{ __('live.up_next', ['title' => $next->position . '. ' . $next->title]) }}</span>
         @endif
     </div>
     <div x-data="{ menu: false }" class="relative shrink-0" @keydown.escape="menu = false" @click.outside="menu = false">
         <button type="button" class="row-action" aria-haspopup="menu" :aria-expanded="menu.toString()" aria-label="{{ __('live.more_actions') }}" title="{{ __('live.more_actions') }}"
             @click="menu = ! menu"><i data-icon="more-vertical"></i></button>
-        <div x-cloak x-show="menu" role="menu" class="absolute right-0 z-20 mt-1 flex min-w-52 flex-col rounded-control border border-line-soft bg-surface p-1 text-left text-sm font-semibold shadow-xl">
+        <div x-cloak x-show="menu" role="menu" class="absolute right-0 z-20 mt-1 flex min-w-52 flex-col rounded-control border border-line-soft bg-surface p-1 text-left text-body-s font-semibold shadow-xl">
             @foreach ($menu ?? [] as $item)
                 <button type="button" role="menuitem" x-show="{{ $item['show'] }}" class="min-h-11 rounded-control px-3 text-left hover:bg-subtle"
                     @click="menu = false; {{ $item['click'] }}">{{ $item['label'] }}</button>

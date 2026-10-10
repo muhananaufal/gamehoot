@@ -7,7 +7,7 @@
     $deleters = $events->map(fn ($event) => $event->deletedBy)->filter()->unique('id')->sortBy('name')->values();
 @endphp
 <x-layouts.host :title="__('events.trash')" :breadcrumbs="$breadcrumbs">
-    <p class="text-sm text-muted">{{ __('events.trash_help') }}</p>
+    <p class="text-body-s text-muted">{{ __('events.trash_help') }}</p>
 
     @if ($events->isEmpty())
         <x-empty-state :title="__('events.trash_empty')" :body="__('events.trash_empty_hint')" />
@@ -24,7 +24,7 @@
 
             <div class="rounded-card bg-surface max-lg:overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left text-body">
-                    <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
+                    <thead class="z-10 border-b border-line-soft bg-surface text-caption font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                         <tr>
                             <x-table.th sort="name">{{ __('host.dashboard.event') }}</x-table.th>
                             @if ($showOwner)
@@ -49,7 +49,7 @@
                                     <td>{{ $event->owner?->name }}</td>
                                 @endif
                                 <td>{{ $event->deletedBy?->name ?? '—' }}</td>
-                                <td class="text-sm text-muted tabular-nums">{{ $event->deleted_at?->timezone($tz)->format('j M Y') }}</td>
+                                <td class="text-body-s text-muted tabular-nums">{{ $event->deleted_at?->timezone($tz)->format('j M Y') }}</td>
                                 {{-- U5: restoring is confirmed; the link it comes back under is chosen in the dialog. --}}
                                 <td class="text-center">
                                     <x-confirm-dialog :title="__('events.restore_title', ['name' => $event->name])" :trigger="__('events.restore_named', ['name' => $event->name])" trigger-icon="refresh" icon-only

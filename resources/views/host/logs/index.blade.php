@@ -22,14 +22,14 @@
 
                 <div class="rounded-card bg-surface max-lg:overflow-x-auto">
                     <table class="w-full min-w-[640px] text-left text-body">
-                        <thead class="z-10 border-b border-line-soft bg-surface text-xs font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
+                        <thead class="z-10 border-b border-line-soft bg-surface text-caption font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
                             <tr>
                                 <x-table.th sort="at">{{ __('logs.when') }}</x-table.th>
                                 <x-table.th sort="who">{{ __('logs.who') }}</x-table.th>
                                 <x-table.th sort="what">{{ __('logs.what') }}</x-table.th>
                             </tr>
                         </thead>
-                        <tbody class="[&_td]:px-4 [&_td]:py-2.5 [&_td]:align-top [&_td:first-child]:pl-6 [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_small]:block [&_small]:text-sm [&_small]:text-muted">
+                        <tbody class="[&_td]:px-4 [&_td]:py-2.5 [&_td]:align-top [&_td:first-child]:pl-6 [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_small]:block [&_small]:text-body-s [&_small]:text-muted">
                             @foreach ($entries as $entry)
                                 <tr data-row data-search="{{ mb_strtolower($entry['actor'] . ' ' . $entry['action'] . ' ' . $entry['subject']) }}" data-sort-at="{{ $entry['at']->getTimestamp() }}"
                                     data-sort-who="{{ $entry['actor'] }}" data-sort-what="{{ $entry['action'] }}" data-who="{{ $entry['actor_id'] }}" data-date="{{ $entry['at']->timezone($tz)->format('Y-m-d') }}">

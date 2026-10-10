@@ -10,7 +10,7 @@
         <label class="relative flex items-center">
             <x-icon name="search" class="pointer-events-none absolute left-3 text-muted" />
             <input type="search" x-model.debounce.150ms="q" aria-label="{{ __('games.search') }}" placeholder="{{ __('games.search') }}" autocomplete="off"
-                class="h-11 w-full rounded-control border border-line-strong bg-field pr-3 pl-10 text-body text-ink">
+                class="h-11 w-full rounded-control border border-field-line bg-field pr-3 pl-10 text-body text-ink">
         </label>
     @endif
     @if ($count > 0)
@@ -20,13 +20,13 @@
         ]" :label="__('packs.filter_type')" x-model="type" />
     @endif
     @if ($count === 0)
-        <p class="px-2 py-1 text-sm text-muted">{{ __('games.empty_title') }}</p>
+        <p class="px-2 py-1 text-body-s text-muted">{{ __('games.empty_title') }}</p>
     @endif
     @foreach ($groups as $status => $items)
         @continue($items->isEmpty())
         <section x-data="{ open: true }" x-show="type === 'all' || {{ \Illuminate\Support\Js::from($items->map(fn ($item) => $item->type->value)->unique()->values()) }}.includes(type)" class="flex flex-col gap-1">
             <button type="button" @click="open = ! open" :aria-expanded="open.toString()"
-                class="flex min-h-9 items-center justify-between rounded-control px-2 text-[11px] font-bold tracking-[0.08em] text-muted uppercase hover:bg-subtle hover:text-ink">
+                class="flex min-h-11 items-center justify-between rounded-control px-2 text-caption font-bold tracking-[0.08em] text-muted uppercase hover:bg-subtle hover:text-ink">
                 {{-- The count follows the type filter. --}}
                 <span x-data="{ counts: {{ \Illuminate\Support\Js::from($items->countBy(fn ($item) => $item->type->value)) }} }"
                     x-text="@js(__('games.group.' . $status)) + ' · ' + (type === 'all' ? {{ $items->count() }} : (counts[type] ?? 0))">{{ __('games.group.' . $status) }} · {{ $items->count() }}</span>
@@ -54,6 +54,18 @@
                                 <span class="size-2 shrink-0 rounded-full {{ $statusTone[$status] }}" aria-hidden="true"></span>
                                 <span class="truncate">{{ $item->title }}</span>
                             </a>
+                            {{-- Audit FE-5, WCAG 2.5.7: the order also changes without dragging, like the question lists. --}}
+                            @if ($status === 'up_next')
+                                @foreach ([['up', -1, ! $loop->first], ['down', 1, ! $loop->last]] as [$direction, $delta, $enabled])
+                                    <button type="button" data-move="{{ $direction }}" @click="nudge($el, {{ $delta }})" @disabled(! $enabled)
+                                        aria-label="{{ __('games.move_' . $direction, ['title' => $item->title]) }}"
+                                        class="flex size-11 shrink-0 items-center justify-center rounded-control text-muted hover:bg-subtle disabled:opacity-30">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="{{ $direction === 'up' ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6' }}"></path>
+                                        </svg>
+                                    </button>
+                                @endforeach
+                            @endif
                         </li>
                     @endforeach
                 </ol>
