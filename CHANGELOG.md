@@ -85,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production refuses to start with debug output on or with cookies allowed over plain HTTP.
 - Server images are scanned for known critical vulnerabilities on every change, and the web server image takes the latest Debian security fixes.
 - Uploaded images are re-encoded on the server, so camera details such as the GPS position never get stored.
+- Database errors no longer write participant names or personal link tokens into the server log.
 
 - Production-ready images and an automatic pipeline: every merge to develop deploys staging, and every version tag deploys production after approval. A failed deploy returns to the previous release by itself.
 - A step-by-step guide for preparing the staging and production servers on Google Cloud.

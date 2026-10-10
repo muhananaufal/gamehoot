@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\People\ClaimCookie;
 use App\Support\RequiredConfig;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +31,9 @@ final class AppServiceProvider extends ServiceProvider
         if (! $this->app->runningInConsole()) {
             RequiredConfig::check();
         }
+
+        // Audit CODE-7: an N+1 query fails in development and tests instead of slowing the event.
+        Model::preventLazyLoading(! $this->app->isProduction());
 
         // O7: host account passwords.
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());

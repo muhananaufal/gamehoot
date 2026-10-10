@@ -61,6 +61,8 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // K5: a failed query never writes its values (names, tokens) into the log.
+            'mask_bindings_in_exception_messages' => true,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

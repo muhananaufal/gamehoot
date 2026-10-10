@@ -43,6 +43,6 @@ it('moves a question two places with two quick arrow clicks and saves the order 
     $page->wait(2);
 
     expect($page->script('window.__saves'))->toBe(1)
-        ->and($pack->questions()->orderBy('position')->get()->map(fn ($q) => $q->pentahoot?->prompt)->all())->toBe(['Second', 'Third', 'First']);
+        ->and($pack->questions()->with('pentahoot')->orderBy('position')->get()->map(fn ($q) => $q->pentahoot?->prompt)->all())->toBe(['Second', 'Third', 'First']);
     $page->assertNoJavaScriptErrors();
 });
