@@ -193,7 +193,7 @@ jobs:
           docker run --rm -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c '
             npm ci --no-audit --no-fund &&
             npx eslint . &&
-            npx prettier --check resources/js tests/js "*.config.js" &&
+            npx prettier --check resources/js tests/js scripts/load "*.config.js" &&
             npx vitest run &&
             npm run build
           '

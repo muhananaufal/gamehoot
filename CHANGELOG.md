@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The realtime server can hold thousands of phones, projectors and host tabs at once instead of refusing connections past about a thousand.
+- A deploy against a database that does not answer now fails its health check instead of going live.
 - Names that differ only in accents, letter case or letter width (José and Jose) are treated as the same name everywhere: they are marked before saving, and New event no longer fails with an error when both are typed. Searching for "jose" also finds José.
 - Reviewing a long imported name list stays smooth while typing; with hundreds of rows each keystroke used to freeze the page for about a second.
 - The event links /app and /apps are refused, since the realtime server answers them before the event could.
@@ -60,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A load test script for staging plays a full room of phones claiming, voting and reconnecting, and reports what each kind of screen received.
 - Host pages keep the session alive while they are open, so a Live control left untouched during a long break still works, and warn ten minutes before the 8 hour session ends.
 - Games whose pack changed since they were added are marked, and Reload from pack shows only for them and asks first, since it replaces edits made to the copied questions.
 - Phones follow the host's changes to the name list at once: a released or deleted name goes back to picking a name, a renamed one shows the new name.

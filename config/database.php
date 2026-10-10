@@ -65,6 +65,10 @@ return [
             'mask_bindings_in_exception_messages' => true,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // O17: a database that does not answer fails the connect within seconds, so
+                // GET /up and every request say so instead of hanging. Bounds the connect only;
+                // queries are not cut short.
+                PDO::ATTR_TIMEOUT => 3,
             ]) : [],
         ],
 

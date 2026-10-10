@@ -10,7 +10,10 @@ use App\Realtime\StatePublisher;
 use App\Support\RequiredConfig;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as Events;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -40,6 +43,12 @@ final class AppServiceProvider extends ServiceProvider
 
         // Audit CODE-7: an N+1 query fails in development and tests instead of slowing the event.
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // O17 (audit OPS-4): GET /up also asks the database; an error here makes it answer 500,
+        // so the deploy smoke test (P4) and the container healthcheck see a dead database.
+        Events::listen(DiagnosingHealth::class, function (): void {
+            DB::select('select 1');
+        });
 
         // O7: host account passwords.
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
