@@ -115,6 +115,11 @@ final class PentahootEngine implements LiveGameEngine
         return PentahootActions::ACTIONS;
     }
 
+    public function versionedActions(): array
+    {
+        return PentahootActions::VERSIONED;
+    }
+
     public function actionRules(string $action): array
     {
         return [];

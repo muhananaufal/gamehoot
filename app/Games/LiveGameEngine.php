@@ -44,6 +44,13 @@ interface LiveGameEngine extends GameEngine
     public function actions(): array;
 
     /**
+     * G15: the actions that must carry the version the host saw (they destroy or decide).
+     *
+     * @return list<string>
+     */
+    public function versionedActions(): array;
+
+    /**
      * Validation rules for the input of one action, e.g. the box to open or the winner.
      *
      * @return array<string, mixed>

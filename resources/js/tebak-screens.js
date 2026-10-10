@@ -232,7 +232,8 @@ export function tebakHost({ type, actionUrl, people, labels, questionIds = [] })
                                 Accept: 'application/json',
                                 'X-CSRF-TOKEN': csrfToken(),
                             },
-                            body: JSON.stringify(input),
+                            // G15: Pick winner and Surrender are refused when the screen moved on.
+                            body: JSON.stringify({ ...input, version: this.store.version }),
                         },
                     );
 

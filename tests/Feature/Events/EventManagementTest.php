@@ -382,7 +382,7 @@ describe('closing and reopening (D-7)', function (): void {
         Event::query()->whereKey($event->id)->update(['status' => EventStatus::Open->value]);
         $cohost = cohostOf($event);
 
-        actingAs($cohost)->post("/host/{$event->id}/close")->assertRedirect();
+        actingAs($cohost)->post("/host/{$event->id}/close", ['version' => $event->fresh()?->state_version])->assertRedirect();
         expect($event->refresh()->status)->toBe(EventStatus::Finished);
 
         actingAs($cohost)->post("/host/{$event->id}/reopen")->assertForbidden();
@@ -396,7 +396,7 @@ describe('closing and reopening (D-7)', function (): void {
         $event = Pentahoot::event();
         $game = Pentahoot::running($event);
 
-        actingAs(ownerOf($event))->post("/host/{$event->id}/close")->assertSessionHasNoErrors();
+        actingAs(ownerOf($event))->post("/host/{$event->id}/close", ['version' => $event->fresh()?->state_version])->assertSessionHasNoErrors();
 
         expect($event->refresh()->status)->toBe(EventStatus::Finished)
             ->and($game->refresh()->status)->toBe(GameStatus::Finished)
@@ -410,7 +410,7 @@ describe('closing and reopening (D-7)', function (): void {
         $game = Game::factory()->for($event)->create(['status' => GameStatus::Finished]);
         $event->forceFill(['status' => EventStatus::Open, 'active_game_id' => $game->id])->save();
 
-        actingAs(ownerOf($event))->post("/host/{$event->id}/close")->assertSessionHasNoErrors();
+        actingAs(ownerOf($event))->post("/host/{$event->id}/close", ['version' => $event->fresh()?->state_version])->assertSessionHasNoErrors();
         expect($event->refresh()->status)->toBe(EventStatus::Finished);
     });
 });

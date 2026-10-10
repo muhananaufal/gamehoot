@@ -31,7 +31,8 @@ uses(RefreshDatabase::class);
  */
 function hostAction(Event $event, Question $question, string $action): TestResponse
 {
-    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}");
+    // G15: like Live control, every action carries the version on screen.
+    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}", ['version' => $event->fresh()?->state_version]);
 }
 
 function castVote(Event $event, Question $question, string $voter, string $target, int $attempt = 1): void

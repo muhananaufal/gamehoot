@@ -30,6 +30,8 @@ describe('version of the screen the host saw (G15)', function (): void {
 
         actingAs($owner)->postJson("{$url}/start")->assertNoContent();
         actingAs($owner)->postJson("{$url}/stop")->assertNoContent();
+        // E3: votes are taken until one second after the end; Reveal waits for that.
+        travelTo(now()->addSeconds(2));
         $seenByCohost = $event->refresh()->state_version;
 
         // The owner reveals; the co-host's screen still shows the question before Reveal.

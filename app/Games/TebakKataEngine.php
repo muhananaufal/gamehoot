@@ -8,6 +8,7 @@ use App\Enums\Audience;
 use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\QuestionStatus;
+use App\Games\Tebak\TebakActions;
 use App\Games\Tebak\TebakBoard;
 use App\Games\TebakKata\AnswerBoxes;
 use App\Games\TebakKata\KataActions;
@@ -153,6 +154,11 @@ final readonly class TebakKataEngine implements LiveGameEngine
     public function actions(): array
     {
         return KataActions::ACTIONS;
+    }
+
+    public function versionedActions(): array
+    {
+        return TebakActions::VERSIONED;
     }
 
     public function actionRules(string $action): array

@@ -9,6 +9,7 @@ use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\MediaVisibility;
 use App\Enums\QuestionStatus;
+use App\Games\Tebak\TebakActions;
 use App\Games\Tebak\TebakBoard;
 use App\Games\TebakGambar\GambarActions;
 use App\Media\MediaUrls;
@@ -142,6 +143,11 @@ final readonly class TebakGambarEngine implements LiveGameEngine
     public function actions(): array
     {
         return GambarActions::ACTIONS;
+    }
+
+    public function versionedActions(): array
+    {
+        return TebakActions::VERSIONED;
     }
 
     public function actionRules(string $action): array

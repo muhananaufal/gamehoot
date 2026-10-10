@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\Question;
 use App\Models\User;
 use App\Realtime\StatePublisher;
+use App\Support\SeenVersion;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -23,13 +24,15 @@ final readonly class RunQuestionAction
 
     /**
      * @param  array<string, mixed>  $input  validated by the engine's actionRules()
+     * @param  int|null  $seenVersion  G15: the version the host saw, for the engine's versioned actions
      *
      * @throws ActionRefused
      */
-    public function handle(LiveGameEngine $engine, string $action, Event $event, Question $question, User $actor, array $input = []): void
+    public function handle(LiveGameEngine $engine, string $action, Event $event, Question $question, User $actor, array $input = [], ?int $seenVersion = null): void
     {
-        DB::transaction(function () use ($engine, $action, $event, $question, $actor, $input): void {
+        DB::transaction(function () use ($engine, $action, $event, $question, $actor, $input, $seenVersion): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
+            SeenVersion::check($locked, $seenVersion);
 
             $engine->perform($action, $locked, $question, $actor, $input);
 
