@@ -57,7 +57,10 @@ export function sessionGuard({ endsAt, url }) {
 
         async ping() {
             try {
-                const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                });
 
                 // The session is gone (limit reached, signed out elsewhere): show the sign in page.
                 if (response.status === 401 || response.status === 419) {

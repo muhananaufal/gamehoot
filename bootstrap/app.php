@@ -7,6 +7,7 @@ use App\Exceptions\ClaimRefused;
 use App\Exceptions\NameListLocked;
 use App\Http\ApiError;
 use App\Http\Middleware\AddLogContext;
+use App\Http\Middleware\EnforceSessionLimit;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\SecurityHeaders;
 use App\Support\QueryErrorLog;
@@ -25,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     // F2: POST /broadcasting/auth for the host channel, behind the same guards as host pages.
     ->withBroadcasting(__DIR__.'/../routes/channels.php', [
-        'middleware' => ['web', 'auth', 'auth.session', EnsureAccountIsActive::class],
+        'middleware' => ['web', 'auth', 'auth.session', EnsureAccountIsActive::class, EnforceSessionLimit::class],
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectUsersTo('/host');

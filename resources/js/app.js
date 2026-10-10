@@ -25,6 +25,7 @@ import { packList } from './pack-list.js';
 import { packPicker } from './pack-picker.js';
 import { replayScreen } from './replay-screen.js';
 import { selectBox } from './select-box.js';
+import { sessionGuard } from './session-guard.js';
 import { initialsOf } from './pentahoot.js';
 import { pentahootHost, pentahootPhone, pentahootScreen } from './pentahoot-screens.js';
 import { connectRealtime, countLabel, fetchSnapshot, offlineEcho, realtimeStore, screenFor } from './realtime.js';
@@ -89,6 +90,8 @@ Alpine.directive('flip', (el, { modifiers }, { cleanup }) => {
 });
 Alpine.data('sortableList', sortableList);
 Alpine.data('liveRegion', liveRegion);
+// C-8: keeps the host session alive and warns before the 8 hour limit.
+Alpine.data('sessionGuard', sessionGuard);
 Alpine.data('replayScreen', replayScreen);
 Alpine.data('nameBatch', nameBatch);
 Alpine.data('newEventWizard', newEventWizard);

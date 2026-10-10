@@ -39,6 +39,7 @@ use App\Http\Controllers\Host\ReopenEventController;
 use App\Http\Controllers\Host\ReplayController;
 use App\Http\Controllers\Host\ResultsController;
 use App\Http\Controllers\Host\ResultsExportController;
+use App\Http\Controllers\Host\SessionStatusController;
 use App\Http\Controllers\Host\TrashController;
 use App\Http\Controllers\Join\EventStateController;
 use App\Http\Controllers\Join\JoinController;
@@ -48,6 +49,7 @@ use App\Http\Controllers\Join\PlayController;
 use App\Http\Controllers\Join\ScreenController;
 use App\Http\Controllers\Join\VoteController;
 use App\Http\Controllers\MediaController;
+use App\Http\Middleware\EnforceSessionLimit;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Views\PhoneStatus;
 use App\Models\Question;
@@ -70,12 +72,14 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [SessionController::class, 'store'])->middleware('throttle:login');
 });
 
-Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class])->group(function (): void {
+Route::middleware(['auth', 'auth.session', EnsureAccountIsActive::class, EnforceSessionLimit::class])->group(function (): void {
     Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
 
     Route::get('/host', DashboardController::class)->name('host.dashboard');
 
     Route::prefix('host')->name('host.')->group(function (): void {
+        // C-8: an open host page keeps the session alive and learns when it ends.
+        Route::get('/session', SessionStatusController::class)->name('session');
         Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
         // U26: the New event names step reads a CSV file without saving it.

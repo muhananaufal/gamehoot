@@ -148,6 +148,18 @@
                 </nav>
             </header>
 
+            {{-- C-8: keeps the session alive while this page is open, and warns 10 minutes before the
+                 8 hour limit since sign in ends it. --}}
+            <div x-data="sessionGuard({ endsAt: @js(\App\Http\Middleware\EnforceSessionLimit::endsAt(request())), url: @js(route('host.session')) })"
+                x-show="phase === 'ending'" x-cloak role="status" data-test="session-ending"
+                class="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-warning px-4 py-3 text-on-warning lg:px-7">
+                <p class="font-semibold" x-text="@js(__('accounts.session_ending')).replace('__TIME__', endsAtLabel)"></p>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <x-button type="submit" variant="secondary">{{ __('accounts.sign_in_again') }}</x-button>
+                </form>
+            </div>
+
             <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
                 {{-- U2: the page title and its actions head the content; the top bar only shows where you are. --}}
                 @if ($heading)

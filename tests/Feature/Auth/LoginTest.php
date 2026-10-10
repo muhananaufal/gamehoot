@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Laravel\actingAs;
@@ -10,7 +11,9 @@ use function Pest\Laravel\assertAuthenticatedAs;
 use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\from;
 use function Pest\Laravel\get;
+use function Pest\Laravel\getJson;
 use function Pest\Laravel\post;
+use function Pest\Laravel\travelTo;
 
 uses(RefreshDatabase::class);
 
@@ -68,8 +71,52 @@ it('signs out a host whose account was disabled during the session', function ()
 
     $host->forceFill(['disabled_at' => now()])->save();
 
-    get('/host')->assertRedirect('/login');
+    // The reason sits under the form's login field, the only one that shows errors.
+    get('/host')->assertRedirect('/login')->assertSessionHasErrors(['login' => 'This account is disabled. Ask your super-admin.']);
     assertGuest();
+});
+
+/*
+ * C-8 (audit SESS-1): a host session ends 8 hours after sign in, however active; an open host
+ * page keeps the idle session alive and learns when the limit ends it.
+ */
+describe('session limit (C-8)', function (): void {
+    /** An open host page pings every hour here (every 10 minutes in the browser). */
+    function pingUntil(string $time): void
+    {
+        while (now()->addHour()->lessThanOrEqualTo(CarbonImmutable::parse($time))) {
+            travelTo(now()->addHour());
+            getJson('/host/session')->assertOk();
+        }
+
+        travelTo(CarbonImmutable::parse($time));
+    }
+
+    it('keeps an idle host page signed in with the ping, and ends the session 8 hours after sign in', function (): void {
+        travelTo(CarbonImmutable::parse('2026-10-15 08:00:00'));
+        hostWithPassword();
+        post('/login', ['login' => 'arifrahman', 'password' => 'correct-horse-42'])->assertRedirect('/host');
+
+        // Seven quiet hours: only the ping, far beyond the 120 minute idle lifetime.
+        pingUntil('2026-10-15 15:59:00');
+        get('/host')->assertOk();
+        getJson('/host/session')->assertOk()->assertExactJson(['ends_at' => CarbonImmutable::parse('2026-10-15 16:00:00')->getTimestampMs()]);
+
+        travelTo(CarbonImmutable::parse('2026-10-15 16:00:00'));
+        getJson('/host/session')->assertUnauthorized()->assertJsonPath('code', 'UNAUTHENTICATED');
+        assertGuest();
+    });
+
+    it('sends a page request past the limit to sign in with the reason', function (): void {
+        travelTo(CarbonImmutable::parse('2026-10-15 08:00:00'));
+        hostWithPassword();
+        post('/login', ['login' => 'arifrahman', 'password' => 'correct-horse-42']);
+
+        pingUntil('2026-10-15 15:30:00');
+        travelTo(CarbonImmutable::parse('2026-10-15 16:00:01'));
+        get('/host')->assertRedirect('/login')->assertSessionHasErrors(['login' => __('accounts.session_ended')]);
+        assertGuest();
+    });
 });
 
 it('limits sign in attempts per account (F11)', function (): void {

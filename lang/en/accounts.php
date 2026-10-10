@@ -27,6 +27,10 @@ return [
     'no_self_service' => 'Accounts are created by a super-admin. Forgot your password? Ask your super-admin to reset it.',
     'joining_hint' => 'Joining a game? Use the link or QR code on the screen instead.',
     'disabled' => 'This account is disabled. Ask your super-admin.',
+    // C-8: the absolute session limit.
+    'session_ended' => 'You were signed out 8 hours after signing in. Sign in again to continue.',
+    'session_ending' => 'Your session ends at __TIME__. Sign in again during a break to keep going without interruption.',
+    'sign_in_again' => 'Sign in again',
 
     'host_accounts' => 'Host accounts',
     'add_host' => 'Add host',
