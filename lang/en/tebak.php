@@ -43,11 +43,10 @@ return [
     'next_question' => 'Next question',
     'skip_title' => 'Skip this question?',
     'clear_winner' => 'Clear the name',
-    'show_final' => 'Show final results',
     'final_help' => 'Freezes the final board and shows the podium. Questions not played do not count.',
     'show_next' => 'Show question __N__',
     'no_question' => 'Pick a question to show.',
-    'all_done' => 'All questions are done. Show the final results to end the game.',
+    'all_done' => 'All questions are done. Finish the game to show the final results.',
     'live_board' => 'Leaderboard now',
     'live_board_empty' => 'No winner yet.',
 

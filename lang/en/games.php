@@ -32,7 +32,7 @@ return [
     'pack' => 'question pack',
     'no_packs' => 'You have no question packs yet. Write one under Question packs first.',
     'empty_title' => 'No games yet.',
-    'empty' => 'Pick a question pack on the right to add the first game. Games are played in this order.',
+    'empty' => 'Add the first game with Add games, from one of your question packs. Games are played in this order.',
     'questions' => '{0} No questions|{1} 1 question|[2,*] :count questions',
     'added' => 'Game added. Its questions are copies of the pack.',
     'deleted' => 'Game deleted.',
@@ -44,7 +44,6 @@ return [
     'question_saved' => 'Question saved. The pack is not changed.',
     'edit_question' => 'Edit question :number',
     // D-2: why a copied question can no longer be edited.
-    'locked_shown' => 'On screen already',
     'locked_finished' => 'Game finished',
     'save_question' => 'Save question',
     'reload' => 'Reload from pack',

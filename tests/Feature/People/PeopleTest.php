@@ -452,7 +452,7 @@ describe('the empty list follows the state of the event (U25)', function (): voi
         $event->forceFill(['status' => EventStatus::Draft])->save();
 
         actingAs(hostOf($event))->get("/host/{$event->id}/people")
-            ->assertSee('Add the people who can play one by one with Add name')
+            ->assertSee('Add the people who can play with Add names')
             ->assertSee(route('host.events.people.import.create', $event), false);
     });
 
@@ -471,7 +471,7 @@ describe('the empty list follows the state of the event (U25)', function (): voi
 
         actingAs(hostOf($event))->get("/host/{$event->id}/people")
             ->assertSee('The list locked when the first game started, so names can no longer be added.')
-            ->assertDontSee('one by one with Add name')
+            ->assertDontSee('Add the people who can play with Add names')
             ->assertDontSee(route('host.events.people.import.create', $event), false)
             ->assertDontSee('Add name');
     });

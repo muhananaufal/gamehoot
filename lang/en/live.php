@@ -38,7 +38,6 @@ return [
     'no_games' => 'No games yet',
     'no_games_help' => 'Add a game from a question pack on the Games page.',
     'add_game' => 'Add a game',
-    'last_game' => 'On screen: :title',
     'up_next' => 'Up next: :title',
     'more_actions' => 'More actions',
     'all_played' => 'All games played',
