@@ -6,9 +6,7 @@ set -uo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 script="$here/gate-run.sh"
 tree=0123456789abcdef0123456789abcdef01234567
-gate_jobs='PHP (Pint, Larastan, audit, Pest, mutation)
-Pest browser (Chrome, Safari)
-Production image proof, frontend, Gitleaks, workflow lint, repo rules'
+gate_jobs="$(cat "$here/../gate-jobs.txt")"
 failures=0
 total=0
 

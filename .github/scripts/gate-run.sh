@@ -13,17 +13,15 @@ set -uo pipefail
 
 tree="${1:-}"
 repo="${GITHUB_REPOSITORY:?}"
-required_jobs=(
-    'PHP (Pint, Larastan, audit, Pest, mutation)'
-    'Pest browser (Chrome, Safari)'
-    'Production image proof, frontend, Gitleaks, workflow lint, repo rules'
-)
-
 not_gated() {
     echo "gated=false"
     echo "No green gate run on $repo for this tree: $1" >&2
     exit 0
 }
+
+# The gate jobs that must all pass (one list, checked against ci.yml by gate-jobs.test.sh).
+mapfile -t required_jobs < <(grep -v '^$' "${GATE_JOBS_FILE:-$(dirname "$0")/../gate-jobs.txt}" 2> /dev/null)
+[ "${#required_jobs[@]}" -gt 0 ] || not_gated "no gate job list"
 
 [[ "$tree" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || not_gated "'$tree' is not a tree hash"
 

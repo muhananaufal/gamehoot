@@ -21,11 +21,12 @@
 # back to GitHub runners when the office runner is silent). GATE_WATCH_DEPLOY=0 skips the watch.
 set -uo pipefail
 
-required_jobs=(
-    'PHP (Pint, Larastan, audit, Pest, mutation)'
-    'Pest browser (Chrome, Safari)'
-    'Production image proof, frontend, Gitleaks, workflow lint, repo rules'
-)
+# The gate jobs that must all pass (one list, checked against ci.yml by gate-jobs.test.sh).
+mapfile -t required_jobs < <(grep -v '^$' "$(dirname "$0")/../.github/gate-jobs.txt")
+[ "${#required_jobs[@]}" -gt 0 ] || {
+    echo "gate-and-merge: .github/gate-jobs.txt lists no gate job" >&2
+    exit 1
+}
 origin="${GATE_ORIGIN_REMOTE:-origin}"
 local_cmd="${GATE_LOCAL_CMD:-scripts/ci-local.sh}"
 deploy_cmd="${GATE_DEPLOY_CMD:-scripts/deploy.sh}"

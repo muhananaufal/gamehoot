@@ -9,9 +9,7 @@ script="$here/gate-and-merge.sh"
 trailer_check="$here/../.github/scripts/gate-trailer.sh"
 failures=0
 total=0
-gate_jobs='PHP (Pint, Larastan, audit, Pest, mutation)
-Pest browser (Chrome, Safari)
-Production image proof, frontend, Gitleaks, workflow lint, repo rules'
+gate_jobs="$(cat "$here/../.github/gate-jobs.txt")"
 
 setup() {
     root="$(mktemp -d)"
