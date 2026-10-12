@@ -25,7 +25,7 @@
 @endphp
 <div id="live-replay" x-data="liveRegion">
     @if ($replay['groups'] !== [])
-        <section aria-labelledby="replay-heading" x-init="$store.replayPick.game = @js($replay['current']['game'] ?? null) ?? ($store.replayPick.game && @js(array_map(fn ($group) => $group['game']->id, $replay['groups'])).includes($store.replayPick.game) ? $store.replayPick.game : @js($replay['pick']))"
+        <section aria-labelledby="replay-heading" x-init="$store.replayPick.game = @js($replay['current']['game'] ?? null) ?? ($store.replayPick.game && @js(array_map(fn ($group) => $group['game']->id, $replay['groups'])).includes($store.replayPick.game) ? $store.replayPick.game : null)"
             class="flex flex-col gap-3 rounded-card bg-surface p-5">
             <div class="flex flex-col gap-1">
                 <h2 id="replay-heading" class="text-body-s font-bold text-muted">{{ __('replay.card_title') }}</h2>
@@ -48,7 +48,11 @@
             @endif
 
             <x-select :options="array_map(fn ($group) => ['value' => $group['game']->id, 'label' => $gameLabel($group['game'])], $replay['groups'])"
-                :label="__('replay.game')" x-model="$store.replayPick.game" class="w-full" />
+                :label="__('replay.game')" :placeholder="__('replay.pick_game')" clearable x-model="$store.replayPick.game" class="w-full" />
+
+            {{-- D-11: nothing is picked at first, so the Monitor column stays short; picking the
+                 game again empties the card. --}}
+            <p x-show="!$store.replayPick.game" class="text-body-s text-muted" data-test="replay-empty">{{ __('replay.pick_hint') }}</p>
 
             @foreach ($replay['groups'] as $group)
                 <ol x-show="$store.replayPick.game === @js($group['game']->id)" class="flex flex-col gap-0.5">

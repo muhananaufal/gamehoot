@@ -55,6 +55,27 @@ describe('U22 custom dropdown', () => {
         expect(box.open).toBe(false);
         expect(focused).toBe(true);
     });
+
+    it('keeps the chosen value when it is chosen again, unless the dropdown can be cleared', () => {
+        const fixed = selectBox({ options, value: 'open' });
+        fixed.$refs = { button: { focus: () => {} } };
+        fixed.choose(options[2]);
+        expect(fixed.value).toBe('open');
+
+        // D-11: choosing the picked game again empties the Replay on screen card.
+        const clearable = selectBox({ options, value: 'open', clearable: true, placeholder: 'Pick a game' });
+        clearable.$refs = { button: { focus: () => {} } };
+        clearable.choose(options[2]);
+        expect(clearable.value).toBe(null);
+        clearable.choose(options[1]);
+        expect(clearable.value).toBe('draft');
+    });
+
+    it('shows the placeholder while nothing is chosen', () => {
+        expect(selectBox({ options, value: null, placeholder: 'Pick a game' }).selectedLabel).toBe('Pick a game');
+        expect(selectBox({ options, value: null, placeholder: 'Pick a game' }).empty).toBe(true);
+        expect(selectBox({ options, value: 'draft', placeholder: 'Pick a game' }).empty).toBe(false);
+    });
 });
 
 describe('U22 a dropdown that is never cut off by a scrolling box', () => {

@@ -25,7 +25,18 @@ it('replays a final podium from Live control on the Public View, after the event
 
     actingAs($event->owner()->firstOrFail());
     $host = visit("/host/{$event->id}")->assertSee('Replay on screen');
-    // The last finished game is picked first; its final podium closes its moments.
+    $openLists = 'document.querySelectorAll("#live-replay ol:not([style*=none])").length';
+    $pick = <<<'JS'
+        document.querySelector("#live-replay [role=combobox]").click();
+        [...document.querySelectorAll("#live-replay [role=option]")].find((o) => o.innerText.includes("2. Word Round")).click();
+        JS;
+
+    // Nothing is picked at first, so the Monitor column stays short (D-11).
+    $host->assertSee('Pick a game to see the moments you can show again.')->assertScript($openLists, 0);
+
+    $host->script($pick);
+    $host->assertScript($openLists, 1)->assertDontSee('Pick a game to see the moments you can show again.');
+    // Its final podium closes the moments of the game.
     $host->script('[...document.querySelectorAll("#live-replay ol:not([style*=none]) li")].find((li) => li.innerText.includes("Final podium")).querySelector("[data-test=replay-show]").click()');
     $host->assertSee('Showing: 2. Word Round · Final podium');
 
@@ -35,5 +46,10 @@ it('replays a final podium from Live control on the Public View, after the event
     $host->assertDontSee('Showing:');
 
     $screen->assertDontSee('Final results')->assertNoJavaScriptErrors();
+
+    // Picking the same game again empties the card (D-11).
+    $host->assertScript($openLists, 1);
+    $host->script($pick);
+    $host->assertScript($openLists, 0)->assertSee('Pick a game to see the moments you can show again.');
     $host->assertNoJavaScriptErrors();
 });
