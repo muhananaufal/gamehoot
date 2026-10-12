@@ -1,8 +1,11 @@
-# W18, P6: the full gate runs in the gate repository (repository variable GATE_ROLE=gate) when
-# scripts/gate-and-merge.sh pushes a gate/<branch> ref there. Origin runs no CI on push. Version
-# tags and staging deploys on request check the Gate-* trailers (gate-trailer.sh), then build,
-# push and scan the images and deploy them (P1, P4). A missing or stale trailer stops the image
-# job; the full gate then runs on origin by hand:
+# W18, P6, P11: the full gate runs where scripts/gate-and-merge.sh pushes a gate/<branch> ref: on
+# origin on the office runner (repository variable GATE_RUNNER=self-hosted; the default), or in
+# the gate repository (GATE_ROLE=gate; --gate mirror). Gate jobs isolate themselves on the shared
+# runner with ci-sandbox.sh. Origin runs no other CI on push. Version tags and staging deploys on
+# request check the Gate-* trailers (gate-trailer.sh) or a green gate of the same tree on origin
+# (gate-run.sh, for pull requests merged with the Merge button), then build, push and scan the
+# images and deploy them (P1, P4). Without either the image job stops; the full gate then runs on
+# origin by hand:
 #   gh workflow run ci.yml --ref <tag or develop> -f gate=true [-f deploy=staging]
 # Pull requests (W2) run the full gate on origin when opened ready, marked ready, or labelled
 # "gate". O2: with the repository variable STAGING_AUTO=on, every push to develop deploys staging
@@ -44,7 +47,7 @@ permissions:
 jobs:
   php:
     name: PHP (Pint, Larastan, audit, Pest, mutation)
-    if: ${{ ((vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '') && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
     runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     permissions:
@@ -97,7 +100,7 @@ jobs:
     # One job for both browsers: the image and asset setup is paid once (P6). Safari still runs
     # when Chrome fails. Not parallel: WebKit workers time out on a 2-core runner (P6).
     name: Pest browser (Chrome, Safari)
-    if: ${{ ((vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '') && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
     runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 30
     permissions:
@@ -161,7 +164,7 @@ jobs:
     # history, workflow lint and the repository rules, in one job so the setup and the per-job
     # minute rounding are paid once (P6). Each check runs even when an earlier one failed.
     name: Production image proof, frontend, Gitleaks, workflow lint, repo rules
-    if: ${{ ((vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '') && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
     runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 25
     permissions:
@@ -248,6 +251,7 @@ jobs:
         run: |
           bash .github/scripts/repo-rules.test.sh
           bash .github/scripts/ci-sandbox.test.sh
+          bash .github/scripts/gate-run.test.sh
           bash .github/scripts/gate-trailer.test.sh
           bash .github/scripts/promote-staging.test.sh
           bash scripts/gate-and-merge.test.sh
@@ -272,6 +276,21 @@ jobs:
             exit 0
           fi
           bash .github/scripts/repo-rules.sh "$base" "$head"
+      - name: Name the tested tree (P11, W2)
+        id: tree
+        if: ${{ success() && vars.GATE_ROLE != 'gate' }}
+        run: |
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+          echo "$tree" > "$RUNNER_TEMP/gate-tree"
+      - name: Record the tested tree for deploys (P11, W2)
+        # gate-run.sh lets a deploy of exactly this tree through when every gate job of this run passed.
+        if: ${{ success() && vars.GATE_ROLE != 'gate' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gate-tree-${{ steps.tree.outputs.tree }}
+          path: ${{ runner.temp }}/gate-tree
+          retention-days: 30
       - name: Remove this job's containers, network and images (P11)
         if: ${{ always() }}
         run: bash .github/scripts/ci-sandbox.sh cleanup
@@ -287,6 +306,7 @@ jobs:
     runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     permissions:
+      actions: read
       contents: read
       packages: write
     env:
@@ -312,9 +332,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check the gate (W18)
+      - name: Check the gate (W18, P11)
         env:
           TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$FULL_GATE" = true ]; then
             echo "The full gate ran and passed in this run."
@@ -322,7 +343,11 @@ jobs:
           fi
           verdict="$(bash .github/scripts/gate-trailer.sh HEAD)"
           if [ "$verdict" != gated=true ]; then
-            echo "::error::No gate trailer for this tree. Merge with scripts/gate-and-merge.sh, or run the full gate here: gh workflow run ci.yml --ref $GITHUB_REF_NAME -f gate=true"
+            # A pull request merged with the Merge button: a green gate of this exact tree on origin.
+            verdict="$(bash .github/scripts/gate-run.sh "$(git rev-parse 'HEAD^{tree}')")"
+          fi
+          if [ "$verdict" != gated=true ]; then
+            echo "::error::No gate for this tree. Merge with scripts/gate-and-merge.sh or a gated pull request, or run the full gate here: gh workflow run ci.yml --ref $GITHUB_REF_NAME -f gate=true"
             exit 1
           fi
       - name: Set up Docker Buildx

@@ -20,6 +20,7 @@ setup() {
     echo 0 > "$state/pushes"
     printf 'success\n' > "$state/result"
     printf '%s\n' "$gate_jobs" > "$state/job-names"
+    printf '%s\n' "$gate_jobs" > "$state/all-jobs"
 
     git init -q --bare -b develop "$root/origin.git"
     git init -q --bare -b develop "$root/gate.git"
@@ -35,6 +36,23 @@ while read -r _old new ref; do
 done
 HOOK
     chmod +x "$root/gate.git/hooks/post-receive"
+    # P11: origin's CI for gate/* refs on the office runner. origin-job-names lists the gate jobs
+    # that pass there (empty: GATE_RUNNER is not set, every gate job is skipped); origin-status
+    # "queued" plays an office runner that never takes the job.
+    cp "$state/job-names" "$state/origin-job-names"
+    echo completed > "$state/origin-status"
+    cat > "$root/origin.git/hooks/post-receive" << HOOK
+#!/usr/bin/env bash
+while read -r _old new ref; do
+    case "\$ref" in refs/heads/gate/*) ;; *) continue ;; esac
+    case "\$new" in *[!0]*) ;; *) continue ;; esac
+    n=\$((\$(cat "$state/pushes") + 1)); echo "\$n" > "$state/pushes"
+    echo "\$n" >> "$state/origin-runs"
+    printf '[{"databaseId":%s,"status":"%s","conclusion":"%s"}]\n' "\$n" "\$(cat "$state/origin-status")" "\$(cat "$state/result")" > "$state/runs/\$new"
+    cp "$state/origin-job-names" "$state/jobs/\$n"
+done
+HOOK
+    chmod +x "$root/origin.git/hooks/post-receive"
 
     # Fake gh: run list by commit, run watch, run view of the green jobs.
     cat > "$root/bin/gh" << 'GH'
@@ -64,7 +82,25 @@ case "$1 $2" in
         [ -f "$state/on-watch" ] && bash "$state/on-watch"
         id="$3"; grep -l "\"databaseId\":$id," "$state"/runs/* | xargs cat | grep -q '"conclusion":"success"' ;;
     "run view")
-        id="$3"; cat "$state/jobs/$id" ;;
+        id="$3"
+        if [[ "$*" == *status,jobs* ]]; then
+            # The office pickup check: "status<TAB>conclusion<TAB>name" per gate job.
+            queued=0
+            grep -l "\"databaseId\":$id," "$state"/runs/* | xargs cat | grep -q '"status":"queued"' && queued=1
+            while IFS= read -r name; do
+                if [ "$queued" = 1 ]; then
+                    printf 'queued\t\t%s\n' "$name"
+                elif grep -qxF "$name" "$state/jobs/$id"; then
+                    printf 'completed\tsuccess\t%s\n' "$name"
+                else
+                    printf 'completed\tskipped\t%s\n' "$name"
+                fi
+            done < "$state/all-jobs"
+        else
+            cat "$state/jobs/$id"
+        fi ;;
+    "run cancel")
+        echo "$3" >> "$state/cancelled" ;;
     *) echo "fake gh: unexpected $*" >&2; exit 2 ;;
 esac
 GH
@@ -77,6 +113,8 @@ GH
     git config core.autocrlf false
     git remote add gate "$root/gate.git"
     git config pentahoot.gateRemote gate
+    # The earlier tests describe the gate repository; P11 tests choose office themselves.
+    git config pentahoot.gateMode mirror
     mkdir -p app
     echo "code" > app/Game.php
     echo "# Changelog" > CHANGELOG.md
@@ -91,8 +129,8 @@ GH
 }
 
 run_script() {
-    PATH="$root/bin:$PATH" GATE_TEST_STATE="$state" GATE_REPO=test/gate GATE_LOCAL_CMD=true GATE_POLL=0 \
-        GATE_DEPLOY_CMD="${GATE_DEPLOY_CMD:-:}" bash "$script" "$@" > "$root/out.txt" 2>&1
+    PATH="$root/bin:$PATH" GATE_TEST_STATE="$state" GATE_REPO=test/gate GATE_ORIGIN_REPO=test/origin GATE_LOCAL_CMD=true \
+        GATE_POLL=0 GATE_QUEUE_LIMIT=0 GATE_DEPLOY_CMD="${GATE_DEPLOY_CMD:-:}" bash "$script" "$@" > "$root/out.txt" 2>&1
 }
 
 # check NAME CONDITION...: records one result; prints the script output when it fails.
@@ -271,6 +309,53 @@ cleanup
 setup
 PATH="$root/bin:$PATH" GATE_TEST_STATE="$state" GATE_REPO=test/gate GATE_LOCAL_CMD=false GATE_POLL=0 bash "$script" feature/x > "$root/out.txt" 2>&1; code=$?
 check "a red local check stops the script" test "$code" != 0 -a "$(pushes)" = 0
+cleanup
+
+# 15. P11: the office gate on origin is the default; its run id goes into the trailers.
+setup
+git config --unset pentahoot.gateMode
+run_script feature/x; code=$?
+check "office is the default gate and merges" test "$code" = 0 -a "$(wc -l < "$state/origin-runs" 2> /dev/null)" = 1
+check "the office gate yields valid trailers" gated
+check "the office gate ref is removed from origin" test -z "$(git --git-dir="$root/origin.git" for-each-ref refs/heads/gate)"
+check "the gate repository is not used" test "$(pushes)" = 1 -a -z "$(git --git-dir="$root/gate.git" for-each-ref refs/heads/gate)"
+cleanup
+
+# 16. Origin skips the gate jobs (GATE_RUNNER is not set there): the gate repository takes over.
+setup
+git config pentahoot.gateMode office
+: > "$state/origin-job-names"
+run_script feature/x; code=$?
+check "without the office gate the gate repository takes over" test "$code" = 0 -a "$(pushes)" = 2
+check "the fallback yields valid trailers" gated
+check "it says why" grep -q "GATE_RUNNER" "$root/out.txt"
+cleanup
+
+# 17. The office runner never takes the job: cancel it, the gate repository takes over.
+setup
+git config pentahoot.gateMode office
+echo queued > "$state/origin-status"
+run_script feature/x; code=$?
+check "a silent office runner moves the gate to the gate repository" test "$code" = 0 -a -s "$state/cancelled" -a "$(pushes)" = 2
+check "the office gate ref is removed after the fallback" test -z "$(git --git-dir="$root/origin.git" for-each-ref refs/heads/gate)"
+cleanup
+
+# 18. No gate repository and no terminal to ask: stop without spending organisation minutes.
+setup
+git config pentahoot.gateMode office
+git config --unset pentahoot.gateRemote
+echo queued > "$state/origin-status"
+run_script feature/x < /dev/null; code=$?
+check "without a gate repository it stops instead of spending org minutes" test "$code" != 0 -a -s "$state/cancelled"
+check "it says how to go on" grep -q "runner=github" "$root/out.txt"
+check "nothing reaches develop" test "$(git --git-dir="$root/origin.git" log -1 --format=%s develop)" = "feat(games): add a game"
+cleanup
+
+# 19. --gate mirror overrides an office default.
+setup
+git config pentahoot.gateMode office
+run_script --gate mirror feature/x; code=$?
+check "--gate mirror uses the gate repository" test "$code" = 0 -a ! -s "$state/origin-runs"
 cleanup
 
 echo "$((total - failures))/$total passed"

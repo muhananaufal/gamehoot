@@ -108,6 +108,8 @@ job_rules() {
     detached "$logs/zizmor.txt" -e GH_TOKEN="$(gh auth token 2>/dev/null || true)" -v "$mount:/repo" -w /repo "$zizmor_image" --config .github/zizmor.yml --min-severity=low .github || code=1
     {
         bash .github/scripts/repo-rules.test.sh
+        bash .github/scripts/ci-sandbox.test.sh
+        bash .github/scripts/gate-run.test.sh
         bash .github/scripts/gate-trailer.test.sh
         bash .github/scripts/promote-staging.test.sh
         bash scripts/gate-and-merge.test.sh
