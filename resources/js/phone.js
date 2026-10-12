@@ -14,6 +14,7 @@ import { pentahootPhone } from './pentahoot-screens.js';
 import { followEvent, registerRealtimeStore } from './realtime-boot.js';
 import { connectionBanner, nudgeDirective } from './scene.js';
 import { tebakScreen } from './tebak-screens.js';
+import { themeToggle } from './theme.js';
 
 markPageEntered();
 watchFormSubmits();
@@ -35,6 +36,8 @@ Alpine.data('celebration', celebration);
 Alpine.data('nameSearch', nameSearch);
 Alpine.data('pentahootPhone', pentahootPhone);
 Alpine.data('tebakScreen', tebakScreen);
+// U17: each player can switch the theme of their own phone.
+Alpine.data('themeToggle', themeToggle);
 
 // F20: one realtime store; the phone page follows its event once (no page swaps here).
 registerRealtimeStore(Alpine);
