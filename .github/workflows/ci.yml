@@ -44,8 +44,8 @@ permissions:
 jobs:
   php:
     name: PHP (Pint, Larastan, audit, Pest, mutation)
-    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
-    runs-on: ubuntu-24.04
+    if: ${{ ((vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '') && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -54,37 +54,51 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Own Docker network, names and limits (P11)
+        run: bash .github/scripts/ci-sandbox.sh setup
       - name: Start MySQL in the background
         run: bash .github/scripts/ci-mysql.sh start
       - uses: ./.github/actions/php-image
         with:
-          push: ${{ vars.GATE_ROLE == 'gate' }}
+          tag: ${{ env.CI_PHP }}
+          push: ${{ vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '' }}
       - name: Check formatting (Pint)
-        run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/pint --test
+        run: |
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" "$CI_PHP" vendor/bin/pint --test
       - name: Analyse (Larastan)
-        run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+        run: |
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" "$CI_PHP" vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - name: Audit dependencies
-        run: docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci composer audit
+        run: |
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" "$CI_PHP" composer audit
       - name: Wait for MySQL
         run: bash .github/scripts/ci-mysql.sh wait
       - name: Run test suite (MySQL 8.4)
         run: |
           cp .env.example .env
           app_key="base64:$(openssl rand -base64 32)"
-          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="$app_key" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci php artisan test --display-warnings
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="$app_key" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" php artisan test --display-warnings
       - name: Mutation test of the core rules (K2)
         # E1 CompetitionRanking, E3 VoteWindow, E5 AnswerBoxes, E10 Leaderboard. Measured 89.47%
         # with --parallel (10 of 95 mutations survive); the score moves a little with timing, so
         # --min keeps a margin. Raise it once the surviving mutations are tested.
         run: |
-          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci php -d pcov.enabled=1 vendor/bin/pest tests/Unit/Games --mutate --everything --covered-only --parallel --min=85 --class='App\Games\Pentahoot\CompetitionRanking,App\Games\Pentahoot\VoteWindow,App\Games\TebakKata\AnswerBoxes,App\Games\Tebak\Leaderboard'
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" php -d pcov.enabled=1 vendor/bin/pest tests/Unit/Games --mutate --everything --covered-only --parallel --min=85 --class='App\Games\Pentahoot\CompetitionRanking,App\Games\Pentahoot\VoteWindow,App\Games\TebakKata\AnswerBoxes,App\Games\Tebak\Leaderboard'
+      - name: Remove this job's containers, network and images (P11)
+        if: ${{ always() }}
+        run: bash .github/scripts/ci-sandbox.sh cleanup
 
   browser:
     # One job for both browsers: the image and asset setup is paid once (P6). Safari still runs
     # when Chrome fails. Not parallel: WebKit workers time out on a 2-core runner (P6).
     name: Pest browser (Chrome, Safari)
-    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
-    runs-on: ubuntu-24.04
+    if: ${{ ((vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '') && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -93,22 +107,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Own Docker network, names and limits (P11)
+        run: bash .github/scripts/ci-sandbox.sh setup
       - name: Start MySQL in the background
         run: bash .github/scripts/ci-mysql.sh start
       - uses: ./.github/actions/php-image
         with:
           target: browser
-          push: ${{ vars.GATE_ROLE == 'gate' }}
+          tag: ${{ env.CI_PHP }}
+          push: ${{ vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '' }}
       - name: Install packages and build assets
         run: |
-          docker run --rm -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c 'npm ci --no-audit --no-fund && npm run build'
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c 'npm ci --no-audit --no-fund && npm run build'
           cp .env.example .env
       - name: Wait for MySQL
         run: bash .github/scripts/ci-mysql.sh wait
       - name: Run browser tests in Chrome (W11)
         # storage:link serves the public question images under /media (F16).
         run: |
-          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser chrome"
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser chrome"
       - name: Set the Chrome screenshots aside
         # Every browser test run empties tests/Browser/Screenshots when it starts (the plugin's
         # Screenshot::cleanup), so the Safari run would delete the evidence of a Chrome failure.
@@ -119,7 +138,8 @@ jobs:
       - name: Run browser tests in Safari (W11)
         if: ${{ !cancelled() }}
         run: |
-          docker run --rm --network host -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root pentahoot-php:ci sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser safari"
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser safari"
       - name: Set the Safari screenshots aside
         if: ${{ !cancelled() }}
         run: |
@@ -132,14 +152,17 @@ jobs:
           name: browser-screenshots
           path: browser-screenshots
           retention-days: 3
+      - name: Remove this job's containers, network and images (P11)
+        if: ${{ always() }}
+        run: bash .github/scripts/ci-sandbox.sh cleanup
 
   checks:
     # P1, P2, P3, W10, W14, W15, W16: the production image proof, frontend checks, secrets in the
     # history, workflow lint and the repository rules, in one job so the setup and the per-job
     # minute rounding are paid once (P6). Each check runs even when an earlier one failed.
     name: Production image proof, frontend, Gitleaks, workflow lint, repo rules
-    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
-    runs-on: ubuntu-24.04
+    if: ${{ ((vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '') && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 25
     permissions:
       contents: read
@@ -147,14 +170,16 @@ jobs:
     env:
       # The proof runs in the gate repository and on pull requests; the origin fallback gate
       # skips it because the image job builds the real images right after.
-      PROOF: ${{ vars.GATE_ROLE == 'gate' || github.event_name == 'pull_request' }}
+      PROOF: ${{ vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '' || github.event_name == 'pull_request' }}
       CACHE: ghcr.io/${{ github.repository_owner }}/pentahoot-ci:cache-production
-      USE_CACHE: ${{ vars.GATE_ROLE == 'gate' }}
+      USE_CACHE: ${{ vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Own Docker network, names and limits (P11)
+        run: bash .github/scripts/ci-sandbox.sh setup
       # The proof comes first, from the clean checkout: the frontend step below writes
       # public/build, which .dockerignore does not exclude.
       - name: Set up Docker Buildx
@@ -174,7 +199,7 @@ jobs:
           context: .
           target: production
           load: true
-          tags: pentahoot-app:proof
+          tags: pentahoot-app:proof-${{ env.CI_ID }}
           cache-from: ${{ env.USE_CACHE == 'true' && format('type=registry,ref={0}', env.CACHE) || '' }}
           cache-to: ${{ env.USE_CACHE == 'true' && format('type=registry,ref={0},mode=max,ignore-error=true', env.CACHE) || '' }}
       - name: Build web image (proof)
@@ -184,18 +209,19 @@ jobs:
           context: .
           target: web
           load: true
-          tags: pentahoot-web:proof
+          tags: pentahoot-web:proof-${{ env.CI_ID }}
       - name: Scan images (Trivy)
         # One vulnerability database download for both images (A3).
         if: env.PROOF == 'true'
         run: |
-          for image in pentahoot-app:proof pentahoot-web:proof; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+          for image in "pentahoot-app:proof-$CI_ID" "pentahoot-web:proof-$CI_ID"; do
+            docker run --rm --label "pentahoot-ci=$CI_ID" -v /var/run/docker.sock:/var/run/docker.sock -v pentahoot-trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
           done
       - name: ESLint, Prettier, Vitest, build, phone bundle budget (F27)
         if: ${{ !cancelled() }}
         run: |
-          docker run --rm -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c '
+          # shellcheck disable=SC2086 # CI_RUN holds several docker options
+          docker run --rm $CI_RUN -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c '
             npm ci --no-audit --no-fund &&
             npx eslint . &&
             npx prettier --check resources/js tests/js scripts/load "*.config.js" &&
@@ -221,6 +247,7 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           bash .github/scripts/repo-rules.test.sh
+          bash .github/scripts/ci-sandbox.test.sh
           bash .github/scripts/gate-trailer.test.sh
           bash .github/scripts/promote-staging.test.sh
           bash scripts/gate-and-merge.test.sh
@@ -245,6 +272,9 @@ jobs:
             exit 0
           fi
           bash .github/scripts/repo-rules.sh "$base" "$head"
+      - name: Remove this job's containers, network and images (P11)
+        if: ${{ always() }}
+        run: bash .github/scripts/ci-sandbox.sh cleanup
 
   image:
     # P1, P3, P4: origin builds the images only to deploy them, pushes them with provenance and an

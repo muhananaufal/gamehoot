@@ -1,6 +1,6 @@
 name: PHP image
 description: >-
-  Provides a project PHP image target as pentahoot-php:ci and installs Composer dependencies in it.
+  Provides a project PHP image target under a local tag and installs Composer dependencies in it.
   P6: the image is pulled ready-made from the registry, tagged with a hash of the files it is built
   from; it is built only when that tag is missing, and pushed when the caller allows it.
 
@@ -8,6 +8,9 @@ inputs:
   target:
     description: Dockerfile target, "dev" or "browser".
     default: dev
+  tag:
+    description: Local tag of the image, unique per job on the shared office runner (P11, ci-sandbox.sh).
+    default: pentahoot-php:ci
   push:
     description: Push a freshly built image to the registry ("true" in the gate repository).
     default: 'false'
@@ -36,9 +39,10 @@ runs:
       shell: bash
       env:
         IMAGE: ${{ steps.ref.outputs.image }}
+        TAG: ${{ inputs.tag }}
       run: |
         if docker pull --quiet "$IMAGE" > /dev/null 2>&1; then
-          docker tag "$IMAGE" pentahoot-php:ci
+          docker tag "$IMAGE" "$TAG"
           echo "found=true" >> "$GITHUB_OUTPUT"
         else
           echo "found=false" >> "$GITHUB_OUTPUT"
@@ -57,7 +61,7 @@ runs:
         target: ${{ inputs.target }}
         load: true
         tags: |
-          pentahoot-php:ci
+          ${{ inputs.tag }}
           ${{ steps.ref.outputs.image }}
 
     - name: Push the image for the next runs
@@ -75,6 +79,8 @@ runs:
 
     - name: Install Composer dependencies
       shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
       run: >-
-        docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci
+        docker run --rm -v "$PWD:/var/www/html" "$TAG"
         composer install --no-interaction --no-progress --prefer-dist
