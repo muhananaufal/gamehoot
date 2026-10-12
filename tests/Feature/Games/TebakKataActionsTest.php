@@ -188,6 +188,28 @@ describe('leaderboard and final results (E11, E12, E17, G10)', function (): void
         expect(publicSnapshot($event))->toHaveKey('game.leaderboard', null);
     });
 
+    it('sends the board before the last win with the leaderboard, for the transition (E11)', function (): void {
+        $event = Pentahoot::event();
+        $game = TebakKata::running($event);
+        $first = kataQuestion($game, 1);
+        kataAction($event, $first, 'show');
+        kataAction($event, $first, 'winner', ['person' => Pentahoot::person($event, 'Budi Santoso')->id]);
+        kataAction($event, $first, 'leaderboard');
+
+        // The first win has no board before it.
+        expect(publicSnapshot($event))->toHaveKey('game.leaderboard_before', []);
+
+        $second = kataQuestion($game, 2);
+        kataAction($event, $second, 'show');
+        expect(publicSnapshot($event))->toHaveKey('game.leaderboard_before', null);
+        kataAction($event, $second, 'winner', ['person' => Pentahoot::person($event, 'Rita Wulandari')->id]);
+        kataAction($event, $second, 'leaderboard');
+
+        expect(publicSnapshot($event))->toHaveKey('game.leaderboard_before', [
+            ['rank' => 1, 'name' => 'Budi Santoso', 'points' => 1],
+        ]);
+    });
+
     it('freezes the final top 5 when the game finishes, with the tie-break (E10, G10)', function (): void {
         travelTo(CarbonImmutable::parse('2026-10-15 10:00:00'));
         $event = Pentahoot::event();

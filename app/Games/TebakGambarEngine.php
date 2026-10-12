@@ -124,6 +124,8 @@ final readonly class TebakGambarEngine implements LiveGameEngine
             'count' => $questions->count(),
             'question' => $current === null ? null : $this->questionPart($current, $audience, $resolved),
             'leaderboard' => $game->leaderboard_at === null ? null : $this->board->live($game),
+            // E11: the board before the last win, which the screens move from into the leaderboard.
+            'leaderboard_before' => $game->leaderboard_at === null ? null : $this->board->liveBefore($game),
             'final' => $game->status === GameStatus::Finished ? $this->board->frozen($game) : null,
         ];
 
