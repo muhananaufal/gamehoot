@@ -69,3 +69,17 @@ it('follows a rename and a release made by the host without a reload (B-6)', fun
     $page->assertSee('Pick your name to join the game')->assertPathIs('/year-end-party');
     $page->assertNoJavaScriptErrors();
 });
+
+it('switches the phone between the light and the dark theme and remembers it (F21, U17)', function (): void {
+    $owner = User::factory()->create();
+    Event::factory()->for($owner, 'owner')->open()->create(['name' => 'Year-End Party', 'slug' => 'year-end-party']);
+
+    $page = visit('/year-end-party')->on()->iPhone15()->assertSee('Pick your name to join the game');
+    $before = $page->script('document.documentElement.dataset.theme');
+    $after = $before === 'dark' ? 'light' : 'dark';
+
+    $page->click('header [aria-label="Switch theme"]')->assertScript('document.documentElement.dataset.theme', $after);
+    // The choice stays on this phone after a reload.
+    $page->refresh()->assertScript('document.documentElement.dataset.theme', $after);
+    $page->assertNoJavaScriptErrors();
+});

@@ -15,7 +15,8 @@
             @if ($person)
                 <span class="truncate text-body-s text-nav-muted" x-data x-text="$store.realtime.me?.name ?? @js($person->name)">{{ $person->name }}</span>
             @endif
-            {{-- U27: each player can calm the motion on their own phone. --}}
+            {{-- U17, U27: each player picks the theme and calms the motion on their own phone. --}}
+            <x-theme-toggle css class="text-nav-icon hover:bg-nav-active" />
             <x-motion-toggle class="-mr-2 text-nav-icon hover:bg-nav-active" />
         </div>
     </header>
