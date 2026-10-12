@@ -136,7 +136,7 @@
             </template>
             <div x-show="view === 'leaderboard'" class="flex flex-col gap-3">
                 <h1 class="font-display text-title-s font-bold">{{ __('tebak.leaderboard') }}</h1>
-                <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" note="moveLabel(row)" note-size="text-body" />
+                <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" move="moveOf(row)" move-size="text-body" />
             </div>
         </div>
     </div>

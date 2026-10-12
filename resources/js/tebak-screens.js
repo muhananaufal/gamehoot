@@ -3,7 +3,8 @@
 import { cardConfetti } from './celebrate.js';
 import { withBusyButton } from './action-busy.js';
 import { legendOf } from './kata.js';
-import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
+import { prefersReducedMotion } from './flip.js';
+import { BOARD_HOLD_MS, boardRows, canReveal, canSkip, hasBoardBefore, moveBadge, tebakView } from './tebak.js';
 import { fill, podium, promptSize, SCREEN_ROWS, searchPeople } from './pentahoot.js';
 
 function csrfToken() {
@@ -30,15 +31,9 @@ function base(labels) {
 
         legendOf,
 
-        moveLabel(row) {
-            const move = movementOf(row);
-
-            return {
-                up: fill(this.labels.moved_up, { N: move.steps }),
-                down: fill(this.labels.moved_down, { N: move.steps }),
-                new: this.labels.new_entry,
-                same: '',
-            }[move.direction];
+        /** E11: the arrow or NEW badge of a leaderboard row (x-rank-list move). */
+        moveOf(row) {
+            return moveBadge(row, this.labels);
         },
     };
 }
@@ -52,8 +47,19 @@ export function tebakScreen({ types, labels, projector = false }) {
     return {
         ...base(labels),
 
+        // E11: the leaderboard shows the board before the last win first, then moves into the board now.
+        boardPhase: 'after',
+        boardTimer: null,
+
         // U31: a winner and the final podium are worth a celebration, once they happen here.
         init() {
+            // E11: every new leaderboard plays its move once; a page opened on it plays it too.
+            this.$watch(
+                () => this.boardKey,
+                () => this.playBoard(),
+            );
+            this.playBoard();
+
             this.$watch(
                 () => this.view,
                 (view) => {
@@ -91,7 +97,29 @@ export function tebakScreen({ types, labels, projector = false }) {
             return this.store.snapshot?.event?.show_on_devices === true;
         },
         get board() {
-            return this.game?.leaderboard ?? [];
+            return boardRows(this.game?.leaderboard_before, this.game?.leaderboard, this.boardPhase);
+        },
+        /** E11: what identifies one leaderboard, so a new one plays its move again. */
+        get boardKey() {
+            const board = this.game?.leaderboard;
+
+            return board ? JSON.stringify([board, this.game.leaderboard_before ?? null]) : null;
+        },
+
+        /** E11, U27: hold the board before for a moment, then let x-flip move the cards. */
+        playBoard() {
+            clearTimeout(this.boardTimer);
+
+            if (!this.boardKey || !hasBoardBefore(this.game.leaderboard_before) || prefersReducedMotion()) {
+                this.boardPhase = 'after';
+
+                return;
+            }
+
+            this.boardPhase = 'before';
+            this.boardTimer = setTimeout(() => {
+                this.boardPhase = 'after';
+            }, BOARD_HOLD_MS);
         },
         /** E17: the final podium uses the same component as Pentahoot, with points as the score. */
         get stand() {

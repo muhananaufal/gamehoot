@@ -2,15 +2,18 @@
 
 declare(strict_types=1);
 
+use App\Enums\QuestionStatus;
 use App\Enums\ReplayKind;
 use App\Games\Replay\Moment;
 use App\Games\Replay\ReplayMoments;
 use App\Models\Event;
 use App\Models\Game;
 use App\Models\Question;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\Pentahoot;
 use Tests\Support\Replay;
+use Tests\Support\TebakKata;
 
 uses(RefreshDatabase::class);
 
@@ -120,8 +123,29 @@ describe('what the Public View draws for a replay (D-11)', function (): void {
         markReplay($event, ReplayKind::Final, $game);
         $final = app(ReplayMoments::class)->payload($event->fresh() ?? $event);
 
-        expect($board)->toBe(['kind' => 'leaderboard', 'type' => 'tebak_kata', 'game' => 'Word Round', 'number' => 1, 'title' => 'PARIS', 'rows' => [['rank' => 1, 'name' => 'Rita Wulandari', 'score' => 1]]])
+        // E11: the first win has no board before it to move from.
+        expect($board)->toBe(['kind' => 'leaderboard', 'type' => 'tebak_kata', 'game' => 'Word Round', 'number' => 1, 'title' => 'PARIS', 'rows' => [['rank' => 1, 'name' => 'Rita Wulandari', 'score' => 1]], 'before' => []])
             ->and($final)->toBe(['kind' => 'final', 'type' => 'tebak_kata', 'game' => 'Word Round', 'number' => null, 'title' => 'Word Round', 'rows' => [['rank' => 1, 'name' => 'Rita Wulandari', 'score' => 1]]]);
+    });
+
+    it('moves a replayed leaderboard from the board before that question, not from later wins (E11)', function (): void {
+        $event = Pentahoot::event();
+        $game = TebakKata::game($event, [['A?', 'ONE'], ['B?', 'TWO'], ['C?', 'THREE']], 'Word Round');
+        $winners = ['Rita Wulandari', 'Budi Santoso', 'Budi Santoso'];
+
+        foreach ($game->questions()->orderBy('position')->get() as $index => $question) {
+            $question->forceFill([
+                'status' => QuestionStatus::Won,
+                'winner_person_id' => Pentahoot::person($event, $winners[$index])->id,
+                'resolved_at' => CarbonImmutable::parse('2026-10-07 10:00:00')->addMinutes($index),
+            ])->save();
+        }
+
+        markReplay($event, ReplayKind::Leaderboard, $game, $game->questions()->where('position', 2)->firstOrFail());
+        $board = app(ReplayMoments::class)->payload($event->fresh() ?? $event);
+
+        expect($board['rows'] ?? null)->toBe([['rank' => 1, 'name' => 'Rita Wulandari', 'score' => 1], ['rank' => 2, 'name' => 'Budi Santoso', 'score' => 1]])
+            ->and($board['before'] ?? null)->toBe([['rank' => 1, 'name' => 'Rita Wulandari', 'score' => 1]]);
     });
 
     it('draws nothing for a marker that no longer points at a moment', function (): void {

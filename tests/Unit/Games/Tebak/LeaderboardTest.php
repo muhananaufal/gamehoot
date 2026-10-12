@@ -20,7 +20,7 @@ function wins(array $wins): array
 }
 
 /**
- * @param  list<array{rank: int, name: string, points: int, movement: ?int}>  $rows
+ * @param  list<array{rank: int, name: string, points: int, movement?: ?int}>  $rows
  * @return list<string>
  */
 function board(array $rows): array
@@ -87,5 +87,28 @@ describe('E10, E16 Tebak leaderboard', function (): void {
         $pass = Leaderboard::top(wins([['Rita', 1, '10:00'], ['Budi', 1, '10:01'], ['Budi', 1, '10:02']]));
         expect(array_map(fn (array $row): string => $row['name'].' '.var_export($row['movement'], true), $pass))
             ->toBe(['Budi 1', 'Rita -1']);
+    });
+
+    it('gives the top five before the last win, for the transition to the board now (E11)', function (): void {
+        $wins = wins([['A', 1, '10:00'], ['B', 1, '10:01'], ['C', 1, '10:02'], ['D', 1, '10:03'], ['E', 1, '10:04'], ['F', 3, '10:05']]);
+
+        // F enters at the top and pushes E out of the top five; before, E was still in it.
+        expect(board(Leaderboard::top($wins)))->toBe(['1 F 3', '2 A 1', '3 B 1', '4 C 1', '5 D 1'])
+            ->and(board(Leaderboard::before($wins)))->toBe(['1 A 1', '2 B 1', '3 C 1', '4 D 1', '5 E 1']);
+    });
+
+    it('gives the old points of the last winner before the win (E11)', function (): void {
+        expect(board(Leaderboard::before(wins([['Rita', 1, '10:00'], ['Budi', 1, '10:01'], ['Budi', 2, '10:02']]))))
+            ->toBe(['1 Rita 1', '2 Budi 1']);
+    });
+
+    it('has no board before the first win (E11)', function (): void {
+        expect(Leaderboard::before(wins([['Rita', 1, '10:00']])))->toBe([])
+            ->and(Leaderboard::before([]))->toBe([]);
+    });
+
+    it('keeps only rank, name and points in the board before (F14)', function (): void {
+        expect(array_keys(Leaderboard::before(wins([['Rita', 1, '10:00'], ['Budi', 1, '10:01']]))[0]))
+            ->toBe(['rank', 'name', 'points']);
     });
 });

@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Collection;
  * (E11) and the final podium of a finished Tebak game (E12). Read from the frozen results.
  *
  * @phpstan-type Row array{rank: int, name: string, score: int}
- * @phpstan-type Payload array{kind: string, type: string, game: string, number: ?int, title: string, prompt?: string, rows: list<Row>}
+ * @phpstan-type Payload array{kind: string, type: string, game: string, number: ?int, title: string, prompt?: string, rows: list<Row>, before?: list<Row>}
  */
 final readonly class ReplayMoments
 {
@@ -91,7 +91,8 @@ final readonly class ReplayMoments
         }
 
         if ($kind === ReplayKind::Leaderboard) {
-            return [...$base, 'number' => $question->position, 'title' => $this->answer($question), 'rows' => self::scores($this->board->after($game, $question))];
+            // E11: with the board before that question, which the screen moves from.
+            return [...$base, 'number' => $question->position, 'title' => $this->answer($question), 'rows' => self::scores($this->board->after($game, $question)), 'before' => self::scores($this->board->before($game, $question))];
         }
 
         if ($game->type === GameType::Pentahoot) {

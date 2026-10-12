@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The Word Guess and Picture Guess leaderboard first shows the standings before the last question, then slides each name to its new place, on the projector, on phones and in replays. Moves are colored arrows with the steps, and a name new in the top five gets a NEW badge.
+
 - Replay on screen in Live control starts with no game picked, so its list of moments no longer fills the Monitor column; picking the picked game again closes the list.
 
 ### Fixed

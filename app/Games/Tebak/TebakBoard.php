@@ -62,16 +62,43 @@ final readonly class TebakBoard
      */
     public function after(Game $game, Question $question): array
     {
+        return array_map(
+            fn (array $row): array => ['rank' => $row['rank'], 'name' => $row['name'], 'points' => $row['points'], 'movement' => $row['movement']],
+            Leaderboard::top($this->winsUntil($game, $question)),
+        );
+    }
+
+    /**
+     * E11: the top five before the last win, which the screens move from into the live board.
+     *
+     * @return list<array{rank: int, name: string, points: int}>
+     */
+    public function liveBefore(Game $game): array
+    {
+        return Leaderboard::before($this->wins($game));
+    }
+
+    /**
+     * D-11, E11: the top five before a won question, for a replayed leaderboard.
+     *
+     * @return list<array{rank: int, name: string, points: int}>
+     */
+    public function before(Game $game, Question $question): array
+    {
+        return Leaderboard::before($this->winsUntil($game, $question));
+    }
+
+    /**
+     * @return list<Win> the wins up to and including a question
+     */
+    private function winsUntil(Game $game, Question $question): array
+    {
         $until = $question->resolved_at;
-        $wins = array_values(array_filter(
+
+        return array_values(array_filter(
             $this->wins($game),
             fn (array $win): bool => $until !== null && $win['resolved_at']->lessThanOrEqualTo($until),
         ));
-
-        return array_map(
-            fn (array $row): array => ['rank' => $row['rank'], 'name' => $row['name'], 'points' => $row['points'], 'movement' => $row['movement']],
-            Leaderboard::top($wins),
-        );
     }
 
     /**
