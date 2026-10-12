@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-12
+
 ### Fixed
 
 - Moving a game or a question with the keyboard keeps the focus on its Move button after the new order is saved, so it can be moved again right away.
@@ -258,7 +260,8 @@ Foundation stage: accounts, events, question packs, name lists and joining from 
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
 
-[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.5.0...develop
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.6.0...develop
+[0.6.0]: https://github.com/devivace-groups/pentahoot/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/devivace-groups/pentahoot/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/devivace-groups/pentahoot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/devivace-groups/pentahoot/compare/v0.2.0...v0.3.0
