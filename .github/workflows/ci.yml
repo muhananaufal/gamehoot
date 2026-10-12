@@ -138,7 +138,7 @@ jobs:
           cp -r tests/Browser/Screenshots/. browser-screenshots/safari/ 2> /dev/null || true
       - name: Keep failure screenshots
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: browser-screenshots
           path: browser-screenshots
@@ -265,7 +265,7 @@ jobs:
       - name: Record the tested tree for deploys (P11, W2)
         # gate-run.sh lets a deploy of exactly this tree through when every gate job of this run passed.
         if: ${{ success() && vars.GATE_ROLE != 'gate' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: gate-tree-${{ steps.tree.outputs.tree }}
           path: ${{ runner.temp }}/gate-tree
