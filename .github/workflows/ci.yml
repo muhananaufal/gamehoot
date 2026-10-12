@@ -27,6 +27,11 @@ on:
         description: Run the full gate in this run (fallback when the trailers do not match)
         type: boolean
         default: false
+      runner:
+        description: Runner of the image and deploy jobs (P10); scripts/deploy.sh picks github when the office runner is down
+        type: choice
+        options: [office, github]
+        default: office
 
 concurrency:
   # A newer push or pull request update cancels the older gate; tags and deploys never.
@@ -247,7 +252,8 @@ jobs:
     name: Production images
     needs: [php, browser, checks]
     if: ${{ !cancelled() && vars.GATE_ROLE != 'gate' && ((startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on') || (github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && ((github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && vars.STAGING_AUTO == 'on')))) && needs.php.result != 'failure' && needs.browser.result != 'failure' && needs.checks.result != 'failure' }}
-    runs-on: ubuntu-24.04
+    # P10: the office runner when DEPLOY_RUNNER=self-hosted; scripts/deploy.sh re-runs with runner=github when it does not answer.
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -260,6 +266,17 @@ jobs:
       app_digest: ${{ steps.promote.outputs.app_digest || steps.app.outputs.digest }}
       web_digest: ${{ steps.promote.outputs.web_digest || steps.web.outputs.digest }}
     steps:
+      - name: Docker settings of this job only (P10)
+        # The office runner shares one user and one ~/.docker with other teams' runners: a login,
+        # its logout and the buildx builders stay in this job's own folder. The CLI plugins
+        # (buildx, compose) are linked in, so they are found as before.
+        run: |
+          config="$RUNNER_TEMP/docker-config"
+          mkdir -p "$config/cli-plugins"
+          if [ -d "$HOME/.docker/cli-plugins" ]; then
+            find "$HOME/.docker/cli-plugins" -maxdepth 1 -type f -exec ln -sf {} "$config/cli-plugins/" \;
+          fi
+          echo "DOCKER_CONFIG=$config" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -347,9 +364,20 @@ jobs:
           APP_DIGEST: ${{ steps.promote.outputs.app_digest || steps.app.outputs.digest }}
           WEB_DIGEST: ${{ steps.promote.outputs.web_digest || steps.web.outputs.digest }}
         run: |
+          # P10: the cache volume has its own name on the shared office runner.
           for image in "$REPO@$APP_DIGEST" "$REPO-web@$WEB_DIGEST"; do
             docker pull --quiet "$image"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v pentahoot-trivy-cache:/root/.cache aquasec/trivy:0.74.0 image --no-progress --severity CRITICAL --ignore-unfixed --exit-code 1 "$image"
+          done
+      - name: Remove the images this job pulled (P10)
+        # Only this job's own images: the office runner is a shared staging server, so no prune.
+        if: ${{ always() }}
+        env:
+          APP_DIGEST: ${{ steps.promote.outputs.app_digest || steps.app.outputs.digest }}
+          WEB_DIGEST: ${{ steps.promote.outputs.web_digest || steps.web.outputs.digest }}
+        run: |
+          for image in "$REPO@$APP_DIGEST" "$REPO-web@$WEB_DIGEST"; do
+            case "$image" in *@sha256:*) docker image rm "$image" > /dev/null 2>&1 || true ;; esac
           done
 
   deploy-staging:
@@ -358,7 +386,7 @@ jobs:
     name: Deploy staging
     needs: image
     if: ${{ !cancelled() && needs.image.result == 'success' && github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && ((github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && vars.STAGING_AUTO == 'on')) }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 15
     environment: staging
     concurrency:
@@ -386,7 +414,7 @@ jobs:
     name: Deploy production
     needs: image
     if: ${{ !cancelled() && needs.image.result == 'success' && startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on' }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 15
     environment: production
     concurrency:
