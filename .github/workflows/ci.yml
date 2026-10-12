@@ -225,6 +225,7 @@ jobs:
           bash .github/scripts/promote-staging.test.sh
           bash scripts/gate-and-merge.test.sh
           bash deploy/deploy.test.sh
+          bash scripts/deploy.test.sh
           bash scripts/ci-report.test.sh
           if [ -n "$PR_BASE" ]; then
             # W2: a pull request must contain the newest base commit, so the merge is what was tested.

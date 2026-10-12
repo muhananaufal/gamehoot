@@ -92,7 +92,7 @@ GH
 
 run_script() {
     PATH="$root/bin:$PATH" GATE_TEST_STATE="$state" GATE_REPO=test/gate GATE_LOCAL_CMD=true GATE_POLL=0 \
-        bash "$script" "$@" > "$root/out.txt" 2>&1
+        GATE_DEPLOY_CMD="${GATE_DEPLOY_CMD:-:}" bash "$script" "$@" > "$root/out.txt" 2>&1
 }
 
 # check NAME CONDITION...: records one result; prints the script output when it fails.
@@ -201,6 +201,12 @@ run_script --tag v1.1.0-rc.1 feature/x; code=$?
 check "tag mode succeeds" test "$code" = 0
 check "the tag reaches origin with valid trailers" gated v1.1.0-rc.1 v1.1.0-rc.1
 check "tag mode does not touch develop" test "$code" = 0 -a "$(git --git-dir="$root/origin.git" log -1 --format=%s develop)" = "feat(games): add a game"
+cleanup
+
+# 10. P10: a version tag hands over to the deploy watcher, which falls back to GitHub runners.
+setup
+GATE_DEPLOY_CMD="echo deploy-watch" run_script --tag v1.1.0 feature/x
+check "a version tag starts the deploy watcher with that tag" grep -q "deploy-watch production v1.1.0" "$root/out.txt"
 cleanup
 
 # 11. A release that only adds the changelog reuses the gate recorded on develop, for the merge
