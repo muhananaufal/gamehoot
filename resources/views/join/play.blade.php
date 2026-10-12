@@ -9,7 +9,7 @@
             joinUrl: @js(route('join.index', $event)),
             labels: @js(__('pentahoot')),
         })"
-        x-show="$store.realtime.screen() === 'live'" class="flex grow flex-col">
+        x-show="$store.realtime.screen() === 'live' && view !== 'other'" class="flex grow flex-col">
 
         <div x-cloak x-show="isPentahoot && question && view !== 'next' && view !== 'waiting'" class="flex items-center justify-between gap-3 pb-3 text-body font-semibold text-muted">
             <span x-text="question ? label('question_of', { N: question.number, TOTAL: $store.realtime.snapshot.game.count }) : ''"></span>

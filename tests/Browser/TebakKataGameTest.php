@@ -65,6 +65,31 @@ it('shows a Tebak Kata question on the projector and mirrors it on phones only w
     $phone->assertSee('Final results')->assertNoJavaScriptErrors();
 });
 
+it('centres the Watch the screen message on phones when they do not mirror the screen (E14)', function (): void {
+    $event = Pentahoot::event(['Budi Santoso'], ['show_on_devices' => false]);
+    // The fixture's names are claimed already; a phone needs a free one.
+    Person::factory()->for($event)->create(['name' => 'Rita Wulandari']);
+    TebakKata::running($event, [['Capital of France?', 'PARIS', [0]]]);
+
+    $phone = visit('/year-end-party')->on()->iPhone15()->click('Rita Wulandari')
+        ->assertSee('Watch the screen and answer out loud to the host.');
+
+    // The Pentahoot part of the page draws nothing for a Tebak game, so it must not take space:
+    // the message box fills the page and centres its content. (The connection bar above it shows
+    // here because tests run without Reverb, so the box is measured, not the page centre.)
+    $share = $phone->script(<<<'JS'
+        (() => {
+            const box = document.querySelector(`[x-show="view !== 'final' && !mirrored"]`).getBoundingClientRect();
+            const main = document.querySelector('main').getBoundingClientRect();
+
+            return box.height / main.height;
+        })()
+        JS);
+
+    expect(is_numeric($share) ? (float) $share : null)->toBeGreaterThan(0.75);
+    $phone->assertNoJavaScriptErrors();
+});
+
 it('runs a Tebak Kata question from Live control: show, hint, winner and leaderboard (D-5, D-6, E5, E11)', function (): void {
     $event = Pentahoot::event(['Rita Wulandari', 'Budi Santoso']);
     TebakKata::running($event, [['Capital of France?', 'PARIS', [0]], ['Largest ocean?', 'PACIFIC', [1]]]);
