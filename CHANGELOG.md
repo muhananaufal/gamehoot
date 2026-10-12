@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Replay on screen in Live control starts with no game picked, so its list of moments no longer fills the Monitor column; picking the picked game again closes the list.
+
 ### Fixed
 
 - During Word Guess and Picture Guess, the "Watch the screen" message on phones sits in the middle of the screen instead of the lower half.

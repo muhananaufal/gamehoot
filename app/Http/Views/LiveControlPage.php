@@ -66,16 +66,14 @@ final readonly class LiveControlPage
     }
 
     /**
-     * D-11: the Replay card: the moments of each game, the one on screen, whether a question
-     * blocks a replay now, and the game picked first (the one replayed, else the last finished).
+     * D-11: the Replay card: the moments of each game, the one on screen, and whether a question
+     * blocks a replay now. No game is picked first unless one is replayed (the card's view).
      *
-     * @return array{groups: list<array{game: Game, moments: list<Moment>}>, current: ?array{kind: string, game: string, question: ?string}, busy: bool, pick: ?string}
+     * @return array{groups: list<array{game: Game, moments: list<Moment>}>, current: ?array{kind: string, game: string, question: ?string}, busy: bool}
      */
     private function replay(Event $event): array
     {
         $groups = $this->replays->forEvent($event);
-        $finished = array_values(array_filter($groups, fn (array $group): bool => $group['game']->status === GameStatus::Finished));
-        $last = $finished !== [] ? $finished[array_key_last($finished)] : ($groups !== [] ? $groups[array_key_last($groups)] : null);
         $current = $event->replay_kind === null ? null : [
             'kind' => $event->replay_kind->value,
             'game' => (string) $event->replay_game_id,
@@ -86,7 +84,6 @@ final readonly class LiveControlPage
             'groups' => $groups,
             'current' => $current,
             'busy' => ReplayOnScreen::questionOnScreen($event),
-            'pick' => $current['game'] ?? $last['game']->id ?? null,
         ];
     }
 
