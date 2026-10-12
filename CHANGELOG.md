@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- During Word Guess and Picture Guess, the "Watch the screen" message on phones sits in the middle of the screen instead of the lower half.
+
 ## [0.6.0] - 2026-10-12
 
 ### Fixed
