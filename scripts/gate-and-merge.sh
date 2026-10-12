@@ -12,6 +12,8 @@
 #
 # Once per machine: git config pentahoot.gateRemote <remote of the gate repository>, and gh
 # signed in with access to it. GATE_REPO (owner/name) overrides the name read from the remote URL.
+# A version tag deploys production; the script then watches that run with scripts/deploy.sh (P10:
+# back to GitHub runners when the office runner is silent). GATE_WATCH_DEPLOY=0 skips the watch.
 set -uo pipefail
 
 required_jobs=(
@@ -21,6 +23,7 @@ required_jobs=(
 )
 origin="${GATE_ORIGIN_REMOTE:-origin}"
 local_cmd="${GATE_LOCAL_CMD:-scripts/ci-local.sh}"
+deploy_cmd="${GATE_DEPLOY_CMD:-scripts/deploy.sh}"
 poll="${GATE_POLL:-20}"
 wait_limit="${GATE_WAIT:-600}"
 
@@ -188,6 +191,13 @@ Gate-Tree: $gated_tree" || die "cannot create the tag $tag"
     git push -q "$origin" "refs/tags/$tag" || die "cannot push the tag $tag to $origin"
     git push -q "$gate_remote" --delete "$gate_ref" 2> /dev/null || true
     echo "Tagged $tag on $head (gate run $run_id)."
+    if [ "${GATE_WATCH_DEPLOY:-1}" != 0 ]; then
+        echo "Watching the production run of $tag (P10); GATE_WATCH_DEPLOY=0 skips this."
+        # Word splitting on purpose: tests pass a command with its arguments.
+        # shellcheck disable=SC2086
+        $deploy_cmd production "$tag"
+        exit $?
+    fi
     exit 0
 fi
 

@@ -112,6 +112,7 @@ job_rules() {
         bash .github/scripts/promote-staging.test.sh
         bash scripts/gate-and-merge.test.sh
         bash deploy/deploy.test.sh
+        bash scripts/deploy.test.sh
         bash scripts/ci-report.test.sh
         bash .github/scripts/repo-rules.sh "$(git merge-base origin/develop HEAD)" HEAD
     } > "$logs/rules.txt" 2>&1 || code=1
