@@ -249,15 +249,7 @@ jobs:
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
-          bash .github/scripts/repo-rules.test.sh
-          bash .github/scripts/ci-sandbox.test.sh
-          bash .github/scripts/gate-run.test.sh
-          bash .github/scripts/gate-trailer.test.sh
-          bash .github/scripts/promote-staging.test.sh
-          bash scripts/gate-and-merge.test.sh
-          bash deploy/deploy.test.sh
-          bash scripts/deploy.test.sh
-          bash scripts/ci-report.test.sh
+          bash .github/scripts/run-tests.sh
           if [ -n "$PR_BASE" ]; then
             # W2: a pull request must contain the newest base commit, so the merge is what was tested.
             if ! git merge-base --is-ancestor "$PR_BASE" "$PR_HEAD"; then
