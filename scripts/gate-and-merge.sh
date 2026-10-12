@@ -210,7 +210,7 @@ if [ -z "$run_id" ]; then
         { [ "$recorded_tree" = "$tree" ] || docs_only "$recorded_tree" "$tree"; } || continue
         # The run may be in either place (P11): the trailer does not say which.
         for repo in "$origin_repo" $mirror_repo; do
-            if jobs_ok "$recorded_run" "$repo"; then
+            if jobs_ok "$recorded_run" "$repo" 2> /dev/null; then
                 run_id="$recorded_run"
                 gated_tree="$recorded_tree"
                 echo "Reusing the green gate run $run_id recorded on ${recorded#refs/remotes/}."
@@ -278,8 +278,18 @@ office_takes() {
     done
 }
 
+# Pushes the temporary gate ref. Its output is shown only when the push fails: GitHub's "Create a
+# pull request" hint for a new branch does not apply to this ref and confused readers.
+push_gate_ref() {
+    local out
+    out="$(git push -q --force "$gate_remote" "$gate_commit:$gate_ref" 2>&1)" || {
+        printf '%s\n' "$out" >&2
+        die "cannot push to $gate_remote"
+    }
+}
+
 if [ -z "$run_id" ]; then
-    git push -q --force "$gate_remote" "$gate_commit:$gate_ref" || die "cannot push to $gate_remote"
+    push_gate_ref
     echo "Gate started for $gate_commit in $gate_repo ($gate_mode); waiting for the run..."
     started="$(await_run "$gate_commit")" || exit 1
     if [ "$gate_mode" = office ] && ! office_takes "$started"; then
@@ -287,7 +297,7 @@ if [ -z "$run_id" ]; then
             git push -q "$origin" --delete "$gate_ref" 2> /dev/null || true
             use_mirror
             echo "Moving the gate to the gate repository $gate_repo."
-            git push -q --force "$gate_remote" "$gate_commit:$gate_ref" || die "cannot push to $gate_remote"
+            push_gate_ref
             started="$(await_run "$gate_commit")" || exit 1
         else
             github_cmd="gh workflow run ci.yml --repo $gate_repo --ref gate/$branch -f gate=true -f runner=github"
