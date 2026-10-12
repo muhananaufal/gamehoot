@@ -31,6 +31,7 @@ while read -r _old new ref; do
     n=\$((\$(cat "$state/pushes") + 1)); echo "\$n" > "$state/pushes"
     printf '[{"databaseId":%s,"status":"completed","conclusion":"%s"}]\n' "\$n" "\$(cat "$state/result")" > "$state/runs/\$new"
     cp "$state/job-names" "$state/jobs/\$n"
+    echo test/gate > "$state/repo-of-\$n"
 done
 HOOK
     chmod +x "$root/gate.git/hooks/post-receive"
@@ -48,6 +49,9 @@ while read -r _old new ref; do
     echo "\$n" >> "$state/origin-runs"
     printf '[{"databaseId":%s,"status":"%s","conclusion":"%s"}]\n' "\$n" "\$(cat "$state/origin-status")" "\$(cat "$state/result")" > "$state/runs/\$new"
     cp "$state/origin-job-names" "$state/jobs/\$n"
+    echo test/origin > "$state/repo-of-\$n"
+    # GitHub suggests a pull request for every new branch.
+    echo "Create a pull request for '\${ref#refs/heads/}' on GitHub by visiting:"
 done
 HOOK
     chmod +x "$root/origin.git/hooks/post-receive"
@@ -81,6 +85,12 @@ case "$1 $2" in
         id="$3"; grep -l "\"databaseId\":$id," "$state"/runs/* | xargs cat | grep -q '"conclusion":"success"' ;;
     "run view")
         id="$3"
+        # A run lives in one repository; GitHub answers 404 for it anywhere else.
+        repo="$(sed -n 's/.*--repo \([^ ]*\).*/\1/p' <<< "$*")"
+        if [ -f "$state/repo-of-$id" ] && [ -n "$repo" ] && [ "$(cat "$state/repo-of-$id")" != "$repo" ]; then
+            echo "failed to get run: HTTP 404: Not Found" >&2
+            exit 1
+        fi
         if [[ "$*" == *status,jobs* ]]; then
             # The office pickup check: "status<TAB>conclusion<TAB>name" per gate job.
             queued=0
@@ -255,6 +265,8 @@ echo "- Added a game" >> CHANGELOG.md
 git commit -qam "docs(changelog): release 1.1.0"
 run_script --no-local release/1.1.0 main; to_main=$?
 check "a changelog-only release reaches main" test "$first" = 0 -a "$to_main" = 0
+# The recorded run is looked up in both places; the miss in one must not print as an error.
+check "looking up the recorded run prints no 404" bash -c '! grep -q "HTTP 404" "$1"' _ "$root/out.txt"
 check "the merge to main starts no new gate" test "$(pushes)" = 1
 check "main carries valid trailers" gated "" main
 run_script --no-local release/1.1.0 develop; back=$?
@@ -315,6 +327,7 @@ git config --unset pentahoot.gateMode
 run_script feature/x; code=$?
 check "office is the default gate and merges" test "$code" = 0 -a "$(wc -l < "$state/origin-runs" 2> /dev/null)" = 1
 check "the office gate yields valid trailers" gated
+check "GitHub's pull request hint for the gate ref is not shown" bash -c '! grep -q "Create a pull request" "$1"' _ "$root/out.txt"
 check "the office gate ref is removed from origin" test -z "$(git --git-dir="$root/origin.git" for-each-ref refs/heads/gate)"
 check "the gate repository is not used" test "$(pushes)" = 1 -a -z "$(git --git-dir="$root/gate.git" for-each-ref refs/heads/gate)"
 cleanup

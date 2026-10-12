@@ -21,6 +21,8 @@ return [
     'moved_up' => 'up __N__',
     'moved_down' => 'down __N__',
     'new_entry' => 'new',
+    // E11: the badge of a name new in the top five.
+    'new_badge' => 'NEW',
     'watch_screen' => 'Watch the screen and answer out loud to the host.',
     'answer_image' => 'The answer',
 

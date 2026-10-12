@@ -65,6 +65,32 @@ it('shows a Tebak Kata question on the projector and mirrors it on phones only w
     $phone->assertSee('Final results')->assertNoJavaScriptErrors();
 });
 
+it('centres the Watch the screen message on phones when they do not mirror the screen (E14)', function (): void {
+    $event = Pentahoot::event(['Budi Santoso'], ['show_on_devices' => false]);
+    // The fixture's names are claimed already; a phone needs a free one.
+    Person::factory()->for($event)->create(['name' => 'Rita Wulandari']);
+    TebakKata::running($event, [['Capital of France?', 'PARIS', [0]]]);
+
+    $phone = visit('/year-end-party')->on()->iPhone15()->click('Rita Wulandari')
+        ->assertSee('Watch the screen and answer out loud to the host.');
+
+    // The Pentahoot part of the page draws nothing for a Tebak game, so it must not take space:
+    // the message box fills the page and centres its content. (The connection bar above it shows
+    // here because tests run without Reverb, so the box is measured, not the page centre.)
+    // Retried until the page settles (CI measured 0.05 right after the text appeared); the bug kept
+    // the box at 0.60 for good.
+    $phone->assertScript(<<<'JS'
+        (() => {
+            const box = document.querySelector(`[x-show="view !== 'final' && !mirrored"]`).getBoundingClientRect();
+            const main = document.querySelector('main').getBoundingClientRect();
+
+            return box.height / main.height > 0.75;
+        })()
+        JS, true);
+
+    $phone->assertNoJavaScriptErrors();
+});
+
 it('runs a Tebak Kata question from Live control: show, hint, winner and leaderboard (D-5, D-6, E5, E11)', function (): void {
     $event = Pentahoot::event(['Rita Wulandari', 'Budi Santoso']);
     TebakKata::running($event, [['Capital of France?', 'PARIS', [0]], ['Largest ocean?', 'PACIFIC', [1]]]);
@@ -105,5 +131,37 @@ it('runs a Tebak Kata question from Live control: show, hint, winner and leaderb
         ->click('@show-leaderboard')
         // The button goes once the leaderboard is on screen (E11).
         ->assertMissing('@show-leaderboard')
+        ->assertNoJavaScriptErrors();
+});
+
+it('moves the leaderboard from the board before the last win to the board now, with arrows and NEW (E11)', function (): void {
+    $event = Pentahoot::event(['Budi Santoso', 'Rita Wulandari']);
+    $game = TebakKata::running($event, [['Capital of France?', 'PARIS', [0], 1], ['Largest ocean?', 'PACIFIC', [1], 2]]);
+    [$first, $second] = $game->questions()->orderBy('position')->get()->all();
+
+    runKata($event, $first, 'show');
+    runKata($event, $first, 'winner', ['person' => Pentahoot::person($event, 'Budi Santoso')->id]);
+    runKata($event, $second, 'show');
+    runKata($event, $second, 'winner', ['person' => Pentahoot::person($event, 'Rita Wulandari')->id]);
+
+    $screen = visit('/year-end-party/screen')->resize(1920, 1080)->assertSee('Winner:');
+    // Record which name leads the visible ranked list each time the page changes.
+    $screen->script(<<<'JS'
+        window.leaders = [];
+        new MutationObserver(() => {
+            const row = [...document.querySelectorAll('ol li')].find((li) => li.offsetParent !== null);
+            const name = row?.innerText.includes('Rita') ? 'R' : row?.innerText.includes('Budi') ? 'B' : '';
+            if (name && window.leaders.at(-1) !== name) {
+                window.leaders.push(name);
+            }
+        }).observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+        JS);
+
+    runKata($event, $second, 'leaderboard');
+
+    // First the board after Q1 (Budi alone), then the board now (Rita on top).
+    $screen->assertScript('window.leaders.join("")', 'BR');
+    $screen->assertSee('NEW')
+        ->assertScript('[...document.querySelectorAll("ol li [role=img]")].filter((el) => el.offsetParent !== null).map((el) => el.getAttribute("aria-label")).join(",")', 'new,down 1')
         ->assertNoJavaScriptErrors();
 });

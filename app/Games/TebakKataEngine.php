@@ -118,7 +118,8 @@ final readonly class TebakKataEngine implements LiveGameEngine
     /**
      * F1, F2, E5: the question on screen. Closed boxes never carry their letter on the public
      * channel; the answer and the winner arrive once the question is resolved. E11: the
-     * leaderboard while shown (G14); E12, E17: the frozen final board once the game finished.
+     * leaderboard while shown (G14), with the board before the last win; E12, E17: the frozen
+     * final board once the game finished.
      */
     public function snapshot(Game $game, Audience $audience): array
     {
@@ -135,6 +136,8 @@ final readonly class TebakKataEngine implements LiveGameEngine
             'count' => $questions->count(),
             'question' => $current === null ? null : $this->questionPart($current, $audience, $resolved),
             'leaderboard' => $game->leaderboard_at === null ? null : $this->board->live($game),
+            // E11: the board before the last win, which the screens move from into the leaderboard.
+            'leaderboard_before' => $game->leaderboard_at === null ? null : $this->board->liveBefore($game),
             'final' => $game->status === GameStatus::Finished ? $this->board->frozen($game) : null,
         ];
 

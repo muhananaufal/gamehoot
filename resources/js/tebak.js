@@ -1,6 +1,7 @@
 // Screen logic both Tebak games share (Tebak Kata and Tebak Gambar), for the Public View, the
 // phone mirror (E14) and Live control. Pure functions over the game part of the snapshot;
 // covered by tests/js/tebak.test.js.
+import { fill } from './pentahoot.js';
 
 /**
  * What the screen shows.
@@ -36,6 +37,50 @@ export function movementOf(row) {
     }
 
     return { direction: row.movement > 0 ? 'up' : 'down', steps: Math.abs(row.movement) };
+}
+
+/**
+ * E11: a row's move as the screens draw it, a colored arrow with its steps or a NEW badge, with
+ * the words screen readers hear. Nothing for a name that kept its place, or before the cards moved.
+ */
+export function moveBadge(row, labels) {
+    if (row.settled === false) {
+        return null;
+    }
+
+    const move = movementOf(row);
+
+    if (move.direction === 'same') {
+        return null;
+    }
+
+    const label = {
+        up: fill(labels.moved_up ?? '', { N: move.steps }),
+        down: fill(labels.moved_down ?? '', { N: move.steps }),
+        new: labels.new_entry ?? '',
+    }[move.direction];
+
+    return { ...move, label };
+}
+
+/** E11: how long the board before the last win stays before the cards move to their new places. */
+export const BOARD_HOLD_MS = 1200;
+
+/** E11: whether there is a board before the last win to move from (none after the first win). */
+export function hasBoardBefore(before) {
+    return Array.isArray(before) && before.length > 0;
+}
+
+/**
+ * E11: the rows of a leaderboard in each phase of its transition: 'before' is the board before
+ * the last win, not settled yet (no moves shown); 'after' the board now, settled, with its moves.
+ */
+export function boardRows(before, now, phase) {
+    if (phase === 'before' && hasBoardBefore(before)) {
+        return before.map((row) => ({ ...row, settled: false }));
+    }
+
+    return (now ?? []).map((row) => ({ ...row, settled: true }));
 }
 
 /**

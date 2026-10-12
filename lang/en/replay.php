@@ -8,6 +8,8 @@ return [
     'card_title' => 'Replay on screen',
     'card_help' => 'Show a past moment on the projector again.',
     'game' => 'Game',
+    'pick_game' => 'Pick a game',
+    'pick_hint' => 'Pick a game to see the moments you can show again. Pick it again to close the list.',
     'final' => 'Final podium',
     'final_results' => 'Final results',
     'question' => 'Question __N__',

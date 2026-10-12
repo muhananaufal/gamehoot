@@ -45,12 +45,18 @@ export function typeAhead(options, letter, from) {
     return from;
 }
 
-export function selectBox({ options, value, view = globalThis.window }) {
+/**
+ * `placeholder` labels the button while nothing is chosen. `clearable`: choosing the chosen value
+ * again empties the dropdown (D-11, the game of Replay on screen).
+ */
+export function selectBox({ options, value, placeholder = '', clearable = false, view = globalThis.window }) {
     // `view` stays out of the component data: Alpine would make the whole window reactive.
 
     return {
         options,
         value,
+        placeholder,
+        clearable,
         open: false,
         q: '',
         active: 0,
@@ -70,11 +76,15 @@ export function selectBox({ options, value, view = globalThis.window }) {
             return this.options.find((option) => option.value === this.value) ?? null;
         },
 
+        get empty() {
+            return this.selected === null;
+        },
+
         get selectedLabel() {
             const option = this.selected;
 
             if (!option) {
-                return '';
+                return this.placeholder;
             }
 
             return option.count === undefined ? String(option.label) : `${option.label} · ${option.count}`;
@@ -118,7 +128,7 @@ export function selectBox({ options, value, view = globalThis.window }) {
         },
 
         choose(option) {
-            this.value = option.value;
+            this.value = this.clearable && option.value === this.value ? null : option.value;
             this.close(true);
         },
 

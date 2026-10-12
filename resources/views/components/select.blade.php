@@ -6,12 +6,16 @@
     // Sends the choice with a form; leave out when bound with x-model.
     'name' => null,
     'value' => null,
+    // D-11: shown while nothing is chosen; with it, nothing is chosen until the user picks.
+    'placeholder' => null,
+    // D-11: choosing the chosen value again empties the dropdown.
+    'clearable' => false,
 ])
 @php
     $id = 'select-' . \Illuminate\Support\Str::random(8);
 @endphp
 {{-- U22: the themed dropdown (resources/js/select-box.js), W3C APG select-only combobox. --}}
-<div x-data="selectBox({ options: {{ \Illuminate\Support\Js::from($options) }}, value: {{ \Illuminate\Support\Js::from($value ?? ($options[0]['value'] ?? null)) }} })" x-modelable="value"
+<div x-data="selectBox({ options: {{ \Illuminate\Support\Js::from($options) }}, value: {{ \Illuminate\Support\Js::from($value ?? ($placeholder === null ? ($options[0]['value'] ?? null) : null)) }}, placeholder: {{ \Illuminate\Support\Js::from($placeholder ?? '') }}, clearable: {{ $clearable ? 'true' : 'false' }} })" x-modelable="value"
     @keydown.escape.stop="open && close(true)" @click.outside="open && close()"
     {{ $attributes->merge(['class' => 'relative inline-flex']) }}>
     @if ($name)
@@ -20,7 +24,7 @@
     <button type="button" x-ref="button" role="combobox" aria-label="{{ $label }}" aria-haspopup="listbox" aria-controls="{{ $id }}"
         :aria-expanded="open.toString()" @click="toggle()" @keydown="onKey($event)"
         class="inline-flex h-11 w-full min-w-28 cursor-pointer items-center justify-between gap-3 rounded-control border border-field-line bg-field px-3.5 text-body font-semibold text-ink tabular-nums hover:bg-subtle">
-        <span class="truncate" x-text="selectedLabel"></span>
+        <span class="truncate" :class="empty && 'font-normal text-muted'" x-text="selectedLabel"></span>
         <x-icon name="chevron-down" class="size-4 shrink-0 text-muted transition-transform" ::class="open && 'rotate-180'" />
     </button>
     {{-- Fixed to the screen (select-box.js), so a scrolling box never cuts the list off. --}}

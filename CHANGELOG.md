@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-12
+
+### Added
+
+- Players can switch their phone between the light and the dark theme from the header; the phone remembers the choice.
+
+### Changed
+
+- The Word Guess and Picture Guess leaderboard first shows the standings before the last question, then slides each name to its new place, on the projector, on phones and in replays. Moves are colored arrows with the steps, and a name new in the top five gets a NEW badge.
+- Replay on screen in Live control starts with no game picked, so its list of moments no longer fills the Monitor column; picking the picked game again closes the list.
+
+### Fixed
+
+- During Word Guess and Picture Guess, the "Watch the screen" message on phones sits in the middle of the screen instead of the lower half.
+
 ## [0.6.0] - 2026-10-12
 
 ### Fixed
@@ -260,7 +275,8 @@ Foundation stage: accounts, events, question packs, name lists and joining from 
 - Players join from the event link by picking their name, or straight from their personal link, without an account; the phone is remembered for reconnecting.
 - Phones show clear screens when an event is not found, not open yet, ended, locked for new players, or when a name is already in use.
 
-[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.6.0...develop
+[Unreleased]: https://github.com/devivace-groups/pentahoot/compare/v0.6.1...develop
+[0.6.1]: https://github.com/devivace-groups/pentahoot/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/devivace-groups/pentahoot/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/devivace-groups/pentahoot/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/devivace-groups/pentahoot/compare/v0.3.0...v0.4.0

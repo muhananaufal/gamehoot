@@ -44,6 +44,25 @@ final class Leaderboard
     }
 
     /**
+     * E11: the top five as they stood before the last win, which the screens show first and then
+     * move into the board now. Empty before the second win, since there was no board yet.
+     *
+     * @param  list<Win>  $wins
+     * @return list<array{rank: int, name: string, points: int}>
+     */
+    public static function before(array $wins): array
+    {
+        if (count($wins) < 2) {
+            return [];
+        }
+
+        return array_map(
+            fn (array $row): array => ['rank' => $row['rank'], 'name' => $row['name'], 'points' => $row['points']],
+            self::rank(self::withoutLatest($wins)),
+        );
+    }
+
+    /**
      * @param  list<Win>  $wins
      * @return list<array{person_id: string, name: string, points: int, reached_at: CarbonImmutable, rank: int}>
      */
