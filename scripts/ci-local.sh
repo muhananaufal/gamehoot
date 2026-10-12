@@ -107,13 +107,7 @@ job_rules() {
     detached "$logs/actionlint.txt" -v "$mount:/repo" -w /repo "$actionlint_image" -color=false || code=1
     detached "$logs/zizmor.txt" -e GH_TOKEN="$(gh auth token 2>/dev/null || true)" -v "$mount:/repo" -w /repo "$zizmor_image" --config .github/zizmor.yml --min-severity=low .github || code=1
     {
-        bash .github/scripts/repo-rules.test.sh
-        bash .github/scripts/gate-trailer.test.sh
-        bash .github/scripts/promote-staging.test.sh
-        bash scripts/gate-and-merge.test.sh
-        bash deploy/deploy.test.sh
-        bash scripts/deploy.test.sh
-        bash scripts/ci-report.test.sh
+        bash .github/scripts/run-tests.sh
         bash .github/scripts/repo-rules.sh "$(git merge-base origin/develop HEAD)" HEAD
     } > "$logs/rules.txt" 2>&1 || code=1
     return "$code"

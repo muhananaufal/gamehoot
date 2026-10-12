@@ -7,25 +7,32 @@
 #   Gate-Tree: <tree hash that passed>
 # Gate trailers are written by this script only (AGENTS.md section 5).
 #
-#   scripts/gate-and-merge.sh [--no-local] <branch> [develop|main|release/x.y.z]
-#   scripts/gate-and-merge.sh [--no-local] --tag v1.1.0-rc.1 <branch>
+#   scripts/gate-and-merge.sh [--no-local] [--gate office|mirror] <branch> [develop|main|release/x.y.z]
+#   scripts/gate-and-merge.sh [--no-local] [--gate office|mirror] --tag v1.1.0-rc.1 <branch>
 #
-# Once per machine: git config pentahoot.gateRemote <remote of the gate repository>, and gh
-# signed in with access to it. GATE_REPO (owner/name) overrides the name read from the remote URL.
+# P11: where the gate runs. "office" (the default, or git config pentahoot.gateMode) pushes the
+# gate ref to origin, whose gate jobs run on the office runner (GATE_RUNNER=self-hosted there).
+# "mirror" uses the gate repository: git config pentahoot.gateRemote <remote>, gh with access to
+# it; GATE_REPO (owner/name) overrides the name read from its URL. When origin skips the gate jobs
+# or no office job starts within GATE_QUEUE_LIMIT seconds (default 600), the office gate moves to
+# the gate repository if there is one, and otherwise asks before using GitHub-hosted runners on
+# origin (organisation minutes). GATE_ORIGIN_REPO overrides origin's owner/name.
 # A version tag deploys production; the script then watches that run with scripts/deploy.sh (P10:
 # back to GitHub runners when the office runner is silent). GATE_WATCH_DEPLOY=0 skips the watch.
 set -uo pipefail
 
-required_jobs=(
-    'PHP (Pint, Larastan, audit, Pest, mutation)'
-    'Pest browser (Chrome, Safari)'
-    'Production image proof, frontend, Gitleaks, workflow lint, repo rules'
-)
+# The gate jobs that must all pass (one list, checked against ci.yml by gate-jobs.test.sh).
+mapfile -t required_jobs < <(grep -v '^$' "$(dirname "$0")/../.github/gate-jobs.txt")
+[ "${#required_jobs[@]}" -gt 0 ] || {
+    echo "gate-and-merge: .github/gate-jobs.txt lists no gate job" >&2
+    exit 1
+}
 origin="${GATE_ORIGIN_REMOTE:-origin}"
 local_cmd="${GATE_LOCAL_CMD:-scripts/ci-local.sh}"
 deploy_cmd="${GATE_DEPLOY_CMD:-scripts/deploy.sh}"
 poll="${GATE_POLL:-20}"
 wait_limit="${GATE_WAIT:-600}"
+queue_limit="${GATE_QUEUE_LIMIT:-600}"
 
 die() {
     echo "gate-and-merge: $*" >&2
@@ -39,10 +46,12 @@ usage() {
 
 run_local=1
 tag=""
+gate_mode=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --no-local) run_local=0 ;;
         --tag) [ $# -ge 2 ] || usage; tag="$2"; shift ;;
+        --gate) [ $# -ge 2 ] || usage; gate_mode="$2"; shift ;;
         -h | --help) usage ;;
         -*) usage ;;
         *) break ;;
@@ -62,10 +71,43 @@ if [ -z "$tag" ]; then
     [ "$branch" != "$target" ] || die "cannot merge $branch into itself"
 fi
 
-gate_remote="$(git config --get pentahoot.gateRemote)" || die "set the gate remote once: git config pentahoot.gateRemote <remote>"
-gate_url="$(git remote get-url "$gate_remote" 2> /dev/null)" || die "the gate remote $gate_remote does not exist"
-gate_repo="${GATE_REPO:-$(sed -E 's#^(https://github\.com/|git@github\.com:)##; s#\.git$##' <<< "$gate_url")}"
-[[ "$gate_repo" =~ ^[^/[:space:]]+/[^/[:space:]]+$ ]] || die "cannot read owner/name from $gate_url; set GATE_REPO"
+# owner/name of remote $1, or $2 when set.
+repo_of() {
+    local url name
+    url="$(git remote get-url "$1" 2> /dev/null)" || die "the remote $1 does not exist"
+    name="${2:-$(sed -E 's#^(https://github\.com/|git@github\.com:)##; s#\.git$##' <<< "$url")}"
+    [[ "$name" =~ ^[^/[:space:]]+/[^/[:space:]]+$ ]] || die "cannot read owner/name from $url; set GATE_REPO or GATE_ORIGIN_REPO"
+    printf '%s' "$name"
+}
+
+gate_mode="${gate_mode:-$(git config --get pentahoot.gateMode || echo office)}"
+origin_repo="$(repo_of "$origin" "${GATE_ORIGIN_REPO:-}")" || exit 1
+mirror_remote="$(git config --get pentahoot.gateRemote || true)"
+mirror_repo=""
+if [ -n "$mirror_remote" ]; then
+    mirror_repo="$(repo_of "$mirror_remote" "${GATE_REPO:-}")" || exit 1
+fi
+
+# The gate repository (W18).
+use_mirror() {
+    [ -n "$mirror_remote" ] || die "set the gate remote once: git config pentahoot.gateRemote <remote>"
+    gate_mode=mirror
+    gate_remote="$mirror_remote"
+    gate_repo="$mirror_repo"
+}
+
+# P11: origin's gate jobs on the office runner.
+use_office() {
+    gate_mode=office
+    gate_remote="$origin"
+    gate_repo="$origin_repo"
+}
+
+case "$gate_mode" in
+    mirror) use_mirror ;;
+    office) use_office ;;
+    *) die "the gate is office or mirror, not $gate_mode" ;;
+esac
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
     die "commit or stash your changes first"
@@ -107,10 +149,11 @@ if [ "$run_local" = 1 ]; then
     fi
 fi
 
-# Whether every gate job of run ID passed (a run whose gate jobs were skipped is no gate).
+# Whether every gate job of run ID passed (a run whose gate jobs were skipped is no gate), in
+# repository $2 (default: the current gate).
 jobs_ok() {
     local names job
-    names="$(gh run view "$1" --repo "$gate_repo" --json jobs --jq '.jobs[] | select(.conclusion == "success") | .name')" || return 1
+    names="$(gh run view "$1" --repo "${2:-$gate_repo}" --json jobs --jq '.jobs[] | select(.conclusion == "success") | .name')" || return 1
     for job in "${required_jobs[@]}"; do
         grep -qxF "$job" <<< "$names" || return 1
     done
@@ -164,25 +207,104 @@ if [ -z "$run_id" ]; then
         recorded_tree="$(trailer Gate-Tree "$recorded")"
         [[ "$recorded_run" =~ ^[0-9]+$ ]] || continue
         [ "$(git cat-file -t "$recorded_tree" 2> /dev/null)" = tree ] || continue
-        if { [ "$recorded_tree" = "$tree" ] || docs_only "$recorded_tree" "$tree"; } && jobs_ok "$recorded_run"; then
-            run_id="$recorded_run"
-            gated_tree="$recorded_tree"
-            echo "Reusing the green gate run $run_id recorded on ${recorded#refs/remotes/}."
-            break
-        fi
+        { [ "$recorded_tree" = "$tree" ] || docs_only "$recorded_tree" "$tree"; } || continue
+        # The run may be in either place (P11): the trailer does not say which.
+        for repo in "$origin_repo" $mirror_repo; do
+            if jobs_ok "$recorded_run" "$repo"; then
+                run_id="$recorded_run"
+                gated_tree="$recorded_tree"
+                echo "Reusing the green gate run $run_id recorded on ${recorded#refs/remotes/}."
+                break 2
+            fi
+        done
     done
 fi
 
-if [ -z "$run_id" ]; then
-    git push -q --force "$gate_remote" "$gate_commit:$gate_ref" || die "cannot push to the gate repository"
-    echo "Gate started for $gate_commit in $gate_repo; waiting for the run..."
-    deadline=$((SECONDS + wait_limit))
-    until started="$(gh run list --repo "$gate_repo" --workflow ci.yml --commit "$gate_commit" --json databaseId --jq '.[0].databaseId // empty')" && [ -n "$started" ]; do
-        [ "$SECONDS" -lt "$deadline" ] || die "no gate run appeared for $gate_commit in $wait_limit s"
+# The newest run of ci.yml for COMMIT in the current gate, waiting up to wait_limit for one other
+# than $2 (the run just given up on) to appear.
+await_run() {
+    local id deadline=$((SECONDS + wait_limit))
+    until id="$(gh run list --repo "$gate_repo" --workflow ci.yml --commit "$1" --json databaseId --jq '.[0].databaseId // empty')" && [ -n "$id" ] && [ "$id" != "${2:-}" ]; do
+        [ "$SECONDS" -lt "$deadline" ] || die "no gate run appeared for $1 in $wait_limit s"
         sleep "$poll"
     done
+    printf '%s' "$id"
+}
+
+# P11: what the office runner did with the gate jobs of run ID on origin. Prints "started" (one
+# of them runs or ran), "skipped" (all skipped: GATE_RUNNER is not set on origin) or "waiting".
+office_pickup() {
+    local jobs job line started=0 skipped=0
+    jobs="$(gh run view "$1" --repo "$gate_repo" --json status,jobs --jq '.jobs[] | [.status, .conclusion, .name] | join("\t")')" || {
+        echo waiting
+        return
+    }
+    for job in "${required_jobs[@]}"; do
+        line="$(awk -F '\t' -v name="$job" '$3 == name' <<< "$jobs")"
+        case "$line" in
+            '') ;;
+            completed$'\t'skipped$'\t'*) skipped=$((skipped + 1)) ;;
+            in_progress$'\t'* | completed$'\t'*) started=1 ;;
+        esac
+    done
+    if [ "$started" = 1 ]; then
+        echo started
+    elif [ "$skipped" = "${#required_jobs[@]}" ]; then
+        echo skipped
+    else
+        echo waiting
+    fi
+}
+
+# P11: wait until the office runner takes run ID, at most queue_limit seconds. Returns 1 when it
+# did not (the run is then cancelled) and prints the reason.
+office_takes() {
+    local state deadline=$((SECONDS + queue_limit))
+    while :; do
+        state="$(office_pickup "$1")"
+        case "$state" in
+            started) return 0 ;;
+            skipped)
+                echo "Origin skipped the gate jobs: the repository variable GATE_RUNNER is not set there."
+                return 1
+                ;;
+        esac
+        if [ "$SECONDS" -ge "$deadline" ]; then
+            gh run cancel "$1" --repo "$gate_repo" > /dev/null 2>&1 || true
+            echo "No office runner took the gate in $queue_limit s; run $1 is cancelled."
+            return 1
+        fi
+        sleep "$poll"
+    done
+}
+
+if [ -z "$run_id" ]; then
+    git push -q --force "$gate_remote" "$gate_commit:$gate_ref" || die "cannot push to $gate_remote"
+    echo "Gate started for $gate_commit in $gate_repo ($gate_mode); waiting for the run..."
+    started="$(await_run "$gate_commit")" || exit 1
+    if [ "$gate_mode" = office ] && ! office_takes "$started"; then
+        if [ -n "$mirror_remote" ]; then
+            git push -q "$origin" --delete "$gate_ref" 2> /dev/null || true
+            use_mirror
+            echo "Moving the gate to the gate repository $gate_repo."
+            git push -q --force "$gate_remote" "$gate_commit:$gate_ref" || die "cannot push to $gate_remote"
+            started="$(await_run "$gate_commit")" || exit 1
+        else
+            github_cmd="gh workflow run ci.yml --repo $gate_repo --ref gate/$branch -f gate=true -f runner=github"
+            answer=""
+            if [ -t 0 ]; then
+                read -r -p "No gate repository is set up. Run the gate on GitHub-hosted runners on origin (organisation minutes)? [y/N] " answer
+            fi
+            case "$answer" in
+                y | Y | yes) ;;
+                *) die "no gate ran. Run it on GitHub-hosted runners with: $github_cmd, then run this script again" ;;
+            esac
+            $github_cmd || die "cannot start the gate on GitHub-hosted runners"
+            started="$(await_run "$gate_commit" "$started")" || exit 1
+        fi
+    fi
     gh run watch "$started" --repo "$gate_repo" --exit-status --compact --interval 30 || die "the gate failed: https://github.com/$gate_repo/actions/runs/$started"
-    run_id="$(green_run "$gate_commit")" || die "run $started did not pass every gate job (is GATE_ROLE=gate set in $gate_repo?)"
+    run_id="$(green_run "$gate_commit")" || die "run $started did not pass every gate job (GATE_ROLE=gate in the gate repository, GATE_RUNNER on origin?)"
 fi
 
 if [ -n "$tag" ]; then
@@ -208,7 +330,9 @@ final="$(git commit-tree "$tree" -p "$base" -p "$head" -m "$message" -m "Gate-Ru
 Gate-Tree: $gated_tree
 Co-authored-by: aetheris <agents.aetheris@gmail.com>")" || die "cannot build the merge commit"
 git push -q "$origin" "$final:refs/heads/$target" || die "$origin refused the push to $target (did it move?): rebase and run again"
-git push -q "$gate_remote" "$final:refs/heads/$target" || echo "Warning: the gate repository's $target was not updated." >&2
+if [ -n "$mirror_remote" ]; then
+    git push -q "$mirror_remote" "$final:refs/heads/$target" || echo "Warning: the gate repository's $target was not updated." >&2
+fi
 git push -q "$gate_remote" --delete "$gate_ref" 2> /dev/null || true
 git fetch -q "$origin"
 
