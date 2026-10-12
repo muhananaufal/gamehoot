@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Players can switch their phone between the light and the dark theme from the header; the phone remembers the choice.
+
 ### Changed
 
 - Replay on screen in Live control starts with no game picked, so its list of moments no longer fills the Monitor column; picking the picked game again closes the list.
