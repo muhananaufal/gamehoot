@@ -66,32 +66,23 @@ jobs:
           tag: ${{ env.CI_PHP }}
           push: ${{ vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '' }}
       - name: Check formatting (Pint)
-        run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" "$CI_PHP" vendor/bin/pint --test
+        run: bash .github/scripts/ci-run.sh php vendor/bin/pint --test
       - name: Analyse (Larastan)
-        run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" "$CI_PHP" vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+        run: bash .github/scripts/ci-run.sh php vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - name: Audit dependencies
-        run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" "$CI_PHP" composer audit
+        run: bash .github/scripts/ci-run.sh php composer audit
       - name: Wait for MySQL
         run: bash .github/scripts/ci-mysql.sh wait
       - name: Run test suite (MySQL 8.4)
         run: |
           cp .env.example .env
-          app_key="base64:$(openssl rand -base64 32)"
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="$app_key" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" php artisan test --display-warnings
+          bash .github/scripts/ci-run.sh php-db php artisan test --display-warnings
       - name: Mutation test of the core rules (K2)
         # E1 CompetitionRanking, E3 VoteWindow, E5 AnswerBoxes, E10 Leaderboard. Measured 89.47%
         # with --parallel (10 of 95 mutations survive); the score moves a little with timing, so
         # --min keeps a margin. Raise it once the surviving mutations are tested.
         run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" php -d pcov.enabled=1 vendor/bin/pest tests/Unit/Games --mutate --everything --covered-only --parallel --min=85 --class='App\Games\Pentahoot\CompetitionRanking,App\Games\Pentahoot\VoteWindow,App\Games\TebakKata\AnswerBoxes,App\Games\Tebak\Leaderboard'
+          bash .github/scripts/ci-run.sh php-db php -d pcov.enabled=1 vendor/bin/pest tests/Unit/Games --mutate --everything --covered-only --parallel --min=85 --class='App\Games\Pentahoot\CompetitionRanking,App\Games\Pentahoot\VoteWindow,App\Games\TebakKata\AnswerBoxes,App\Games\Tebak\Leaderboard'
       - name: Remove this job's containers, network and images (P11)
         if: ${{ always() }}
         run: bash .github/scripts/ci-sandbox.sh cleanup
@@ -121,16 +112,14 @@ jobs:
           push: ${{ vars.GATE_ROLE == 'gate' || vars.GATE_RUNNER != '' }}
       - name: Install packages and build assets
         run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c 'npm ci --no-audit --no-fund && npm run build'
+          bash .github/scripts/ci-run.sh node sh -c 'npm ci --no-audit --no-fund && npm run build'
           cp .env.example .env
       - name: Wait for MySQL
         run: bash .github/scripts/ci-mysql.sh wait
       - name: Run browser tests in Chrome (W11)
         # storage:link serves the public question images under /media (F16).
         run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser chrome"
+          bash .github/scripts/ci-run.sh php-db sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser chrome"
       - name: Set the Chrome screenshots aside
         # Every browser test run empties tests/Browser/Screenshots when it starts (the plugin's
         # Screenshot::cleanup), so the Safari run would delete the evidence of a Chrome failure.
@@ -141,8 +130,7 @@ jobs:
       - name: Run browser tests in Safari (W11)
         if: ${{ !cancelled() }}
         run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/var/www/html" -e APP_KEY="base64:$(openssl rand -base64 32)" -e DB_HOST="$CI_DB" -e DB_PORT=3306 -e DB_USERNAME=root -e DB_PASSWORD=ci-only-root "$CI_PHP" sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser safari"
+          bash .github/scripts/ci-run.sh php-db sh -c "php artisan storage:link --force > /dev/null && php artisan test --testsuite=Browser --browser safari"
       - name: Set the Safari screenshots aside
         if: ${{ !cancelled() }}
         run: |
@@ -223,8 +211,7 @@ jobs:
       - name: ESLint, Prettier, Vitest, build, phone bundle budget (F27)
         if: ${{ !cancelled() }}
         run: |
-          # shellcheck disable=SC2086 # CI_RUN holds several docker options
-          docker run --rm $CI_RUN -v "$PWD:/app" -w /app "node:$(cat .nvmrc)-bookworm-slim" sh -c '
+          bash .github/scripts/ci-run.sh node sh -c '
             npm ci --no-audit --no-fund &&
             npx eslint . &&
             npx prettier --check resources/js tests/js scripts/load "*.config.js" &&
