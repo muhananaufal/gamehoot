@@ -77,16 +77,17 @@ it('centres the Watch the screen message on phones when they do not mirror the s
     // The Pentahoot part of the page draws nothing for a Tebak game, so it must not take space:
     // the message box fills the page and centres its content. (The connection bar above it shows
     // here because tests run without Reverb, so the box is measured, not the page centre.)
-    $share = $phone->script(<<<'JS'
+    // Retried until the page settles (CI measured 0.05 right after the text appeared); the bug kept
+    // the box at 0.60 for good.
+    $phone->assertScript(<<<'JS'
         (() => {
             const box = document.querySelector(`[x-show="view !== 'final' && !mirrored"]`).getBoundingClientRect();
             const main = document.querySelector('main').getBoundingClientRect();
 
-            return box.height / main.height;
+            return box.height / main.height > 0.75;
         })()
-        JS);
+        JS, true);
 
-    expect(is_numeric($share) ? (float) $share : null)->toBeGreaterThan(0.75);
     $phone->assertNoJavaScriptErrors();
 });
 
