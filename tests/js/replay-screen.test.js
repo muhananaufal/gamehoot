@@ -71,3 +71,22 @@ describe('D-11 what the Public View draws for a replayed moment', () => {
         expect(surrendered.winner).toBeNull();
     });
 });
+
+describe('E11 a replayed leaderboard moves from the board before that question', () => {
+    it('reads the board before as votes like the rows', () => {
+        const board = replayView({
+            kind: 'leaderboard',
+            type: 'tebak_kata',
+            game: 'Word Round',
+            number: 2,
+            title: 'PACIFIC',
+            rows: [{ rank: 1, name: 'Budi Santoso', score: 2 }],
+            before: [{ rank: 1, name: 'Budi Santoso', score: 1 }],
+        });
+
+        expect(board.before).toEqual([{ rank: 1, name: 'Budi Santoso', votes: 1 }]);
+        expect(
+            replayView({ kind: 'final', type: 'tebak_kata', game: 'G', number: null, title: 'G', rows }).before,
+        ).toEqual([]);
+    });
+});

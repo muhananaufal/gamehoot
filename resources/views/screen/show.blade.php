@@ -97,7 +97,7 @@
             {{-- E11: the leaderboard after a win, with each name's move. --}}
             <x-scene show="view === 'leaderboard'" class="flex flex-col gap-[3vh] text-screen-body">
                 <p class="font-display text-[1.6em] font-bold">{{ __('tebak.leaderboard') }}</p>
-                <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" note="moveLabel(row)" />
+                <x-rank-list rows="board.map((row) => ({ ...row, votes: row.points }))" move="moveOf(row)" />
                 <p class="text-[0.7em] text-muted">{{ __('tebak.tie_note') }}</p>
             </x-scene>
 
@@ -135,7 +135,7 @@
                         <x-podium stand="view.stand" :score="__('tebak.points')" class="grow justify-end text-screen-body" />
                     </template>
                     <template x-if="view.shape === 'list'">
-                        <x-rank-list rows="view.rows" class="text-screen-body" />
+                        <x-rank-list rows="listRows" class="text-screen-body" />
                     </template>
                     <template x-if="view.shape === 'winner'">
                         <div class="flex grow flex-col items-center justify-center gap-[3vh] text-center">
