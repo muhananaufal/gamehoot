@@ -26,6 +26,8 @@ final readonly class SavePackQuestion
         $engine = $this->engines->for($pack->game_type);
 
         return DB::transaction(function () use ($pack, $question, $validated, $engine, $actor): PackQuestion {
+            $pack->contentChanged();
+
             if ($question === null) {
                 QuestionPack::query()->lockForUpdate()->findOrFail($pack->id);
                 $last = $pack->questions()->max('position');
@@ -33,7 +35,7 @@ final readonly class SavePackQuestion
                 $question->pack()->associate($pack);
             }
 
-            // G11: a file written before a failed transaction stays behind as a traceable orphan.
+            // G11: files written here are deleted again if the transaction rolls back.
             $validated = $this->images->store($engine, $validated, $actor);
 
             $question->fill($engine->questionAttributes($validated))->save();

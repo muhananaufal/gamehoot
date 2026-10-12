@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 return [
     'title' => 'Results',
-    'subtitle' => 'Frozen when each question was revealed. Changes after that do not alter them.',
     'export' => 'Export CSV',
     'last_change' => 'Last change: :time WIB',
     'reopened_note' => 'If you exported the CSV before this time, export it again.',
-    'empty' => 'No game has results yet.',
+    'empty_title' => 'No results yet.',
+    'empty' => 'Results appear here once a game reveals its first question. Run the games from Live control.',
     'question' => 'Question :number',
     'rank' => 'Rank',
     'name' => 'Name',

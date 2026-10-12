@@ -19,9 +19,22 @@ export default [
         },
     },
     {
+        files: ['scripts/**/*.mjs'],
+        languageOptions: {
+            globals: globals.node,
+        },
+    },
+    {
         rules: {
             eqeqeq: 'error',
             'no-console': ['error', { allow: ['warn', 'error'] }],
+        },
+    },
+    {
+        // F19: the load test is a command line tool; its report is its output.
+        files: ['scripts/**/*.mjs'],
+        rules: {
+            'no-console': 'off',
         },
     },
 ];

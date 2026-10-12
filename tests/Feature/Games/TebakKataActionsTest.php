@@ -32,7 +32,8 @@ uses(RefreshDatabase::class);
  */
 function kataAction(Event $event, Question $question, string $action, array $input = []): TestResponse
 {
-    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}", $input);
+    // G15: like Live control, every action carries the version on screen.
+    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}", ['version' => $event->fresh()?->state_version, ...$input]);
 }
 
 function kataQuestion(Game $game, int $position): Question
@@ -109,7 +110,7 @@ describe('skip (E6, D-5)', function (): void {
             ->and($game->refresh()->current_question_id)->toBeNull();
 
         kataAction($event, $first, 'show')->assertNoContent();
-        kataAction($event, $first, 'skip')->assertConflict();
+        kataAction($event, $first, 'skip')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
     });
 
     it('cannot skip when nothing else is left in the queue (E6)', function (): void {
@@ -118,7 +119,7 @@ describe('skip (E6, D-5)', function (): void {
         $only = kataQuestion($game, 1);
         kataAction($event, $only, 'show');
 
-        kataAction($event, $only, 'skip')->assertConflict();
+        kataAction($event, $only, 'skip')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
     });
 });
 
@@ -197,10 +198,10 @@ describe('leaderboard and final results (E11, E12, E17, G10)', function (): void
             travelTo(now()->addSecond());
         }
 
-        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish")->assertRedirect();
+        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version])->assertRedirect();
 
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
-            ->and(GameResult::query()->orderBy('rank')->get()->map(fn (GameResult $row): string => "{$row->rank} {$row->person?->name} {$row->points}")->all())
+            ->and(GameResult::query()->with('person')->orderBy('rank')->get()->map(fn (GameResult $row): string => "{$row->rank} {$row->person?->name} {$row->points}")->all())
             ->toBe(['1 Rita Wulandari 1', '2 Budi Santoso 1']);
         // E17: the final podium stays on screen (G7).
         expect(publicSnapshot($event))->toHaveKey('game.status', 'finished')
@@ -214,7 +215,7 @@ describe('guards (C-2, C-3)', function (): void {
         $question = kataQuestion(TebakKata::running($event), 1);
 
         actingAs(User::factory()->create())->postJson("/host/{$event->id}/questions/{$question->id}/show")->assertForbidden();
-        kataAction($event, $question, 'reveal')->assertNotFound();
+        kataAction($event, $question, 'reveal')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
     });
 
     it('locks a question that has been on screen against editing (D-2)', function (): void {

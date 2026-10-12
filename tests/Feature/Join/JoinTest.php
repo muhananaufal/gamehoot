@@ -49,6 +49,28 @@ describe('general join page (B-1, F12)', function (): void {
             ->assertDontSee('Bunga Lestari');
     });
 
+    it('sends a light page for a big list: one form, one button per name (A3)', function (): void {
+        $event = openEvent();
+        Person::factory()->for($event)->count(480)->sequence(fn ($sequence) => ['name' => "Participant Number {$sequence->index}"])->create();
+
+        $html = (string) get('/gathering-2026')->assertOk()->getContent();
+
+        expect(substr_count($html, 'action="'.route('join.claim', $event).'"'))->toBe(1)
+            ->and(substr_count($html, 'name="person"'))->toBe(480)
+            // 300 phones open this page at once when the QR code shows.
+            ->and(strlen($html))->toBeLessThan(120_000);
+    });
+
+    it('gives the name buttons the radius and border of the search box (U23)', function (): void {
+        $event = openEvent();
+        Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+
+        $html = (string) get('/gathering-2026')->assertOk()->getContent();
+
+        expect($html)->toContain('[&_button]:rounded-control [&_button]:border [&_button]:border-field-line')
+            ->and($html)->toContain('h-12 rounded-control border border-field-line');
+    });
+
     it('says the event cannot be found for unknown and deleted events', function (): void {
         get('/no-such-event')->assertNotFound()->assertSee('EVENT_NOT_FOUND');
 
@@ -75,6 +97,17 @@ describe('general join page (B-1, F12)', function (): void {
 });
 
 describe('claiming a name (B-1, G3)', function (): void {
+    it('shows a phone screen when the picked name was removed from the list meanwhile', function (): void {
+        $event = openEvent();
+        $removed = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $removed->delete();
+
+        post('/gathering-2026/claim', ['person' => $removed->id])
+            ->assertNotFound()
+            ->assertSee('This name is no longer on the list')
+            ->assertSee('NAME_NOT_FOUND');
+    });
+
     it('claims a name for this phone and stores only the hash of the token', function (): void {
         $event = openEvent();
         $budi = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
@@ -89,7 +122,16 @@ describe('claiming a name (B-1, G3)', function (): void {
 
         withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')
             ->assertOk()
-            ->assertSee('You’re in, Budi Santoso!', false);
+            ->assertSee('You’re in, Budi Santoso!', false)
+            // U31: the light confetti of phones, with its own cheering Penta.
+            ->assertSee('x-data="celebration({ projector: false })"', false)
+            // U30: phone scenes, the pick that beats, the Sent stamp, Penta's moods and "you" on the podium.
+            ->assertSee('class="scene-stack phone-scenes', false)
+            ->assertSee('x-nudge.pulse=', false)
+            ->assertSee('stamp-in', false)
+            ->assertSee('mood: '."'happy'", false)
+            ->assertSee('mood: '."'sad'", false)
+            ->assertSee('ring-accent', false);
     });
 
     it('refuses a name that another phone already claimed (NAME_TAKEN)', function (): void {

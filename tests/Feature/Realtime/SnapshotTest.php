@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\People\ClaimName;
+use App\Actions\People\EditNameList;
+use App\Actions\People\ReleaseClaim;
 use App\Enums\Audience;
 use App\Enums\QuestionStatus;
 use App\Models\Event;
@@ -46,9 +49,14 @@ it('gives every screen the event, the lobby count and the version (F1, F15, F23)
             'claims_locked' => false,
             'screen_theme' => 'dark',
             'show_on_devices' => false,
+            // U31: idle bursts and confetti on the Public View.
+            'screen_animations' => true,
+            'roster' => 0,
         ],
         'lobby' => ['joined' => 2],
         'game' => null,
+        // D-11: no past moment on screen.
+        'replay' => null,
     ]);
 });
 
@@ -76,6 +84,22 @@ it('computes the body once per version, but the server clock on every call (F4, 
     $bumped->save();
 
     expect(snapshotOf($bumped))->toHaveKey('event.name', 'Renamed without a version bump');
+});
+
+it('keeps one cache entry per event and audience, holding the latest version (audit PERF-1)', function (): void {
+    $event = snapshotEvent();
+    snapshotOf($event);
+
+    foreach ([8, 9, 10] as $version) {
+        $event->bumpStateVersion();
+        $event->save();
+        snapshotOf($event);
+        expect(cache()->get(EventSnapshot::cacheKey($event, Audience::Public)))->toHaveKey('version', $version);
+    }
+
+    // The old per-version keys of the database cache store were never read again, so they
+    // never expired; nothing is written under such a key any more.
+    expect(cache()->has("state:{$event->id}:9:public"))->toBeFalse();
 });
 
 it('tells open screens that a deleted event is gone (D-3)', function (): void {
@@ -131,3 +155,23 @@ it('keeps the largest Tebak Kata snapshot under the Reverb message limit (F14)',
 
     expect(strlen($message))->toBeLessThan(EventSnapshot::MAX_MESSAGE_BYTES);
 })->with(['public', 'host']);
+
+it('moves the roster when the host changes the name list, not when a phone claims a name (B-6)', function (): void {
+    $event = snapshotEvent();
+    $host = $event->owner()->firstOrFail();
+    $names = app(EditNameList::class);
+    $roster = fn (): int => app(EventSnapshot::class)->for($event->refresh(), Audience::Public)['event']['roster'];
+
+    $added = $names->add($event, 'Budi Santoso');
+    expect($roster())->toBe(1);
+    $names->import($event, ['Citra Dewi'], $host);
+    expect($roster())->toBe(2);
+    $names->rename($event, $added, 'Budi S.');
+    expect($roster())->toBe(3);
+    app(ClaimName::class)->handle($event, $added);
+    expect($roster())->toBe(3);
+    app(ReleaseClaim::class)->handle($event, $added->refresh(), $host);
+    expect($roster())->toBe(4);
+    $names->delete($event, $added, $host);
+    expect($roster())->toBe(5);
+});

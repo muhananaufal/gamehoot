@@ -40,17 +40,26 @@ final class RequiredConfig
      */
     public static function missing(): array
     {
-        if (config('broadcasting.default') !== 'reverb') {
-            return [];
-        }
-
         $missing = [];
 
-        foreach (self::REVERB as $key => $variable) {
-            $value = config($key);
+        if (config('broadcasting.default') === 'reverb') {
+            foreach (self::REVERB as $key => $variable) {
+                $value = config($key);
 
-            if (! is_scalar($value) || (string) $value === '') {
-                $missing[] = $variable;
+                if (! is_scalar($value) || (string) $value === '') {
+                    $missing[] = $variable;
+                }
+            }
+        }
+
+        // O7: production never shows stack traces, and its cookies only travel over HTTPS.
+        if (app()->isProduction()) {
+            if (config('app.debug') === true) {
+                $missing[] = 'APP_DEBUG=false';
+            }
+
+            if (config('session.secure') !== true) {
+                $missing[] = 'SESSION_SECURE_COOKIE=true';
             }
         }
 

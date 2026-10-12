@@ -116,7 +116,7 @@ describe('casting a vote (F3, E3, G2, T1)', function (): void {
 
     it('refuses a vote from an earlier attempt after a reset (T1)', function (): void {
         [$event, $question] = liveQuestion();
-        actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/reset")->assertNoContent();
+        actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/reset", ['version' => $event->fresh()?->state_version])->assertNoContent();
         actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/start")->assertNoContent();
         auth()->logout();
 

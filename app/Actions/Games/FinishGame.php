@@ -14,6 +14,7 @@ use App\Models\Game;
 use App\Models\User;
 use App\Realtime\StatePublisher;
 use App\Support\AuditLog;
+use App\Support\SeenVersion;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -27,17 +28,23 @@ final readonly class FinishGame
     public function __construct(private StatePublisher $publisher, private AuditLog $auditLog, private GameEngines $engines) {}
 
     /**
+     * @param  int|null  $seenVersion  G15: the version on the host's screen; null when Close event runs this
+     *
      * @throws ActionRefused
      */
-    public function handle(Event $event, Game $game, User $actor): void
+    public function handle(Event $event, Game $game, User $actor, ?int $seenVersion = null): void
     {
-        DB::transaction(function () use ($event, $game, $actor): void {
+        DB::transaction(function () use ($event, $game, $actor, $seenVersion): void {
             $locked = Event::query()->lockForUpdate()->findOrFail($event->id);
+            SeenVersion::check($locked, $seenVersion);
             $lockedGame = Game::query()->lockForUpdate()->findOrFail($game->id);
 
             if ($locked->active_game_id !== $lockedGame->id || $lockedGame->status === GameStatus::Finished) {
                 throw ActionRefused::stale();
             }
+
+            // D-10: a question already revealed has its result frozen (G10); finishing closes it.
+            $lockedGame->questions()->where('status', QuestionStatus::Revealed)->update(['status' => QuestionStatus::Done]);
 
             $early = $lockedGame->questions()
                 ->whereNotIn('status', [QuestionStatus::Done, QuestionStatus::Won, QuestionStatus::Surrendered])
@@ -48,13 +55,14 @@ final readonly class FinishGame
 
             // G7, E12: the game stays on screen with its final results until the next one starts.
             $lockedGame->forceFill(['status' => GameStatus::Finished, 'current_question_id' => null, 'leaderboard_at' => null])->save();
+            // D-11: play, closing and reopening always end a replay.
+            $locked->endReplay();
             $locked->bumpStateVersion();
             $locked->save();
             $this->publisher->publish($locked);
 
-            if ($early) {
-                $this->auditLog->record(LoggedAction::GameFinishedEarly, $actor, $locked, ['game_id' => $lockedGame->id]);
-            }
+            // E13: results are frozen either way; an early finish says so.
+            $this->auditLog->record($early ? LoggedAction::GameFinishedEarly : LoggedAction::GameFinished, $actor, $locked, ['game_id' => $lockedGame->id]);
         });
     }
 }

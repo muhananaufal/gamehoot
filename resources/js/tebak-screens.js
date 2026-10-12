@@ -1,8 +1,10 @@
 // F20: the Alpine components of the Tebak screens (Tebak Kata and Tebak Gambar). They only read
 // the shared realtime store; the rules live in tebak.js, kata.js and on the server.
+import { cardConfetti } from './celebrate.js';
+import { withBusyButton } from './action-busy.js';
 import { legendOf } from './kata.js';
 import { canReveal, canSkip, movementOf, tebakView } from './tebak.js';
-import { fill, podium, searchPeople } from './pentahoot.js';
+import { fill, podium, promptSize, SCREEN_ROWS, searchPeople } from './pentahoot.js';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
@@ -44,10 +46,27 @@ function base(labels) {
 /**
  * The Public View and the phone mirror (E14) of the Tebak games of the given types: the question
  * (boxes or images), the winner or surrender, the leaderboard (E11) and the final podium (E12, E17).
+ * E20: only the projector (projector: true) caps the podium at ten name rows; phones list everyone.
  */
-export function tebakScreen({ types, labels }) {
+export function tebakScreen({ types, labels, projector = false }) {
     return {
         ...base(labels),
+
+        // U31: a winner and the final podium are worth a celebration, once they happen here.
+        init() {
+            this.$watch(
+                () => this.view,
+                (view) => {
+                    if (view === 'won') {
+                        this.$dispatch('celebrate', { key: `won:${this.question.id}` });
+                    }
+
+                    if (view === 'final') {
+                        this.$dispatch('celebrate', { key: `final:${this.game.id}` });
+                    }
+                },
+            );
+        },
 
         get store() {
             return this.$store.realtime;
@@ -63,6 +82,10 @@ export function tebakScreen({ types, labels }) {
         get question() {
             return this.game?.question ?? null;
         },
+        /** E15: smaller type for longer prompts (Kata up to 500 characters). */
+        get promptFont() {
+            return promptSize(this.question?.prompt ?? this.question?.title).tebak;
+        },
         /** E14: phones mirror the questions only when the host turned it on. */
         get mirrored() {
             return this.store.snapshot?.event?.show_on_devices === true;
@@ -74,6 +97,7 @@ export function tebakScreen({ types, labels }) {
         get stand() {
             return podium(
                 (this.game?.final ?? []).map((row) => ({ rank: row.rank, name: row.name, votes: row.points })),
+                projector ? SCREEN_ROWS : Infinity,
             );
         },
     };
@@ -85,13 +109,25 @@ export function tebakScreen({ types, labels }) {
  * with a confirmation (D-6), surrender, and show the leaderboard (E11). STALE_ACTION is shown
  * when the state moved on (C-3).
  */
-export function tebakHost({ type, actionUrl, people, labels }) {
+export function tebakHost({ type, actionUrl, people, labels, questionIds = [] }) {
     return {
         ...base(labels),
         busy: false,
         error: '',
         query: '',
         chosen: null,
+
+        // U32: the winner is stamped with a little confetti in the card.
+        init() {
+            this.$watch(
+                () => this.status,
+                (status) => {
+                    if (status === 'won' && this.$refs.winnerConfetti) {
+                        cardConfetti(this.$refs.winnerConfetti, { reduced: this.$store.motion?.reduced ?? false });
+                    }
+                },
+            );
+        },
 
         get store() {
             return this.$store.realtime;
@@ -143,6 +179,19 @@ export function tebakHost({ type, actionUrl, people, labels }) {
         },
 
         /** D-5: any queued question, while none is on screen (G7). */
+        /** D-10: Show question 1 starts a game; once a question was shown, Next question or the list goes on. */
+        get firstToOpen() {
+            return this.codes.length > 0 && this.codes.every((code) => code === 'q') ? this.nextToOpen : null;
+        },
+
+        /** D-10: the first queued question, then a skipped one (E6), for Next question. */
+        get nextToOpen() {
+            const queued = this.codes.indexOf('q');
+            const index = queued === -1 ? this.codes.indexOf('Q') : queued;
+
+            return index === -1 || !questionIds[index] ? null : { number: index + 1, id: questionIds[index] };
+        },
+
         canShow(index) {
             const code = this.codes[index];
 
@@ -170,34 +219,40 @@ export function tebakHost({ type, actionUrl, people, labels }) {
             this.busy = true;
             this.error = '';
 
-            try {
-                const response = await fetch(
-                    actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
-                    {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Accept: 'application/json',
-                            'X-CSRF-TOKEN': csrfToken(),
+            // U16: the button that started the action shows the spinner until it ends.
+            await withBusyButton(async () => {
+                try {
+                    const response = await fetch(
+                        actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
+                        {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': csrfToken(),
+                            },
+                            // G15: Pick winner and Surrender are refused when the screen moved on.
+                            body: JSON.stringify({ ...input, version: this.store.version }),
                         },
-                        body: JSON.stringify(input),
-                    },
-                );
+                    );
 
-                if (response.status !== 204) {
-                    const body = await response.json().catch(() => ({}));
-                    this.error = body.message ?? this.labels.network_error;
+                    if (response.status !== 204) {
+                        const body = await response.json().catch(() => ({}));
+                        this.error = body.message ?? this.labels.network_error;
+                    } else if (action === 'winner') {
+                        this.chosen = null;
+                        this.query = '';
+                    }
+
+                    // F1: this page loads the new state itself instead of waiting for the broadcast.
                     this.store.refresh?.();
-                } else if (action === 'winner') {
-                    this.chosen = null;
-                    this.query = '';
+                } catch {
+                    this.error = this.labels.network_error;
+                } finally {
+                    this.busy = false;
                 }
-            } catch {
-                this.error = this.labels.network_error;
-            } finally {
-                this.busy = false;
-            }
+            });
         },
     };
 }

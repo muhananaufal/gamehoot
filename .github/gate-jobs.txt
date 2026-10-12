@@ -1,0 +1,3 @@
+PHP (Pint, Larastan, audit, Pest, mutation)
+Pest browser (Chrome, Safari)
+Production image proof, frontend, Gitleaks, workflow lint, repo rules

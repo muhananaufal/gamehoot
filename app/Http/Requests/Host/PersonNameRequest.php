@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Http\Concerns\LiveValidation;
 use App\Models\Event;
 use App\Models\Person;
 use App\People\PersonName;
@@ -15,7 +16,9 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class PersonNameRequest extends FormRequest
 {
-    public const int MAX_NAMES = 500;
+    use LiveValidation;
+
+    public const int MAX_NAMES = PersonName::MAX_PER_EVENT;
 
     /**
      * @return array<string, list<mixed>>

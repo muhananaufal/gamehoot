@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\User;
+use App\Accounts\Username;
+use App\Http\Concerns\LiveValidation;
 use App\Validation\AccountRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 
 final class StoreUserRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return $this->user()?->can('create', User::class) ?? false;
-    }
+    use LiveValidation;
 
     /**
      * @return array<string, list<mixed>>
@@ -26,6 +24,17 @@ final class StoreUserRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['email' => Str::lower($this->string('email')->trim()->toString())]);
+        $this->merge([
+            'email' => Str::lower($this->string('email')->trim()->toString()),
+            'username' => Username::normalize($this->string('username')->toString()),
+        ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return AccountRules::messages();
     }
 }

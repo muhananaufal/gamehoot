@@ -7,9 +7,12 @@ Baca berkas ini utuh sebelum menulis kode.
 
 | Apa | Di mana |
 | :-- | :-- |
-| Semua keputusan produk dan teknis, lengkap dengan ID (A, B, C, D, E, F, G, K, O, P, T, W) | `docs/pentahoot-spec.html` (versi terbit: https://claude.ai/artifact/YApdMqJDKY2XEpsdLAj34A) |
+| Semua keputusan produk dan teknis, lengkap dengan ID (A, B, C, D, E, F, G, K, O, P, T, U, W) | `docs/pentahoot-spec.html` (versi terbit: https://claude.ai/artifact/YApdMqJDKY2XEpsdLAj34A) |
 | Mockup UI tiga layar (HP, Public View, panel host) | https://claude.ai/artifact/QwAUn3xFXjzXWWFmxqhjL7 |
 | Kebutuhan asli dari PM | "PRD — Pentahoot Game Platform" (PDF, dipegang PM) |
+| Langkah kerja harian dengan perintahnya, dari branch sampai rilis | Bab 16 spesifikasi |
+| Cara debugging, batas mentok, dan format catatannya | Bab 17 spesifikasi; catatan di `docs/debugging/` |
+| Cara merancang dan mengeksekusi proyek seperti ini (blueprint) | Bab 18 spesifikasi |
 
 Aturan:
 
@@ -20,9 +23,9 @@ Aturan:
 ## 2. Keputusan yang dikunci — jangan diusulkan ulang
 
 - **Laravel 13 + PHP 8.4, dijalankan di Docker** di lokal, CI, staging, dan production: container `app` (php-fpm), `web` (nginx), `reverb` (A8). Pola compose mengikuti staging `vivace-board`. Base image **Debian bookworm**, bukan Alpine: Playwright (W11) hanya mendukung Debian/Ubuntu (P2).
-- **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). Sampai versi server diketahui (O-B), hanya pakai fitur MySQL 8.0 ke atas; CI menguji MySQL 8.0 dan 8.4.
+- **Database: server MySQL yang sudah ada** (bukan container), dengan database dan user khusus Pentahoot (A9). CI menguji MySQL 8.4 saja (keputusan pemilik, 9 Oktober 2026); versi server production tetap dicek saat database dibuat (O-B).
 - **Laravel Reverb** satu server, **tanpa Redis**, **tanpa queue worker** (F5, F7).
-- **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**.
+- **Blade + Alpine.js + Laravel Echo + Tailwind** di semua layar, **tanpa Livewire**. Panel host memakai **Unpoly** untuk navigasi tanpa reload dan modal dari halaman server (U18); halaman peserta dan Public View tidak.
 - **Pest v5** (+ plugin browser) untuk test, **Vitest** untuk logika JS murni, **Pint** untuk format, **Larastan** untuk analisis statis (W11).
 - Server production: **VM lewat SSH** dengan disk permanen (A7), menjalankan Docker.
 - **Bahasa antarmuka: Inggris** (A10). Isi yang ditulis host bebas bahasa.
@@ -35,12 +38,14 @@ Aturan:
 - **Engine game tidak mem-publish.** Aksi soal berjalan lewat `RunQuestionAction` (transaksi, kunci event, naikkan versi, publish); engine hanya mengubah state game (F13). Dicek oleh arch test "game engines do not publish realtime state".
 - **Setiap aksi yang menaikkan `state_version` wajib memanggil `StatePublisher::publish()`** di dalam transaksinya; snapshot dikirim setelah commit dan broadcast yang gagal hanya dicatat, tidak menggagalkan aksi (F22). Dicek oleh `tests/Architecture/StatePublishingTest.php`.
 - **Broadcast pakai `ShouldBroadcastNow`** dan dijaga jauh di bawah batas 10.000 byte Reverb (F14). Per vote hanya `{answered: n}`; rincian suara lewat `GET /host/{event}/state`.
+- **Pesan hanya ke audiens yang membacanya (F25).** Penghitung yang sering berubah (`answered`, `joined`) lewat channel `event.{uuid}.screen` (proyektor dan Live control), tidak ke HP, dan tidak menaikkan `state_version`. Klaim nama oleh peserta tidak menaikkan versi.
+- **Channel host berkunci (F26):** `event.{uuid}.host.{kunci}`; kunci diputar saat hak akses dicabut. Aksi yang mencabut hak akses wajib memutar kunci.
 - **Aksi peserta lewat HTTP POST**, bukan pesan WebSocket (F3). Rate limit per token klaim, bukan per IP (F11).
 - **Aksi host** dijalankan dalam transaksi dengan `lockForUpdate` dan update bersyarat terhadap state (F6, G12).
 - **Waktu dari server.** `ends_at` + `server_now`, tanpa job terjadwal (F4). Suara diterima sampai `ends_at` + 1 detik (E3).
 - **Semua file lewat disk `media`** dan tabel `media_files` (F16, G11). Gambar jawaban privat, hanya lewat temporary signed URL saat Reveal (E9).
 - **Channel realtime memakai UUID event**, bukan slug (F18).
-- **Frontend (F20):** halaman host memakai satu layout (sidebar kiri + top bar breadcrumb dan aksi), tanpa menu di top bar; satu Alpine store bersama menerima snapshot, mengecek `state_version`, dan mengatur reconnect; view hanya membaca store. Elemen berulang (baris peringkat, podium, kotak huruf, countdown, pencarian nama, timeline progres) berupa komponen Blade. Timeline progres selalu vertikal dengan satu komponen. Semua teks UI (Bahasa Inggris) ada di berkas bahasa, tidak ditulis langsung di view.
+- **Frontend (F20):** halaman host memakai satu layout (sidebar kiri + top bar berisi breadcrumb saja; aksi halaman di kepala konten, U2); satu Alpine store bersama menerima snapshot, mengecek `state_version`, dan mengatur reconnect; view hanya membaca store. Elemen berulang (baris peringkat, podium, kotak huruf, countdown, pencarian nama, timeline progres) berupa komponen Blade. Timeline progres selalu vertikal dengan satu komponen. Semua teks UI (Bahasa Inggris) ada di berkas bahasa, tidak ditulis langsung di view.
 - **Tema (F21):** warna hanya lewat token semantik Tailwind (`bg-surface`, `text-ink`, `bg-rank-1`, ...). Tema gelap mengganti nilai token di `[data-theme=dark]`. **Dilarang** hex arbitrer (`bg-[#...]`) dan palet bawaan (`bg-gray-900`) di view; dicek di CI.
 - **Podium (E17)** hanya untuk hasil final; selama permainan tetap daftar peringkat.
 
@@ -51,7 +56,7 @@ Aturan:
 - Satu penanda untuk satu fakta: `events.active_game_id`, `games.current_question_id` (G7).
 - Hasil **dibekukan** ke `question_results` saat Reveal dan `game_results` saat game selesai. Halaman Hasil dan export hanya membaca tabel beku (G10).
 - Jaminan di level database: unique `(question_id, voter_person_id)`, unique `(event_id, name_normalized)`, FK `restrict` untuk data yang dipakai hasil (G2, G13).
-- Hanya `events` dan `question_packs` yang memakai soft delete (G4, D-9).
+- Hanya `events`, `question_packs`, dan `users` yang memakai soft delete (G4, D-9, C-7).
 
 ## 5. Alur git (W1–W7)
 
@@ -79,16 +84,18 @@ Siklus satu tugas:
    ```
 
    Trailer `aetheris` **wajib**. Trailer AI lain boleh ditambahkan di bawahnya, tidak menggantikan.
-5. Isi `CHANGELOG.md` dan penuhi Definition of Done (bagian 6).
-6. `git fetch origin && git rebase origin/develop` → `git push --force-with-lease origin feature/<nama>` (force hanya di branch fitur sendiri, setelah rebase).
-7. **Tunggu CI hijau untuk commit terakhir branch itu (W18)**, misalnya dengan `gh run watch`. Merah → perbaiki di branch yang sama → push → tunggu hijau lagi. **Dilarang merge selama CI belum hijau.**
-8. `git checkout develop && git merge --no-ff feature/<nama>` → `git push origin develop` → `git branch -d feature/<nama>` → `git push origin --delete feature/<nama>`.
+5. Isi `CHANGELOG.md` dan penuhi Definition of Done (bagian 6). Commit changelog tetap yang terakhir (W10); perubahan yang hanya menyentuh `CHANGELOG.md`, `docs/`, atau `*.md` tidak membutuhkan gerbang ulang (W18).
+6. `git fetch origin && git rebase origin/develop` → `git push --force-with-lease origin feature/<nama>` (force hanya di branch fitur sendiri, setelah rebase). **Push ke origin tidak menjalankan CI** (P6).
+7. **Gerbang dan merge lewat satu perintah (W18):** `scripts/gate-and-merge.sh feature/<nama>`. Script menjalankan `scripts/ci-local.sh`, menjalankan gerbang penuh untuk hasil merge (bawaan: di origin, di runner kantor, P11; `--gate mirror`: di repo gerbang), menunggu hijau, mengecek `develop` belum bergerak, lalu membuat merge commit `--no-ff` dengan trailer `Gate-Run` dan `Gate-Tree` dan mendorongnya ke `origin`. Merah → perbaiki di branch yang sama → jalankan lagi. **Dilarang merge tanpa script ini**, dan dilarang menulis trailer `Gate-*` dengan tangan. CI lokal gratis tapi lama (±35 menit di Docker WSL, terukur 9 Oktober 2026; gerbang ±8 menit). Ia hanya menghemat saat merah, jadi **wajib** untuk perubahan di `app/`, `resources/`, `routes/`, `database/`, `config/`, `lang/`, `composer.*`, `package*.json`, atau `Dockerfile`; perubahan yang hanya menyentuh `.github/`, `scripts/`, `tests/`, `docs/`, atau `*.md` boleh memakai `--no-local`.
+8. `git branch -d feature/<nama>` → `git push origin --delete feature/<nama>`.
 
 Aturan tetap:
 
-- **Tanpa pull request** untuk merge ke `develop` (W2), **tapi CI wajib hijau sebelum merge** (W18). Pengganti review: berhenti untuk review pemilik proyek setelah batch fondasi dan setelah setiap game selesai.
-- `release/*` dan `hotfix/*` juga wajib CI hijau sebelum merge ke `main`. Job deploy hanya jalan kalau job CI di push yang sama hijau.
-- Sebelum remote GitHub ada: jalankan langkah CI yang sama secara lokal di container yang sama, dan laporkan hasilnya sebagai pengganti sementara.
+- **Pull request boleh dipakai (W2, P11)**, **gerbang tetap wajib hijau sebelum merge** (W18). Gerbang PR berjalan di runner kantor saat PR dibuka siap atau ditandai ready; push berikutnya hanya dengan label `gate`. Tombol Merge GitHub sah selama branch tidak ketinggalan dari `develop`: deploy mengenali tree yang lulus gerbang PR (`.github/scripts/gate-run.sh`). Merge langsung lewat `scripts/gate-and-merge.sh` tetap sah. Review pemilik proyek tetap setelah batch fondasi dan setelah setiap game selesai.
+- **Merge satu per satu, segera setelah gerbangnya hijau.** Kalau `develop` bergerak sebelum merge, script berhenti: rebase, lalu jalankan lagi.
+- `release/*` dan `hotfix/*` juga lewat `scripts/gate-and-merge.sh <branch> main`. Tag versi dibuat di merge commit hasil script. Tag rc: `scripts/gate-and-merge.sh --tag v<x.y.z>-rc.<n> release/<x.y.z>`.
+- **Gerbang penuh berjalan di runner kantor lewat origin** (P11, variabel origin `GATE_RUNNER=self-hosted`), atau di repo gerbang dengan `--gate mirror` (repo GitHub terpisah, variabel `GATE_ROLE=gate`, remote lokalnya di `git config pentahoot.gateRemote`). Runner kantor diam 10 menit atau `GATE_RUNNER` belum ada → script pindah ke repo gerbang bila ada, kalau tidak bertanya dulu sebelum memakai runner GitHub (menit org). Origin membangun image, memindai, dan men-deploy setelah mengecek trailer atau gerbang hijau untuk tree yang sama. Keduanya tidak ada → job image berhenti; gerbang penuh lalu dijalankan di origin: `gh workflow run ci.yml --ref <tag atau develop> -f gate=true [-f deploy=staging]`.
+- Kalau repo gerbang tidak bisa dipakai: `scripts/ci-local.sh` (job dan image yang sama dengan workflow), hasilnya dilaporkan, dan merge tanpa trailer berarti deploy berikutnya butuh gerbang penuh di origin (`-f gate=true`). `scripts/ci-report.sh` membaca pemakaian menit CI dan metrik DORA.
 - **Merge ke `main` selalu ditanyakan dulu** ke pemilik proyek, setiap rilis.
 - Dilarang commit langsung di `main`/`develop`, dilarang commit `wip`/`temp`, dilarang `git push --force` di `main`, `develop`, `release/*`.
 - Remote GitHub (`devivace-groups`) menyusul. Saat dibuat, cek branch protection (W7).
@@ -138,7 +145,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 ## 6a. Aturan repo dan tooling (W12–W17)
 
 - **`.gitattributes`** memaksa akhir baris LF untuk semua berkas teks (pengembangan di Windows, container di Linux).
-- **Test memakai MySQL**, bukan SQLite. CI menguji MySQL 8.0 dan 8.4 sampai versi server diketahui.
+- **Test memakai MySQL**, bukan SQLite. CI menguji MySQL 8.4 (W13).
 - **Migration yang sudah masuk `develop` tidak boleh diedit**; perubahan lewat migration baru. Migration harus aman saat container lama masih jalan sebentar selama deploy (tambah kolom dulu, hapus kolom lama di rilis berikutnya).
 - **Hook lokal sebelum commit:** Pint pada berkas yang diubah, ESLint/Prettier untuk JS, dan pengecekan format pesan commit.
 - **ESLint + Prettier** untuk kode Alpine dan JS, di hook lokal dan di CI.
@@ -146,8 +153,8 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 
 ## 6b. Operasional (O1–O10)
 
-- **CI (O1):** GitHub Actions menjalankan gerbang kualitas + `composer audit` di setiap push.
-- **Deploy (O2):** `develop` → staging, tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
+- **CI (O1):** gerbang kualitas + `composer audit` berjalan di repo gerbang lewat `scripts/gate-and-merge.sh`, bukan di setiap push. Origin tidak menjalankan CI saat push; hanya tag versi, deploy staging yang diminta, dan PR yang siap.
+- **Deploy (O2):** staging di-deploy **saat diminta** dari `develop` (`scripts/deploy.sh staging`, P10), atau otomatis di setiap push ke `develop` kalau variabel `STAGING_AUTO=on`; tag di `main` → production. Deploy wajib me-restart Reverb. Ada langkah rollback tertulis. **Dilarang deploy selama event berlangsung.**
 - **Rahasia (O3):** hanya di `.env` tiap lingkungan dan GitHub Secrets. `.env.example` selalu lengkap.
 - **Seeder (O10):**
   - Super-admin dibuat dengan `php artisan pentahoot:create-super-admin`; email dan password ditanyakan saat perintah dijalankan, **tidak pernah** di seeder atau di kode.
@@ -166,14 +173,17 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 - **Konfigurasi (K6):** variabel wajib yang hilang membuat aplikasi gagal start dengan pesan jelas.
 - **Upload (K7):** batas yang sama di validasi Laravel, PHP (`upload_max_filesize`, `post_max_size`), dan nginx (`client_max_body_size`).
 - **Dependency (K8):** paket baru wajib disertai alasan di pesan commit.
+- **Otorisasi satu lapis (K9):** hak akses hanya lewat `->can()` di berkas rute; FormRequest hanya memvalidasi, controller tidak memakai `abort_if` untuk hak akses. Dicek arch test.
 
 ## 6d. Pipeline (P1–P7)
 
-- **Image (P1, P2):** dibangun sekali di CI, disimpan di GitHub Container Registry dengan tag commit SHA dan versi. Build bertahap, base image Debian bookworm, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
-- **Scan (P3):** gitleaks + Trivy + `composer audit`.
+- **Image (P1, P2):** dibangun di origin hanya saat akan di-deploy (tag versi atau deploy staging), dipindai Trivy, disimpan di GitHub Container Registry org dengan tag commit SHA dan versi. Build bertahap, base image Debian bookworm, non-root, base image dikunci, tanpa dependency dev, opcache aktif, `healthcheck` di setiap container. VM hanya menarik image.
+- **Scan (P3):** gitleaks + Trivy + `composer audit`, ditambah `actionlint` dan `zizmor` untuk workflow. Action GitHub dipin ke SHA commit (tanpa Dependabot); pin diperbarui manual saat menyiapkan `release/x.y.z`. Temuan zizmor yang diterima dicatat beserta alasannya di `.github/zizmor.yml`. `security-scan.yml` memeriksa ulang dependency tiap Senin di repo gerbang; image dipindai saat dibangun.
 - **Deploy (P4):** lewat SSH, **tanpa `git pull` dan tanpa `composer install` di server**: salin `compose.yaml` → `IMAGE_TAG=<sha> docker compose pull` → `docker compose run --rm app php artisan migrate --force` → `docker compose up -d` → smoke test `/up` + satu koneksi WebSocket → kalau gagal, kembali ke tag image sebelumnya.
 - **Production (P5):** deploy menunggu persetujuan manual di environment GitHub.
-- **Job CI (P6):** lint, analisis statis, test, mutation, browser, dijalankan paralel dengan cache; run lama dibatalkan.
+- **Runner deploy (P10):** job image dan deploy berjalan di runner self-hosted kantor (`DEPLOY_RUNNER=self-hosted`), yang berbagi server dengan staging tim lain: job hanya membersihkan image Pentahoot miliknya, **dilarang** `docker system prune` atau pembersihan global. Deploy dimulai lewat `scripts/deploy.sh`, yang pindah ke runner GitHub bila runner kantor tidak mengambil job dalam 3 menit.
+- **Gerbang di runner kantor (P11):** bawaan `gate-and-merge.sh` (`GATE_RUNNER=self-hosted` di origin); repo gerbang lewat `--gate mirror`. Job gerbang di server bersama wajib terisolasi: jaringan Docker sendiri (tanpa `--network host`), nama container dan tag image unik per run, batas CPU/memori, kepemilikan berkas dikembalikan, hanya resource sendiri yang dibersihkan.
+- **Job CI (P6), dibagi dua repo:** *repo gerbang* menjalankan gerbang penuh (PHP: Pint + Larastan + audit + Pest MySQL 8.4 + mutation K2; browser Chrome lalu Safari dalam satu job; frontend + Gitleaks + lint workflow + aturan repo; build image + Trivy sebagai bukti) dengan image CI siap pakai. *Origin* hanya menjalankan job image (cek trailer `Gate-Tree` → build → push → Trivy) lalu deploy, di tag versi dan deploy staging yang diminta. Trailer hilang atau tree tidak cocok → job image berhenti dan menyebut perintah gerbang penuh di origin (`-f gate=true`). PR yang siap atau berlabel `gate` menjalankan gerbang penuh di origin (W2). Browser test tidak dijalankan paralel (flaky di runner 2 core).
 - **Data (P7):** staging hanya data demo; data production tidak pernah disalin ke staging.
 - **Langkah rilis lengkap** (persiapan pertama dan langkah berulang untuk staging, production, hotfix, dan hari event) ada di bagian 15 spesifikasi. Ikuti urutannya, jangan dihafal.
 
@@ -188,7 +198,7 @@ Definition of Done (O11) — fitur baru boleh di-merge ke `develop` hanya kalau:
 | Beban | Skrip F19 di staging sebelum gladi |
 | Browser (W11) | Pest Browser Testing untuk alur end-to-end (host + Public View + HP dalam satu test, termasuk Safari/WebKit dan emulasi iPhone); Vitest untuk logika JS murni (F4, F15, F17, E5). Setiap test browser memanggil `assertNoJavaScriptErrors()`. Batasan plugin 5.0.1 (upload file tidak bisa diuji di browser, login lewat form hanya di Chromium) ada di W11 spesifikasi. |
 
-Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki sampai hijau, dan test itu tetap tinggal sebagai regression test.
+Bugfix wajib diawali test yang membuktikan bug-nya (merah), lalu diperbaiki sampai hijau, dan test itu tetap tinggal sebagai regression test. Bug yang butuh lebih dari satu jam, muncul di staging atau production, atau penyebabnya tidak terduga dicatat di `docs/debugging/` dengan format bab 17 spesifikasi. Setelah 3 percobaan perbaikan gagal, berhenti menambal dan ganti jenis pertanyaan; setelah 5 percobaan atau 2 jam, berhenti dan minta orang kedua.
 
 ## 8. Clean code
 

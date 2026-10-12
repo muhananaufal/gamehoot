@@ -25,7 +25,8 @@ final class QuestionPack extends Model
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'owner_id')->withTrashed();
     }
 
     /**
@@ -37,6 +38,15 @@ final class QuestionPack extends Model
     }
 
     /**
+     * D-9: something a reload would copy changed. Runs first in the change's transaction, so the
+     * row stays locked until the change is committed and a copy never reads a half-done change.
+     */
+    public function contentChanged(): void
+    {
+        self::query()->whereKey($this->id)->increment('content_version');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -45,6 +55,7 @@ final class QuestionPack extends Model
     {
         return [
             'game_type' => GameType::class,
+            'content_version' => 'integer',
         ];
     }
 }

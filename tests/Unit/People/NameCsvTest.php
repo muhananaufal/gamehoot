@@ -38,4 +38,10 @@ describe('T4 name CSV', function (): void {
         expect($csv->names)->toBe(['Budi', 'Rita'])
             ->and($csv->separator)->toBe(',');
     });
+
+    it('reads a file saved by Excel as Windows-1252 instead of dropping accented names', function (): void {
+        $windows1252 = "Jos\xE9 Rizal\nRen\xE9 \xD1u\xF1ez\nBudi\n";
+
+        expect(NameCsv::parse($windows1252)->names)->toBe(['José Rizal', 'René Ñuñez', 'Budi']);
+    });
 });

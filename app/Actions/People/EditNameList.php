@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Actions\People;
 
+use App\Enums\LoggedAction;
 use App\Exceptions\NameListLocked;
 use App\Models\Event;
 use App\Models\Person;
+use App\Models\User;
 use App\People\JoinToken;
 use App\People\PersonName;
 use App\Realtime\StatePublisher;
+use App\Support\AuditLog;
 use Closure;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * B-3, B-4: changes to the master name list. The event row is locked first so the check
@@ -20,7 +25,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class EditNameList
 {
-    public function __construct(private StatePublisher $publisher) {}
+    public function __construct(private StatePublisher $publisher, private AuditLog $auditLog) {}
 
     public function add(Event $event, string $name): Person
     {
@@ -33,14 +38,40 @@ final readonly class EditNameList
     }
 
     /**
+     * B-8 (audit DATA-1): each row is saved in its own savepoint, so a clash only the unique
+     * index finds (another host saving the same name, a comparison the folding misses) becomes a
+     * message for its line (a ValidationException) instead of an error 500, and nothing of the
+     * list is saved.
+     *
      * @param  list<string>  $names
      */
-    public function import(Event $event, array $names): void
+    public function import(Event $event, array $names, User $actor): void
     {
-        $this->locked($event, function (Event $locked) use ($names): void {
-            foreach ($names as $name) {
-                $this->newPerson($name)->event()->associate($locked)->save();
+        $this->locked($event, function (Event $locked) use ($names, $actor): void {
+            $clashes = [];
+
+            foreach ($names as $index => $name) {
+                try {
+                    DB::transaction(fn () => $this->newPerson($name)->event()->associate($locked)->save());
+                } catch (UniqueConstraintViolationException) {
+                    $clashes[] = $index;
+                }
             }
+
+            if ($clashes !== []) {
+                $problem = __('people.duplicate_saved');
+                $messages = ['names' => array_map(fn (int $index): string => __('people.on_line', ['line' => $index + 1, 'problem' => $problem]), $clashes)];
+
+                // The import review marks the rows themselves (names.{index}).
+                foreach ($clashes as $index) {
+                    $messages["names.{$index}"] = [$problem];
+                }
+
+                throw ValidationException::withMessages($messages);
+            }
+
+            // E13: who added names, and how many; the names themselves are in the list.
+            $this->auditLog->record(LoggedAction::NamesAdded, $actor, $locked, ['count' => count($names)]);
         });
     }
 
@@ -54,9 +85,13 @@ final readonly class EditNameList
         });
     }
 
-    public function delete(Event $event, Person $person): void
+    public function delete(Event $event, Person $person, User $actor): void
     {
-        $this->locked($event, fn () => $person->delete());
+        $this->locked($event, function (Event $locked) use ($person, $actor): void {
+            $person->delete();
+            // E13: the name and its personal link are gone; the log keeps the name.
+            $this->auditLog->record(LoggedAction::PersonDeleted, $actor, $locked, ['name' => $person->name]);
+        });
     }
 
     /**
@@ -78,6 +113,7 @@ final readonly class EditNameList
 
             $result = $change($locked);
             $locked->bumpStateVersion();
+            $locked->bumpRosterVersion();
             $locked->save();
             $this->publisher->publish($locked);
 

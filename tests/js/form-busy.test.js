@@ -1,0 +1,97 @@
+import { describe, expect, it } from 'vitest';
+import { busyPreview, markBusy, markIdle } from '../../resources/js/form-busy.js';
+
+function button(attributes = {}) {
+    const values = { ...attributes };
+
+    return {
+        disabled: false,
+        getAttribute: (name) => values[name] ?? null,
+        setAttribute: (name, value) => {
+            values[name] = value;
+        },
+        removeAttribute: (name) => {
+            delete values[name];
+        },
+        attributes: values,
+    };
+}
+
+function form(buttons) {
+    const values = {};
+
+    return {
+        querySelectorAll: () => buttons,
+        setAttribute: (name, value) => {
+            values[name] = value;
+        },
+        removeAttribute: (name) => {
+            delete values[name];
+        },
+        attributes: values,
+    };
+}
+
+describe('host forms while they are sent', () => {
+    it('locks every submit button and marks the clicked one as busy, so a slow save is not sent twice', () => {
+        const save = button();
+        const other = button();
+        const sent = form([save, other]);
+
+        expect(markBusy(sent, save)).toBe(true);
+
+        expect(save.disabled).toBe(true);
+        expect(other.disabled).toBe(true);
+        expect(save.attributes['aria-busy']).toBe('true');
+        expect(sent.attributes['aria-busy']).toBe('true');
+    });
+
+    it('leaves dialog buttons alone: Cancel only closes the dialog', () => {
+        const cancel = button({ formmethod: 'dialog' });
+
+        expect(markBusy(form([cancel]), cancel)).toBe(false);
+        expect(cancel.disabled).toBe(false);
+    });
+
+    it('leaves a <form method="dialog"> alone too, so its Cancel never keeps spinning', () => {
+        const cancel = button();
+        const dialogForm = { ...form([cancel]), getAttribute: (name) => (name === 'method' ? 'dialog' : null) };
+
+        expect(markBusy(dialogForm, cancel)).toBe(false);
+        expect(cancel.disabled).toBe(false);
+        expect(cancel.attributes['aria-busy']).toBeUndefined();
+    });
+
+    it('unlocks again when the page comes back from the browser cache', () => {
+        const save = button();
+        const sent = form([save]);
+        markBusy(sent, save);
+
+        markIdle(sent);
+
+        expect(save.disabled).toBe(false);
+        expect(save.attributes['aria-busy']).toBeUndefined();
+        expect(sent.attributes['aria-busy']).toBeUndefined();
+    });
+});
+
+describe('host forms sent through Unpoly (U16)', () => {
+    it('locks the buttons and spins the clicked one while the request runs, and undoes it when it ends', () => {
+        const save = button({ type: 'submit' });
+        const cancel = button({ type: 'submit' });
+        const sent = form([save, cancel]);
+        const undo = [];
+
+        busyPreview(sent, save)({ undo: (fn) => undo.push(fn) });
+
+        expect(save.disabled).toBe(true);
+        expect(cancel.disabled).toBe(true);
+        expect(save.attributes['aria-busy']).toBe('true');
+        expect(undo).toHaveLength(1);
+
+        undo[0]();
+
+        expect(save.disabled).toBe(false);
+        expect(save.attributes['aria-busy']).toBeUndefined();
+    });
+});

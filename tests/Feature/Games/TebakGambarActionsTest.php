@@ -32,7 +32,8 @@ beforeEach(function (): void {
  */
 function gambarAction(Event $event, Question $question, string $action, array $input = []): TestResponse
 {
-    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}", $input);
+    // G15: like Live control, every action carries the version on screen.
+    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}", ['version' => $event->fresh()?->state_version, ...$input]);
 }
 
 function gambarQuestion(Game $game, int $position): Question
@@ -170,7 +171,7 @@ describe('winner, surrender and results (D-6, E10, E12, E13)', function (): void
             gambarAction($event, $question, 'winner', ['person' => $person->id]);
         }
 
-        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish")->assertRedirect();
+        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games/{$game->id}/finish", ['version' => $event->fresh()?->state_version])->assertRedirect();
 
         expect($game->refresh()->status)->toBe(GameStatus::Finished)
             // E10: same points, Rita got there first.

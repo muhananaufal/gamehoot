@@ -36,7 +36,7 @@ describe('editing copied questions (D-2)', function (): void {
         get(copyUrl($event, $game, $copy).'/edit')->assertOk()->assertSee('Pack prompt?');
 
         put(copyUrl($event, $game, $copy), ['prompt' => 'Copy prompt?', 'duration_seconds' => 45])
-            ->assertRedirect("/host/{$event->id}/games/{$game->id}/questions")
+            ->assertRedirect("/host/{$event->id}/games/{$game->id}")
             ->assertSessionHas('status', 'Question saved. The pack is not changed.');
 
         expect($copy->pentahoot()->firstOrFail()->only(['prompt', 'duration_seconds']))->toBe(['prompt' => 'Copy prompt?', 'duration_seconds' => 45])
@@ -71,21 +71,23 @@ describe('editing copied questions (D-2)', function (): void {
             ->assertSessionHasErrors('duration_seconds');
     });
 
-    it('locks questions that have been on screen, and every question of a finished game', function (): void {
+    it('locks questions that have been on screen, and every question of a game that has started (D-2)', function (): void {
         $event = Pentahoot::event();
         $game = TebakKata::game($event, [['A?', 'AB'], ['B?', 'CD']]);
         $shown = $game->questions()->where('position', 1)->firstOrFail();
         $shown->forceFill(['status' => QuestionStatus::Queued, 'skip_used' => true])->save();
         $fresh = $game->questions()->where('position', 2)->firstOrFail();
         $body = ['prompt' => 'X?', 'answer_text' => 'XY', 'points' => 1];
+        $page = "/host/{$event->id}/games/{$game->id}";
 
         actingAs($event->owner()->firstOrFail());
-        get("/host/{$event->id}/games/{$game->id}/questions")->assertDontSee(copyUrl($event, $game, $shown).'/edit');
-        from("/host/{$event->id}/games/{$game->id}/questions")->put(copyUrl($event, $game, $shown), $body)
+        from($page)->put(copyUrl($event, $game, $shown), $body)
             ->assertSessionHasErrors(['action' => 'This question has been on screen, so it can no longer be edited.']);
 
         $game->forceFill(['status' => GameStatus::Finished])->save();
-        put(copyUrl($event, $game, $fresh), $body)->assertSessionHasErrors('action');
+        from($page)->put(copyUrl($event, $game, $fresh), $body)
+            ->assertSessionHasErrors(['action' => 'This game has started, so it can no longer be changed.']);
+        get($page)->assertSee('This game has started, so it can no longer be changed.')->assertDontSee(copyUrl($event, $game, $fresh).'/edit');
     });
 
     it('keeps other hosts out and questions inside their own game', function (): void {
@@ -95,5 +97,20 @@ describe('editing copied questions (D-2)', function (): void {
 
         actingAs(User::factory()->create())->get(copyUrl($event, $game, Pentahoot::question($game)).'/edit')->assertForbidden();
         actingAs($event->owner()->firstOrFail())->get(copyUrl($event, $game, Pentahoot::question($other)).'/edit')->assertNotFound();
+    });
+
+    it('marks the game as edited in this event, and a reload clears the mark (D-9)', function (): void {
+        $event = Pentahoot::event();
+        $pack = Pentahoot::pack($event->owner()->firstOrFail(), ['Pack prompt?']);
+        actingAs($event->owner()->firstOrFail())->post("/host/{$event->id}/games", ['pack_id' => $pack->id]);
+        $game = Game::query()->sole();
+        $copy = $game->questions()->sole();
+        expect($game->edited_at)->toBeNull();
+
+        put(copyUrl($event, $game, $copy), ['prompt' => 'Copy prompt?', 'duration_seconds' => 45]);
+        expect($game->refresh()->edited_at)->not->toBeNull();
+
+        Pest\Laravel\post("/host/{$event->id}/games/{$game->id}/reload");
+        expect($game->refresh()->edited_at)->toBeNull();
     });
 });

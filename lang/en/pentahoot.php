@@ -28,15 +28,15 @@ return [
     'network_error' => 'Could not send. Check your connection and try again.',
 
     // Public View (E2, E4, E15, E17)
-    'answer_on_phone' => 'Pick your answer on your phone',
+    'answer_on_phone' => 'Pick your answer now',
     'answered_of' => '__N__ / __TOTAL__ answered',
     'votes_total' => ['one' => '__N__ vote', 'other' => '__N__ votes'],
     'no_votes' => 'No votes',
     'votes' => 'votes',
+    'votes_count' => ['one' => '__N__ vote', 'other' => '__N__ votes'],
     // E20: one row standing for a large tie on the projector.
     'tied_names' => ['one' => '__N__ name tied', 'other' => '__N__ names tied'],
     'game_over' => 'Thanks for playing!',
-    'game_over_host' => 'This game is finished. Start the next one from the Games page.',
 
     // Live control (D-5, D-8, E13, E15, C-3)
     'no_game' => 'No game is running.',
@@ -50,16 +50,17 @@ return [
         'revealed' => 'Revealed',
         'done' => 'Done',
     ],
+    'open_next' => 'Open question __N__',
     'no_question' => 'Pick a question to open.',
+    'all_done' => 'All questions are done.',
     'open' => 'Open',
     'start' => 'Start',
-    'stop' => 'Stop',
+    'stop' => 'Stop voting',
     'reveal' => 'Reveal',
     'next' => 'Next question',
     'reset' => 'Reset votes',
     'reset_title' => 'Reset this question?',
     'reset_help' => 'Deletes every vote of this question and logs it. Players vote again when you start it.',
-    'danger' => 'Actions that cannot be undone',
     'all_answered' => 'Everyone answered (__N__/__TOTAL__). Press Stop when ready.',
     'tally' => 'Live count',
     'tally_note' => 'Only hosts see this',

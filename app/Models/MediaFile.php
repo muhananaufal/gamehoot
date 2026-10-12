@@ -39,7 +39,8 @@ final class MediaFile extends Model
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     /**

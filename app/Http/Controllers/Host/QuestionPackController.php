@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Host;
 
+use App\Actions\Packs\RenamePack;
 use App\Http\Requests\Host\StorePackRequest;
 use App\Http\Requests\Host\UpdatePackRequest;
 use App\Http\Views\PackPage;
@@ -41,9 +42,9 @@ final class QuestionPackController
         return view('host.packs.show', $this->page->data($user, $pack));
     }
 
-    public function update(UpdatePackRequest $request, QuestionPack $pack): RedirectResponse
+    public function update(UpdatePackRequest $request, QuestionPack $pack, RenamePack $rename): RedirectResponse
     {
-        $pack->update(['title' => $request->string('title')->trim()->toString()]);
+        $rename->handle($pack, $request->string('title')->trim()->toString());
 
         return redirect()->route('host.packs.show', $pack)->with('status', __('packs.saved'));
     }

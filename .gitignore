@@ -21,6 +21,7 @@ auth.json
 /storage/framework/views/*
 /storage/logs/*
 /public/hot
+/public/fonts-manifest.dev.json
 /public/storage
 /public/media
 /public/build

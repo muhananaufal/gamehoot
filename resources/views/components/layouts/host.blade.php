@@ -2,31 +2,47 @@
     'title',
     // list of [label, url|null]; the last item is the current page.
     'breadcrumbs' => [],
-    // F20: the event menu appears while working inside one event.
+    // F20, U1: the event being worked on opens its pages under its name in the sidebar.
     'event' => null,
+    // U2: false for the pages that are a dialog's content and carry their own title (h2).
+    'heading' => true,
 ])
 @php
     /** @var \App\Models\User $user */
     $user = auth()->user();
     $initials = collect(explode(' ', $user->name))->filter()->take(2)->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))->implode('');
+    $recent = \App\Http\Views\RecentEvents::for($user, $event);
+    $eventPages = [
+        ['host.events.live', 'broadcast', __('realtime.live.title'), 'host.events.live'],
+        ['host.events.games.index', 'layers', __('games.title'), 'host.events.games.*'],
+        ['host.events.people.index', 'user', __('host.nav.names'), 'host.events.people.*'],
+        ['host.events.results', 'calendar', __('results.title'), 'host.events.results'],
+        ['host.events.logs', 'layers', __('logs.title'), 'host.events.logs'],
+        ['host.events.edit', 'settings', __('host.nav.settings'), 'host.events.edit'],
+    ];
 @endphp
 <x-layouts.base :title="$title">
-    <div x-data="{ menuOpen: false }" class="flex min-h-dvh" @keydown.escape.window="menuOpen = false">
+    {{-- U18: links and forms inside data-host-shell move without reloading (resources/js/navigation.js). --}}
+    <div x-data="hostShell" data-host-shell class="flex min-h-dvh" @keydown.escape.window="menuOpen = false">
+        {{-- U37 (audit FE-12): the first Tab stop jumps past the sidebar and the top bar to the content. --}}
+        <a href="#main-content" class="sr-only z-50 rounded-control bg-surface px-4 py-3 font-semibold text-ink shadow-xl focus:not-sr-only focus:fixed focus:top-3 focus:left-3">{{ __('ui.skip_to_content') }}</a>
         {{-- F20: one sidebar; on phones it becomes a drawer. --}}
         <div x-show="menuOpen" x-cloak class="fixed inset-0 z-30 bg-nav/70 lg:hidden" @click="menuOpen = false"></div>
-        <aside id="host-sidebar"
-            class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col bg-nav px-3.5 py-4 text-[15px] text-nav-ink transition-transform lg:static lg:translate-x-0"
+        {{-- U1: the sidebar scrolls on its own, so theme and sign out stay in view on long pages. --}}
+        <aside id="host-sidebar" :data-collapsed="collapsed"
+            class="group fixed inset-y-0 left-0 z-40 flex h-dvh w-64 -translate-x-full flex-col bg-nav text-body text-nav-ink drawer lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0 lg:data-[collapsed=true]:w-[4.75rem]"
             :class="{ 'translate-x-0': menuOpen }">
-            <div class="flex items-center justify-between px-2 pb-4">
-                <x-logo :size="32" class="text-[22px]" />
+            <div class="flex shrink-0 items-center justify-between px-5.5 pt-4 pb-4 lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0">
+                <span class="lg:group-data-[collapsed=true]:hidden"><x-logo :size="32" class="text-title-s" /></span>
+                <span class="hidden lg:group-data-[collapsed=true]:block"><x-logo :size="32" :wordmark="false" /></span>
                 <button type="button" class="flex size-11 items-center justify-center rounded-control text-nav-icon lg:hidden"
                     @click="menuOpen = false" aria-label="{{ __('host.nav.close_menu') }}">
                     <x-icon name="close" />
                 </button>
             </div>
 
-            <nav class="flex flex-col gap-0.5" aria-label="{{ __('host.nav.main') }}">
-                <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase">{{ __('host.nav.workspace') }}</span>
+            <nav id="host-nav" up-hungry class="flex min-h-0 grow flex-col gap-0.5 overflow-y-auto px-3.5 pb-3" aria-label="{{ __('host.nav.main') }}">
+                <span class="px-3 pt-3.5 pb-1.5 text-caption font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.workspace') }}</span>
                 <x-host-nav-link :href="route('host.dashboard')" icon="calendar" :active="request()->routeIs('host.dashboard')">
                     {{ __('host.nav.events') }}
                 </x-host-nav-link>
@@ -37,30 +53,40 @@
                     {{ __('host.nav.deleted_events') }}
                 </x-host-nav-link>
 
-                @if ($event)
-                    <span class="truncate px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase">{{ $event->name }}</span>
-                    <x-host-nav-link :href="route('host.events.live', $event)" icon="broadcast" :active="request()->routeIs('host.events.live')">
-                        {{ __('realtime.live.title') }}
-                    </x-host-nav-link>
-                    <x-host-nav-link :href="route('host.events.games.index', $event)" icon="layers" :active="request()->routeIs('host.events.games.*')">
-                        {{ __('games.title') }}
-                    </x-host-nav-link>
-                    <x-host-nav-link :href="route('host.events.people.index', $event)" icon="user" :active="request()->routeIs('host.events.people.*')">
-                        {{ __('host.nav.names') }}
-                    </x-host-nav-link>
-                    <x-host-nav-link :href="route('host.events.results', $event)" icon="calendar" :active="request()->routeIs('host.events.results')">
-                        {{ __('results.title') }}
-                    </x-host-nav-link>
-                    <x-host-nav-link :href="route('host.events.logs', $event)" icon="layers" :active="request()->routeIs('host.events.logs')">
-                        {{ __('logs.title') }}
-                    </x-host-nav-link>
-                    <x-host-nav-link :href="route('host.events.edit', $event)" icon="settings" :active="request()->routeIs('host.events.edit')">
-                        {{ __('host.nav.settings') }}
-                    </x-host-nav-link>
+                @if ($recent->isNotEmpty())
+                    <span class="px-3 pt-3.5 pb-1.5 text-caption font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.recent') }}</span>
+                    @foreach ($recent as $item)
+                        @php $current = $event?->is($item) ?? false; @endphp
+                        {{-- U23: the name expands its pages in place instead of opening Live control, so
+                             any page of a recent event is one click away. The event being worked on
+                             starts expanded. --}}
+                        <div x-data="{ open: @js($current) }" class="contents">
+                        <button type="button" @click="open = ! open" :aria-expanded="open" aria-expanded="{{ $current ? 'true' : 'false' }}" title="{{ $item->name }}"
+                            aria-controls="recent-{{ $item->id }}"
+                            @class([
+                                'flex h-11 w-full shrink-0 items-center gap-3 rounded-control px-3 text-left lg:group-data-[collapsed=true]:justify-center lg:group-data-[collapsed=true]:px-0',
+                                'font-bold text-nav-ink' => $current,
+                                'font-medium text-nav-muted hover:bg-nav-active hover:text-nav-ink' => ! $current,
+                            ])>
+                            <span @class(['flex size-[18px] shrink-0 items-center justify-center'])>
+                                <span @class(['size-2 rounded-full', 'bg-success-dot' => $item->status === \App\Enums\EventStatus::Open, 'bg-warning-dot' => $item->status === \App\Enums\EventStatus::Finished, 'bg-nav-icon' => $item->status === \App\Enums\EventStatus::Draft])
+                                    aria-hidden="true"></span>
+                            </span>
+                            <span class="grow truncate lg:group-data-[collapsed=true]:sr-only">{{ $item->name }}</span>
+                            <span class="sr-only">{{ __('host.event_status.' . $item->status->value) }}</span>
+                            <x-icon name="chevron-down" class="size-4 shrink-0 text-nav-icon transition-transform lg:group-data-[collapsed=true]:hidden" x-bind:class="open && 'rotate-180'" />
+                        </button>
+                        <div id="recent-{{ $item->id }}" x-show="open" @unless ($current) x-cloak @endunless class="flex flex-col gap-0.5 pl-3 lg:group-data-[collapsed=true]:pl-0">
+                            @foreach ($eventPages as [$route, $icon, $label, $pattern])
+                                <x-host-nav-link :href="route($route, $item)" :icon="$icon" :active="$current && request()->routeIs($pattern)">{{ $label }}</x-host-nav-link>
+                            @endforeach
+                        </div>
+                        </div>
+                    @endforeach
                 @endif
 
                 @can('viewAny', \App\Models\User::class)
-                    <span class="px-3 pt-3.5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-nav-label uppercase">{{ __('host.nav.admin') }}</span>
+                    <span class="px-3 pt-3.5 pb-1.5 text-caption font-bold tracking-[0.08em] text-nav-label uppercase lg:group-data-[collapsed=true]:sr-only">{{ __('host.nav.admin') }}</span>
                     <x-host-nav-link :href="route('admin.users.index')" icon="user" :active="request()->routeIs('admin.users.*')">
                         {{ __('host.nav.host_accounts') }}
                     </x-host-nav-link>
@@ -70,52 +96,89 @@
                 @endcan
             </nav>
 
-            <div class="mt-auto flex items-center gap-2.5 border-t border-nav-active px-2 pt-3">
-                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-sm font-bold text-brand-pupil" aria-hidden="true">{{ $initials }}</span>
-                <div class="flex min-w-0 grow flex-col">
-                    <span class="truncate text-sm font-bold">{{ $user->name }}</span>
-                    <span class="truncate text-xs whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+            {{-- U1: theme, motion and log out spread evenly over the full width, the account on its own
+                 row below, so the name and role stay readable beside the avatar. Narrowed, both stack as icons. --}}
+            <div class="flex shrink-0 flex-col gap-1 border-t border-nav-active px-5.5 py-3 lg:group-data-[collapsed=true]:items-center lg:group-data-[collapsed=true]:px-2">
+                <div class="flex items-center justify-evenly lg:group-data-[collapsed=true]:flex-col">
+                    <x-theme-toggle class="text-nav-icon hover:bg-nav-active" />
+                    <x-motion-toggle class="text-nav-icon hover:bg-nav-active" />
+                    <form method="POST" action="{{ route('logout') }}" up-submit="false">
+                        @csrf
+                        <button type="submit" aria-label="{{ __('accounts.sign_out') }}" title="{{ __('accounts.sign_out') }}"
+                            class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
+                            <x-icon name="logout" />
+                        </button>
+                    </form>
                 </div>
-                <button type="button" x-data="themeToggle" @click="toggle()" aria-label="{{ __('host.nav.switch_theme') }}"
-                    class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
-                    <x-icon name="moon" />
-                </button>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" aria-label="{{ __('accounts.sign_out') }}"
-                        class="flex size-11 items-center justify-center rounded-control text-nav-icon hover:bg-nav-active">
-                        <x-icon name="logout" />
-                    </button>
-                </form>
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-pink font-display text-body-s font-bold text-brand-pupil" title="{{ $user->name }}" aria-hidden="true">{{ $initials }}</span>
+                    <div class="flex min-w-0 grow flex-col lg:group-data-[collapsed=true]:sr-only">
+                        <span class="truncate text-body-s font-bold" data-test="account-name">{{ $user->name }}</span>
+                        <span class="truncate text-caption whitespace-nowrap text-nav-icon">{{ $user->is_super_admin ? __('accounts.role_super_admin') : __('accounts.role_host') }}</span>
+                    </div>
+                </div>
             </div>
         </aside>
+        {{-- U1: apply a remembered narrow sidebar before the first paint, so it does not flash wide. --}}
+        <script @if ($nonce = \Illuminate\Support\Facades\Vite::cspNonce()) nonce="{{ $nonce }}" @endif>
+            try { if (localStorage.getItem('pentahoot-sidebar') === 'collapsed') document.getElementById('host-sidebar').dataset.collapsed = 'true'; } catch (e) {}
+        </script>
 
-        <div class="flex min-w-0 grow flex-col">
-            <header class="flex min-h-16 shrink-0 items-center gap-3 border-b border-line bg-bar px-4 lg:px-7">
+        {{-- U18: the part a navigation replaces; the sidebar keeps its scroll and only its links update (up-hungry). --}}
+        <div id="host-content" up-main class="flex min-w-0 grow flex-col">
+            <header class="sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-line bg-bar px-4 lg:px-7">
                 <button type="button" class="-ml-2 flex size-11 items-center justify-center rounded-control lg:hidden"
                     @click="menuOpen = true" aria-controls="host-sidebar" :aria-expanded="menuOpen.toString()"
                     aria-label="{{ __('host.nav.open_menu') }}">
                     <x-icon name="menu" />
                 </button>
-                <nav aria-label="{{ __('host.nav.breadcrumb') }}" class="flex min-w-0 grow items-center gap-2 text-[15px]">
+                <button type="button" class="-ml-3 hidden size-11 items-center justify-center rounded-control text-muted hover:bg-subtle hover:text-ink lg:flex"
+                    @click="toggleCollapsed()" aria-controls="host-sidebar" :aria-expanded="(!collapsed).toString()"
+                    :aria-label="collapsed ? @js(__('host.nav.expand')) : @js(__('host.nav.collapse'))"
+                    aria-label="{{ __('host.nav.collapse') }}" :title="collapsed ? @js(__('host.nav.expand')) : @js(__('host.nav.collapse'))">
+                    <x-icon name="sidebar" />
+                </button>
+                <nav id="breadcrumbs" aria-label="{{ __('host.nav.breadcrumb') }}" class="flex min-w-0 grow items-center gap-2 text-body">
                     @foreach ($breadcrumbs as [$label, $url])
                         @if ($loop->last)
                             <span class="truncate font-bold" aria-current="page">{{ $label }}</span>
                         @else
-                            <a href="{{ $url }}" class="truncate text-muted hover:text-ink">{{ $label }}</a>
+                            <a href="{{ $url }}" class="inline-flex min-h-11 items-center truncate text-muted hover:text-ink">{{ $label }}</a>
                             <span class="text-line-strong" aria-hidden="true">/</span>
                         @endif
                     @endforeach
                 </nav>
-                @isset($actions)
-                    <div class="flex items-center gap-2.5">{{ $actions }}</div>
-                @endisset
             </header>
 
-            <main class="flex grow flex-col gap-5 px-4 py-6 lg:px-7">
-                <x-flash />
+            {{-- C-8: keeps the session alive while this page is open, and warns 10 minutes before the
+                 8 hour limit since sign in ends it. --}}
+            <div x-data="sessionGuard({ endsAt: @js(\App\Http\Middleware\EnforceSessionLimit::endsAt(request())), url: @js(route('host.session')) })"
+                x-show="phase === 'ending'" x-cloak role="status" data-test="session-ending"
+                class="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-warning px-4 py-3 text-on-warning lg:px-7">
+                <p class="font-semibold" x-text="@js(__('accounts.session_ending')).replace('__TIME__', endsAtLabel)"></p>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <x-button type="submit" variant="secondary">{{ __('accounts.sign_in_again') }}</x-button>
+                </form>
+            </div>
+
+            <main id="main-content" tabindex="-1" class="flex grow flex-col gap-5 px-4 py-6 focus:outline-none lg:px-7">
+                {{-- U2: the page title and its actions head the content; the top bar only shows where you are. --}}
+                @if ($heading)
+                    {{-- U14: an id, so a page can swap its title and actions alone. --}}
+                    <div id="content-head" class="flex flex-wrap items-center justify-between gap-3">
+                        <h1 class="font-display text-title font-bold">{{ last($breadcrumbs)[0] }}</h1>
+                        @isset($actions)
+                            <div class="flex flex-wrap items-center gap-2.5">{{ $actions }}</div>
+                        @endisset
+                    </div>
+                @endif
                 {{ $slot }}
             </main>
+            <x-toasts />
         </div>
+        {{-- U5, U18: inside the shell, so their forms and links move without reloading too. --}}
+        <x-confirm-host />
+        <x-row-menu-host />
     </div>
 </x-layouts.base>

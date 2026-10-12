@@ -33,6 +33,7 @@ final readonly class ReleaseClaim
 
             $locked->forceFill(['claim_token_hash' => null, 'claimed_at' => null])->save();
             $row->bumpStateVersion();
+            $row->bumpRosterVersion();
             $row->save();
             $this->publisher->publish($row);
 

@@ -1,0 +1,88 @@
+# Staging and production (A7, A8, P4). The deploy job copies this file to the deploy folder
+# on the VM as compose.yaml, next to the .env of that environment. Images come from the
+# registry (P1); nothing is built on the server. The database is the existing MySQL server
+# (A9), reached through host.docker.internal.
+#
+#   IMAGE_TAG=<sha or version> docker compose pull
+#   docker compose run --rm app php artisan migrate --force
+#   IMAGE_TAG=<sha or version> docker compose up -d
+#
+# Only the host's reverse proxy reaches these ports (bound to 127.0.0.1): WEB_PORT for the
+# app, REVERB_HOST_PORT for WebSockets (/app path).
+
+name: pentahoot
+
+x-app: &app
+  # P1, P4: deploy.sh passes the digests of the scanned images; the tag stays readable.
+  image: ${IMAGE_REPO:-ghcr.io/devivace-groups/pentahoot}:${IMAGE_TAG:?set IMAGE_TAG}${APP_DIGEST:+@${APP_DIGEST}}
+  env_file: .env
+  restart: unless-stopped
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  volumes:
+    # F16, A7: images live on the VM's permanent disk; logs survive container updates (K5).
+    - media:/var/www/html/storage/app/media
+    - logs:/var/www/html/storage/logs
+
+services:
+  app:
+    <<: *app
+
+  web:
+    image: ${IMAGE_REPO:-ghcr.io/devivace-groups/pentahoot}-web:${IMAGE_TAG:?set IMAGE_TAG}${WEB_DIGEST:+@${WEB_DIGEST}}
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8000}:8080"
+    volumes:
+      - media:/var/www/html/storage/app/media:ro
+
+  # O2: replaced on every deploy, so Reverb always runs the new code.
+  reverb:
+    <<: *app
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "127.0.0.1:${REVERB_HOST_PORT:-8080}:8080"
+    # P9 (audit OPS-1): every phone, projector and host tab is one open socket; the default
+    # limit of 1,024 open files would refuse new connections in a full venue.
+    ulimits:
+      nofile:
+        soft: 10000
+        hard: 10000
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8080) ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # O4, P4: dump before every migration (deploy.sh) and restore by hand, with a one-off
+  # MySQL client container: the "tools" profile keeps it out of "up". The password goes into
+  # an option file inside the container, never on a command line (MySQL password guidance).
+  #   docker compose run --rm -T backup dump > pentahoot.sql
+  #   gunzip -c backups/<file>.sql.gz | docker compose run --rm -T backup restore
+  # MYSQL_CLIENT_IMAGE follows the server version once it is known (O-B).
+  backup:
+    image: ${MYSQL_CLIENT_IMAGE:-mysql:8.4}
+    profiles: [tools]
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        umask 077
+        printf '[client]\nhost="%s"\nport="%s"\nuser="%s"\npassword="%s"\n' "$$DB_HOST" "$$DB_PORT" "$$DB_USERNAME" "$$DB_PASSWORD" > /tmp/client.cnf
+        case "$$1" in
+          dump) exec mysqldump --defaults-extra-file=/tmp/client.cnf --single-transaction --no-tablespaces --set-gtid-purged=OFF --routines --triggers "$$DB_DATABASE" ;;
+          restore) exec mysql --defaults-extra-file=/tmp/client.cnf "$$DB_DATABASE" ;;
+          *) echo "usage: backup dump|restore" >&2; exit 2 ;;
+        esac
+      - backup
+    command: [dump]
+
+volumes:
+  media:
+  logs:

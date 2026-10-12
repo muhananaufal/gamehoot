@@ -6,9 +6,14 @@ namespace App\Providers;
 
 use App\Models\Event;
 use App\People\ClaimCookie;
+use App\Realtime\StatePublisher;
 use App\Support\RequiredConfig;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as Events;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -18,7 +23,12 @@ final class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register(): void {}
+    public function register(): void
+    {
+        // F22: nested actions in one request share the publisher, so one commit sends one set
+        // of snapshots per event (audit PERF-4).
+        $this->app->scoped(StatePublisher::class);
+    }
 
     /**
      * Bootstrap any application services.
@@ -31,6 +41,15 @@ final class AppServiceProvider extends ServiceProvider
             RequiredConfig::check();
         }
 
+        // Audit CODE-7: an N+1 query fails in development and tests instead of slowing the event.
+        Model::preventLazyLoading(! $this->app->isProduction());
+
+        // O17 (audit OPS-4): GET /up also asks the database; an error here makes it answer 500,
+        // so the deploy smoke test (P4) and the container healthcheck see a dead database.
+        Events::listen(DiagnosingHealth::class, function (): void {
+            DB::select('select 1');
+        });
+
         // O7: host account passwords.
         Password::defaults(fn (): Password => Password::min(12)->letters()->numbers());
 
@@ -38,8 +57,9 @@ final class AppServiceProvider extends ServiceProvider
         // account are limited more strictly in LoginRequest.
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip() ?? 'unknown'));
 
-        // F11: a whole venue may share one address, so the per-IP claim limit is generous.
-        RateLimiter::for('claim', fn (Request $request): Limit => Limit::perMinute(300)->by($request->ip() ?? 'unknown'));
+        // F11 (audit RATE-1): a whole venue may share one address and scan the QR code in the same
+        // minute; a claim is still guarded by the conditional update (F6) and 16-character tokens.
+        RateLimiter::for('claim', fn (Request $request): Limit => Limit::perMinute(1000)->by($request->ip() ?? 'unknown'));
 
         // F11: votes are limited per phone (claim token), so a venue behind one IP keeps voting.
         // Throttling runs before route model binding, so the event is still its link here.

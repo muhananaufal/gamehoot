@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\User;
+use App\Http\Concerns\LiveValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateUserStatusRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        $account = $this->route('user');
-
-        return $account instanceof User && ($this->user()?->can('changeStatus', $account) ?? false);
-    }
+    use LiveValidation;
 
     /**
      * @return array<string, list<string>>

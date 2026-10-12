@@ -8,10 +8,12 @@ use App\Actions\People\EditNameList;
 use App\Exceptions\NameListLocked;
 use App\Http\Requests\Host\ConfirmImportRequest;
 use App\Http\Requests\Host\ImportPeopleRequest;
+use App\Http\Requests\Host\PersonNameRequest;
 use App\Models\Event;
+use App\Models\User;
 use App\People\DuplicateNames;
 use App\People\NameCsv;
-use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -36,7 +38,16 @@ final class PersonImportController
             return $this->review($event, array_values(array_filter($old, is_string(...))), null, null);
         }
 
-        return view('host.people.import', ['event' => $event, 'rows' => null, 'separator' => null, 'fileName' => null]);
+        // B-4: Back from Review names the last file; the file itself is picked again.
+        $last = $request->query('last');
+
+        return view('host.people.import', [
+            'event' => $event,
+            'rows' => null,
+            'separator' => null,
+            'fileName' => null,
+            'last' => is_string($last) && $last !== '' ? mb_substr($last, 0, 255) : null,
+        ]);
     }
 
     public function store(ImportPeopleRequest $request, Event $event): View|RedirectResponse
@@ -53,14 +64,13 @@ final class PersonImportController
         return $this->review($event, $csv->names, $csv->separator, $file->getClientOriginalName());
     }
 
-    public function update(ConfirmImportRequest $request, Event $event, EditNameList $names): RedirectResponse
+    public function update(ConfirmImportRequest $request, Event $event, EditNameList $names, #[CurrentUser] User $user): RedirectResponse
     {
+        // B-8: a clash only the unique index finds comes back as a ValidationException for its row.
         try {
-            $names->import($event, $request->names());
+            $names->import($event, $request->names(), $user);
         } catch (NameListLocked) {
             return redirect()->route('host.events.people.index', $event)->withErrors(['names' => __('people.locked')]);
-        } catch (UniqueConstraintViolationException) {
-            return back()->withInput()->withErrors(['names' => __('people.duplicate_race')]);
         }
 
         return redirect()->route('host.events.people.index', $event)
@@ -78,6 +88,9 @@ final class PersonImportController
             'event' => $event,
             'separator' => $separator,
             'fileName' => $fileName,
+            'last' => null,
+            // B-3: how many more names fit in the event.
+            'room' => max(0, PersonNameRequest::MAX_NAMES - $event->people()->count()),
             'rows' => array_map(fn (int $index, string $name): array => [
                 'name' => $name,
                 'problem' => $problems[$index] ?? null,

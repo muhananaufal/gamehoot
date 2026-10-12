@@ -139,6 +139,31 @@ describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
             ->assertSessionHasErrors('question_image_small');
     });
 
+    it('names fields as the form labels them and explains a failed upload', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+        $tooBigForPhp = new UploadedFile(UploadedFile::fake()->image('big.jpg', 1920, 1080)->getPathname(), 'big.jpg', 'image/jpeg', UPLOAD_ERR_INI_SIZE, true);
+
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", gambarForm(['title' => '', 'answer_image' => $tooBigForPhp]))
+            ->assertSessionHasErrors([
+                'title' => 'The question field is required.',
+                'answer_image' => 'The answer image could not be uploaded. Images over 2 MB are refused; pick a smaller one.',
+            ]);
+    });
+
+    it('asks to pick the images again after an error, because browsers cannot refill file fields', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+
+        actingAs($host)->from("/host/packs/{$pack->id}/questions/create")
+            ->followingRedirects()
+            ->post("/host/packs/{$pack->id}/questions", gambarForm(['title' => '']))
+            ->assertSee('Picked images are not kept after an error. Pick them again.');
+
+        actingAs($host)->get("/host/packs/{$pack->id}/questions/create")
+            ->assertDontSee('Picked images are not kept after an error.');
+    });
+
     it('refuses HEIC with a clear message, and files that are not really JPG or PNG (E8, O7)', function (): void {
         $host = User::factory()->create();
         $pack = gambarPack($host);
@@ -165,6 +190,18 @@ describe('Tebak Gambar pack questions (E8, E9, G11)', function (): void {
         $big = UploadedFile::fake()->image('big.jpg', 1920, 1080)->size(2049);
         actingAs($host)->post("/host/packs/{$pack->id}/questions", gambarForm(['answer_image' => $big]))
             ->assertSessionHasErrors('answer_image');
+    });
+
+    it('refuses images taller than the browser makes them (K7, audit SEC-4)', function (): void {
+        $host = User::factory()->create();
+        $pack = gambarPack($host);
+
+        actingAs($host)->post("/host/packs/{$pack->id}/questions", gambarForm([
+            'question_image' => UploadedFile::fake()->image('tall.png', 1000, 4000),
+            'question_image_small' => UploadedFile::fake()->image('tall.png', 300, 1200),
+        ]))->assertSessionHasErrors(['question_image', 'question_image_small']);
+
+        expect(MediaFile::query()->count())->toBe(0);
     });
 
     it('keeps the stored images when an edit leaves the fields empty, and stores new files otherwise (D-9)', function (): void {

@@ -5,11 +5,10 @@ declare(strict_types=1);
 return [
     'pick_title' => 'Pick your name to join the game',
     'search' => 'Search name',
-    'claimed_hidden' => 'Names already claimed on another phone are hidden.',
+    'claimed_hidden' => 'Names someone already picked are hidden.',
     'wrong_name' => 'Picked the wrong name? Ask the host to release it.',
     'no_names' => 'No names are available right now. Ask the host.',
     'no_match' => 'No name matches your search.',
-    'join_as' => 'Join as :name',
 
     'welcome' => 'You’re in, :name!',
     'waiting' => 'Waiting for the host to start the next game. Keep this page open.',
@@ -36,7 +35,11 @@ return [
         ],
         'taken' => [
             'title' => 'This name is already in use',
-            'body' => '“:name” is playing on another phone. If that’s you on a new phone, ask the host to release the name, then try again.',
+            'body' => '“:name” is already playing on another device. If that’s you on a new one, ask the host to release the name, then try again.',
+        ],
+        'name_gone' => [
+            'title' => 'This name is no longer on the list',
+            'body' => 'The host changed the name list. Go back and pick your name again.',
         ],
         'link_invalid' => [
             'title' => 'This link no longer works',

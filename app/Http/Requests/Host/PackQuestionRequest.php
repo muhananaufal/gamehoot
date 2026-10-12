@@ -6,6 +6,8 @@ namespace App\Http\Requests\Host;
 
 use App\Games\GameEngine;
 use App\Games\GameEngines;
+use App\Http\Concerns\LiveValidation;
+use App\Http\Views\QuestionFieldNames;
 use App\Models\QuestionPack;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -14,12 +16,22 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class PackQuestionRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return $this->engine()->questionRules(creating: $this->route('question') === null);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return QuestionFieldNames::for($this->pack()->game_type);
     }
 
     public function engine(): GameEngine

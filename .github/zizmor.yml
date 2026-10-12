@@ -1,0 +1,7 @@
+# P3: zizmor findings that were reviewed and accepted, each with its reason.
+rules:
+  self-repository:
+    ignore:
+      # zizmor suggests the "$/" form for actions in this repository. The form documented by
+      # GitHub is "./"; keep it until "$/" appears in the GitHub documentation.
+      - ci.yml

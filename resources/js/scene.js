@@ -1,0 +1,240 @@
+// U30: the small moves of the Public View and the phones. Scenes themselves change with Alpine's
+// x-transition and the scene-* classes in app.css (components/scene.blade.php); this module holds
+// the rules that decide when something moves. Data never waits for motion: a nudge only decorates
+// a value that is already on screen.
+import { EASE, MOTION } from './motion.js';
+
+/** The stroke offset of the countdown ring: 0 is full, the circumference is empty. */
+export function ringOffset(msLeft, durationSeconds, circumference) {
+    if (!durationSeconds || durationSeconds <= 0) {
+        return circumference;
+    }
+
+    const left = Math.min(1, Math.max(0, msLeft / (durationSeconds * 1_000)));
+
+    return Math.round((1 - left) * circumference * 100) / 100;
+}
+
+/** How tense the countdown looks: pulsing from five seconds, red-orange from three (U30). */
+export function urgencyOf(seconds) {
+    if (!seconds || seconds <= 0) {
+        return 'calm';
+    }
+
+    if (seconds <= 3) {
+        return 'last';
+    }
+
+    return seconds <= 5 ? 'soon' : 'calm';
+}
+
+/** A short "Back online" once the socket returns after a drop (T2). */
+export function connectionNotice(previous, current) {
+    return current === 'connected' && (previous === 'reconnecting' || previous === 'offline') ? 'back_online' : null;
+}
+
+export const NUDGES = Object.freeze({
+    // A number that changed: a quick pop.
+    pop: {
+        frames: [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
+        duration: MOTION.slow,
+        easing: EASE.overshoot,
+    },
+    // A countdown second in the last five: a smaller beat.
+    pulse: {
+        frames: [{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }],
+        duration: MOTION.slow,
+        easing: EASE.overshoot,
+    },
+    // A letter box that opens turns to show its face (E5).
+    flip: {
+        frames: [{ transform: 'perspective(600px) rotateY(90deg)' }, { transform: 'perspective(600px) rotateY(0)' }],
+        duration: MOTION.slow,
+        easing: EASE.overshoot,
+    },
+    // A refused action: a small no.
+    shake: {
+        frames: [
+            { transform: 'translateX(0)' },
+            { transform: 'translateX(-6px)' },
+            { transform: 'translateX(5px)' },
+            { transform: 'translateX(-3px)' },
+            { transform: 'translateX(0)' },
+        ],
+        duration: MOTION.quick,
+        easing: 'linear',
+    },
+    // U32: content that changed its meaning (the main action of Live control) fades in.
+    fade: { frames: [{ opacity: 0 }, { opacity: 1 }], duration: MOTION.base, easing: EASE.out },
+});
+
+/** Whether a value change deserves a nudge. The first value never moves (a reload is not news). */
+export function shouldNudge(kind, previous, next, first) {
+    if (first || previous === next) {
+        return false;
+    }
+
+    // A beat or a shake needs something to show: a new count, a new problem.
+    if (kind === 'pulse' || kind === 'shake') {
+        return next !== null && next !== undefined && next !== '';
+    }
+
+    if (kind === 'flip') {
+        return previous === 'closed' && next !== 'closed';
+    }
+
+    return true;
+}
+
+export function nudge(el, kind, { reduced = false } = {}) {
+    const move = NUDGES[kind];
+
+    if (!move || reduced || typeof el.animate !== 'function') {
+        return null;
+    }
+
+    return el.animate(move.frames, { duration: move.duration, easing: move.easing });
+}
+
+/**
+ * U30: the x-nudge directive. x-nudge.pop="count" pops the element whenever count changes.
+ * Kinds: pop, pulse, flip, shake.
+ */
+export function nudgeDirective(Alpine) {
+    return (el, { expression, modifiers }, { effect, evaluateLater }) => {
+        const kind = modifiers.find((modifier) => modifier in NUDGES) ?? 'pop';
+        const read = evaluateLater(expression);
+        let previous;
+        let first = true;
+
+        effect(() => {
+            read((value) => {
+                if (shouldNudge(kind, previous, value, first)) {
+                    nudge(el, kind, { reduced: Alpine.store('motion')?.reduced ?? false });
+                }
+
+                previous = value;
+                first = false;
+            });
+        });
+    };
+}
+
+/**
+ * U30: Penta in the lobby waves when someone joins and dozes off after a quiet minute.
+ * `tell` hands a mood to Penta.
+ */
+export function lobbyMood({ quietMs = 60_000, tell }) {
+    let last = null;
+    let timer = null;
+
+    const arm = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => tell('sleepy'), quietMs);
+    };
+
+    return {
+        joined(count) {
+            if (last !== null && count > last) {
+                tell('wave');
+            }
+
+            if (last === null || count > last) {
+                arm();
+            }
+
+            last = count;
+        },
+
+        stop() {
+            clearTimeout(timer);
+            timer = null;
+        },
+    };
+}
+
+/** T2, U30: the connection banner of every live page, with a short Back online after a drop. */
+export function connectionBanner({ holdMs = 1_500 } = {}) {
+    let previous = null;
+    let timer = null;
+
+    return {
+        back: false,
+
+        init() {
+            previous = this.$store.realtime.connection;
+            this.$watch(
+                () => this.$store.realtime.connection,
+                (current) => {
+                    if (connectionNotice(previous, current) === 'back_online') {
+                        this.back = true;
+                        clearTimeout(timer);
+                        timer = setTimeout(() => {
+                            this.back = false;
+                        }, holdMs);
+                    }
+
+                    previous = current;
+                },
+            );
+        },
+    };
+}
+
+/** U30: the lobby of the Public View tells the Penta named "lobby" when players join or stay away. */
+export function lobbyPenta({ quietMs = 60_000 } = {}) {
+    let lobby = null;
+
+    return {
+        init() {
+            lobby = lobbyMood({ quietMs, tell: (mood) => this.$dispatch('mascot-react', { name: 'lobby', mood }) });
+            const joined = () => this.$store.realtime.snapshot?.lobby?.joined ?? 0;
+            lobby.joined(joined());
+            this.$watch(joined, (count) => lobby.joined(count));
+        },
+
+        destroy() {
+            lobby?.stop();
+        },
+    };
+}
+
+/** U32: what Penta on the sign in page does for the focused field. */
+export function loginReaction(field) {
+    if (field?.tagName !== 'INPUT') {
+        return { mood: 'idle' };
+    }
+
+    if (field.name === 'password') {
+        return { mood: field.type === 'password' ? 'shy' : 'peek' };
+    }
+
+    // The pupils move from -5 (start of the field) to 5 (about 24 characters in).
+    const caret = Math.min(field.selectionStart ?? field.value.length, 24);
+
+    return { look: { x: Math.round((caret / 24) * 10 - 5), y: 4 } };
+}
+
+/**
+ * U32: the sign in form tells the Penta named "login" where to look and how to feel. A mood is
+ * only sent when it changes, so typing a password does not replay it.
+ */
+export function loginPenta() {
+    let mood = 'idle';
+
+    return {
+        follow(field) {
+            const reaction = loginReaction(field);
+            const next = reaction.mood ?? 'idle';
+
+            if (next !== mood) {
+                mood = next;
+                this.$dispatch('mascot-react', { name: 'login', mood });
+            }
+
+            if (reaction.look) {
+                this.$dispatch('mascot-react', { name: 'login', look: reaction.look });
+            }
+        },
+    };
+}

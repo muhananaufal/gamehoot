@@ -73,12 +73,36 @@ it('runs a question from Live control: open, stop, reveal and move on (D-5, F2)'
     // "Time up" only shows once the server applied Stop (the new ends_at comes from the server).
     // Move the clock after that: travelTo freezes the server clock, and a Stop that reached the
     // server after the jump would end at the frozen time and never close (E3).
-    $page->click('Stop')->assertSee('Question 2 of 2 · Time up');
+    $page->click('Stop voting')->assertSee('Question 2 of 2 · Time up');
     travelTo(now()->addSeconds(2));
 
+    // D-5, D-10: another question opens from the list; the revealed one is closed on the way.
+    $page->click('Reveal')
+        ->assertSee('No votes')
+        ->click('Most punctual?')
+        ->assertSee('Question 1 of 2 · Live')
+        ->assertNoJavaScriptErrors();
+});
+
+it('goes through the questions in order from the middle of Live control (D-10)', function (): void {
+    $event = Pentahoot::event();
+    Pentahoot::running($event, ['Most punctual?', 'Best presenter?']);
+
+    actingAs($event->owner()->firstOrFail());
+
+    // The hint above the button shows in every game type, also before the first question.
+    $page = visit("/host/{$event->id}")
+        ->assertSee('Pick a question to open.')
+        ->click('Open question 1')
+        ->assertSee('Question 1 of 2 · Live');
+
+    $page->click('Stop voting')->assertSee('Question 1 of 2 · Time up');
+    travelTo(now()->addSeconds(2));
+
+    // Next question closes question 1 and opens question 2 at once.
     $page->click('Reveal')
         ->assertSee('No votes')
         ->click('Next question')
-        ->assertSee('Pick a question to open.')
+        ->assertSee('Question 2 of 2 · Live')
         ->assertNoJavaScriptErrors();
 });

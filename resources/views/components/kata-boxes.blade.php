@@ -17,13 +17,15 @@
                         <button type="button" x-show="cell.b !== null" :disabled="!({{ $canOpen }})" @click="{{ $open }}"
                             :aria-label="label('open_box', { N: cell.b + 1 })"
                             :data-test="'open-box-' + (cell.b + 1)"
+                            x-nudge.flip="legendOf(cell)"
                             class="flex h-[1.6em] min-h-11 w-[1.3em] min-w-11 items-center justify-center rounded-control border-2 font-display font-bold enabled:cursor-pointer enabled:hover:border-accent"
-                            :class="({ initial: 'border-accent bg-accent text-on-accent', hint: 'border-rank-1 bg-rank-1 text-on-rank-1', revealed: 'border-success-dot bg-success text-on-success', closed: 'border-line-strong bg-surface' })[legendOf(cell)]"
+                            :class="({ initial: 'border-accent bg-accent text-on-accent', hint: 'border-rank-1 bg-rank-1 text-on-rank-1', revealed: 'border-success-dot bg-success text-on-success', closed: 'border-field-line bg-surface' })[legendOf(cell)]"
                             x-text="cell.c ?? ''"></button>
                     @else
-                        <span x-show="cell.b !== null" aria-hidden="true"
+                        {{-- U30: a box turns to show its letter when it opens. --}}
+                        <span x-show="cell.b !== null" aria-hidden="true" x-nudge.flip="legendOf(cell)"
                             class="flex h-[1.6em] w-[1.3em] items-center justify-center rounded-control border-2 font-display font-bold"
-                            :class="({ initial: 'border-accent bg-accent text-on-accent', hint: 'border-rank-1 bg-rank-1 text-on-rank-1', revealed: 'border-success-dot bg-success text-on-success', closed: 'border-line-strong bg-surface' })[legendOf(cell)]"
+                            :class="({ initial: 'border-accent bg-accent text-on-accent', hint: 'border-rank-1 bg-rank-1 text-on-rank-1', revealed: 'border-success-dot bg-success text-on-success', closed: 'border-field-line bg-surface' })[legendOf(cell)]"
                             x-text="cell.c ?? ''"></span>
                     @endif
                 </span>

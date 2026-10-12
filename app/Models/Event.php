@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use App\Enums\ReplayKind;
 use App\Enums\ScreenTheme;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,8 +17,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
-#[Fillable(['name', 'slug', 'show_on_devices', 'screen_theme'])]
+#[Fillable(['name', 'slug', 'show_on_devices', 'screen_animations', 'screen_theme'])]
+#[Hidden(['host_channel_key'])]
 final class Event extends Model
 {
     /** @use HasFactory<EventFactory> */
@@ -28,8 +32,10 @@ final class Event extends Model
     protected $attributes = [
         'status' => 'draft',
         'show_on_devices' => false,
+        'screen_animations' => true,
         'screen_theme' => 'dark',
         'state_version' => 0,
+        'roster_version' => 0,
     ];
 
     /**
@@ -37,7 +43,8 @@ final class Event extends Model
      */
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'owner_id')->withTrashed();
     }
 
     /**
@@ -55,7 +62,8 @@ final class Event extends Model
      */
     public function deletedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'deleted_by');
+        // C-7: a deleted account keeps its name on what it did.
+        return $this->belongsTo(User::class, 'deleted_by')->withTrashed();
     }
 
     /**
@@ -84,6 +92,26 @@ final class Event extends Model
         return $this->belongsTo(Game::class, 'active_game_id');
     }
 
+    /**
+     * D-11: the game of the moment the Public View replays.
+     *
+     * @return BelongsTo<Game, $this>
+     */
+    public function replayGame(): BelongsTo
+    {
+        return $this->belongsTo(Game::class, 'replay_game_id');
+    }
+
+    /**
+     * D-11: the question of the moment the Public View replays, none for a final podium.
+     *
+     * @return BelongsTo<Question, $this>
+     */
+    public function replayQuestion(): BelongsTo
+    {
+        return $this->belongsTo(Question::class, 'replay_question_id');
+    }
+
     public function isOwnedBy(User $user): bool
     {
         return $this->owner_id === $user->id;
@@ -101,6 +129,55 @@ final class Event extends Model
     public function bumpStateVersion(): void
     {
         $this->state_version++;
+    }
+
+    /**
+     * D-11: back to live. Every game action calls this, so play always wins over a replay.
+     */
+    public function endReplay(): void
+    {
+        $this->forceFill(['replay_kind' => null, 'replay_game_id' => null, 'replay_question_id' => null]);
+    }
+
+    /**
+     * B-6: the host changed the name list, so phones with a name fetch their own state again.
+     * Saved with the event, inside the change's transaction.
+     */
+    public function bumpRosterVersion(): void
+    {
+        $this->roster_version++;
+    }
+
+    /**
+     * F26: the key in the host channel name. Events made before the key existed get one the
+     * first time it is needed.
+     */
+    public function hostChannelKey(): string
+    {
+        if ($this->host_channel_key === null) {
+            $this->forceFill(['host_channel_key' => Str::random(32)])->save();
+        }
+
+        return (string) $this->host_channel_key;
+    }
+
+    /**
+     * F26: a new key, so sockets that joined the host channel before someone lost access
+     * receive nothing more. Saved inside the caller's transaction; returns the old key.
+     */
+    public function rotateHostChannelKey(): string
+    {
+        $old = $this->hostChannelKey();
+        $this->forceFill(['host_channel_key' => Str::random(32)])->save();
+
+        return $old;
+    }
+
+    protected static function booted(): void
+    {
+        self::creating(function (self $event): void {
+            $event->host_channel_key ??= Str::random(32);
+        });
     }
 
     /**
@@ -122,9 +199,12 @@ final class Event extends Model
             'status' => EventStatus::class,
             'screen_theme' => ScreenTheme::class,
             'show_on_devices' => 'boolean',
+            'screen_animations' => 'boolean',
             'names_locked_at' => 'datetime',
             'join_locked_at' => 'datetime',
             'state_version' => 'integer',
+            'roster_version' => 'integer',
+            'replay_kind' => ReplayKind::class,
         ];
     }
 }

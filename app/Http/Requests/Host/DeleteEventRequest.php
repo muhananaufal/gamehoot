@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Host;
 
+use App\Http\Concerns\LiveValidation;
 use App\Models\Event;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,8 @@ use Illuminate\Validation\Rule;
  */
 final class DeleteEventRequest extends FormRequest
 {
+    use LiveValidation;
+
     /**
      * @return array<string, list<mixed>>
      */

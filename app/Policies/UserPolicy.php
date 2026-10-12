@@ -21,6 +21,19 @@ final class UserPolicy
         return $actor->is_super_admin;
     }
 
+    public function update(User $actor, User $account): bool
+    {
+        return $actor->is_super_admin;
+    }
+
+    /**
+     * C-7: a super-admin cannot delete their own account.
+     */
+    public function delete(User $actor, User $account): bool
+    {
+        return $actor->is_super_admin && ! $actor->is($account);
+    }
+
     public function resetPassword(User $actor, User $account): bool
     {
         return $actor->is_super_admin;

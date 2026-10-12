@@ -17,13 +17,15 @@ final class DuplicateNames
      * @param  list<string>  $names
      * @return array<int, NameClash> keyed by list index
      */
-    public static function in(array $names, Event $event): array
+    public static function in(array $names, ?Event $event): array
     {
         $existing = [];
 
-        foreach ($event->people()->get(['name', 'name_normalized']) as $person) {
+        // U26: a new event has no names yet.
+        foreach ($event?->people()->get(['name']) ?? [] as $person) {
             /** @var Person $person */
-            $existing[$person->name_normalized] = $person->name;
+            // B-8: folded again from the name, since rows saved before B-8 kept their accents.
+            $existing[PersonName::normalize($person->name)] = $person->name;
         }
 
         $seen = [];
@@ -32,10 +34,12 @@ final class DuplicateNames
         foreach ($names as $index => $name) {
             $key = PersonName::normalize($name);
 
-            if (isset($existing[$key])) {
+            if (mb_strlen(PersonName::display($name)) > PersonName::MAX_LENGTH) {
+                $problems[$index] = NameClash::tooLong();
+            } elseif (isset($existing[$key])) {
                 $problems[$index] = NameClash::withExisting($existing[$key]);
             } elseif (isset($seen[$key])) {
-                $problems[$index] = NameClash::withRow($seen[$key] + 1);
+                $problems[$index] = NameClash::withRow($seen[$key] + 1, PersonName::display($name));
             } else {
                 $seen[$key] = $index;
             }

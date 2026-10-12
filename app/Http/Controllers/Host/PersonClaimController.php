@@ -24,9 +24,9 @@ final class PersonClaimController
         return redirect()->route('host.events.people.index', $event)->with('status', __('people.released', ['name' => $person->name]));
     }
 
-    public function update(Event $event, Person $person, RegenerateJoinLink $regenerate): RedirectResponse
+    public function update(Event $event, Person $person, RegenerateJoinLink $regenerate, #[CurrentUser] User $user): RedirectResponse
     {
-        $regenerate->handle($person);
+        $regenerate->handle($event, $person, $user);
 
         return redirect()->route('host.events.people.index', $event)->with('status', __('people.link_regenerated', ['name' => $person->name]));
     }

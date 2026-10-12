@@ -8,6 +8,7 @@ use App\Enums\Audience;
 use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\QuestionStatus;
+use App\Games\Tebak\TebakActions;
 use App\Games\Tebak\TebakBoard;
 use App\Games\TebakKata\AnswerBoxes;
 use App\Games\TebakKata\KataActions;
@@ -102,7 +103,8 @@ final readonly class TebakKataEngine implements LiveGameEngine
      */
     public function saveCopyDetail(Question $question, array $attributes): void
     {
-        $detail = $question->kata()->firstOrFail();
+        // D-2: an edited copy, or a question of the event's own getting its detail.
+        $detail = $question->kata()->first() ?? $question->kata()->make();
         $detail->fill($attributes);
         $detail->opened_indexes = $detail->initial_open_indexes;
         $detail->save();
@@ -144,7 +146,7 @@ final readonly class TebakKataEngine implements LiveGameEngine
         return $snapshot;
     }
 
-    public function liveCounters(Game $game, Audience $audience): array
+    public function liveCounters(LiveState $live, Audience $audience): array
     {
         return [];
     }
@@ -152,6 +154,11 @@ final readonly class TebakKataEngine implements LiveGameEngine
     public function actions(): array
     {
         return KataActions::ACTIONS;
+    }
+
+    public function versionedActions(): array
+    {
+        return TebakActions::VERSIONED;
     }
 
     public function actionRules(string $action): array

@@ -69,14 +69,20 @@ function fakeEcho() {
         },
     });
 
+    const left = [];
+
     return {
         listeners,
+        left,
         channel,
         private: (name) => channel(`private-${name}`),
+        leave: (name) => left.push(name),
         connector: {
             onConnectionChange(callback) {
                 onChange = callback;
-                return () => {};
+                return () => {
+                    onChange = () => {};
+                };
             },
         },
         status: (value) => onChange(value),
@@ -90,9 +96,14 @@ function fakeDocument() {
         addEventListener: (type, handler) => {
             handlers[type] = handler;
         },
+        removeEventListener: (type, handler) => {
+            if (handlers[type] === handler) {
+                delete handlers[type];
+            }
+        },
         show() {
             this.visibilityState = 'visible';
-            handlers.visibilitychange();
+            handlers.visibilitychange?.();
         },
     };
 }
@@ -214,6 +225,70 @@ describe('F17, T2, T3 connection', () => {
     });
 });
 
+describe('U18 leaving a page', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('stops listening, polling and following the page once the page is replaced', async () => {
+        const echo = fakeEcho();
+        const doc = fakeDocument();
+        const store = realtimeStore({ now: () => Date.now() });
+        let version = 1;
+        const fetchState = vi.fn(async () => snapshot(version++, Date.now()));
+        const connection = connectRealtime({
+            store,
+            echo,
+            channels: [
+                { name: 'event.abc.public', private: false },
+                { name: 'event.abc.host', private: true },
+            ],
+            fetchState,
+            random: () => 0.5,
+            doc,
+        });
+        await vi.runOnlyPendingTimersAsync();
+        echo.status('failed');
+
+        connection.stop();
+        const calls = fetchState.mock.calls.length;
+        const held = store.version;
+
+        expect(echo.left).toEqual(['event.abc.public', 'event.abc.host']);
+        // No more polling, no reaction to the socket, the tab or late broadcasts.
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS + POLL_JITTER_MS + 1);
+        echo.status('connected');
+        doc.show();
+        echo.listeners['event.abc.public.state'](snapshot(99));
+        await vi.runOnlyPendingTimersAsync();
+
+        expect(fetchState.mock.calls.length).toBe(calls);
+        expect(store.version).toBe(held);
+    });
+});
+
+describe('U18 joining a page while the socket is already up', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('shows the page as live at once, since no connection change will come', async () => {
+        const echo = fakeEcho();
+        echo.connector.connectionStatus = () => 'connected';
+        const store = realtimeStore({ now: () => Date.now() });
+
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.xyz.public', private: false }],
+            fetchState: async () => snapshot(3, Date.now()),
+            random: () => 0.5,
+            doc: fakeDocument(),
+        });
+        await vi.runOnlyPendingTimersAsync();
+
+        expect(store.connection).toBe('connected');
+    });
+});
+
 describe('F20 status screens', () => {
     it('picks the screen from the event status', () => {
         const store = realtimeStore();
@@ -307,16 +382,76 @@ describe('F14, F24 small messages', () => {
         connectRealtime({
             store,
             echo,
-            channels: [{ name: 'event.abc.public', private: false }],
+            channels: [
+                { name: 'event.abc.public', private: false },
+                { name: 'event.abc.screen', private: false, counters: true },
+            ],
             fetchState: async () => null,
             onAnswered,
             doc: fakeDocument(),
         });
 
-        echo.listeners['event.abc.public.answered']({ question_id: 'q1', attempt: 1, answered: 3 });
+        echo.listeners['event.abc.screen.answered']({ question_id: 'q1', attempt: 1, answered: 3 });
 
         expect(onAnswered).toHaveBeenCalledOnce();
         expect(store.snapshot.game.answered).toBe(3);
+    });
+
+    it('reloads a host page when its host channel gets a new key, on the private channel only (F26)', () => {
+        const echo = fakeEcho();
+        const onRotated = vi.fn();
+        connectRealtime({
+            store: realtimeStore(),
+            echo,
+            channels: [
+                { name: 'event.abc.public', private: false },
+                { name: 'event.abc.host.k1', private: true },
+            ],
+            fetchState: async () => null,
+            onRotated,
+            doc: fakeDocument(),
+        });
+
+        expect(echo.listeners['event.abc.public.rotated']).toBeUndefined();
+        echo.listeners['private-event.abc.host.k1.rotated']({});
+
+        expect(onRotated).toHaveBeenCalledOnce();
+    });
+
+    it('never listens for counters on a phone, which follows the public channel only (F25)', () => {
+        const echo = fakeEcho();
+        connectRealtime({
+            store: realtimeStore(),
+            echo,
+            channels: [{ name: 'event.abc.public', private: false }],
+            fetchState: async () => null,
+            doc: fakeDocument(),
+        });
+
+        expect(echo.listeners['event.abc.public.answered']).toBeUndefined();
+        expect(echo.listeners['event.abc.public.joined']).toBeUndefined();
+    });
+
+    it('updates the lobby count from the joined counter, since claims send no snapshot (F23, F25)', () => {
+        const echo = fakeEcho();
+        const store = realtimeStore();
+        store.accept({ ...snapshot(4), lobby: { joined: 2 } });
+        const onJoined = vi.fn();
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.abc.screen', private: false, counters: true }],
+            fetchState: async () => null,
+            onJoined,
+            doc: fakeDocument(),
+        });
+
+        echo.listeners['event.abc.screen.joined']({ joined: 5 });
+
+        expect(store.snapshot.lobby.joined).toBe(5);
+        expect(store.version).toBe(4);
+        expect(onJoined).toHaveBeenCalledOnce();
+        expect(store.joined({ joined: 'many' })).toBe(false);
     });
 });
 
@@ -330,5 +465,71 @@ describe("E4 the phone's own state", () => {
 
         store.accept({ ...snapshot(3), me: null });
         expect(store.me).toBe(null);
+    });
+});
+
+describe('B-6 the phone follows changes to the name list', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const withRoster = (version, roster) => ({ ...snapshot(version, Date.now()), event: { status: 'open', roster } });
+    const start = (store, fetchState, onNameLost = vi.fn()) => {
+        const echo = fakeEcho();
+        connectRealtime({
+            store,
+            echo,
+            channels: [{ name: 'event.abc.public', private: false }],
+            fetchState,
+            onNameLost,
+            random: () => 0.5,
+            doc: fakeDocument(),
+        });
+
+        return { send: (next) => echo.listeners['event.abc.public.state'](next), onNameLost };
+    };
+
+    it('fetches its own state again, after a jitter, when the name list changed', async () => {
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => ({ ...withRoster(1, 0), me: { name: 'Rita', vote: null } }));
+        const { send } = start(store, fetchState);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(fetchState).toHaveBeenCalledTimes(1);
+
+        fetchState.mockImplementation(async () => ({ ...withRoster(3, 1), me: { name: 'Rita Sari', vote: null } }));
+        send(withRoster(2, 0));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+        expect(fetchState).toHaveBeenCalledTimes(1);
+
+        send(withRoster(3, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS * 0.5);
+        expect(fetchState).toHaveBeenCalledTimes(2);
+        expect(store.me.name).toBe('Rita Sari');
+    });
+
+    it('leaves a page without a claimed name (the host pages) alone', async () => {
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => withRoster(1, 0));
+        const { send } = start(store, fetchState);
+        await vi.advanceTimersByTimeAsync(0);
+
+        send(withRoster(2, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+
+        expect(fetchState).toHaveBeenCalledTimes(1);
+    });
+
+    it('says so once when its name was released or deleted', async () => {
+        const store = realtimeStore();
+        const fetchState = vi.fn(async () => ({ ...withRoster(1, 0), me: { name: 'Rita', vote: null } }));
+        const { send, onNameLost } = start(store, fetchState);
+        await vi.advanceTimersByTimeAsync(0);
+
+        fetchState.mockImplementation(async () => ({ ...withRoster(2, 1), me: null }));
+        send(withRoster(2, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+        send(withRoster(3, 1));
+        await vi.advanceTimersByTimeAsync(RECONNECT_JITTER_MS);
+
+        expect(onNameLost).toHaveBeenCalledOnce();
     });
 });

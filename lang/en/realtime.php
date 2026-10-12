@@ -8,6 +8,8 @@ return [
         'connecting' => 'Connecting…',
         'reconnecting' => 'Reconnecting…',
         'offline' => 'Connection lost. The screen still updates every few seconds.',
+        // U30: shown for a moment when the socket returns after a drop.
+        'back_online' => 'Back online',
     ],
 
     'loading' => 'Loading…',
@@ -15,7 +17,7 @@ return [
     // F23: the Public View lobby.
     'screen' => [
         'title' => 'Public View',
-        'join_at' => 'Join on your phone at',
+        'join_at' => 'Join at',
         'qr' => 'QR code with the join link',
         'joined' => ['one' => '__N__ player joined', 'other' => '__N__ players joined'],
         'waiting' => 'The game starts soon',

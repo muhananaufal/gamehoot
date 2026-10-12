@@ -1,35 +1,86 @@
 name: PHP image
-description: Builds a project PHP image target and installs Composer dependencies inside it.
+description: >-
+  Provides a project PHP image target under a local tag and installs Composer dependencies in it.
+  P6: the image is pulled ready-made from the registry, tagged with a hash of the files it is built
+  from; it is built only when that tag is missing, and pushed when the caller allows it.
 
 inputs:
   target:
     description: Dockerfile target, "dev" or "browser".
     default: dev
+  tag:
+    description: Local tag of the image, unique per job on the shared office runner (P11, ci-sandbox.sh).
+    default: pentahoot-php:ci
+  push:
+    description: Push a freshly built image to the registry ("true" in the gate repository).
+    default: 'false'
 
 runs:
   using: composite
   steps:
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4.4.1
+    - name: Image reference
+      id: ref
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+      run: |
+        hash="$(cat Dockerfile docker/php/conf.d/*.ini | sha256sum | cut -c1-16)"
+        echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/pentahoot-ci:$TARGET-$hash" >> "$GITHUB_OUTPUT"
 
-    - name: Build PHP image
-      uses: docker/build-push-action@v7.4.0
+    - name: Log in to the registry
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+
+    - name: Pull the ready-made image
+      id: pull
+      shell: bash
+      env:
+        IMAGE: ${{ steps.ref.outputs.image }}
+        TAG: ${{ inputs.tag }}
+      run: |
+        if docker pull --quiet "$IMAGE" > /dev/null 2>&1; then
+          docker tag "$IMAGE" "$TAG"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::$IMAGE is not in the registry yet; building it."
+        fi
+
+    - name: Set up Docker Buildx
+      if: steps.pull.outputs.found != 'true'
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+    - name: Build the image
+      if: steps.pull.outputs.found != 'true'
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
       with:
         context: .
         target: ${{ inputs.target }}
         load: true
-        tags: pentahoot-php:ci
-        cache-from: type=gha,scope=php-${{ inputs.target }}
-        cache-to: type=gha,scope=php-${{ inputs.target }},mode=max
+        tags: |
+          ${{ inputs.tag }}
+          ${{ steps.ref.outputs.image }}
+
+    - name: Push the image for the next runs
+      if: steps.pull.outputs.found != 'true' && inputs.push == 'true'
+      shell: bash
+      env:
+        IMAGE: ${{ steps.ref.outputs.image }}
+      run: docker push --quiet "$IMAGE" || echo "::warning::Could not push $IMAGE; the next run builds it again."
 
     - name: Cache vendor
-      uses: actions/cache@v6.1.0
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: vendor
         key: vendor-${{ hashFiles('composer.lock', 'Dockerfile') }}
 
     - name: Install Composer dependencies
       shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
       run: >-
-        docker run --rm -v "$PWD:/var/www/html" pentahoot-php:ci
+        docker run --rm -v "$PWD:/var/www/html" "$TAG"
         composer install --no-interaction --no-progress --prefer-dist

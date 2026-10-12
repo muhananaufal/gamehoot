@@ -1,6 +1,19 @@
 // F20: the Alpine components of the three Pentahoot screens. They only read the shared
 // realtime store; the rules live in pentahoot.js and on the server.
-import { canVote, capRows, fill, phaseOf, podium, revealSteps, searchPeople, secondsLeft } from './pentahoot.js';
+import { withBusyButton } from './action-busy.js';
+import {
+    canVote,
+    capRows,
+    fill,
+    phaseOf,
+    podium,
+    promptSize,
+    revealSteps,
+    SCREEN_ROWS,
+    searchPeople,
+    secondsLeft,
+} from './pentahoot.js';
+import { ringOffset, urgencyOf } from './scene.js';
 
 /** Redraw rate of countdowns and the closed phase (F4). */
 const TICK_MS = 250;
@@ -34,10 +47,27 @@ function base(labels) {
         tick: 0,
         clock: null,
 
+        /**
+         * Audit PERF-6: the clock ticks only while a countdown is on screen, so a phone waiting
+         * in the lobby for an hour is not woken four times a second. The phase reads the tick,
+         * so the clock stops itself once the question closes.
+         */
         startClock() {
-            this.clock = setInterval(() => {
-                this.tick = Date.now();
-            }, TICK_MS);
+            const follow = (phase) => {
+                if (phase === 'live' && this.question?.ends_at) {
+                    this.clock ??= setInterval(() => {
+                        this.tick = Date.now();
+                    }, TICK_MS);
+
+                    return;
+                }
+
+                clearInterval(this.clock);
+                this.clock = null;
+            };
+
+            this.$watch(() => this.phase, follow);
+            follow(this.phase);
         },
 
         destroy() {
@@ -54,10 +84,18 @@ function base(labels) {
  * The phone: wait, pick a name and vote (F3, F9, E3), see the sent answer (E4), then the
  * same top 5 as the Public View (E4b).
  */
-export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
+export function pentahootPhone({
+    peopleUrl,
+    voteUrl,
+    joinUrl = null,
+    navigate = (url) => window.location.assign(url),
+    labels,
+}) {
     return {
         ...base(labels),
         people: null,
+        // B-6: the name list the people were loaded for; a newer one loads them again.
+        peopleRoster: null,
         query: '',
         chosen: null,
         sending: false,
@@ -75,7 +113,16 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
             );
             this.$watch(
                 () => this.view,
-                (view) => view === 'vote' && this.loadPeople(),
+                (view) => {
+                    if (view === 'vote') {
+                        this.loadPeople();
+                    }
+
+                    // U31: a phone celebrates the results it was waiting for, not a reload.
+                    if (view === 'results' && this.results.length > 0) {
+                        this.$dispatch('celebrate', { key: `reveal:${this.question.id}:${this.question.attempt}` });
+                    }
+                },
             );
 
             if (this.view === 'vote') {
@@ -157,7 +204,9 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
         },
 
         async loadPeople() {
-            if (this.people !== null) {
+            const roster = this.store.snapshot?.event?.roster ?? null;
+
+            if (this.people !== null && this.peopleRoster === roster) {
                 return;
             }
 
@@ -169,6 +218,7 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
 
                 if (response.ok) {
                     this.people = (await response.json()).people;
+                    this.peopleRoster = roster;
                 }
             } catch {
                 this.error = this.labels.network_error;
@@ -201,6 +251,13 @@ export function pentahootPhone({ peopleUrl, voteUrl, labels }) {
                         ...(this.store.me ?? {}),
                         vote: { question_id: question.id, attempt: question.attempt, target: body.target.name },
                     };
+                } else if (body.code === 'NOT_CLAIMED' && joinUrl !== null) {
+                    // B-6: the host released this name; the phone picks a name again.
+                    navigate(joinUrl);
+                } else if (body.code === 'ALREADY_VOTED') {
+                    // E4: an earlier try reached the server but its answer was lost; show that pick.
+                    await this.store.refresh?.();
+                    this.error = this.myVote ? '' : body.message;
                 } else {
                     this.error = body.message ?? this.labels.network_error;
                 }
@@ -268,8 +325,23 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
 
             return secondsLeft(this.store, this.question);
         },
+        /** U30: the countdown ring, as a stroke offset of a circle with pathLength 100. */
+        get ring() {
+            void this.tick;
+            const endsAt = this.question?.ends_at;
+
+            return ringOffset(endsAt ? this.store.msUntil(endsAt) : 0, this.question?.duration, 100);
+        },
+        /** U30: pulsing from five seconds, red-orange from three. */
+        get urgency() {
+            return urgencyOf(this.seconds);
+        },
         get results() {
             return this.question?.results ?? [];
+        },
+        /** E15: smaller type for longer prompts, so nothing leaves the projector. */
+        get promptFont() {
+            return promptSize(this.question?.prompt);
         },
         /** E20: the projector draws at most ten rows; a tie that does not fit is one summary row. */
         get rows() {
@@ -278,8 +350,9 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
         get steps() {
             return revealSteps(this.rows);
         },
+        /** E20: the projector podium shares the ten-row budget. */
         get stand() {
-            return podium(this.results);
+            return podium(this.results, SCREEN_ROWS);
         },
 
         /** E2: a row shows once the reveal has reached its rank. */
@@ -322,7 +395,13 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
                 this.timers.push(setTimeout(() => (this.shown = step), delay));
             }
 
-            this.timers.push(setTimeout(() => (this.final = true), delay + STEP_MS));
+            this.timers.push(
+                setTimeout(() => {
+                    this.final = true;
+                    // U31: rank 1 is out; a screen that opened on a past reveal stays quiet.
+                    this.$dispatch('celebrate', { key: `reveal:${key}` });
+                }, delay + STEP_MS),
+            );
         },
     };
 }
@@ -331,7 +410,7 @@ export function pentahootScreen({ labels, reducedMotion = false }) {
  * Live control: open any question that is not done (D-5), run it, see the live count only
  * hosts see (F2), and read STALE_ACTION when the state moved on (C-3).
  */
-export function pentahootHost({ actionUrl, labels }) {
+export function pentahootHost({ actionUrl, labels, questionIds = [] }) {
     return {
         ...base(labels),
         busy: false,
@@ -384,6 +463,12 @@ export function pentahootHost({ actionUrl, labels }) {
         get allAnswered() {
             return this.phase === 'live' && this.total > 0 && this.answered >= this.total;
         },
+        /** D-8: nothing is left to open, so the next step is finishing the game. */
+        get allDone() {
+            const statuses = this.game?.statuses ?? [];
+
+            return !this.question && statuses.length > 0 && statuses.every((status) => status === 'done');
+        },
         get busyQuestion() {
             return this.phase === 'live' || this.phase === 'closed' || this.phase === 'revealed';
         },
@@ -420,8 +505,55 @@ export function pentahootHost({ actionUrl, labels }) {
             return status === 'ready' ? 'todo' : 'current';
         },
 
+        /** D-5, D-10: the list opens a ready question unless one runs; a revealed one is closed on the way. */
         canOpen(number) {
-            return !this.busyQuestion && this.statusOf(number) === 'ready';
+            return (!this.busyQuestion || this.phase === 'revealed') && this.statusOf(number) === 'ready';
+        },
+
+        /**
+         * D-10: the one main action of the middle, for the step at hand: open the first question,
+         * start, stop voting, reveal, go on to the next question, or finish after the last one.
+         * Null when the list decides (a game under way with no question open).
+         */
+        get mainAction() {
+            const question = this.question;
+
+            if (!question || this.phase === 'done') {
+                if (this.allDone) {
+                    return { action: 'finish' };
+                }
+
+                const first = this.firstToOpen;
+
+                return first ? { action: 'start', id: first.id, label: 'open_next', number: first.number } : null;
+            }
+
+            switch (this.phase) {
+                case 'ready':
+                    return { action: 'start', id: question.id, label: 'start' };
+                case 'live':
+                    return { action: 'stop', id: question.id, label: 'stop' };
+                case 'closed':
+                    return { action: 'reveal', id: question.id, label: 'reveal' };
+                case 'revealed':
+                    return this.nextToOpen
+                        ? { action: 'advance', id: question.id, label: 'next' }
+                        : { action: 'finish' };
+                default:
+                    return null;
+            }
+        },
+
+        /** D-10: Open question 1 starts a game; once a question was played, Next question or the list goes on. */
+        get firstToOpen() {
+            return questionIds.every((_, i) => this.statusOf(i + 1) === 'ready') ? this.nextToOpen : null;
+        },
+
+        /** D-10: the first question still to play, for Next question. */
+        get nextToOpen() {
+            const index = questionIds.findIndex((_, i) => this.statusOf(i + 1) === 'ready');
+
+            return index === -1 ? null : { number: index + 1, id: questionIds[index] };
         },
 
         async act(action, questionId = this.question?.id) {
@@ -432,20 +564,27 @@ export function pentahootHost({ actionUrl, labels }) {
             this.busy = true;
             this.error = '';
 
-            try {
-                const { status, body } = await postJson(
-                    actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
-                );
+            // U16: the button that started the action shows the spinner until it ends.
+            await withBusyButton(async () => {
+                try {
+                    // G15: every action carries the version on screen; Reset is refused when it moved.
+                    const { status, body } = await postJson(
+                        actionUrl.replace('__QUESTION__', questionId).replace('__ACTION__', action),
+                        { version: this.store.version },
+                    );
 
-                if (status !== 204) {
-                    this.error = body.message ?? this.labels.network_error;
+                    if (status !== 204) {
+                        this.error = body.message ?? this.labels.network_error;
+                    }
+
+                    // F1: this page loads the new state itself instead of waiting for the broadcast.
                     this.store.refresh?.();
+                } catch {
+                    this.error = this.labels.network_error;
+                } finally {
+                    this.busy = false;
                 }
-            } catch {
-                this.error = this.labels.network_error;
-            } finally {
-                this.busy = false;
-            }
+            });
         },
     };
 }

@@ -1,0 +1,3 @@
+# Findings that are not secrets (P3). One fingerprint per line, each with its reason.
+# deploy/smoke.sh: the sample WebSocket nonce of RFC 6455, sent by the deploy smoke test.
+df78b781ac50759a520a8b5d53974282676521db:deploy/smoke.sh:generic-api-key:38

@@ -31,7 +31,8 @@ uses(RefreshDatabase::class);
  */
 function hostAction(Event $event, Question $question, string $action): TestResponse
 {
-    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}");
+    // G15: like Live control, every action carries the version on screen.
+    return actingAs($event->owner()->firstOrFail())->postJson("/host/{$event->id}/questions/{$question->id}/{$action}", ['version' => $event->fresh()?->state_version]);
 }
 
 function castVote(Event $event, Question $question, string $voter, string $target, int $attempt = 1): void
@@ -92,6 +93,22 @@ describe('start and stop (F4, D-5)', function (): void {
         $game->forceFill(['current_question_id' => null])->save();
         hostAction($event, Pentahoot::question($game, 3), 'start')->assertConflict();
         hostAction($event, Pentahoot::question($game, 1), 'start')->assertNoContent();
+    });
+
+    it('closes a revealed question when another one opens from the list (D-5, D-10)', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['First?', 'Second?', 'Third?']);
+        [$first, $third] = [Pentahoot::question($game), Pentahoot::question($game, 3)];
+        hostAction($event, $first, 'start');
+        hostAction($event, $first, 'stop');
+        travelTo(now()->addSeconds(2));
+        hostAction($event, $first, 'reveal');
+
+        hostAction($event, $third, 'start')->assertNoContent();
+
+        expect($first->refresh()->status)->toBe(QuestionStatus::Done)
+            ->and($third->refresh()->status)->toBe(QuestionStatus::Live)
+            ->and($game->refresh()->current_question_id)->toBe($third->id);
     });
 });
 
@@ -169,6 +186,40 @@ describe('reveal and next (E1, E2, E3, E4, G10)', function (): void {
     });
 });
 
+describe('next question in order (D-10)', function (): void {
+    it('closes the revealed question and opens the next ready one in one step', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['First?', 'Second?', 'Third?']);
+        [$first, $second] = [Pentahoot::question($game), Pentahoot::question($game, 2)];
+        hostAction($event, $first, 'start');
+        hostAction($event, $first, 'stop');
+        travelTo(now()->addSeconds(2));
+        hostAction($event, $first, 'reveal');
+        $version = $event->refresh()->state_version;
+
+        hostAction($event, $first, 'advance')->assertNoContent();
+
+        expect($first->refresh()->status)->toBe(QuestionStatus::Done)
+            ->and($second->refresh()->status)->toBe(QuestionStatus::Live)
+            ->and($game->refresh()->current_question_id)->toBe($second->id)
+            ->and($event->refresh()->state_version)->toBe($version + 1);
+    });
+
+    it('goes on only from a revealed question, and only while a question is left', function (): void {
+        $event = Pentahoot::event();
+        $game = Pentahoot::running($event, ['Only?']);
+        $only = Pentahoot::question($game);
+        hostAction($event, $only, 'advance')->assertConflict();
+        hostAction($event, $only, 'start');
+        hostAction($event, $only, 'stop');
+        travelTo(now()->addSeconds(2));
+        hostAction($event, $only, 'reveal');
+
+        hostAction($event, $only, 'advance')->assertConflict();
+        expect($only->refresh()->status)->toBe(QuestionStatus::Revealed);
+    });
+});
+
 describe('reset (T1, E13)', function (): void {
     it('deletes the votes and the frozen results, starts a new attempt and logs it', function (): void {
         $event = Pentahoot::event();
@@ -209,8 +260,8 @@ describe('guards (F6, C-2, C-3)', function (): void {
         $foreign = Pentahoot::question(Pentahoot::running($other));
         $idle = Pentahoot::question(Pentahoot::game($event));
 
-        hostAction($event, $question, 'explode')->assertNotFound();
-        hostAction($event, $foreign, 'start')->assertNotFound();
+        hostAction($event, $question, 'explode')->assertConflict()->assertJsonPath('code', 'ACTION_UNAVAILABLE');
+        hostAction($event, $foreign, 'start')->assertNotFound()->assertJsonPath('code', 'NOT_FOUND');
         hostAction($event, $idle, 'start')->assertConflict()->assertJsonPath('code', 'STALE_ACTION');
     });
 

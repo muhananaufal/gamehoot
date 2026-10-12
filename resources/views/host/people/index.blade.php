@@ -1,132 +1,171 @@
 @php
     $locked = $event->names_locked_at !== null;
     $linkBase = url('/' . $event->slug . '/j') . '/';
+    // U5: the dialog texts and address templates are sent once; each row button only adds its
+    // kind, id and name (data-ask).
+    $confirmTexts = [
+        'rename' => ['title' => __('people.rename_title'), 'label' => __('people.save'), 'method' => 'PUT', 'tone' => 'primary',
+            'url' => route('host.events.people.update', [$event, '__P__']),
+            'field' => ['name' => 'name', 'label' => __('people.name'), 'placeholder' => __('examples.person_name'), 'maxlength' => 100, 'form' => 'rename-__P__']],
+        'release' => ['title' => __('people.release') . '?', 'body' => __('people.release_confirm', ['name' => '__N__']), 'label' => __('people.release'), 'method' => 'POST', 'tone' => 'primary',
+            'url' => route('host.events.people.release-claim', [$event, '__P__'])],
+        'newLink' => ['title' => __('people.new_link') . '?', 'body' => __('people.new_link_confirm', ['name' => '__N__']), 'label' => __('people.new_link'), 'method' => 'POST', 'tone' => 'primary',
+            'url' => route('host.events.people.regenerate-link', [$event, '__P__'])],
+        'delete' => ['title' => __('people.delete_title', ['name' => '__N__']), 'body' => __('people.delete_confirm'), 'label' => __('people.delete'), 'method' => 'DELETE', 'tone' => 'destructive',
+            'url' => route('host.events.people.destroy', [$event, '__P__'])],
+    ];
+    // U5, U7: the labels and tooltips of the row icon buttons, also sent once.
+    $labels = [
+        'copy' => ['label' => __('people.copy_for', ['name' => '__N__']), 'title' => __('people.copy')],
+        'menu' => ['label' => __('people.actions_for', ['name' => '__N__']), 'title' => __('people.actions')],
+    ];
+    // U5: Copy sits beside the link; the other actions are in the row menu of the Actions column.
+    $menu = [
+        ['key' => 'newLink', 'label' => __('people.new_link'), 'type' => 'confirm', 'url' => route('host.events.people.regenerate-link', [$event, '__P__'])],
+        ['key' => 'release', 'label' => __('people.release'), 'type' => 'confirm', 'url' => route('host.events.people.release-claim', [$event, '__P__'])],
+        ['key' => 'rename', 'label' => __('people.rename'), 'type' => 'confirm', 'url' => route('host.events.people.update', [$event, '__P__'])],
+        ['key' => 'delete', 'label' => __('people.delete'), 'type' => 'confirm', 'danger' => true, 'url' => route('host.events.people.destroy', [$event, '__P__'])],
+    ];
+    $addFailed = old('form') === 'add-person' && $errors->has('names');
+    // B-4: the texts of the Add names checks, sent once, in the words of the server (AddNamesRequest).
+    $addTexts = [
+        'line' => __('people.on_line', ['line' => '__L__', 'problem' => '__P__']),
+        'existing' => __('people.duplicate_existing', ['name' => '__N__']),
+        'repeat' => __('people.duplicate_line', ['line' => '__R__', 'name' => '__N__']),
+        'too_long' => __('people.too_long', ['max' => \App\People\PersonName::MAX_LENGTH]),
+        'count' => ['one' => trans_choice('people.names_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.names_count', 2, ['count' => '__N__'])],
+        'add' => ['one' => trans_choice('people.add_count', 1, ['count' => '__N__']), 'other' => trans_choice('people.add_count', 2, ['count' => '__N__'])],
+        'empty' => __('people.add'),
+    ];
+    // A refused rename reopens its dialog with what was typed and the error.
+    $renaming = str_starts_with((string) old('form'), 'rename-') ? $people->firstWhere('id', substr((string) old('form'), 7)) : null;
+    $renameRetry = $renaming ? [
+        'row' => ['ask' => 'rename', 'id' => $renaming->id, 'name' => $renaming->name],
+        'previous' => ['value' => old('name'), 'error' => $errors->first('name')],
+    ] : null;
 @endphp
 <x-layouts.host :title="__('people.title') . ' · ' . $event->name" :event="$event"
     :breadcrumbs="[[__('host.dashboard.title'), route('host.dashboard')], [$event->name, route('host.events.edit', $event)], [__('people.title'), null]]">
-    @unless ($locked)
-        <x-slot:actions>
-            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)">{{ __('people.import') }}</x-button>
-        </x-slot:actions>
-    @endunless
-
-    @if ($locked)
-        <div role="status" class="rounded-card bg-warning px-4 py-3 text-sm font-semibold text-on-warning">{{ __('people.locked_banner') }}</div>
-    @endif
-    @error('names')
-        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-sm font-semibold text-on-danger">{{ $message }}</div>
-    @enderror
-
-    <div class="flex flex-wrap items-end justify-between gap-3">
-        <nav class="flex flex-wrap gap-2" aria-label="{{ __('people.status') }}">
-            @foreach (['all', 'joined', 'waiting'] as $key)
-                <a href="{{ route('host.events.people.index', [$event, ...($key === 'all' ? [] : ['filter' => $key])]) }}"
-                    @if ($filter === $key) aria-current="page" @endif
-                    @class([
-                        'inline-flex h-11 items-center rounded-control px-3.5 text-sm font-semibold',
-                        'bg-inverse text-on-inverse' => $filter === $key,
-                        'border border-line-strong bg-surface text-ink hover:bg-subtle' => $filter !== $key,
-                    ])>{{ __('people.' . $key) }} · {{ $counts[$key] }}</a>
-            @endforeach
-        </nav>
-
-        @unless ($locked)
-            <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex items-end gap-2.5" novalidate>
-                @csrf
-                <input type="hidden" name="form" value="add-person">
-                <x-field name="name" :label="__('people.name')" id="add-person-name" :submitted="old('form') === 'add-person'" maxlength="100" autocomplete="off" />
-                <x-button type="submit">{{ __('people.add') }}</x-button>
-            </form>
-        @endunless
-    </div>
-
-    <div class="overflow-x-auto rounded-card bg-surface">
-        @if ($people->isEmpty())
-            <p class="px-6 py-10 text-center text-muted">{{ __('people.empty') }}</p>
-        @else
-            <table class="w-full min-w-[760px] text-left text-[15px]">
-                <thead class="border-b border-line-soft text-xs font-bold tracking-[0.06em] text-muted uppercase">
-                    <tr>
-                        <th scope="col" class="px-5 py-3">{{ __('people.name') }}</th>
-                        <th scope="col" class="px-4 py-3">{{ __('people.status') }}</th>
-                        <th scope="col" class="px-4 py-3">{{ __('people.link') }}</th>
-                        <th scope="col" class="px-5 py-3"><span class="sr-only">{{ __('people.status') }}</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($people as $person)
-                        <tr class="border-b border-line-soft last:border-0">
-                            <td class="px-5 py-3">
-                                @if (! $locked && $editing === $person->id)
-                                    <form method="POST" action="{{ route('host.events.people.update', [$event, $person]) }}" class="flex items-end gap-2" novalidate>
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="form" value="rename-{{ $person->id }}">
-                                        <x-field name="name" :label="__('people.rename')" :value="$person->name" :id="'rename-' . $person->id"
-                                            :submitted="old('form') === 'rename-' . $person->id" maxlength="100" autofocus />
-                                        <x-button type="submit" variant="secondary">{{ __('people.save') }}</x-button>
-                                    </form>
-                                @else
-                                    <span class="font-bold">{{ $person->name }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3">
-                                @if ($person->claimed_at)
-                                    <x-chip tone="success" dot>{{ __('people.status_joined') }}</x-chip>
-                                @else
-                                    <x-chip>{{ __('people.status_waiting') }}</x-chip>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3" x-data="{ copied: false }">
-                                <span class="font-mono text-sm text-muted">/{{ $event->slug }}/j/{{ $person->join_token }}</span>
-                                <button type="button" class="ml-2 min-h-11 text-sm font-semibold text-accent"
-                                    @click="navigator.clipboard.writeText(@js($linkBase . $person->join_token)).then(() => { copied = true; setTimeout(() => copied = false, 1500) })"
-                                    x-text="copied ? @js(__('people.copied')) : @js(__('people.copy'))">{{ __('people.copy') }}</button>
-                            </td>
-                            <td class="px-5 py-3">
-                                <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm font-semibold">
-                                    @unless ($locked)
-                                        <x-button variant="link" :href="route('host.events.people.index', [$event, 'edit' => $person->id])">{{ __('people.rename') }}</x-button>
-                                    @endunless
-                                    @if ($person->claimed_at)
-                                        <x-confirm-dialog :title="__('people.release') . '?'" :trigger="__('people.release')" trigger-variant="link">
-                                            <p class="text-[15px] text-muted">{{ __('people.release_confirm', ['name' => $person->name]) }}</p>
-                                            <form method="POST" action="{{ route('host.events.people.release-claim', [$event, $person]) }}" class="flex justify-end gap-2.5 pt-1.5">
-                                                @csrf
-                                                <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
-                                                <x-button type="submit">{{ __('people.release') }}</x-button>
-                                            </form>
-                                        </x-confirm-dialog>
-                                    @endif
-                                    <x-confirm-dialog :title="__('people.new_link') . '?'" :trigger="__('people.new_link')" trigger-variant="link">
-                                        <p class="text-[15px] text-muted">{{ __('people.new_link_confirm', ['name' => $person->name]) }}</p>
-                                        <form method="POST" action="{{ route('host.events.people.regenerate-link', [$event, $person]) }}" class="flex justify-end gap-2.5 pt-1.5">
-                                            @csrf
-                                            <x-button variant="secondary" formmethod="dialog" type="submit">{{ __('ui.cancel') }}</x-button>
-                                            <x-button type="submit">{{ __('people.new_link') }}</x-button>
-                                        </form>
-                                    </x-confirm-dialog>
-                                    @unless ($locked)
-                                        <form method="POST" action="{{ route('host.events.people.destroy', [$event, $person]) }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <x-button type="submit" variant="link-destructive">{{ __('people.delete') }}</x-button>
-                                        </form>
-                                    @endunless
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    {{-- U2, U21: the page actions head the content. --}}
+    <x-slot:actions>
+        @if ($people->isNotEmpty())
+            <x-confirm-dialog :title="__('people.export_links') . '?'" :trigger="__('people.export_links')">
+                <p class="text-body font-semibold text-on-warning">{{ __('people.links_warning') }}</p>
+                <div class="flex justify-end gap-2.5 pt-1.5">
+                    <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                    <x-button :href="route('host.events.people.links', $event)" download @click="$el.closest('dialog').close()">{{ __('people.export_links') }}</x-button>
+                </div>
+            </x-confirm-dialog>
         @endif
-    </div>
+        @unless ($locked)
+            <x-button variant="secondary" :href="route('host.events.people.import.create', $event)" up-layer="new modal" up-size="large" up-history="false" :up-accept-location="route('host.events.people.index', $event, false)">{{ __('people.import') }}</x-button>
+            <x-confirm-dialog :title="__('people.add')" :trigger="__('people.add')" trigger-icon="plus" trigger-variant="primary" :open="$addFailed">
+                {{-- B-4: one name per line; the same checks as the server run while typing (name-batch.js). --}}
+                <form method="POST" action="{{ route('host.events.people.store', $event) }}" class="flex flex-col gap-3" novalidate
+                    x-data="nameBatch({ existing: {{ \Illuminate\Support\Js::from($people->pluck('name')->values()) }}, text: {{ \Illuminate\Support\Js::from($addFailed ? (string) old('names', '') : '') }}, texts: {{ \Illuminate\Support\Js::from($addTexts) }} })">
+                    @csrf
+                    <input type="hidden" name="form" value="add-person">
+                    <div class="flex flex-col gap-1.5">
+                        <label for="add-names" class="text-body-s font-semibold">{{ __('people.names_label') }}</label>
+                        <textarea id="add-names" name="names" rows="6" x-model="text" autofocus autocomplete="off" placeholder="{{ __('examples.names') }}"
+                            aria-describedby="add-names-hint add-names-check"
+                            class="rounded-control border border-field-line bg-field px-3 py-2.5 text-body text-ink">{{ $addFailed ? old('names') : '' }}</textarea>
+                        <p id="add-names-hint" class="text-body-s text-muted">{{ __('people.add_names_hint') }}</p>
+                        <div id="add-names-check" aria-live="polite" class="flex flex-col gap-1 text-body-s">
+                            <p x-show="check.names.length > 0" x-text="summary" class="text-muted"></p>
+                            <template x-for="problem in check.problems" :key="problem.line">
+                                <p class="font-semibold text-on-danger" x-text="problemText(problem)"></p>
+                            </template>
+                            <p x-show="check.tooMany" class="font-semibold text-on-danger">{{ __('people.too_many', ['max' => \App\Http\Requests\Host\PersonNameRequest::MAX_NAMES]) }}</p>
+                        </div>
+                        @if ($addFailed)
+                            @foreach ($errors->get('names') as $message)
+                                <p class="text-body-s font-semibold text-on-danger">{{ $message }}</p>
+                            @endforeach
+                        @endif
+                    </div>
+                    <div class="flex justify-end gap-2.5 pt-1.5">
+                        <x-button variant="secondary" type="button" @click="$el.closest('dialog').close()">{{ __('ui.cancel') }}</x-button>
+                        <x-button type="submit" x-bind:disabled="!check.ok"><span x-text="addLabel">{{ __('people.add') }}</span></x-button>
+                    </div>
+                </form>
+            </x-confirm-dialog>
+        @endunless
+    </x-slot:actions>
 
-    <section class="flex flex-wrap items-center justify-between gap-4 rounded-card bg-surface p-5" aria-labelledby="links-heading">
-        <div class="flex max-w-2xl flex-col gap-1">
-            <h2 id="links-heading" class="font-display text-xl font-semibold">{{ __('people.links_title') }}</h2>
-            <p class="text-sm font-semibold text-on-warning">{{ __('people.links_warning') }}</p>
+    <x-realtime :event="$event" :audience="\App\Enums\Audience::Host" />
+    @if ($renameRetry)
+        <script type="application/json" id="rename-retry">@json($renameRetry)</script>
+    @endif
+    {{-- U12: join status, the lock banner and the list refresh when the event's version moves on,
+         and at most every 10 s while names are being claimed (F25). --}}
+    <div id="names-live" x-data="liveRegion({ claims: true })" class="flex flex-col gap-5">
+    @if ($locked)
+        {{-- B-3, B-6: the list is locked; say whether new claims still are, and switch them here. --}}
+        <div role="status" class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning px-4 py-3 text-body-s font-semibold text-on-warning">
+            <p>{{ __('people.locked_banner') }} {{ $event->join_locked_at ? __('people.claims_closed') : __('people.claims_open') }}</p>
+            {{-- U24: changes of state ask first. --}}
+            @include('host.partials.confirm-action', [
+                'trigger' => $event->join_locked_at ? __('events.unlock') : __('events.lock'), 'variant' => 'secondary',
+                'title' => ($event->join_locked_at ? __('events.unlock') : __('events.lock')) . '?',
+                'body' => $event->join_locked_at ? __('events.unlock_confirm') : __('events.lock_confirm'),
+                'action' => route('host.events.join-lock', $event), 'confirm' => $event->join_locked_at ? __('events.unlock') : __('events.lock'),
+                'fields' => ['locked' => $event->join_locked_at ? '0' : '1'],
+            ])
         </div>
-        <x-button variant="secondary" :href="route('host.events.people.links', $event)">{{ __('people.export_links') }}</x-button>
-    </section>
+    @endif
+    {{-- Errors of Add names show in its dialog, which opens again. --}}
+    @if ($errors->has('names') && ! $addFailed)
+        <div role="alert" class="rounded-card bg-danger px-4 py-3 text-body-s font-semibold text-on-danger">{{ $errors->first('names') }}</div>
+    @endif
+
+    @if ($people->isEmpty())
+        {{-- U25: the empty list says what applies now, and offers adding only while the list can change. --}}
+        @if ($locked)
+            <x-empty-state :title="__('people.empty_title')" :body="__('people.empty_locked')" />
+        @else
+            <x-empty-state :title="__('people.empty_title')" :body="$event->status === \App\Enums\EventStatus::Draft ? __('people.empty') : __('people.empty_open')">
+                <x-button variant="secondary" :href="route('host.events.people.import.create', $event)" up-layer="new modal" up-size="large" up-history="false" :up-accept-location="route('host.events.people.index', $event, false)">{{ __('people.import') }}</x-button>
+            </x-empty-state>
+        @endif
+    @else
+        {{-- U4: search, filter, sort and pages in the browser; the view state stays in localStorage. --}}
+        <div x-data="tableView({ key: 'names:{{ $event->id }}', sort: 'name', copied: @js(__('people.copied', ['name' => '__N__'])), copyFailed: @js(__('ui.copy_failed')), copyBase: @js($linkBase), labels: @js($labels) })"
+            x-init="$store.confirm.texts = @js($confirmTexts); $store.rowMenu.spec = @js($menu); const retry = document.getElementById('rename-retry'); if (retry) { const r = JSON.parse(retry.textContent); $store.confirm.askRow({ dataset: r.row }, r.previous) }"
+            class="flex flex-col gap-4">
+            <x-table.toolbar :search="__('people.search')">
+                {{-- U4, U22: the status filter is a dropdown with a count per status. --}}
+                <x-select :options="[
+                    ['value' => 'all', 'label' => __('people.all_statuses'), 'count' => $counts['all']],
+                    ['value' => 'joined', 'label' => __('people.joined'), 'count' => $counts['joined']],
+                    ['value' => 'waiting', 'label' => __('people.waiting'), 'count' => $counts['waiting']],
+                ]" :label="__('people.status')" x-model="filter" />
+            </x-table.toolbar>
+
+            {{-- Sideways scrolling only on narrow screens: a scrolling box would pin the header to the box, not the page. --}}
+            <div class="rounded-card bg-surface max-lg:overflow-x-auto">
+                <table class="w-full min-w-[640px] text-left text-body" @click="onRowClick($event)">
+                    <thead class="z-10 border-b border-line-soft bg-surface text-caption font-bold tracking-[0.06em] text-muted uppercase lg:sticky lg:top-16">
+                        <tr>
+                            <x-table.th sort="name">{{ __('people.name') }}</x-table.th>
+                            <x-table.th sort="joined">{{ __('people.status') }}</x-table.th>
+                            <x-table.th sort="link">{{ __('people.link') }}</x-table.th>
+                            <x-table.th actions>{{ __('people.actions') }}</x-table.th>
+                        </tr>
+                    </thead>
+                    {{-- A3, U5: cell styles live here once; each row carries only its data. --}}
+                    <tbody class="[&_b]:font-bold [&_small]:block [&_small]:pt-1 [&_small]:text-caption [&_small]:text-muted [&_td]:px-4 [&_td]:py-2.5 [&_td:first-child]:pl-6 [&_td:last-child]:text-center [&>tr]:border-b [&>tr]:border-line-soft [&>tr:last-child]:border-0 [&_code]:font-mono [&_code]:text-body-s [&_code]:text-muted [&_td>span]:inline-flex [&_td>span]:items-center [&_td>span]:gap-1">
+                        @foreach ($people as $person)
+                            {{-- U5: the row carries its id and name once; its icon buttons only say what they do. --}}
+                            {{-- One line per row (B-3: up to 500 rows). U6: when the name joined, in WIB (T10). B-6: a joined name is released right next to its status. --}}
+<tr data-row data-id="{{ $person->id }}" data-name="{{ $person->name }}" data-search="{{ mb_strtolower($person->name) }} {{ $person->join_token }}" data-filter="{{ $person->claimed_at ? 'joined' : 'waiting' }}" data-sort-name="{{ $person->name }}" data-sort-joined="{{ $person->claimed_at?->getTimestamp() }}" data-sort-link="{{ $person->join_token }}"><td><b>{{ $person->name }}</b></td><td>@if ($person->claimed_at)<x-chip tone="success" dot>{{ __('people.status_joined') }}</x-chip><small>{{ __('people.joined_at', ['time' => $person->claimed_at->timezone(config('app.display_timezone'))->format('j M, H:i')]) }}</small>@else<x-chip>{{ __('people.status_waiting') }}</x-chip>@endif</td><td><span><code>/j/{{ $person->join_token }}</code><button type="button" class="row-action" data-copy="{{ $person->join_token }}"><i data-icon="copy"></i></button></span></td><td><button type="button" class="row-action" data-menu data-new-link="1"@if ($person->claimed_at) data-release="1"@endif @unless ($locked) data-rename="1" data-delete="1"@endunless aria-haspopup="menu"><i data-icon="more"></i></button></td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <p x-show="shown === 0" x-cloak class="px-6 py-8 text-center text-muted">{{ __('people.no_match') }}</p>
+                <x-table-pager />
+            </div>
+        </div>
+    @endif
+    </div>
 </x-layouts.host>

@@ -13,11 +13,24 @@ final readonly class NameClash
     private function __construct(
         public ?int $row,
         public ?string $existingName,
+        public string $name = '',
+        public bool $tooLong = false,
     ) {}
 
-    public static function withRow(int $row): self
+    /**
+     * B-4: longer than the name column takes (PersonName::MAX_LENGTH).
+     */
+    public static function tooLong(): self
     {
-        return new self($row, null);
+        return new self(null, null, '', true);
+    }
+
+    /**
+     * $name is the clashing name itself, used in the example of how to tell the two apart.
+     */
+    public static function withRow(int $row, string $name): self
+    {
+        return new self($row, null, $name);
     }
 
     public static function withExisting(string $name): self
@@ -27,8 +40,24 @@ final readonly class NameClash
 
     public function message(): string
     {
+        if ($this->tooLong) {
+            return __('people.too_long', ['max' => PersonName::MAX_LENGTH]);
+        }
+
         return $this->existingName !== null
             ? __('people.duplicate_existing', ['name' => $this->existingName])
-            : __('people.duplicate_row', ['row' => $this->row]);
+            : __('people.duplicate_row', ['row' => $this->row, 'name' => $this->name]);
+    }
+
+    /**
+     * B-4: the same message for Add names, where the host typed lines rather than file rows.
+     *
+     * @param  list<int>  $lineOf  the line in the text area of each name, by its place in the list
+     */
+    public function lineMessage(array $lineOf): string
+    {
+        return $this->tooLong || $this->existingName !== null || $this->row === null
+            ? $this->message()
+            : __('people.duplicate_line', ['line' => $lineOf[$this->row - 1] ?? $this->row, 'name' => $this->name]);
     }
 }

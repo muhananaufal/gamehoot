@@ -28,6 +28,9 @@ final readonly class TebakActions
 {
     public const array ACTIONS = ['show', 'skip', 'winner', 'surrender', 'leaderboard'];
 
+    /** G15: picking the winner and surrendering cannot be undone. */
+    public const array VERSIONED = ['winner', 'surrender'];
+
     public function __construct(private AuditLog $auditLog) {}
 
     /**
@@ -71,7 +74,7 @@ final readonly class TebakActions
     {
         match ($action) {
             'show' => $this->show($game, $question),
-            'skip' => $this->skip($game, $question),
+            'skip' => $this->skip($event, $game, $question, $actor),
             'winner' => $this->winner($event, $game, $question, $actor, is_string($input['person'] ?? null) ? $input['person'] : ''),
             'surrender' => $this->surrender($event, $game, $question, $actor),
             'leaderboard' => $this->leaderboard($game, $question),
@@ -114,16 +117,17 @@ final readonly class TebakActions
     /**
      * Once per question, to the end of the queue. E6: not when nothing else is queued.
      */
-    private function skip(Game $game, Question $question): void
+    private function skip(Event $event, Game $game, Question $question, User $actor): void
     {
         $this->expectCurrent($game, $question, QuestionStatus::Shown);
 
         $othersQueued = $game->questions()->where('status', QuestionStatus::Queued)->whereKeyNot($question->id)->exists();
 
         if ($question->skip_used || ! $othersQueued) {
-            throw ActionRefused::stale();
+            throw ActionRefused::unavailable();
         }
 
+        // E13: the one skip of the question is used.
         $last = $game->questions()->max('position');
         $question->forceFill([
             'status' => QuestionStatus::Queued,
@@ -131,6 +135,9 @@ final readonly class TebakActions
             'position' => (is_numeric($last) ? (int) $last : 0) + 1,
         ])->save();
         $game->forceFill(['current_question_id' => null])->save();
+
+        // Audit CODE-3: logged once the skip is allowed and done, like every other action.
+        $this->auditLog->record(LoggedAction::QuestionSkipped, $actor, $event, ['question_id' => $question->id]);
     }
 
     /**

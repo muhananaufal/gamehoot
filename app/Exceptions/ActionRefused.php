@@ -29,6 +29,15 @@ final class ActionRefused extends RuntimeException
     }
 
     /**
+     * K4: an action the state never allows (Skip with nothing else queued, a second Skip, an
+     * action the game type does not have), as opposed to a screen that fell behind.
+     */
+    public static function unavailable(): self
+    {
+        return new self('ACTION_UNAVAILABLE', 409);
+    }
+
+    /**
      * D-1: one active game per event.
      */
     public static function gameRunning(): self
@@ -68,6 +77,14 @@ final class ActionRefused extends RuntimeException
         return new self('QUESTION_LOCKED', 409);
     }
 
+    /**
+     * D-2, D-9: a game that has started (running or finished) can only be looked at.
+     */
+    public static function gameStarted(): self
+    {
+        return new self('GAME_STARTED', 409);
+    }
+
     public static function eventNotOpen(): self
     {
         return new self('EVENT_NOT_OPEN', 409);
@@ -92,6 +109,22 @@ final class ActionRefused extends RuntimeException
     public static function notClaimed(): self
     {
         return new self('NOT_CLAIMED', 401);
+    }
+
+    /**
+     * D-11: a replay waits until no question is on screen, so play always wins.
+     */
+    public static function questionOnScreen(): self
+    {
+        return new self('QUESTION_ON_SCREEN', 409);
+    }
+
+    /**
+     * D-11: the moment was never on screen (or is not of this event), so it cannot come back.
+     */
+    public static function momentUnavailable(): self
+    {
+        return new self('MOMENT_UNAVAILABLE', 409);
     }
 
     public function render(Request $request): JsonResponse|RedirectResponse

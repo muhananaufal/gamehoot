@@ -76,6 +76,19 @@ export function realtimeStore({ now = () => Date.now() } = {}) {
             return true;
         },
 
+        /**
+         * F23, F25: the lobby count after a claim; claims send no snapshot.
+         */
+        joined({ joined }) {
+            if (this.snapshot === null || !Number.isInteger(joined)) {
+                return false;
+            }
+
+            this.snapshot.lobby = { ...this.snapshot.lobby, joined };
+
+            return true;
+        },
+
         /** Milliseconds left until a server timestamp, never negative. */
         msUntil(serverTime) {
             return Math.max(0, serverTime - this.serverNow());
@@ -108,9 +121,12 @@ export async function fetchSnapshot(url) {
  * @param {{
  *   store: ReturnType<typeof realtimeStore>,
  *   echo: { channel: Function, private: Function, connector: { onConnectionChange: Function } },
- *   channels: Array<{ name: string, private: boolean }>,
+ *   channels: Array<{ name: string, private: boolean, counters?: boolean }>,
  *   fetchState: () => Promise<object|null>,
  *   onAnswered?: () => void,
+ *   onJoined?: () => void,
+ *   onRotated?: () => void,
+ *   onNameLost?: () => void,
  *   random?: () => number,
  *   doc?: { visibilityState: string, addEventListener: Function },
  * }} options
@@ -121,18 +137,31 @@ export function connectRealtime({
     channels,
     fetchState,
     onAnswered = () => {},
+    onJoined = () => {},
+    onRotated = () => {},
+    onNameLost = () => {},
     random = Math.random,
     doc = document,
 }) {
     let everConnected = false;
     let lastStatus = null;
     let pollTimer = null;
+    // U18: set once the page is replaced; late timers, broadcasts and replies are ignored.
+    let stopped = false;
 
     const refresh = async () => {
+        if (stopped) {
+            return;
+        }
+
         const sentAt = Date.now();
 
         try {
             const next = await fetchState();
+
+            if (stopped) {
+                return;
+            }
 
             if (next === null) {
                 store.missing = true;
@@ -140,7 +169,13 @@ export function connectRealtime({
                 return;
             }
 
+            const hadName = store.me !== null;
             store.accept(next, { sentAt, receivedAt: Date.now() });
+
+            // B-6: the host released or deleted this phone's name; it picks a name again.
+            if (hadName && store.me === null) {
+                onNameLost();
+            }
         } catch {
             // T2: the next poll or reconnect tries again.
         }
@@ -170,6 +205,10 @@ export function connectRealtime({
         const subscription = channel.private ? echo.private(channel.name) : echo.channel(channel.name);
 
         subscription.listen('.state', (next) => {
+            if (stopped) {
+                return;
+            }
+
             // F24: the snapshot was too big to send; fetch it, spread by jitter (F17).
             if (next?.refresh === true) {
                 setTimeout(refresh, random() * RECONNECT_JITTER_MS);
@@ -177,18 +216,48 @@ export function connectRealtime({
                 return;
             }
 
-            store.accept(next);
+            const roster = store.snapshot?.event?.roster;
+
+            // B-6: the host changed the name list; a phone with a name fetches its own state
+            // (its name, or none any more), spread by jitter like a reconnect (F17).
+            if (store.accept(next) && store.me !== null && roster !== undefined && next.event?.roster !== roster) {
+                setTimeout(refresh, random() * RECONNECT_JITTER_MS);
+            }
         });
 
-        if (!channel.private) {
+        // F25: the counters come on their own channel, which phones do not follow.
+        if (channel.counters === true) {
             subscription.listen('.answered', (counter) => {
+                if (stopped) {
+                    return;
+                }
+
                 store.answered(counter);
                 onAnswered();
+            });
+
+            subscription.listen('.joined', (counter) => {
+                if (stopped) {
+                    return;
+                }
+
+                store.joined(counter);
+                onJoined();
+            });
+        }
+
+        // F26: the host channel got a new key because someone lost access; the page loads
+        // again and joins the new channel if this host still may.
+        if (channel.private) {
+            subscription.listen('.rotated', () => {
+                if (!stopped) {
+                    onRotated();
+                }
             });
         }
     }
 
-    echo.connector.onConnectionChange((status) => {
+    const stopFollowingConnection = echo.connector.onConnectionChange((status) => {
         // The connector reports one change through several events; act on changes only.
         if (status === lastStatus) {
             return;
@@ -224,15 +293,36 @@ export function connectRealtime({
         }
     });
 
-    doc.addEventListener('visibilitychange', () => {
+    // U18: a page joined while the tab's socket is already up gets no connection change; read
+    // the state now (the first refresh below already covers missed broadcasts).
+    if (echo.connector.connectionStatus?.() === 'connected') {
+        everConnected = true;
+        lastStatus = 'connected';
+        store.connection = 'connected';
+    }
+
+    const onVisible = () => {
         if (doc.visibilityState === 'visible') {
             refresh();
         }
-    });
+    };
+    doc.addEventListener('visibilitychange', onVisible);
 
     refresh();
 
-    return { refresh };
+    /** U18: the host panel replaces pages without reloading; leave everything this page joined. */
+    const stop = () => {
+        stopped = true;
+        stopPolling();
+        stopFollowingConnection?.();
+        doc.removeEventListener?.('visibilitychange', onVisible);
+
+        for (const channel of channels) {
+            echo.leave?.(channel.name);
+        }
+    };
+
+    return { refresh, stop };
 }
 
 /**

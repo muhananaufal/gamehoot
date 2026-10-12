@@ -56,6 +56,25 @@ final readonly class TebakBoard
     }
 
     /**
+     * D-11, E11: the board as it stood right after a won question, from the wins up to it.
+     *
+     * @return list<array{rank: int, name: string, points: int, movement: ?int}>
+     */
+    public function after(Game $game, Question $question): array
+    {
+        $until = $question->resolved_at;
+        $wins = array_values(array_filter(
+            $this->wins($game),
+            fn (array $win): bool => $until !== null && $win['resolved_at']->lessThanOrEqualTo($until),
+        ));
+
+        return array_map(
+            fn (array $row): array => ['rank' => $row['rank'], 'name' => $row['name'], 'points' => $row['points'], 'movement' => $row['movement']],
+            Leaderboard::top($wins),
+        );
+    }
+
+    /**
      * G10: the final board, read from the frozen table.
      *
      * @return list<array{rank: int, name: string, points: int}>

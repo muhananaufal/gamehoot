@@ -82,11 +82,13 @@ describe('results (D-3, G10)', function (): void {
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
             ->streamedContent();
 
-        expect(explode("\n", trim($csv)))->toBe([
-            'Game,Question,Prompt,Rank,Name,Score',
-            '"Office Awards",1,"Most punctual?",1,"Rita Wulandari",5',
-            '"Office Awards",1,"Most punctual?",2,"\'=cmd Budi",3',
-        ]);
+        // A byte order mark makes Excel open the file as UTF-8, so accents and emoji survive.
+        expect($csv)->toStartWith("\u{FEFF}Game,")
+            ->and(explode("\n", trim(substr($csv, 3))))->toBe([
+                'Game,Question,Prompt,Rank,Name,Score',
+                '"Office Awards",1,"Most punctual?",1,"Rita Wulandari",5',
+                '"Office Awards",1,"Most punctual?",2,"\'=cmd Budi",3',
+            ]);
     });
 
     it('is for the owner and co-hosts only', function (): void {
@@ -129,7 +131,7 @@ describe('Tebak Kata results (D-3, E10, G10)', function (): void {
 
         $csv = actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}/results.csv")->assertOk()->streamedContent();
 
-        expect(explode("\n", trim($csv)))->toBe([
+        expect(explode("\n", trim(substr($csv, 3))))->toBe([
             'Game,Question,Prompt,Rank,Name,Score',
             '"Word Guess",1,"Capital of France?",,"Rita Wulandari",2',
             '"Word Guess",Final,,1,"Rita Wulandari",2',
@@ -153,7 +155,7 @@ describe('Tebak Gambar results (D-3, G10)', function (): void {
             ->assertSeeInOrder(['Picture Guess', 'Which city is this?', 'Paris', 'Rita Wulandari', '2 points', 'Which ocean is this?', 'Not played', 'Final leaderboard', 'Rita Wulandari']);
 
         $csv = actingAs($owner)->get("/host/{$event->id}/results.csv")->assertOk()->streamedContent();
-        expect(explode("\n", trim($csv)))->toBe([
+        expect(explode("\n", trim(substr($csv, 3))))->toBe([
             'Game,Question,Prompt,Rank,Name,Score',
             '"Picture Guess",1,"Which city is this?",,"Rita Wulandari",2',
             '"Picture Guess",Final,,1,"Rita Wulandari",2',
@@ -183,4 +185,12 @@ describe('activity log (E13)', function (): void {
     it('keeps other hosts out', function (): void {
         actingAs(User::factory()->create())->get('/host/'.playedEvent()->id.'/logs')->assertForbidden();
     });
+});
+
+it('shows no explanation paragraph under the title (U21)', function (): void {
+    $event = Event::factory()->open()->create();
+
+    actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}/results")
+        ->assertOk()
+        ->assertDontSee('Results are frozen when they are decided');
 });

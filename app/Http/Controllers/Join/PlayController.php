@@ -8,6 +8,7 @@ use App\Enums\EventStatus;
 use App\Http\Views\PhoneStatus;
 use App\Models\Event;
 use App\People\ClaimCookie;
+use App\Realtime\PhoneState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -31,6 +32,6 @@ final class PlayController
             return PhoneStatus::forEvent($event) ?? redirect()->route('join.index', $event);
         }
 
-        return response()->view('join.play', ['event' => $event, 'person' => $person]);
+        return response()->view('join.play', ['event' => $event, 'person' => $person, 'me' => PhoneState::for($person, $event)]);
     }
 }

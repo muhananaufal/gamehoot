@@ -62,9 +62,56 @@ describe('Public View (F23)', function (): void {
         expect($config)->not->toHaveKey('initial.host');
         expect($config)
             ->toHaveKey('stateUrl', url('/gathering-2026/state'))
-            ->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false]])
+            ->toHaveKey('channels', [
+                ['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false],
+                // F25: the Public View follows the counters; phones do not.
+                ['name' => "event.{$event->id}.screen", 'private' => false, 'counters' => true],
+            ])
             ->toHaveKey('initial.version', 9)
             ->toHaveKey('initial.lobby.joined', 1);
+    });
+
+    it('follows the device motion setting only, never a choice made in the panel on the same browser (U27, U31)', function (): void {
+        screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('data-motion-device-only', false)
+            ->assertSee('document.documentElement.dataset.motion', false)
+            ->assertDontSee('pentahoot-motion', false);
+    });
+
+    it('changes its scenes with motion and keeps every live number moving (U30)', function (): void {
+        screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('class="scene-stack', false)
+            ->assertSee('x-transition:enter="scene-in"', false)
+            // The countdown ring and the last five seconds.
+            ->assertSee('pathLength="100"', false)
+            ->assertSee(':stroke-dashoffset="ring"', false)
+            ->assertSee('x-nudge.pulse=', false)
+            // Penta greets the lobby, and the player count pops when someone joins.
+            ->assertSee('name: '."'lobby'", false)
+            ->assertSee('x-nudge.pop=', false)
+            // T2: the banner says so when the connection comes back.
+            ->assertSee('Back online', false);
+    });
+
+    it('celebrates on a canvas and follows the host Screen animations setting (U31)', function (): void {
+        $event = screensEvent();
+
+        get('/gathering-2026/screen')
+            ->assertOk()
+            ->assertSee('data-screen-animations="on"', false)
+            ->assertSee('x-data="celebration({ projector: true })"', false)
+            ->assertSee('@celebrate.window="play($event.detail)"', false)
+            ->assertSee('name: '."'celebration'", false);
+
+        $event->forceFill(['screen_animations' => false])->save();
+
+        get('/gathering-2026/screen')->assertSee('data-screen-animations="off"', false);
     });
 
     it('answers unknown events with the not found screen', function (): void {
@@ -81,7 +128,31 @@ describe('player screen', function (): void {
 
         $response = withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk();
 
-        expect(realtimeConfigOf($response))->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false]]);
+        expect(realtimeConfigOf($response))->toHaveKey('channels', [['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false]]);
+    });
+
+    it('puts the phone\'s own name and vote into the first snapshot, so a reload never flashes "Time is up" (E4)', function (): void {
+        $event = screensEvent();
+        $person = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $token = ClaimCookie::newToken();
+        $person->forceFill(['claim_token_hash' => ClaimCookie::hash($token), 'claimed_at' => now()])->save();
+
+        $initial = realtimeConfigOf(withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk())['initial'];
+
+        expect($initial)->toBeArray()->toHaveKey('me.name', 'Budi Santoso');
+    });
+
+    it('tells the phone where to pick a name again once its name is released or deleted, and shows the name from the store (B-6)', function (): void {
+        $event = screensEvent();
+        $person = Person::factory()->for($event)->create(['name' => 'Budi Santoso']);
+        $token = ClaimCookie::newToken();
+        $person->forceFill(['claim_token_hash' => ClaimCookie::hash($token), 'claimed_at' => now()])->save();
+
+        $response = withCookie(ClaimCookie::name($event), $token)->get('/gathering-2026/play')->assertOk();
+
+        expect(realtimeConfigOf($response))->toHaveKey('joinUrl', url('/gathering-2026'))
+            ->and((string) $response->getContent())->toContain('x-text="$store.realtime.me?.name ??');
+        expect(realtimeConfigOf(get('/gathering-2026/screen')))->toHaveKey('joinUrl', null);
     });
 });
 
@@ -97,8 +168,10 @@ describe('Live control (F2, C-2)', function (): void {
         expect(realtimeConfigOf($response))
             ->toHaveKey('stateUrl', url("/host/{$event->id}/state"))
             ->toHaveKey('channels', [
-                ['name' => "event.{$event->id}.public", 'private' => false],
-                ['name' => "event.{$event->id}.host", 'private' => true],
+                ['name' => "event.{$event->id}.public", 'private' => false, 'counters' => false],
+                // F26: the host channel name carries the event's key.
+                ['name' => "event.{$event->id}.host.{$event->fresh()?->hostChannelKey()}", 'private' => true, 'counters' => false],
+                ['name' => "event.{$event->id}.screen", 'private' => false, 'counters' => true],
             ])
             ->toHaveKey('initial.host.names', 0);
     });
@@ -145,7 +218,7 @@ describe('Tebak Kata screens (stage 4)', function (): void {
         actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")
             ->assertOk()
             ->assertSee('Capital of France?')
-            ->assertSee('Show final results')
+            ->assertSee('Finish game')
             ->assertSee('Rita Wulandari');
     });
 
@@ -172,7 +245,7 @@ describe('Tebak Gambar screens (stage 5)', function (): void {
             ->assertOk()
             ->assertSee('Which city is this?')
             ->assertSee('Reveal answer')
-            ->assertSee('Show final results')
+            ->assertSee('Finish game')
             ->assertSee('Rita Wulandari');
     });
 
@@ -189,4 +262,17 @@ describe('Tebak Gambar screens (stage 5)', function (): void {
 
         get('/year-end-party/screen')->assertOk()->assertDontSee('Paris')->assertDontSee($answerImage);
     });
+});
+
+describe('Live control after the last question (D-8)', function (): void {
+    it('tells the host every question is done and offers to finish the game right there', function (string $kind): void {
+        $event = Pentahoot::event();
+        $kind === 'pentahoot' ? Pentahoot::running($event) : TebakKata::running($event);
+
+        $html = (string) actingAs($event->owner()->firstOrFail())->get("/host/{$event->id}")->assertOk()->getContent();
+        $flag = $kind === 'pentahoot' ? 'allDone' : 'allResolved';
+
+        // The notice shows only once nothing is left, and holds its own Finish game form.
+        expect($html)->toMatch('/x-show="'.$flag.'"[^>]*>[\s\S]*?All questions are done[\s\S]*?\/games\/[0-9a-f-]+\/finish/');
+    })->with(['pentahoot', 'tebak']);
 });

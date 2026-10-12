@@ -18,6 +18,9 @@ return [
         'close_menu' => 'Close menu',
         'breadcrumb' => 'Breadcrumb',
         'switch_theme' => 'Switch theme',
+        'recent' => 'Recent events',
+        'collapse' => 'Collapse sidebar',
+        'expand' => 'Expand sidebar',
     ],
 
     'dashboard' => [
@@ -33,13 +36,23 @@ return [
         'cohost' => 'Co-host',
         'names_count' => '{0} No names yet|{1} 1 name|[2,*] :count names',
         'games_count' => '{0} No games yet|{1} 1 game|[2,*] :count games',
-        'empty' => 'No events yet.',
-        'empty_filtered' => 'No events with this status.',
+        'empty_title' => 'No events yet.',
+        'empty' => 'Write a question pack first, then make an event, add the names and pick its games.',
+        'empty_filtered' => 'No event matches.',
+        'search' => 'Search name, link or owner',
+        'all_statuses' => 'All statuses',
+        'changed' => 'Changed',
+        'changed_at' => 'Changed :time',
+        'created_column' => 'Created',
+        'date_filter' => 'Filter by created date',
+        'created' => 'Created :date',
+        'owned_by' => 'Owned by :name',
     ],
 
     'event_status' => [
         'draft' => 'Draft',
-        'open' => 'Open',
+        // D-10: an open event reads Playing everywhere; Open event stays the action that opens it.
+        'open' => 'Playing',
         'finished' => 'Finished',
     ],
 ];

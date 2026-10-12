@@ -9,6 +9,7 @@ use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\MediaVisibility;
 use App\Enums\QuestionStatus;
+use App\Games\Tebak\TebakActions;
 use App\Games\Tebak\TebakBoard;
 use App\Games\TebakGambar\GambarActions;
 use App\Media\MediaUrls;
@@ -95,7 +96,8 @@ final readonly class TebakGambarEngine implements LiveGameEngine
 
     public function saveCopyDetail(Question $question, array $attributes): void
     {
-        $question->gambar()->firstOrFail()->forceFill($attributes)->save();
+        // D-2: an edited copy, or a question of the event's own getting its detail.
+        ($question->gambar()->first() ?? $question->gambar()->make())->forceFill($attributes)->save();
     }
 
     public function initialStatus(): QuestionStatus
@@ -133,7 +135,7 @@ final readonly class TebakGambarEngine implements LiveGameEngine
         return $snapshot;
     }
 
-    public function liveCounters(Game $game, Audience $audience): array
+    public function liveCounters(LiveState $live, Audience $audience): array
     {
         return [];
     }
@@ -141,6 +143,11 @@ final readonly class TebakGambarEngine implements LiveGameEngine
     public function actions(): array
     {
         return GambarActions::ACTIONS;
+    }
+
+    public function versionedActions(): array
+    {
+        return TebakActions::VERSIONED;
     }
 
     public function actionRules(string $action): array
@@ -180,10 +187,12 @@ final readonly class TebakGambarEngine implements LiveGameEngine
     /**
      * @return list<mixed>
      */
-    private static function imageRules(int $maxWidth): array
+    private static function imageRules(int $maxSize): array
     {
-        // E8, K7: 2 MB after the browser resized the image to at most $maxWidth px.
-        return ['file', new JpegOrPng, 'max:2048', "dimensions:max_width={$maxWidth}"];
+        // E8, K7: 2 MB after the browser fitted the image within $maxSize x $maxSize px. Audit
+        // SEC-4: the height is limited too, read from the file header before anything decodes the
+        // image, so a very tall PNG that compresses well cannot make GD exhaust the worker's memory.
+        return ['file', new JpegOrPng, 'max:2048', "dimensions:max_width={$maxSize},max_height={$maxSize}"];
     }
 
     /**

@@ -10,8 +10,16 @@ namespace App\Support;
  */
 final class CsvCell
 {
+    /**
+     * Written first: without a byte order mark, Excel on Windows opens a double-clicked CSV
+     * in the local code page and breaks accents and emoji in names.
+     */
+    public const string BOM = "\u{FEFF}";
+
     public static function safe(string $value): string
     {
-        return in_array(substr($value, 0, 1), ['=', '+', '-', '@'], true) ? "'".$value : $value;
+        // Audit SEC-5: Excel also reads the full-width signs as formula starts. Tab and line
+        // breaks never reach here: PersonName::display removes them.
+        return in_array(mb_substr($value, 0, 1), ['=', '+', '-', '@', '＝', '＋', '－', '＠'], true) ? "'".$value : $value;
     }
 }
