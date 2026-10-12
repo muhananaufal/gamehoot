@@ -47,8 +47,8 @@ permissions:
 jobs:
   php:
     name: PHP (Pint, Larastan, audit, Pest, mutation)
-    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
+    if: &gate_jobs_if ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
+    runs-on: &gate_runner ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -91,8 +91,8 @@ jobs:
     # One job for both browsers: the image and asset setup is paid once (P6). Safari still runs
     # when Chrome fails. Not parallel: WebKit workers time out on a 2-core runner (P6).
     name: Pest browser (Chrome, Safari)
-    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
+    if: *gate_jobs_if
+    runs-on: *gate_runner
     timeout-minutes: 30
     permissions:
       contents: read
@@ -152,8 +152,8 @@ jobs:
     # history, workflow lint and the repository rules, in one job so the setup and the per-job
     # minute rounding are paid once (P6). Each check runs even when an earlier one failed.
     name: Production image proof, frontend, Gitleaks, workflow lint, repo rules
-    if: ${{ (vars.GATE_ROLE == 'gate' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/gate/'))) || (vars.GATE_RUNNER != '' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/gate/')) || (github.event_name == 'workflow_dispatch' && inputs.gate) || (github.event_name == 'pull_request' && !github.event.pull_request.draft && (contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action) || (github.event.action == 'labeled' && github.event.label.name == 'gate') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'gate')))) }}
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.GATE_RUNNER || 'ubuntu-24.04' }}
+    if: *gate_jobs_if
+    runs-on: *gate_runner
     timeout-minutes: 25
     permissions:
       contents: read
@@ -282,7 +282,7 @@ jobs:
     needs: [php, browser, checks]
     if: ${{ !cancelled() && vars.GATE_ROLE != 'gate' && ((startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on') || (github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && ((github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && vars.STAGING_AUTO == 'on')))) && needs.php.result != 'failure' && needs.browser.result != 'failure' && needs.checks.result != 'failure' }}
     # P10: the office runner when DEPLOY_RUNNER=self-hosted; scripts/deploy.sh re-runs with runner=github when it does not answer.
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
+    runs-on: &deploy_runner ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
     permissions:
       actions: read
@@ -421,7 +421,7 @@ jobs:
     name: Deploy staging
     needs: image
     if: ${{ !cancelled() && needs.image.result == 'success' && github.ref == 'refs/heads/develop' && vars.STAGING_DEPLOY == 'on' && ((github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && vars.STAGING_AUTO == 'on')) }}
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
+    runs-on: *deploy_runner
     timeout-minutes: 15
     environment: staging
     concurrency:
@@ -449,7 +449,7 @@ jobs:
     name: Deploy production
     needs: image
     if: ${{ !cancelled() && needs.image.result == 'success' && startsWith(github.ref, 'refs/tags/v') && vars.PRODUCTION_DEPLOY == 'on' }}
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
+    runs-on: *deploy_runner
     timeout-minutes: 15
     environment: production
     concurrency:
